@@ -4772,7 +4772,9 @@ function openImgModal(src, name){
 
 // ── Logo inject ──
 (function(){
-  const src = 'https://i.ibb.co/VWNn63tk/IMG-20260324-182147752-MP-AE.jpg';
+  // logo injection disabled — logo.png used directly in HTML
+  const _noop = true; if(_noop) return;
+  const src = 'logo.png';
   ['heroLogo','navLogo','footerLogo'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.src = src;
