@@ -4128,19 +4128,42 @@ function onFlavorChange(sel, pid){
   if(!flav) return;
   const stock = flav.stock;
   const stockEl = document.getElementById(`stock-${pid}`);
-  const addBtn = document.getElementById(`addbtn-${pid}`);
-  const decBtn = document.querySelector(`.qty-dec[data-pid="${pid}"]`);
-  const incBtn = document.querySelector(`.qty-inc[data-pid="${pid}"]`);
-  const qtyEl  = document.getElementById(`qty-${pid}`);
+  const addBtn  = document.getElementById(`addbtn-${pid}`);
+  const decBtn  = document.querySelector(`.qty-dec[data-pid="${pid}"]`);
+  const incBtn  = document.querySelector(`.qty-inc[data-pid="${pid}"]`);
+  const qtyEl   = document.getElementById(`qty-${pid}`);
+  const priceEl = document.getElementById(`price-${pid}`);
 
-  stockEl.textContent = stock===0?'Sin stock':`${stock} unid.`;
-  stockEl.className = `prod-stock-num ${stock===0?'stock-zero':stock<=3?'stock-low':''}`;
-  qtyEl.textContent = '1';
-  if(decBtn) decBtn.disabled = true;
-  if(incBtn) incBtn.disabled = stock<=1;
-  addBtn.disabled = stock===0;
-  addBtn.textContent = stock===0?'❌ Agotado':'🛒 Agregar';
-  addBtn.classList.remove('added');
+  // Actualizar stock display
+  const stockClass = stock===0?'sin-stock':stock<=3?'stock-low':'';
+  if(stockEl) {
+    stockEl.textContent = stock===0?'Sin stock':`${stock} unid.`;
+    stockEl.className = `prod-stock-num ${stockClass}`;
+  }
+
+  // Actualizar precio si el sabor tiene precio diferente (futuro)
+  // Por ahora mantener precio base
+
+  // Actualizar imagen si el sabor tiene imagen propia
+  if (p.imgs && p.imgs[sel.value]) {
+    const galleryEl = document.querySelector(`#gal-${pid} .gallery-slides`);
+    if (galleryEl) {
+      const firstImg = galleryEl.querySelector('img');
+      if (firstImg) firstImg.src = p.imgs[sel.value];
+    }
+    // También actualizar img principal
+    const mainImg = document.querySelector(`#gal-${pid}`);
+    if (mainImg) {
+      const imgs = mainImg.querySelectorAll('img');
+      if (imgs.length > 0) imgs[0].src = p.imgs[sel.value];
+    }
+  }
+
+  // Actualizar botones
+  if(addBtn)  { addBtn.disabled  = stock===0; addBtn.textContent = stock===0?'Sin stock':'🛒 Agregar'; }
+  if(decBtn)  { decBtn.disabled  = true; }
+  if(incBtn)  { incBtn.disabled  = stock<=1; }
+  if(qtyEl)   { qtyEl.textContent= '1'; }
 }
 
 /* ── QTY ── */
@@ -4610,7 +4633,6 @@ async function cargarDesdeSheets() {
     // ── AGRUPAR por nombre base (quitar sabor/color del nombre) ──
     const grouped = {};
     sheetsProds.forEach(p => {
-      // Extraer sabor del nombre: "Whey Protein Doypack 2 Lb Chocolate" → base="Whey Protein Doypack 2 Lb", sabor="Chocolate"
       const { base, sabor } = _extraerSabor(p.name);
       
       if (!grouped[base]) {
@@ -4618,13 +4640,18 @@ async function cargarDesdeSheets() {
           ...p,
           name: base,
           flavors: [],
+          imgs: {}, // mapa sabor → imagen
           img: p.img || _buscarImagen(base, p.brand),
         };
       }
-      // Agregar sabor
-      grouped[base].flavors.push({ name: sabor || 'Unidad', stock: p.flavors[0].stock });
-      // Si este sabor tiene imagen y el grupo no tiene, usarla
-      if (p.img && !grouped[base].img) grouped[base].img = p.img;
+      const saborNombre = sabor || 'Unidad';
+      const stockVal = p.flavors[0].stock;
+      grouped[base].flavors.push({ name: saborNombre, stock: stockVal });
+      // Guardar imagen específica de este sabor
+      if (p.img) {
+        grouped[base].imgs[saborNombre] = p.img;
+        if (!grouped[base].img) grouped[base].img = p.img;
+      }
     });
     
     // Reemplazar PRODUCTS con datos agrupados
@@ -4642,40 +4669,15 @@ async function cargarDesdeSheets() {
 }
 
 function _extraerSabor(nombre) {
-  // Lista de sabores/colores/talles comunes para detectar
-  const SABORES = [
-    'chocolate','vainilla','frutilla','cookies','naranja','limón','limon',
-    'menta','caramelo','dulce de leche','banana','mango','maracuya','frambuesa',
-    'neutro','natural','unflavored','sin sabor',
-    'acai','açaí','blue razz','grape','watermelon','sandía','tropical',
-    // colores ropa
-    'negro','blanco','rojo','azul','verde','rosa','gris','beige','naranja',
-    'azul marino','azul rey','bordó','violeta','lila','celeste','amarillo',
-    // talles
-    'xs','s-m','m-l','l-xl','xl-xxl','s','m','l','xl','xxl',
-    // presentaciones
-    'chocolate blanco','cookies and cream','cookie','frutos rojos','frutos del bosque',
-  ];
-  
   const n = nombre.trim();
-  const nLow = n.toLowerCase();
-  
-  // Buscar sabor al final del nombre (separado por espacio o guion)
-  for (const sab of SABORES) {
-    // Chequear si termina con el sabor
-    const patterns = [
-      new RegExp('\\s*[-–]\\s*' + sab.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\s*$', 'i'),
-      new RegExp('\\s+' + sab.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\s*$', 'i'),
-    ];
-    for (const re of patterns) {
-      if (re.test(nLow)) {
-        const base = n.replace(re, '').trim();
-        return { base: base || n, sabor: sab.charAt(0).toUpperCase() + sab.slice(1) };
-      }
-    }
+  // Detectar sabor por guion: "Producto X - Sabor" → base="Producto X", sabor="Sabor"
+  const guionIdx = n.lastIndexOf(' - ');
+  if (guionIdx !== -1) {
+    const base  = n.substring(0, guionIdx).trim();
+    const sabor = n.substring(guionIdx + 3).trim();
+    if (base && sabor) return { base, sabor };
   }
-  
-  // Si no encontró sabor conocido, devolver nombre completo sin sabor
+  // Sin guion = sin sabor diferenciado
   return { base: n, sabor: '' };
 }
 
