@@ -556,6 +556,16 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   text-transform:uppercase;letter-spacing:.08em;animation:pulseRed 1.5s infinite}
 @keyframes pulseRed{0%,100%{opacity:1}50%{opacity:.6}}
 
+
+/* ── SCROLL TOP ── */
+.scroll-top-btn{position:fixed;bottom:170px;right:24px;z-index:900;
+  width:44px;height:44px;border-radius:50%;background:rgba(0,200,255,.15);
+  border:1px solid rgba(0,200,255,.4);color:var(--cyan);font-size:1.2rem;
+  cursor:pointer;display:none;align-items:center;justify-content:center;
+  transition:all .2s;font-weight:700}
+.scroll-top-btn.visible{display:flex}
+.scroll-top-btn:hover{background:rgba(0,200,255,.3);transform:translateY(-3px)}
+
 </style>
 </head>
 <body>
@@ -613,7 +623,12 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <p class="section-desc">Precios y stock real actualizado. Filtrá por categoría o buscá tu producto.</p>
   </div>
   <div id="searchInfo" class="search-info"></div>
-  <div class="precio-filter">
+  <!-- ── MARCAS (inline sobre catálogo) ── -->
+<div style="overflow:hidden;margin-bottom:20px">
+  <div class="marcas-track" id="marcasTrack"></div>
+</div>
+
+<div class="precio-filter">
     <label>Precio máx:</label>
     <input type="range" class="precio-range" id="precioRange" min="0" max="200000" value="200000" step="1000" oninput="filtrarPrecio(this.value)">
     <span class="precio-val" id="precioVal">Sin límite</span>
@@ -664,19 +679,6 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
       <button class="calc-btn" onclick="calcularRecomendacion()">🔬 VER MI RECOMENDACIÓN</button>
     </div>
     <div class="calc-resultado" id="calcResultado"></div>
-  </div>
-</section>
-
-<div class="grad-line"></div>
-
-<!-- ── MARCAS ── -->
-<section class="marcas-section">
-  <div style="text-align:center;margin-bottom:20px">
-    <span class="section-label">Trabajamos con</span>
-    <h2 class="section-title" style="font-size:2rem">NUESTRAS MARCAS</h2>
-  </div>
-  <div style="overflow:hidden">
-    <div class="marcas-track" id="marcasTrack"></div>
   </div>
 </section>
 
@@ -5281,6 +5283,7 @@ function filtrarPrecio(val) {
   const label = document.getElementById('precioVal');
   if (label) label.textContent = precioMax >= 200000 ? 'Sin límite' : `$${precioMax.toLocaleString('es-AR')}`;
   applyFilters();
+  setTimeout(aplicarFiltroPrecio, 50);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -5293,33 +5296,34 @@ function filtrarPrecio(val) {
 // ══════════════════════════════════════════════════════════
 function makeCardsClickable() {
   document.querySelectorAll('.prod-card').forEach(card => {
-    const pid = card.dataset.pid;
+    const pid = card.dataset.id; // uses data-id not data-pid
     if (!pid) return;
-    // Click en imagen o nombre abre modal
     const img = card.querySelector('.prod-img-wrap');
     const nombre = card.querySelector('.prod-name');
     [img, nombre].forEach(el => {
-      if (el) el.style.cursor = 'pointer';
-      if (el) el.addEventListener('click', () => openProdModal(pid));
+      if (!el) return;
+      el.style.cursor = 'pointer';
+      // Remove old listener by cloning
+      const newEl = el.cloneNode(true);
+      el.parentNode.replaceChild(newEl, el);
+      newEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openProdModal(pid);
+      });
     });
   });
 }
 
-// ══════════════════════════════════════════════════════════
-//  PATCH applyFilters para incluir filtro precio
-// ══════════════════════════════════════════════════════════
-const _origApplyFilters = applyFilters;
-applyFilters = function() {
-  _origApplyFilters();
-  if (precioMax < 200000) {
-    document.querySelectorAll('.prod-card').forEach(card => {
-      const pid = card.dataset.pid;
-      if (!pid) return;
-      const p = getProduct(pid);
-      if (p && p.price > precioMax) card.style.display = 'none';
-    });
-  }
-};
+// ── Precio filter aplicado después de cada render ──
+function aplicarFiltroPrecio() {
+  if (precioMax >= 200000) return;
+  document.querySelectorAll('.prod-card').forEach(card => {
+    const pid = card.dataset.id;
+    if (!pid) return;
+    const p = getProduct(pid);
+    if (p && p.price > precioMax) card.style.display = 'none';
+  });
+}
 
 // ══════════════════════════════════════════════════════════
 //  INIT — llamar todo después de que carguen los productos
@@ -5331,6 +5335,13 @@ renderAll = function() {
   poblarComparador();
   setTimeout(makeCardsClickable, 100);
 };
+
+
+// ── Mostrar/ocultar botón scroll top ──
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('scrollTopBtn');
+  if (btn) btn.classList.toggle('visible', window.scrollY > 400);
+});
 
 </script>
 
