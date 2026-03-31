@@ -430,6 +430,132 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   padding:2px 7px;border-radius:100px;z-index:10;display:none}
 .gal-counter.show{display:block}
 
+
+/* ── MODAL PRODUCTO ── */
+.prod-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);
+  z-index:3000;backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:16px}
+.prod-modal-bg.open{display:flex}
+.prod-modal{background:#111;border:1px solid rgba(0,200,255,.2);border-radius:16px;
+  width:100%;max-width:860px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column}
+.prod-modal-inner{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.prod-modal-img{position:relative;background:#0d0d0d;border-radius:16px 0 0 16px;
+  min-height:320px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.prod-modal-img img{width:100%;height:100%;object-fit:contain;padding:20px;max-height:400px}
+.prod-modal-info{padding:28px;display:flex;flex-direction:column;gap:12px}
+.prod-modal-marca{font-size:.72rem;color:var(--cyan);font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.prod-modal-nombre{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;line-height:1.1}
+.prod-modal-desc{color:#ccc;font-size:.9rem;line-height:1.7}
+.prod-modal-precio-tarjeta{text-decoration:line-through;color:rgba(255,255,255,.35);font-size:.8rem}
+.prod-modal-precio-cash{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.prod-modal-precio-label{font-size:.7rem;color:var(--cyan);font-weight:700;letter-spacing:.08em}
+.prod-modal-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.1);
+  border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;
+  font-size:1rem;display:flex;align-items:center;justify-content:center;z-index:1}
+.prod-modal-close:hover{background:rgba(255,0,153,.3)}
+.prod-modal-wa{width:100%;padding:13px;background:#25D366;color:#000;border:none;
+  border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;
+  cursor:pointer;letter-spacing:.06em;margin-top:6px}
+.prod-modal-wa:hover{opacity:.9}
+@media(max-width:640px){
+  .prod-modal-inner{grid-template-columns:1fr}
+  .prod-modal-img{border-radius:16px 16px 0 0;min-height:200px}
+}
+
+/* ── CALCULADORA ── */
+.calc-section{padding:70px 24px;background:rgba(0,200,255,.03);
+  border-top:1px solid rgba(0,200,255,.08);border-bottom:1px solid rgba(0,200,255,.08)}
+.calc-inner{max-width:700px;margin:0 auto;text-align:center}
+.calc-form{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:28px 0}
+.calc-input{background:rgba(255,255,255,.06);border:1px solid rgba(0,200,255,.2);
+  border-radius:8px;padding:12px 14px;color:#fff;font-family:'Rajdhani',sans-serif;
+  font-size:1rem;outline:none;transition:border .2s}
+.calc-input:focus{border-color:var(--cyan)}
+.calc-select{background:#111;border:1px solid rgba(0,200,255,.2);border-radius:8px;
+  padding:12px 14px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:1rem;outline:none}
+.calc-btn{padding:13px 32px;background:var(--grad);color:#000;border:none;
+  border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;
+  cursor:pointer;letter-spacing:.06em;grid-column:1/-1}
+.calc-resultado{background:rgba(0,200,255,.07);border:1px solid rgba(0,200,255,.2);
+  border-radius:12px;padding:20px;margin-top:20px;display:none;text-align:left}
+.calc-resultado h4{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;
+  color:var(--cyan);margin-bottom:12px}
+.calc-prod-item{display:flex;align-items:center;gap:12px;padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.07)}
+.calc-prod-item:last-child{border-bottom:none}
+.calc-prod-emoji{font-size:1.5rem;width:36px;text-align:center}
+.calc-prod-info{flex:1}
+.calc-prod-nombre{font-weight:700;font-size:.95rem}
+.calc-prod-razon{font-size:.78rem;color:var(--cyan);margin-top:2px}
+
+/* ── COMPARADOR ── */
+.comp-section{padding:70px 24px}
+.comp-inner{max-width:1100px;margin:0 auto}
+.comp-selector{display:flex;gap:12px;margin:24px 0;flex-wrap:wrap;justify-content:center}
+.comp-select{background:#111;border:1px solid rgba(0,200,255,.2);border-radius:8px;
+  padding:10px 14px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:.9rem;
+  outline:none;flex:1;min-width:200px;max-width:300px}
+.comp-tabla{display:none;overflow-x:auto;margin-top:20px}
+.comp-tabla table{width:100%;border-collapse:collapse;font-size:.9rem}
+.comp-tabla th{background:rgba(0,200,255,.1);color:var(--cyan);padding:12px 16px;
+  text-align:left;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em}
+.comp-tabla td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06);color:#ddd}
+.comp-tabla tr:hover td{background:rgba(255,255,255,.03)}
+.comp-tabla .mejor{color:#00FF88;font-weight:700}
+.comp-btn{padding:11px 28px;background:var(--grad);color:#000;border:none;
+  border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;cursor:pointer}
+
+/* ── MARCAS CARRUSEL ── */
+.marcas-section{padding:50px 24px;overflow:hidden;border-top:1px solid rgba(255,255,255,.05)}
+.marcas-track{display:flex;gap:32px;animation:slideMarcas 20s linear infinite;width:max-content}
+.marcas-track:hover{animation-play-state:paused}
+.marca-chip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:8px;padding:10px 20px;font-family:'Bebas Neue',sans-serif;
+  font-size:1rem;letter-spacing:.1em;color:#ccc;white-space:nowrap;cursor:pointer;
+  transition:all .2s}
+.marca-chip:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,200,255,.08)}
+@keyframes slideMarcas{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ── TESTIMONIOS ── */
+.testim-section{padding:70px 24px;background:rgba(255,0,153,.02)}
+.testim-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:20px;margin-top:32px;max-width:1100px;margin-left:auto;margin-right:auto}
+.testim-card{background:#111;border:1px solid rgba(255,255,255,.07);border-radius:12px;
+  padding:20px;transition:all .25s}
+.testim-card:hover{border-color:rgba(255,0,153,.3);transform:translateY(-3px)}
+.testim-stars{color:#FFD700;font-size:1rem;margin-bottom:10px}
+.testim-texto{color:#ccc;font-size:.92rem;line-height:1.7;font-style:italic}
+.testim-autor{margin-top:14px;display:flex;align-items:center;gap:10px}
+.testim-avatar{width:38px;height:38px;border-radius:50%;
+  background:var(--grad);display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.9rem;color:#000}
+.testim-nombre{font-weight:700;font-size:.9rem}
+.testim-prod{font-size:.75rem;color:var(--cyan)}
+
+/* ── FILTRO PRECIO ── */
+.precio-filter{display:flex;align-items:center;gap:12px;margin:0 0 20px;flex-wrap:wrap}
+.precio-filter label{font-size:.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em}
+.precio-range{-webkit-appearance:none;appearance:none;height:4px;background:rgba(0,200,255,.3);
+  border-radius:2px;outline:none;cursor:pointer;flex:1;min-width:120px}
+.precio-range::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:var(--cyan);cursor:pointer}
+.precio-val{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--cyan);
+  min-width:80px;text-align:right}
+
+/* ── WA FLOTANTE ── */
+.wa-float{position:fixed;bottom:104px;right:24px;z-index:900;
+  background:#25D366;border-radius:50%;width:52px;height:52px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(37,211,102,.4);cursor:pointer;
+  transition:transform .2s;text-decoration:none;font-size:1.5rem}
+.wa-float:hover{transform:scale(1.1)}
+
+/* ── STOCK BADGE URGENTE ── */
+.stock-urgente{background:rgba(255,0,0,.15);border:1px solid rgba(255,50,50,.4);
+  color:#ff6666;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:4px;
+  text-transform:uppercase;letter-spacing:.08em;animation:pulseRed 1.5s infinite}
+@keyframes pulseRed{0%,100%{opacity:1}50%{opacity:.6}}
+
 </style>
 </head>
 <body>
@@ -487,6 +613,11 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <p class="section-desc">Precios y stock real actualizado. Filtrá por categoría o buscá tu producto.</p>
   </div>
   <div id="searchInfo" class="search-info"></div>
+  <div class="precio-filter">
+    <label>Precio máx:</label>
+    <input type="range" class="precio-range" id="precioRange" min="0" max="200000" value="200000" step="1000" oninput="filtrarPrecio(this.value)">
+    <span class="precio-val" id="precioVal">Sin límite</span>
+  </div>
   <div class="cat-tabs" id="catTabs">
     <button class="cat-tab active" data-cat="all">Todos</button>
     <button class="cat-tab" data-cat="proteina">🥛 Proteínas</button>
@@ -507,6 +638,109 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <p>Sin resultados. Probá con otro término o categoría.</p>
   </div>
 </section>
+
+<!-- ── CALCULADORA DE PROTEÍNA ── -->
+<section class="calc-section" id="calculadora">
+  <div class="calc-inner">
+    <span class="section-label">Herramienta gratuita</span>
+    <h2 class="section-title">¿QUÉ SUPLEMENTO NECESITÁS?</h2>
+    <p style="color:#aaa;font-size:.95rem">Ingresá tus datos y te recomendamos los productos ideales para tu objetivo.</p>
+    <div class="calc-form">
+      <input type="number" class="calc-input" id="calcPeso" placeholder="Tu peso (kg)" min="40" max="200">
+      <select class="calc-select" id="calcObjetivo">
+        <option value="">Tu objetivo...</option>
+        <option value="masa">Ganar masa muscular</option>
+        <option value="definir">Definir y bajar grasa</option>
+        <option value="resistencia">Mejorar resistencia</option>
+        <option value="salud">Salud y bienestar general</option>
+        <option value="recuperacion">Recuperación y articulaciones</option>
+      </select>
+      <select class="calc-select" id="calcNivel">
+        <option value="">Nivel de entrenamiento...</option>
+        <option value="principiante">Principiante</option>
+        <option value="intermedio">Intermedio</option>
+        <option value="avanzado">Avanzado</option>
+      </select>
+      <button class="calc-btn" onclick="calcularRecomendacion()">🔬 VER MI RECOMENDACIÓN</button>
+    </div>
+    <div class="calc-resultado" id="calcResultado"></div>
+  </div>
+</section>
+
+<div class="grad-line"></div>
+
+<!-- ── MARCAS ── -->
+<section class="marcas-section">
+  <div style="text-align:center;margin-bottom:20px">
+    <span class="section-label">Trabajamos con</span>
+    <h2 class="section-title" style="font-size:2rem">NUESTRAS MARCAS</h2>
+  </div>
+  <div style="overflow:hidden">
+    <div class="marcas-track" id="marcasTrack"></div>
+  </div>
+</section>
+
+<div class="grad-line"></div>
+
+<!-- ── COMPARADOR ── -->
+<section class="comp-section" id="comparador">
+  <div class="comp-inner">
+    <div class="section-header">
+      <span class="section-label">Tomá la mejor decisión</span>
+      <h2 class="section-title">COMPARAR PRODUCTOS</h2>
+      <p class="section-desc">Seleccioná hasta 3 productos para compararlos lado a lado.</p>
+    </div>
+    <div class="comp-selector">
+      <select class="comp-select" id="comp1" onchange="actualizarComparador()"><option value="">— Producto 1 —</option></select>
+      <select class="comp-select" id="comp2" onchange="actualizarComparador()"><option value="">— Producto 2 —</option></select>
+      <select class="comp-select" id="comp3" onchange="actualizarComparador()"><option value="">— Producto 3 (opcional) —</option></select>
+    </div>
+    <div class="comp-tabla" id="compTabla"></div>
+  </div>
+</section>
+
+<div class="grad-line"></div>
+
+<!-- ── TESTIMONIOS ── -->
+<section class="testim-section" id="testimonios">
+  <div style="text-align:center">
+    <span class="section-label">Lo que dicen nuestros clientes</span>
+    <h2 class="section-title">RESULTADOS REALES</h2>
+  </div>
+  <div class="testim-grid">
+    <div class="testim-card">
+      <div class="testim-stars">★★★★★</div>
+      <p class="testim-texto">"Llevo 3 meses tomando la Whey de Star Nutrition y los cambios son increíbles. Recupero mucho más rápido después de entrenar y gané 4kg de músculo."</p>
+      <div class="testim-autor"><div class="testim-avatar">L</div><div><div class="testim-nombre">Lore</div><div class="testim-prod">Whey Protein Doypack</div></div></div>
+    </div>
+    <div class="testim-card">
+      <div class="testim-stars">★★★★★</div>
+      <p class="testim-texto">"La creatina de ON es la mejor que probé. Notás la diferencia en fuerza desde la primera semana. Y la atención de MAXUP es excelente, siempre responden rápido."</p>
+      <div class="testim-autor"><div class="testim-avatar">R</div><div><div class="testim-nombre">Rolando</div><div class="testim-prod">Creatine Powder ON</div></div></div>
+    </div>
+    <div class="testim-card">
+      <div class="testim-stars">★★★★★</div>
+      <p class="testim-texto">"Me recomendaron el Collagen Plus para mis rodillas y en 2 semanas ya notaba la diferencia. 100% original y llegó súper rápido. Muy recomendable."</p>
+      <div class="testim-autor"><div class="testim-avatar">M</div><div><div class="testim-nombre">Marianela</div><div class="testim-prod">Collagen Plus Limón</div></div></div>
+    </div>
+    <div class="testim-card">
+      <div class="testim-stars">★★★★★</div>
+      <p class="testim-texto">"Compré el pre-entreno TNT Dynamite y es una bestia. Energía para todo el entreno sin el bajón posterior. Lo recomiendo a todos en el gym."</p>
+      <div class="testim-autor"><div class="testim-avatar">T</div><div><div class="testim-nombre">Thiago</div><div class="testim-prod">TNT Dynamite</div></div></div>
+    </div>
+    <div class="testim-card">
+      <div class="testim-stars">★★★★★</div>
+      <p class="testim-texto">"Siempre compro en MAXUP. Los precios son los mejores de Jujuy y todo original. El envío es rápido y el asesoramiento muy profesional."</p>
+      <div class="testim-autor"><div class="testim-avatar">C</div><div><div class="testim-nombre">Canevari</div><div class="testim-prod">Cliente frecuente</div></div></div>
+    </div>
+    <div class="testim-card">
+      <div class="testim-stars">★★★★★</div>
+      <p class="testim-texto">"La L-Carnitina de ENA me ayudó un montón con mi proceso de definición. Combinada con cardio los resultados son visibles en pocas semanas."</p>
+      <div class="testim-autor"><div class="testim-avatar">S</div><div><div class="testim-nombre">Soledad</div><div class="testim-prod">L-Carnitina ENA</div></div></div>
+    </div>
+  </div>
+</section>
+
 <div class="grad-line"></div>
 
 <!-- ── FEATURES ── -->
@@ -596,6 +830,35 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 </footer>
 
 <!-- ── CART FAB ── -->
+<!-- ── WA FLOTANTE ── -->
+<a href="https://wa.me/5491168461457" target="_blank" class="wa-float" title="WhatsApp">💬</a>
+
+<!-- ── MODAL PRODUCTO ── -->
+<div class="prod-modal-bg" id="prodModal" onclick="closeProdModal(event)">
+  <div class="prod-modal">
+    <button class="prod-modal-close" onclick="closeProdModalBtn()">✕</button>
+    <div class="prod-modal-inner">
+      <div class="prod-modal-img">
+        <img id="modalImg" src="" alt="">
+      </div>
+      <div class="prod-modal-info">
+        <div class="prod-modal-marca" id="modalMarca"></div>
+        <div class="prod-modal-nombre" id="modalNombre"></div>
+        <div class="prod-modal-desc" id="modalDesc"></div>
+        <div id="modalFlavorWrap" style="margin:4px 0"></div>
+        <div>
+          <div class="prod-modal-precio-tarjeta" id="modalPrecioTarjeta"></div>
+          <div class="prod-modal-precio-cash" id="modalPrecioCash"></div>
+          <div class="prod-modal-precio-label">💵 EFECTIVO / TRANSFERENCIA</div>
+        </div>
+        <div id="modalStock" style="font-size:.8rem;color:#aaa;margin:4px 0"></div>
+        <button class="btn btn-primary" style="width:100%;padding:13px;font-size:1.1rem;margin-top:4px" onclick="addFromModal()">🛒 AGREGAR AL CARRITO</button>
+        <button class="prod-modal-wa" onclick="consultarWA()">📲 CONSULTAR POR WHATSAPP</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <button class="cart-fab" id="cartFab" onclick="openCart()">
   <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
   <span class="cart-badge hidden" id="cartBadge">0</span>
@@ -4791,6 +5054,283 @@ function openImgModal(src, name){
     if(el && !el.src.startsWith('data:') && !el.src.startsWith('http')) el.src = src;
   });
 })();
+
+
+
+// ══════════════════════════════════════════════════════════
+//  MODAL DE PRODUCTO
+// ══════════════════════════════════════════════════════════
+let modalPid = null;
+
+function openProdModal(pid) {
+  const p = getProduct(pid);
+  if (!p) return;
+  modalPid = pid;
+
+  document.getElementById('modalImg').src = p.img || getFallbackImg(p.cat);
+  document.getElementById('modalMarca').textContent = p.brand || '';
+  document.getElementById('modalNombre').textContent = p.name || '';
+  document.getElementById('modalDesc').textContent = p.desc || 'Suplemento de alta calidad para deportistas y personas activas.';
+
+  const tarjeta = p.price_tarjeta || Math.round(p.price * 1.08);
+  document.getElementById('modalPrecioTarjeta').textContent = `Tarjeta/QR/Débito: $${tarjeta.toLocaleString('es-AR')}`;
+  document.getElementById('modalPrecioCash').textContent = `$${p.price.toLocaleString('es-AR')}`;
+
+  // Flavors
+  const flavorWrap = document.getElementById('modalFlavorWrap');
+  if (p.flavors && p.flavors.length > 1) {
+    flavorWrap.innerHTML = `<label style="font-size:.7rem;color:#aaa;text-transform:uppercase;letter-spacing:.1em">Sabor / Presentación</label>
+      <select id="modalFlavor" style="width:100%;background:#1a1a1a;border:1px solid rgba(0,200,255,.2);border-radius:6px;padding:9px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:.95rem;margin-top:4px" onchange="updateModalFlavor()">
+        ${p.flavors.map(f => `<option value="${f.name}" ${f.stock===0?'disabled':''} data-stock="${f.stock}">${f.name}${f.stock===0?' (Sin stock)':f.stock<=3&&f.stock>0?` (Últimas ${f.stock})`:`  ✓ ${f.stock} ud.`}</option>`).join('')}
+      </select>`;
+    updateModalFlavor();
+  } else {
+    const stock = p.flavors[0]?.stock || 0;
+    flavorWrap.innerHTML = '';
+    document.getElementById('modalStock').textContent = stock > 0 ? `✓ ${stock} unidades en stock` : '❌ Sin stock';
+  }
+
+  document.getElementById('prodModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function updateModalFlavor() {
+  const sel = document.getElementById('modalFlavor');
+  if (!sel) return;
+  const stock = parseInt(sel.options[sel.selectedIndex].dataset.stock) || 0;
+  document.getElementById('modalStock').textContent = stock > 0 ? `✓ ${stock} unidades en stock` : '❌ Sin stock';
+  // Update image if product has img per flavor
+  const p = getProduct(modalPid);
+  if (p && p.imgs && p.imgs[sel.value]) {
+    document.getElementById('modalImg').src = p.imgs[sel.value];
+  }
+}
+
+function closeProdModal(e) {
+  if (e.target === document.getElementById('prodModal')) closeProdModalBtn();
+}
+function closeProdModalBtn() {
+  document.getElementById('prodModal').classList.remove('open');
+  document.body.style.overflow = '';
+  modalPid = null;
+}
+
+function addFromModal() {
+  if (!modalPid) return;
+  const flavorSel = document.getElementById('modalFlavor');
+  // Simulate click on the product's add button
+  if (flavorSel) {
+    const cardSel = document.querySelector(`select[onchange*="${modalPid}"]`);
+    if (cardSel) cardSel.value = flavorSel.value;
+  }
+  addToCartById(modalPid);
+  closeProdModalBtn();
+}
+
+function consultarWA() {
+  if (!modalPid) return;
+  const p = getProduct(modalPid);
+  const sabor = document.getElementById('modalFlavor')?.value || '';
+  const msg = `Hola MAXUP! Quiero consultar sobre: ${p.name}${sabor?' - '+sabor:''} ($${p.price.toLocaleString('es-AR')} efectivo). ¿Tienen disponible?`;
+  window.open(`https://wa.me/${WA_DEFAULT}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ══════════════════════════════════════════════════════════
+//  CALCULADORA DE PROTEÍNA
+// ══════════════════════════════════════════════════════════
+function calcularRecomendacion() {
+  const peso = parseFloat(document.getElementById('calcPeso').value);
+  const objetivo = document.getElementById('calcObjetivo').value;
+  const nivel = document.getElementById('calcNivel').value;
+  const res = document.getElementById('calcResultado');
+
+  if (!peso || !objetivo || !nivel) {
+    res.style.display = 'block';
+    res.innerHTML = '<p style="color:#FF0099">⚠️ Completá todos los campos para ver tu recomendación.</p>';
+    return;
+  }
+
+  const RECS = {
+    masa: {
+      prods: ['proteina','gainer','creatina','aminoacido'],
+      tips: [`Necesitás ~${(peso*2).toFixed(0)}g de proteína diaria para ganar masa.`,
+             'La creatina aumenta tu fuerza y potencia en un 10-15%.',
+             'Los BCAA protegen el músculo durante el entrenamiento.']
+    },
+    definir: {
+      prods: ['proteina','quemador','aminoacido','vitaminas'],
+      tips: [`Necesitás ~${(peso*2.2).toFixed(0)}g de proteína para mantener músculo al cortar.',
+             'Los termogénicos aceleran el metabolismo y la quema de grasa.',
+             'La L-Carnitina convierte grasa en energía durante el cardio.`]
+    },
+    resistencia: {
+      prods: ['aminoacido','hidratacion','vitaminas','colageno'],
+      tips: ['Los electrolitos son clave en entrenamientos de larga duración.',
+             'Los BCAA retrasan la fatiga muscular.',
+             'El Colágeno protege tus articulaciones del impacto.']
+    },
+    salud: {
+      prods: ['vitaminas','colageno','proteina','aminoacido'],
+      tips: ['El Omega-3 reduce la inflamación y protege el corazón.',
+             'El Colágeno mejora piel, pelo, uñas y articulaciones.',
+             'Un multivitamínico cubre todas las deficiencias nutricionales.']
+    },
+    recuperacion: {
+      prods: ['colageno','vitaminas','aminoacido','proteina'],
+      tips: ['El Colágeno hidrolizado repara cartílagos y tendones.',
+             'La Glutamina acelera la recuperación muscular.',
+             'El Magnesio reduce calambres y mejora el sueño.']
+    }
+  };
+
+  const rec = RECS[objetivo];
+  const prodsRec = PRODUCTS.filter(p => rec.prods.includes(p.cat) && p.flavors.some(f => f.stock > 0)).slice(0, 4);
+
+  const nivelTexto = {principiante:'principiante',intermedio:'intermedio',avanzado:'avanzado con experiencia'}[nivel];
+  
+  res.style.display = 'block';
+  res.innerHTML = `
+    <h4>💡 Recomendación para ${nivelTexto} — objetivo: ${objetivo === 'masa' ? 'ganar masa' : objetivo}</h4>
+    <ul style="color:#aaa;font-size:.85rem;margin:0 0 16px 16px;line-height:1.8">
+      ${rec.tips.map(t => `<li>${t}</li>`).join('')}
+    </ul>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${prodsRec.map(p => `
+        <div class="calc-prod-item" onclick="openProdModal('${p.id}')" style="cursor:pointer">
+          <div class="calc-prod-emoji">${p.emoji}</div>
+          <div class="calc-prod-info">
+            <div class="calc-prod-nombre">${p.name}</div>
+            <div class="calc-prod-razon">${p.brand} — $${p.price.toLocaleString('es-AR')} efectivo</div>
+          </div>
+          <span style="color:var(--cyan);font-size:.8rem">Ver →</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  COMPARADOR
+// ══════════════════════════════════════════════════════════
+function poblarComparador() {
+  ['comp1','comp2','comp3'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const primer = sel.options[0];
+    sel.innerHTML = '';
+    sel.appendChild(primer);
+    PRODUCTS.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.name} (${p.brand})`;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function actualizarComparador() {
+  const ids = ['comp1','comp2','comp3'].map(id => document.getElementById(id)?.value).filter(Boolean);
+  const tabla = document.getElementById('compTabla');
+  if (ids.length < 2) { tabla.style.display = 'none'; return; }
+
+  const prods = ids.map(id => getProduct(id)).filter(Boolean);
+  const precios = prods.map(p => p.price);
+  const minPrecio = Math.min(...precios);
+  const maxStock = Math.max(...prods.map(p => p.flavors.reduce((s,f)=>s+f.stock,0)));
+
+  tabla.style.display = 'block';
+  tabla.innerHTML = `<table>
+    <tr><th>Característica</th>${prods.map(p=>`<th>${p.name}</th>`).join('')}</tr>
+    <tr><td>Marca</td>${prods.map(p=>`<td>${p.brand}</td>`).join('')}</tr>
+    <tr><td>Categoría</td>${prods.map(p=>`<td>${p.cat}</td>`).join('')}</tr>
+    <tr><td>Precio efectivo</td>${prods.map(p=>`<td class="${p.price===minPrecio?'mejor':''}">$${p.price.toLocaleString('es-AR')}${p.price===minPrecio?' ✓ Mejor precio':''}</td>`).join('')}</tr>
+    <tr><td>Precio tarjeta</td>${prods.map(p=>`<td>$${(p.price_tarjeta||Math.round(p.price*1.08)).toLocaleString('es-AR')}</td>`).join('')}</tr>
+    <tr><td>Stock total</td>${prods.map(p=>{const s=p.flavors.reduce((x,f)=>x+f.stock,0);return`<td class="${s===maxStock?'mejor':''}">${s} ud.${s===maxStock?' ✓ Más stock':''}</td>`}).join('')}</tr>
+    <tr><td>Sabores</td>${prods.map(p=>`<td>${p.flavors.length} opción${p.flavors.length>1?'es':''}</td>`).join('')}</tr>
+    <tr><td></td>${prods.map(p=>`<td><button class="comp-btn" onclick="openProdModal('${p.id}')">Ver producto</button></td>`).join('')}</tr>
+  </table>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  MARCAS CARRUSEL
+// ══════════════════════════════════════════════════════════
+function poblarMarcas() {
+  const marcas = [...new Set(PRODUCTS.map(p => p.brand).filter(Boolean))].sort();
+  const track = document.getElementById('marcasTrack');
+  if (!track) return;
+  // Duplicar para loop infinito
+  const items = [...marcas, ...marcas].map(m =>
+    `<div class="marca-chip" onclick="filtrarMarca('${m}')">${m}</div>`
+  ).join('');
+  track.innerHTML = items;
+}
+
+function filtrarMarca(marca) {
+  // Scroll al catálogo y filtrar
+  document.getElementById('catalogo').scrollIntoView({behavior:'smooth'});
+  setTimeout(() => {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) { searchInput.value = marca; searchInput.dispatchEvent(new Event('input')); }
+  }, 600);
+}
+
+// ══════════════════════════════════════════════════════════
+//  FILTRO DE PRECIO
+// ══════════════════════════════════════════════════════════
+let precioMax = 999999;
+function filtrarPrecio(val) {
+  precioMax = parseInt(val);
+  const label = document.getElementById('precioVal');
+  if (label) label.textContent = precioMax >= 200000 ? 'Sin límite' : `$${precioMax.toLocaleString('es-AR')}`;
+  applyFilters();
+}
+
+// ══════════════════════════════════════════════════════════
+//  STOCK URGENTE — badge en cards
+// ══════════════════════════════════════════════════════════
+// Se maneja dentro de buildCard con el stock count
+
+// ══════════════════════════════════════════════════════════
+//  HACER CARDS CLICKEABLES → abrir modal
+// ══════════════════════════════════════════════════════════
+function makeCardsClickable() {
+  document.querySelectorAll('.prod-card').forEach(card => {
+    const pid = card.dataset.pid;
+    if (!pid) return;
+    // Click en imagen o nombre abre modal
+    const img = card.querySelector('.prod-img-wrap');
+    const nombre = card.querySelector('.prod-name');
+    [img, nombre].forEach(el => {
+      if (el) el.style.cursor = 'pointer';
+      if (el) el.addEventListener('click', () => openProdModal(pid));
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  PATCH applyFilters para incluir filtro precio
+// ══════════════════════════════════════════════════════════
+const _origApplyFilters = applyFilters;
+applyFilters = function() {
+  _origApplyFilters();
+  if (precioMax < 200000) {
+    document.querySelectorAll('.prod-card').forEach(card => {
+      const pid = card.dataset.pid;
+      if (!pid) return;
+      const p = getProduct(pid);
+      if (p && p.price > precioMax) card.style.display = 'none';
+    });
+  }
+};
+
+// ══════════════════════════════════════════════════════════
+//  INIT — llamar todo después de que carguen los productos
+// ══════════════════════════════════════════════════════════
+const _origRenderAll = renderAll;
+renderAll = function() {
+  _origRenderAll();
+  poblarMarcas();
+  poblarComparador();
+  setTimeout(makeCardsClickable, 100);
+};
 
 </script>
 
