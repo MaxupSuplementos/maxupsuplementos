@@ -4629,11 +4629,12 @@ async function cargarDesdeSheets() {
     Object.values(grouped).forEach(p => PRODUCTS.push(p));
     
     renderAll();
+    window.scrollTo(0, 0);
     console.log('✅ Catálogo cargado desde Sheets:', PRODUCTS.length, 'productos agrupados');
     
   } catch(err) {
     console.warn('⚠️ Sheets no disponible, usando catálogo local:', err.message);
-    renderAll(); // usa PRODUCTS estático como fallback
+    renderAll(); window.scrollTo(0, 0); // usa PRODUCTS estático como fallback
   }
 }
 
