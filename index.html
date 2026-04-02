@@ -399,10 +399,32 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   .hero{padding:100px 16px 48px}
   .cart-fab{bottom:18px;right:16px;width:54px;height:54px}
   .form-row{grid-template-columns:1fr}
-  #productsGrid{grid-template-columns:repeat(3,1fr)!important;gap:8px}
-  .prod-name{font-size:.82rem!important}
-  .prod-price-val{font-size:1.3rem!important}
+  #productsGrid{grid-template-columns:repeat(3,1fr)!important;gap:6px}
+  .prod-name{font-size:.72rem!important}
+  .prod-price-val{font-size:1.1rem!important}
+  .prod-img-wrap{height:100px!important}
+  .prod-card{border-radius:8px}
+  .prod-body{padding:6px 8px!important}
+  /* Comparador mobile */
+  .comp-selector{flex-direction:column;align-items:stretch}
+  .comp-select{max-width:none}
+  .comp-tabla{font-size:.78rem}
+  /* Recomendador mobile */
+  .calc-form{grid-template-columns:1fr!important;gap:10px}
+  .calc-inner{text-align:center}
+  .calc-resultado{text-align:left}
+  /* Nav mobile — mostrar botón comparar */
+  .nav-mobile-bar{display:flex!important}
 }
+/* Barra mobile bajo el nav para accesos rápidos */
+.nav-mobile-bar{display:none;position:fixed;top:62px;left:0;right:0;z-index:199;
+  background:rgba(0,0,0,.95);border-bottom:1px solid rgba(0,200,255,.15);
+  padding:6px 12px;gap:8px;overflow-x:auto;white-space:nowrap}
+.nav-mobile-bar a{color:var(--gray);font-size:.78rem;font-weight:600;
+  letter-spacing:.05em;text-transform:uppercase;text-decoration:none;
+  padding:5px 12px;border:1px solid rgba(0,200,255,.2);border-radius:20px;
+  flex-shrink:0;transition:all .2s;display:inline-block}
+.nav-mobile-bar a:hover,.nav-mobile-bar a:active{color:var(--cyan);border-color:var(--cyan)}
 
 /* ── GALLERY ── */
 .prod-img-wrap{position:relative;overflow:hidden}
@@ -548,7 +570,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   display:flex;flex-direction:column;align-items:center;gap:10px}
 
 /* Carrito dentro del grupo */
-.cart-fab{position:static!important;width:56px!important;height:56px!important;
+.cart-fab{position:relative!important;width:56px!important;height:56px!important;
   box-shadow:0 4px 24px rgba(0,200,255,.45)!important}
 
 /* WA */
@@ -600,6 +622,14 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <li><a href="https://wa.me/5491168461457" target="_blank" class="nav-cta nav-wa">📲 WhatsApp</a></li>
   </ul>
 </nav>
+
+<!-- ── BARRA MOBILE ── -->
+<div class="nav-mobile-bar">
+  <a href="#catalogo">🏪 Catálogo</a>
+  <a href="#comparador">⚖️ Comparar</a>
+  <a href="#recomendador">🎯 Recomendación</a>
+  <a href="https://wa.me/5491168461457" target="_blank">📲 WhatsApp</a>
+</div>
 
 <!-- ── HERO ── -->
 <section class="hero">
@@ -669,7 +699,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 </section>
 
 <!-- ── CALCULADORA DE PROTEÍNA ── -->
-<section class="calc-section" id="calculadora">
+<section class="calc-section" id="recomendador">
   <div class="calc-inner">
     <span class="section-label">Herramienta gratuita</span>
     <h2 class="section-title">¿QUÉ SUPLEMENTO NECESITÁS?</h2>
