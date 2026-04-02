@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estado de Pedido — MAXUP Suplementos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--cyan:#00C8FF;--pink:#FF0099;--dark:#0a0a0a;--dark2:#111;--dark3:#1a1a1a;--white:#fff;--gray:#999;--grad:linear-gradient(135deg,var(--cyan),var(--pink))}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--dark);color:var(--white);font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,.025) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0}
+
+/* NAV */
+nav{width:100%;max-width:600px;display:flex;align-items:center;gap:12px;padding:12px 0;margin-bottom:32px;position:relative;z-index:1}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.1em;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
+.nav-back{margin-left:auto;color:var(--gray);font-size:.85rem;font-weight:600;text-decoration:none;letter-spacing:.05em;transition:color .2s}
+.nav-back:hover{color:var(--cyan)}
+
+/* CARD */
+.card{width:100%;max-width:600px;background:var(--dark2);border:1px solid rgba(0,200,255,.12);border-radius:16px;padding:32px;position:relative;z-index:1}
+
+/* SEARCH */
+.search-box{margin-bottom:32px}
+.search-box h1{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.08em;margin-bottom:6px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.search-box p{color:var(--gray);font-size:.9rem;margin-bottom:18px}
+.input-row{display:flex;gap:10px}
+.input-row input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(0,200,255,.2);color:var(--white);font-family:'Rajdhani',sans-serif;font-size:1rem;padding:12px 16px;border-radius:8px;outline:none;text-transform:uppercase;letter-spacing:.08em;transition:border .2s}
+.input-row input:focus{border-color:var(--cyan)}
+.input-row input::placeholder{text-transform:none;letter-spacing:0;color:rgba(255,255,255,.3)}
+.btn-buscar{background:var(--grad);color:#000;border:none;border-radius:8px;padding:12px 24px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.1em;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+.btn-buscar:hover{opacity:.85}
+
+/* RESULTADO */
+#resultado{display:none}
+.estado-header{text-align:center;margin-bottom:28px}
+.estado-codigo{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--cyan);letter-spacing:.12em}
+.estado-cliente{color:var(--gray);font-size:.95rem;margin-top:4px}
+
+/* TIMELINE */
+.timeline{display:flex;flex-direction:column;gap:0;margin-bottom:28px}
+.step{display:flex;gap:16px;position:relative}
+.step:not(:last-child)::after{content:'';position:absolute;left:19px;top:42px;width:2px;height:calc(100% - 10px);background:rgba(255,255,255,.08)}
+.step.activo::after{background:rgba(0,200,255,.3)}
+.step-icon{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;background:var(--dark3)}
+.step.activo .step-icon{border-color:var(--cyan);background:rgba(0,200,255,.1);box-shadow:0 0 16px rgba(0,200,255,.2)}
+.step.completado .step-icon{border-color:rgba(0,230,118,.5);background:rgba(0,230,118,.1)}
+.step-info{padding:8px 0 24px}
+.step-titulo{font-weight:700;font-size:.95rem;color:rgba(255,255,255,.5)}
+.step.activo .step-titulo{color:var(--cyan)}
+.step.completado .step-titulo{color:#00E676}
+.step-desc{font-size:.8rem;color:rgba(255,255,255,.3);margin-top:2px}
+.step.activo .step-desc{color:rgba(0,200,255,.6)}
+
+/* DETALLE */
+.detalle{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:16px;font-size:.88rem}
+.detalle-row{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);gap:12px}
+.detalle-row:last-child{border-bottom:none}
+.detalle-label{color:var(--gray);flex-shrink:0}
+.detalle-val{color:var(--white);font-weight:600;text-align:right}
+.badge-estado{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.78rem;font-weight:700;letter-spacing:.06em}
+.badge-Recibido{background:rgba(0,200,255,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.3)}
+.badge-En\ preparación{background:rgba(255,165,0,.15);color:#FFA500;border:1px solid rgba(255,165,0,.3)}
+.badge-Listo\ para\ retirar{background:rgba(0,230,118,.15);color:#00E676;border:1px solid rgba(0,230,118,.3)}
+.badge-Enviado{background:rgba(0,230,118,.15);color:#00E676;border:1px solid rgba(0,230,118,.3)}
+.badge-Cancelado{background:rgba(255,61,61,.15);color:#FF3D3D;border:1px solid rgba(255,61,61,.3)}
+
+/* ERROR */
+.error-box{text-align:center;padding:24px;color:var(--gray)}
+.error-box span{font-size:2rem;display:block;margin-bottom:8px}
+
+/* LOADING */
+.loading{text-align:center;padding:24px;color:var(--gray);display:none}
+.loading span{display:inline-block;animation:spin 1s linear infinite;font-size:1.5rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* WA BTN */
+.wa-btn{display:block;width:100%;margin-top:20px;padding:13px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.1em;cursor:pointer;text-align:center;text-decoration:none;transition:opacity .2s}
+.wa-btn:hover{opacity:.85}
+
+@media(max-width:480px){
+  .input-row{flex-direction:column}
+  .card{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="https://maxupsuplementos.github.io/maxupsuplementos/" class="nav-logo">MAXUP</a>
+  <a href="https://maxupsuplementos.github.io/maxupsuplementos/" class="nav-back">← Volver al catálogo</a>
+</nav>
+
+<div class="card">
+  <div class="search-box">
+    <h1>Estado de tu Pedido</h1>
+    <p>Ingresá el código que recibiste al confirmar tu compra</p>
+    <div class="input-row">
+      <input type="text" id="inputCodigo" placeholder="Ej: MXP-2048" maxlength="10">
+      <button class="btn-buscar" onclick="buscarPedido()">Buscar</button>
+    </div>
+  </div>
+
+  <div class="loading" id="loading"><span>⟳</span> Buscando tu pedido...</div>
+
+  <div id="resultado"></div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
+
+const ESTADOS = ['Recibido','En preparación','Listo para retirar','Enviado'];
+const ESTADO_ICONS = { 'Recibido':'📥', 'En preparación':'🔧', 'Listo para retirar':'✅', 'Enviado':'🚚', 'Cancelado':'❌' };
+const ESTADO_DESC = {
+  'Recibido': 'Tu pedido fue recibido y está pendiente de confirmación.',
+  'En preparación': 'Estamos preparando tu pedido.',
+  'Listo para retirar': 'Tu pedido está listo. Podés pasar a retirarlo.',
+  'Enviado': 'Tu pedido está en camino.',
+  'Cancelado': 'Este pedido fue cancelado.'
+};
+
+// Auto-buscar si viene código en la URL
+window.onload = function() {
+  const params = new URLSearchParams(window.location.search);
+  const codigo = params.get('pedido');
+  if (codigo) {
+    document.getElementById('inputCodigo').value = codigo.toUpperCase();
+    buscarPedido();
+  }
+};
+
+function buscarPedido() {
+  const codigo = document.getElementById('inputCodigo').value.trim().toUpperCase();
+  if (!codigo) { alert('Ingresá el código de tu pedido'); return; }
+
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('resultado').style.display = 'none';
+
+  fetch(API_URL + '?accion=estado&pedido=' + encodeURIComponent(codigo))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      document.getElementById('loading').style.display = 'none';
+      mostrarResultado(data);
+    })
+    .catch(function() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('resultado').style.display = 'block';
+      document.getElementById('resultado').innerHTML =
+        '<div class="error-box"><span>⚠️</span>No se pudo conectar. Intentá de nuevo en unos segundos.</div>';
+    });
+}
+
+function mostrarResultado(data) {
+  const res = document.getElementById('resultado');
+  res.style.display = 'block';
+
+  if (!data.ok) {
+    res.innerHTML = '<div class="error-box"><span>🔍</span>' + (data.error || 'Pedido no encontrado') + '</div>';
+    return;
+  }
+
+  const estadoActual = data.estado || 'Recibido';
+  const idxActual = ESTADOS.indexOf(estadoActual);
+
+  // Timeline
+  var timelineHTML = '<div class="timeline">';
+  ESTADOS.forEach(function(e, i) {
+    var clase = i < idxActual ? 'completado' : (i === idxActual ? 'activo' : '');
+    timelineHTML += '<div class="step ' + clase + '">'
+      + '<div class="step-icon">' + (ESTADO_ICONS[e] || '⭕') + '</div>'
+      + '<div class="step-info">'
+      + '<div class="step-titulo">' + e + '</div>'
+      + (i === idxActual ? '<div class="step-desc">' + (ESTADO_DESC[e] || '') + '</div>' : '')
+      + '</div></div>';
+  });
+  timelineHTML += '</div>';
+
+  // Detalle
+  var productos = (data.productos || '').split(' | ').map(function(p) { return '• ' + p; }).join('<br>');
+
+  res.innerHTML = '<div class="estado-header">'
+    + '<div class="estado-codigo">' + data.codigo + '</div>'
+    + '<div class="estado-cliente">Pedido de <strong>' + data.cliente + '</strong> · ' + data.fecha + '</div>'
+    + '</div>'
+    + timelineHTML
+    + '<div class="detalle">'
+    + '<div class="detalle-row"><span class="detalle-label">Estado</span><span class="detalle-val"><span class="badge-estado badge-' + estadoActual + '">' + estadoActual + '</span></span></div>'
+    + '<div class="detalle-row"><span class="detalle-label">Productos</span><span class="detalle-val" style="font-size:.82rem">' + productos + '</span></div>'
+    + '<div class="detalle-row"><span class="detalle-label">Total</span><span class="detalle-val" style="color:var(--cyan)">' + data.total + '</span></div>'
+    + '<div class="detalle-row"><span class="detalle-label">Entrega</span><span class="detalle-val">' + data.entrega + (data.direccion && data.direccion !== '-' ? '<br><span style="color:var(--gray);font-size:.8rem">' + data.direccion + '</span>' : '') + '</span></div>'
+    + '<div class="detalle-row"><span class="detalle-label">Pago</span><span class="detalle-val">' + data.pago + '</span></div>'
+    + '</div>'
+    + '<a href="https://wa.me/5491168461457?text=' + encodeURIComponent('Hola! Consulto por mi pedido ' + data.codigo) + '" target="_blank" class="wa-btn">📲 Consultar por WhatsApp</a>';
+}
+
+// Enter para buscar
+document.getElementById('inputCodigo').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') buscarPedido();
+});
+</script>
+</body>
+</html>
