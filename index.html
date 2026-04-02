@@ -5266,28 +5266,26 @@ function consultarWA() {
 //  CALCULADORA DE PROTEÍNA
 // ══════════════════════════════════════════════════════════
 function calcularRecomendacion() {
-  const peso = parseFloat(document.getElementById('calcPeso').value);
-  const objetivo = document.getElementById('calcObjetivo').value;
-  const nivel = document.getElementById('calcNivel').value;
-  const res = document.getElementById('calcResultado');
-
+  var peso = parseFloat(document.getElementById('calcPeso').value);
+  var objetivo = document.getElementById('calcObjetivo').value;
+  var nivel = document.getElementById('calcNivel').value;
+  var res = document.getElementById('calcResultado');
   if (!peso || !objetivo || !nivel) {
     res.style.display = 'block';
-    res.innerHTML = '<p style="color:#FF0099">⚠️ Completá todos los campos para ver tu recomendación.</p>';
+    res.innerHTML = '<p style="color:#FF0099">⚠️ Completá todos los campos.</p>';
     return;
   }
-
   var RECS = {
     masa:        { cats: ['proteina','gainer','creatina','aminoacido'],
                    tips: ['Necesitás ~'+(peso*2).toFixed(0)+'g de proteína diaria para ganar masa.',
                           'La creatina aumenta tu fuerza y potencia en un 10-15%.',
                           'Los BCAA protegen el músculo durante el entrenamiento.'] },
     definir:     { cats: ['quemador','proteina','aminoacido','vitaminas'],
-                   tips: ['Necesitás ~'+(peso*2.2).toFixed(0)+'g de proteína para mantener músculo al cortar.',
+                   tips: ['Necesitás ~'+(peso*2.2).toFixed(0)+'g de proteína para mantener músculo.',
                           'Los termogénicos aceleran el metabolismo y la quema de grasa.',
                           'La L-Carnitina convierte grasa en energía durante el cardio.'] },
     resistencia: { cats: ['hidratacion','aminoacido','colageno','vitaminas'],
-                   tips: ['Los electrolitos son clave en entrenamientos de larga duración.',
+                   tips: ['Los electrolitos son clave en entrenamientos largos.',
                           'Los BCAA retrasan la fatiga muscular.',
                           'El Colágeno protege tus articulaciones del impacto.'] },
     salud:       { cats: ['vitaminas','colageno','aminoacido','proteina'],
@@ -5299,15 +5297,11 @@ function calcularRecomendacion() {
                           'La Glutamina acelera la recuperación muscular.',
                           'El Magnesio reduce calambres y mejora el sueño.'] }
   };
-
   var rec = RECS[objetivo];
   if (!rec) return;
-
-  // Un producto por categoría, respetando orden de prioridad
   var prodsRec = [];
   var usados = {};
-  for (var ci = 0; ci < rec.cats.length; ci++) {
-    if (prodsRec.length >= 4) break;
+  for (var ci = 0; ci < rec.cats.length && prodsRec.length < 4; ci++) {
     var cat = rec.cats[ci];
     for (var pi = 0; pi < PRODUCTS.length; pi++) {
       var p = PRODUCTS[pi];
@@ -5316,41 +5310,28 @@ function calcularRecomendacion() {
       }
     }
   }
-  // Completar si faltan
   for (var pi2 = 0; pi2 < PRODUCTS.length && prodsRec.length < 4; pi2++) {
     var p2 = PRODUCTS[pi2];
     if (!usados[p2.id] && rec.cats.indexOf(p2.cat) >= 0 && p2.flavors.some(function(f){ return f.stock > 0; })) {
       prodsRec.push(p2); usados[p2.id] = true;
     }
   }
-
   var objTexto = {masa:'Ganar masa muscular', definir:'Definición / bajar grasa',
     resistencia:'Resistencia y rendimiento', salud:'Salud y bienestar general',
     recuperacion:'Recuperación'}[objetivo] || objetivo;
   var nivTexto = {principiante:'Principiante', intermedio:'Intermedio', avanzado:'Avanzado'}[nivel];
-
-  var html = '<h4>💡 Recomendación para ' + nivTexto + ' — Objetivo: ' + objTexto + '</h4>'
+  var html = '<h4>💡 Recomendación para '+nivTexto+' — Objetivo: '+objTexto+'</h4>'
     + '<ul style="color:#aaa;font-size:.85rem;margin:0 0 16px 16px;line-height:1.8">'
-    + rec.tips.map(function(t){ return '<li>'+t+'</li>'; }).join('')
-    + '</ul>'
+    + rec.tips.map(function(t){ return '<li>'+t+'</li>'; }).join('') + '</ul>'
     + '<div style="display:flex;flex-direction:column;gap:8px">';
-
-  if (prodsRec.length === 0) {
-    html += '<p style="color:#888">No hay productos en stock para este objetivo ahora.</p>';
-  } else {
-    prodsRec.forEach(function(p) {
-      html += '<div class="calc-prod-item" onclick="openProdModal(''+p.id+'')" style="cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(0,200,255,.08)'" onmouseout="this.style.background=''">'
-        + '<div class="calc-prod-emoji">'+p.emoji+'</div>'
-        + '<div class="calc-prod-info">'
-        + '<div class="calc-prod-nombre">'+p.name+'</div>'
-        + '<div class="calc-prod-razon">'+p.brand+' — $'+p.price.toLocaleString('es-AR')+' efectivo</div>'
-        + '</div>'
-        + '<span style="color:var(--cyan);font-size:.85rem;font-weight:700">Ver →</span>'
-        + '</div>';
-    });
-  }
-  html += '</div><p style="color:#666;font-size:.75rem;margin-top:12px">Hacé clic en cada producto para ver detalles y agregarlo al carrito.</p>';
-
+  prodsRec.forEach(function(p) {
+    html += '<div class="calc-prod-item" onclick="openProdModal(''+p.id+'')" style="cursor:pointer">'
+      + '<div class="calc-prod-emoji">'+p.emoji+'</div>'
+      + '<div class="calc-prod-info"><div class="calc-prod-nombre">'+p.name+'</div>'
+      + '<div class="calc-prod-razon">'+p.brand+' — $'+p.price.toLocaleString('es-AR')+' efectivo</div></div>'
+      + '<span style="color:var(--cyan);font-size:.85rem;font-weight:700">Ver →</span></div>';
+  });
+  html += '</div>';
   res.style.display = 'block';
   res.innerHTML = html;
 }
