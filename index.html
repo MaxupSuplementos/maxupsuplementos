@@ -4732,18 +4732,20 @@ function finalizarPedido(){
       cantidad: i.qty
     }))
   };
+  // Registrar en Sheets y recargar stock cuando responde
   fetch(API_URL, {
     method:'POST',
     body: JSON.stringify(payload)
-  }).catch(()=>{}); // silencioso — no bloquea el pedido si falla
+  }).then(function() {
+    // Esperar 2s extra por si Apps Script sigue procesando y recargar
+    setTimeout(function(){ cargarDesdeSheets(); }, 2000);
+  }).catch(function(){});
 
   const url=`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`;
   window.open(url,'_blank');
   document.getElementById('checkoutFormBody').style.display='none';
   document.getElementById('orderSuccess').style.display='block';
   document.getElementById('waRepeatBtn').onclick=()=>window.open(url,'_blank');
-  // Actualizar catálogo en segundo plano para reflejar el nuevo stock
-  setTimeout(function(){ cargarDesdeSheets(); }, 3000);
 }
 
 function resetAfterOrder(){
@@ -4751,6 +4753,7 @@ function resetAfterOrder(){
   ['clientName','clientPhone','clientEmail','clientAddress','clientNotes'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
+  cargarDesdeSheets();
 }
 
 /* ── TOAST ── */
