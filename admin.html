@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — MAXUP</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--cyan:#00C8FF;--pink:#FF0099;--green:#00E676;--orange:#FFA500;--red:#FF3D3D;
+  --dark:#0a0a0a;--dark2:#111;--dark3:#1a1a1a;--white:#fff;--gray:#999;
+  --grad:linear-gradient(135deg,var(--cyan),var(--pink))}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--dark);color:var(--white);font-family:'Rajdhani',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,200,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,.02) 1px,transparent 1px);
+  background-size:60px 60px;pointer-events:none;z-index:0}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--dark);z-index:1000;
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--dark2);border:1px solid rgba(0,200,255,.15);border-radius:16px;
+  padding:40px;width:100%;max-width:360px;text-align:center}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.1em;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.login-sub{color:var(--gray);font-size:.85rem;margin-bottom:28px}
+.login-input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(0,200,255,.2);
+  color:var(--white);font-family:'Rajdhani',sans-serif;font-size:1rem;
+  padding:12px 16px;border-radius:8px;outline:none;text-align:center;
+  letter-spacing:.1em;margin-bottom:14px;transition:border .2s}
+.login-input:focus{border-color:var(--cyan)}
+.login-btn{width:100%;padding:13px;background:var(--grad);color:#000;border:none;
+  border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;
+  letter-spacing:.1em;cursor:pointer;transition:opacity .2s}
+.login-btn:hover{opacity:.85}
+.login-error{color:var(--red);font-size:.82rem;margin-top:8px;display:none}
+
+/* LAYOUT */
+#app{display:none;min-height:100vh;position:relative;z-index:1}
+header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(0,200,255,.1);padding:12px 20px;
+  display:flex;align-items:center;gap:12px}
+.header-logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.1em;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-badge{background:rgba(0,200,255,.1);border:1px solid rgba(0,200,255,.2);
+  color:var(--cyan);font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.06em}
+.header-logout{margin-left:auto;color:var(--gray);font-size:.8rem;cursor:pointer;
+  background:none;border:none;font-family:'Rajdhani',sans-serif;font-weight:600;
+  letter-spacing:.05em;transition:color .2s}
+.header-logout:hover{color:var(--red)}
+.header-refresh{color:var(--gray);font-size:.8rem;cursor:pointer;background:none;border:none;
+  font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:.05em;transition:color .2s;margin-left:8px}
+.header-refresh:hover{color:var(--cyan)}
+
+/* TABS */
+.tabs{display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.06);
+  background:var(--dark2);overflow-x:auto;position:sticky;top:57px;z-index:99}
+.tab{padding:12px 18px;font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:.08em;
+  color:var(--gray);cursor:pointer;border-bottom:2px solid transparent;
+  white-space:nowrap;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none}
+.tab:hover{color:var(--white)}
+.tab.activo{color:var(--cyan);border-bottom-color:var(--cyan)}
+.tab .badge{background:var(--pink);color:#fff;font-size:.6rem;padding:1px 5px;
+  border-radius:10px;margin-left:4px;vertical-align:middle}
+
+/* CONTENIDO */
+.content{padding:20px;max-width:900px;margin:0 auto}
+
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px}
+.stat-label{color:var(--gray);font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.04em}
+.stat-val.cyan{color:var(--cyan)}
+.stat-val.green{color:var(--green)}
+.stat-val.pink{color:var(--pink)}
+.stat-sub{font-size:.75rem;color:var(--gray);margin-top:4px}
+.stat-sub.up{color:var(--green)}
+.stat-sub.down{color:var(--red)}
+
+/* SECCIÓN */
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;
+  color:var(--gray);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title span{color:var(--cyan)}
+
+/* TABLA PEDIDOS */
+.pedido-card{background:var(--dark2);border:1px solid rgba(255,255,255,.06);
+  border-radius:10px;padding:14px;margin-bottom:10px;transition:border-color .2s}
+.pedido-card:hover{border-color:rgba(0,200,255,.2)}
+.pedido-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.pedido-codigo{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--cyan);letter-spacing:.08em}
+.pedido-cliente{font-weight:700;font-size:.95rem}
+.pedido-fecha{color:var(--gray);font-size:.78rem;margin-left:auto}
+.pedido-info{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--gray);margin-bottom:10px}
+.pedido-info strong{color:var(--white)}
+.pedido-productos{font-size:.8rem;color:rgba(255,255,255,.5);margin-bottom:10px;line-height:1.5}
+.pedido-actions{display:flex;gap:6px;flex-wrap:wrap}
+.btn-estado{padding:5px 12px;border:none;border-radius:6px;font-family:'Rajdhani',sans-serif;
+  font-size:.78rem;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:all .2s}
+.btn-prep{background:rgba(255,165,0,.15);color:var(--orange);border:1px solid rgba(255,165,0,.3)}
+.btn-prep:hover{background:rgba(255,165,0,.3)}
+.btn-listo{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3)}
+.btn-listo:hover{background:rgba(0,230,118,.3)}
+.btn-enviado{background:rgba(0,200,255,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.3)}
+.btn-enviado:hover{background:rgba(0,200,255,.3)}
+.btn-cancelar{background:rgba(255,61,61,.1);color:var(--red);border:1px solid rgba(255,61,61,.2)}
+.btn-cancelar:hover{background:rgba(255,61,61,.25)}
+
+/* BADGE ESTADO */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;letter-spacing:.05em}
+.badge-Recibido{background:rgba(0,200,255,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.3)}
+.badge-preparacion{background:rgba(255,165,0,.15);color:var(--orange);border:1px solid rgba(255,165,0,.3)}
+.badge-listo{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3)}
+.badge-Enviado{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3)}
+.badge-Cancelado{background:rgba(255,61,61,.15);color:var(--red);border:1px solid rgba(255,61,61,.3)}
+
+/* STOCK */
+.stock-item{display:flex;align-items:center;gap:12px;padding:10px 14px;
+  background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:8px;margin-bottom:8px}
+.stock-nombre{flex:1;font-weight:600;font-size:.9rem}
+.stock-marca{font-size:.75rem;color:var(--gray)}
+.stock-num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;min-width:36px;text-align:right}
+.stock-num.cero{color:var(--red)}
+.stock-num.bajo{color:var(--orange)}
+.stock-num.ok{color:var(--green)}
+
+/* CLIENTES */
+.cliente-item{display:flex;align-items:center;gap:12px;padding:12px 14px;
+  background:var(--dark2);border:1px solid rgba(0,230,118,.1);border-radius:8px;margin-bottom:8px}
+.cliente-info{flex:1}
+.cliente-nombre{font-weight:700;font-size:.92rem}
+.cliente-tel{font-size:.78rem;color:var(--gray)}
+.cliente-badge{background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.25);
+  padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap}
+
+/* VENTAS DEL DÍA */
+.venta-item{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.85rem}
+.venta-item:last-child{border-bottom:none}
+.venta-prod{color:var(--white);flex:1}
+.venta-cli{color:var(--gray);font-size:.75rem;margin-top:1px}
+.venta-monto{color:var(--cyan);font-weight:700;font-family:'Bebas Neue',sans-serif;font-size:1rem}
+
+/* FILTRO */
+.filtro-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.filtro-input{background:rgba(255,255,255,.06);border:1px solid rgba(0,200,255,.15);
+  color:var(--white);font-family:'Rajdhani',sans-serif;font-size:.88rem;
+  padding:7px 12px;border-radius:8px;outline:none;transition:border .2s}
+.filtro-input:focus{border-color:var(--cyan)}
+.filtro-btn{padding:7px 14px;border:1px solid rgba(0,200,255,.2);border-radius:8px;
+  background:rgba(0,200,255,.08);color:var(--cyan);font-family:'Rajdhani',sans-serif;
+  font-size:.82rem;font-weight:700;cursor:pointer;letter-spacing:.04em;transition:all .2s}
+.filtro-btn:hover,.filtro-btn.activo{background:rgba(0,200,255,.2);border-color:var(--cyan)}
+
+/* LOADING / EMPTY */
+.loading-txt{text-align:center;color:var(--gray);padding:32px;font-size:.9rem}
+.empty-txt{text-align:center;color:var(--gray);padding:24px;font-size:.88rem}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:var(--dark3);border:1px solid rgba(0,200,255,.3);color:var(--white);
+  padding:10px 20px;border-radius:8px;font-size:.85rem;font-weight:600;
+  z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+@media(max-width:600px){
+  .content{padding:14px}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .pedido-fecha{width:100%;margin-left:0}
+  .tab{padding:10px 12px;font-size:.8rem}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">MAXUP</div>
+    <div class="login-sub">Panel de Administración</div>
+    <input type="password" class="login-input" id="claveInput" placeholder="Clave de acceso"
+      onkeydown="if(event.key==='Enter')login()">
+    <button class="login-btn" onclick="login()">INGRESAR</button>
+    <div class="login-error" id="loginError">Clave incorrecta</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <span class="header-logo">MAXUP</span>
+    <span class="header-badge">ADMIN</span>
+    <button class="header-refresh" onclick="recargarTab()">⟳ Actualizar</button>
+    <button class="header-logout" onclick="logout()">Salir</button>
+  </header>
+
+  <div class="tabs">
+    <button class="tab activo" onclick="switchTab('resumen',this)">📊 Resumen</button>
+    <button class="tab" onclick="switchTab('pedidos',this)">📦 Pedidos <span class="badge" id="badgePedidos"></span></button>
+    <button class="tab" onclick="switchTab('stock',this)">⚠️ Stock bajo</button>
+    <button class="tab" onclick="switchTab('descuentos',this)">🎁 Descuentos</button>
+  </div>
+
+  <div class="content">
+    <div id="tabResumen"></div>
+    <div id="tabPedidos" style="display:none"></div>
+    <div id="tabStock" style="display:none"></div>
+    <div id="tabDescuentos" style="display:none"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
+const CLAVE_CORRECTA = 'maxupdario2024';
+let clave = '';
+let tabActual = 'resumen';
+let filtroEstado = 'todos';
+
+// ── LOGIN ────────────────────────────────────────────────────
+function login() {
+  const input = document.getElementById('claveInput').value;
+  if (input === CLAVE_CORRECTA) {
+    clave = input;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    cargarResumen();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+    setTimeout(function(){ document.getElementById('loginError').style.display='none'; }, 2000);
+  }
+}
+function logout() {
+  clave = '';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('claveInput').value = '';
+}
+
+// ── TABS ─────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  tabActual = tab;
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('activo'); });
+  el.classList.add('activo');
+  ['resumen','pedidos','stock','descuentos'].forEach(function(t){
+    document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'resumen')     cargarResumen();
+  if (tab === 'pedidos')     cargarPedidos();
+  if (tab === 'stock')       cargarStock();
+  if (tab === 'descuentos')  cargarDescuentos();
+}
+
+function recargarTab() {
+  if (tabActual === 'resumen')    cargarResumen();
+  if (tabActual === 'pedidos')    cargarPedidos();
+  if (tabActual === 'stock')      cargarStock();
+  if (tabActual === 'descuentos') cargarDescuentos();
+}
+
+// ── HELPERS ──────────────────────────────────────────────────
+function api(params) {
+  return fetch(API_URL + '?' + params + '&clave=' + encodeURIComponent(clave))
+    .then(function(r){ return r.json(); });
+}
+function fmt(n) { return '$' + Number(n).toLocaleString('es-AR'); }
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+function getBadgeClass(estado) {
+  var map = {'Recibido':'badge-Recibido','En preparación':'badge-preparacion',
+    'Listo para retirar':'badge-listo','Enviado':'badge-Enviado','Cancelado':'badge-Cancelado'};
+  return map[estado] || 'badge-Recibido';
+}
+
+// ── RESUMEN ──────────────────────────────────────────────────
+function cargarResumen() {
+  var el = document.getElementById('tabResumen');
+  el.innerHTML = '<div class="loading-txt">Cargando resumen...</div>';
+  api('accion=admin_resumen').then(function(data) {
+    if (!data.ok) { el.innerHTML = '<div class="empty-txt">Error: ' + data.error + '</div>'; return; }
+
+    var diff = data.ayer > 0 ? Math.round((data.hoy - data.ayer) / data.ayer * 100) : 0;
+    var diffClass = diff >= 0 ? 'up' : 'down';
+    var diffTxt = (diff >= 0 ? '▲' : '▼') + ' ' + Math.abs(diff) + '% vs ayer';
+
+    var html = '<div class="stats-grid">'
+      + '<div class="stat-card"><div class="stat-label">Facturado hoy</div><div class="stat-val cyan">' + fmt(data.hoy) + '</div><div class="stat-sub ' + diffClass + '">' + diffTxt + '</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Ventas hoy</div><div class="stat-val green">' + data.ventasHoy + '</div><div class="stat-sub">Ayer: ' + data.ventasAyer + '</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Pedidos web</div><div class="stat-val pink">' + data.pedidosWeb + '</div><div class="stat-sub">Hoy ' + data.fecha + '</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Facturado ayer</div><div class="stat-val" style="color:var(--gray)">' + fmt(data.ayer) + '</div><div class="stat-sub">' + data.ventasAyer + ' ventas</div></div>'
+      + '</div>';
+
+    if (data.items && data.items.length > 0) {
+      html += '<div class="section-title">Ventas de hoy <span>(' + data.items.length + ')</span></div>'
+        + '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px">';
+      data.items.forEach(function(item) {
+        html += '<div class="venta-item">'
+          + '<div><div class="venta-prod">' + item.producto + (item.cantidad > 1 ? ' ×' + item.cantidad : '') + '</div>'
+          + (item.cliente ? '<div class="venta-cli">' + item.cliente + '</div>' : '') + '</div>'
+          + '<div class="venta-monto">' + fmt(item.monto) + '</div>'
+          + '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="empty-txt">No hay ventas registradas hoy todavía.</div>';
+    }
+
+    el.innerHTML = html;
+  }).catch(function(){ el.innerHTML = '<div class="empty-txt">⚠️ No se pudo conectar.</div>'; });
+}
+
+// ── PEDIDOS ──────────────────────────────────────────────────
+function cargarPedidos() {
+  var el = document.getElementById('tabPedidos');
+  el.innerHTML = '<div class="loading-txt">Cargando pedidos...</div>';
+  api('accion=admin_pedidos').then(function(data) {
+    if (!data.ok) { el.innerHTML = '<div class="empty-txt">Error: ' + data.error + '</div>'; return; }
+
+    var pedidos = data.pedidos || [];
+    var pendientes = pedidos.filter(function(p){ return p.estado === 'Recibido' || p.estado === 'En preparación'; }).length;
+    var badge = document.getElementById('badgePedidos');
+    if (pendientes > 0) { badge.textContent = pendientes; badge.style.display = 'inline'; }
+    else badge.style.display = 'none';
+
+    var html = '<div class="filtro-row">'
+      + '<button class="filtro-btn ' + (filtroEstado==='todos'?'activo':'') + '" onclick="setFiltro(\'todos\',this)">Todos</button>'
+      + '<button class="filtro-btn ' + (filtroEstado==='Recibido'?'activo':'') + '" onclick="setFiltro(\'Recibido\',this)">Recibidos</button>'
+      + '<button class="filtro-btn ' + (filtroEstado==='En preparación'?'activo':'') + '" onclick="setFiltro(\'En preparación\',this)">En prep.</button>'
+      + '<button class="filtro-btn ' + (filtroEstado==='Listo para retirar'?'activo':'') + '" onclick="setFiltro(\'Listo para retirar\',this)">Listos</button>'
+      + '<button class="filtro-btn ' + (filtroEstado==='Enviado'?'activo':'') + '" onclick="setFiltro(\'Enviado\',this)">Enviados</button>'
+      + '</div><div id="listaPedidos"></div>';
+
+    el.innerHTML = html;
+    renderPedidos(pedidos);
+    window._pedidosCache = pedidos;
+  }).catch(function(){ el.innerHTML = '<div class="empty-txt">⚠️ No se pudo conectar.</div>'; });
+}
+
+function setFiltro(estado, btn) {
+  filtroEstado = estado;
+  document.querySelectorAll('.filtro-btn').forEach(function(b){ b.classList.remove('activo'); });
+  btn.classList.add('activo');
+  renderPedidos(window._pedidosCache || []);
+}
+
+function renderPedidos(pedidos) {
+  var lista = document.getElementById('listaPedidos');
+  if (!lista) return;
+  var filtrados = filtroEstado === 'todos' ? pedidos : pedidos.filter(function(p){ return p.estado === filtroEstado; });
+  if (filtrados.length === 0) { lista.innerHTML = '<div class="empty-txt">No hay pedidos con este estado.</div>'; return; }
+
+  var html = '';
+  filtrados.forEach(function(p) {
+    var prods = (p.productos || '').split(' | ').map(function(pr){ return '• ' + pr; }).join('<br>');
+    html += '<div class="pedido-card" id="pc-' + p.codigo + '">'
+      + '<div class="pedido-top">'
+      + '<span class="pedido-codigo">' + p.codigo + '</span>'
+      + '<span class="pedido-cliente">' + p.cliente + '</span>'
+      + '<span class="badge ' + getBadgeClass(p.estado) + '">' + p.estado + '</span>'
+      + '<span class="pedido-fecha">' + p.fecha + '</span>'
+      + '</div>'
+      + '<div class="pedido-info">'
+      + '<span>📱 <strong>' + p.telefono + '</strong></span>'
+      + '<span>💰 <strong>' + p.total + '</strong></span>'
+      + '<span>🚚 <strong>' + p.entrega + '</strong></span>'
+      + '<span>💳 <strong>' + p.pago + '</strong></span>'
+      + '</div>'
+      + '<div class="pedido-productos">' + prods + '</div>'
+      + '<div class="pedido-actions">'
+      + (p.estado !== 'En preparación' ? '<button class="btn-estado btn-prep" onclick="cambiarEstado(\'' + p.codigo + '\',\'En preparación\')">🔧 En prep.</button>' : '')
+      + (p.estado !== 'Listo para retirar' ? '<button class="btn-estado btn-listo" onclick="cambiarEstado(\'' + p.codigo + '\',\'Listo para retirar\')">✅ Listo</button>' : '')
+      + (p.estado !== 'Enviado' ? '<button class="btn-estado btn-enviado" onclick="cambiarEstado(\'' + p.codigo + '\',\'Enviado\')">🚚 Enviado</button>' : '')
+      + (p.estado !== 'Cancelado' ? '<button class="btn-estado btn-cancelar" onclick="cambiarEstado(\'' + p.codigo + '\',\'Cancelado\')">❌ Cancelar</button>' : '')
+      + '<a href="https://wa.me/54' + p.telefono.replace(/\D/g,'') + '?text=' + encodeURIComponent('Hola ' + p.cliente + '! Te escribimos de MAXUP sobre tu pedido ' + p.codigo + '.') + '" target="_blank" class="btn-estado btn-enviado">📲 WA</a>'
+      + '</div>'
+      + '</div>';
+  });
+  lista.innerHTML = html;
+}
+
+function cambiarEstado(codigo, nuevoEstado) {
+  showToast('Actualizando...');
+  api('accion=admin_estado&pedido=' + encodeURIComponent(codigo) + '&estado=' + encodeURIComponent(nuevoEstado))
+    .then(function(data) {
+      if (data.ok) {
+        showToast('✅ ' + codigo + ' → ' + nuevoEstado);
+        // Actualizar en cache local
+        if (window._pedidosCache) {
+          window._pedidosCache.forEach(function(p){ if(p.codigo===codigo) p.estado=nuevoEstado; });
+          renderPedidos(window._pedidosCache);
+        }
+      } else {
+        showToast('❌ Error: ' + (data.error || 'No se pudo actualizar'));
+      }
+    }).catch(function(){ showToast('⚠️ Error de conexión'); });
+}
+
+// ── STOCK ────────────────────────────────────────────────────
+function cargarStock() {
+  var el = document.getElementById('tabStock');
+  el.innerHTML = '<div class="loading-txt">Verificando stock...</div>';
+  api('accion=admin_stock&limite=3').then(function(data) {
+    if (!data.ok) { el.innerHTML = '<div class="empty-txt">Error: ' + data.error + '</div>'; return; }
+    var prods = data.productos || [];
+    if (prods.length === 0) {
+      el.innerHTML = '<div class="empty-txt">✅ Todo el stock está bien (más de 3 unidades por producto).</div>';
+      return;
+    }
+    var html = '<div class="section-title">Productos con ≤3 unidades <span>(' + prods.length + ')</span></div>';
+    prods.forEach(function(p) {
+      var cls = p.stock === 0 ? 'cero' : (p.stock <= 1 ? 'bajo' : 'ok');
+      html += '<div class="stock-item">'
+        + '<div><div class="stock-nombre">' + p.nombre + '</div><div class="stock-marca">' + p.marca + ' · ' + fmt(p.precio) + '</div></div>'
+        + '<div class="stock-num ' + cls + '">' + p.stock + '</div>'
+        + '</div>';
+    });
+    el.innerHTML = html;
+  }).catch(function(){ el.innerHTML = '<div class="empty-txt">⚠️ No se pudo conectar.</div>'; });
+}
+
+// ── DESCUENTOS ───────────────────────────────────────────────
+function cargarDescuentos() {
+  var el = document.getElementById('tabDescuentos');
+  el.innerHTML = '<div class="loading-txt">Verificando clientes...</div>';
+  api('accion=admin_descuentos').then(function(data) {
+    if (!data.ok) { el.innerHTML = '<div class="empty-txt">Error: ' + data.error + '</div>'; return; }
+    var clientes = data.clientes || [];
+    if (clientes.length === 0) {
+      el.innerHTML = '<div class="empty-txt">Ningún cliente califica para descuento todavía.<br><span style="font-size:.8rem;color:#666">Condición: 3 meses consecutivos con compras ≥ $40.000</span></div>';
+      return;
+    }
+    var html = '<div class="section-title">Clientes con 10% de descuento activo <span>(' + clientes.length + ')</span></div>';
+    clientes.forEach(function(c) {
+      html += '<div class="cliente-item">'
+        + '<div class="cliente-info">'
+        + '<div class="cliente-nombre">Cod. ' + c.codigo + ' — ' + c.nombre + '</div>'
+        + '<div class="cliente-tel">📱 ' + c.telefono + ' · Total 3 meses: ' + fmt(c.total3m) + '</div>'
+        + '</div>'
+        + '<span class="cliente-badge">10% OFF</span>'
+        + '</div>';
+    });
+    el.innerHTML = html;
+  }).catch(function(){ el.innerHTML = '<div class="empty-txt">⚠️ No se pudo conectar.</div>'; });
+}
+</script>
+</body>
+</html>
