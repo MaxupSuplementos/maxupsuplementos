@@ -4627,6 +4627,28 @@ function finalizarPedido(){
   if(notes) msg+=`📝 *Notas:* ${notes}\n`;
   msg+=`\n¡Gracias por tu compra! 💪`;
 
+  // ── Registrar en Google Sheets ───────────────────────────
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
+  const payload = {
+    nombre:   name,
+    telefono: phone,
+    email:    email,
+    entrega:  delivery,
+    direccion:address,
+    pago:     pay,
+    total:    cartTotal(),
+    items: cart.map(i=>({
+      nombre:   i.name,
+      marca:    i.brand||'',
+      precio:   i.price,
+      cantidad: i.qty
+    }))
+  };
+  fetch(API_URL, {
+    method:'POST',
+    body: JSON.stringify(payload)
+  }).catch(()=>{}); // silencioso — no bloquea el pedido si falla
+
   const url=`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`;
   window.open(url,'_blank');
   document.getElementById('checkoutFormBody').style.display='none';
