@@ -4742,6 +4742,8 @@ function finalizarPedido(){
   document.getElementById('checkoutFormBody').style.display='none';
   document.getElementById('orderSuccess').style.display='block';
   document.getElementById('waRepeatBtn').onclick=()=>window.open(url,'_blank');
+  // Actualizar catálogo en segundo plano para reflejar el nuevo stock
+  setTimeout(function(){ cargarDesdeSheets(); }, 3000);
 }
 
 function resetAfterOrder(){
