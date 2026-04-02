@@ -5346,22 +5346,41 @@ function calcularRecomendacion() {
     + '<ul style="color:#bbb;font-size:.88rem;margin:0 0 16px 18px;line-height:2">';
   tipsRec.forEach(function(tip) { html += '<li>' + tip + '</li>'; });
   html += '</ul><div style="display:flex;flex-direction:column;gap:8px">';
-  prodsRec.forEach(function(p) {
-    html += '<div class="calc-prod-item" onclick="openProdModal(' + JSON.stringify(p.id) + ')" style="cursor:pointer;border-radius:8px">'
-      + '<div class="calc-prod-emoji">' + p.emoji + '</div>'
-      + '<div class="calc-prod-info">'
-      + '<div class="calc-prod-nombre">' + p.name + '</div>'
-      + '<div class="calc-prod-razon">' + p.brand + ' &mdash; $' + p.price.toLocaleString('es-AR') + ' efectivo</div>'
-      + '</div>'
-      + '<span style="color:var(--cyan);font-size:.9rem;font-weight:700">Ver &rarr;</span>'
-      + '</div>';
-  });
-  if (prodsRec.length === 0) {
-    html += '<p style="color:#888">No hay productos en stock para este objetivo ahora.</p>';
-  }
-  html += '</div><p style="color:#555;font-size:.75rem;margin-top:14px">Hace clic en cada producto para ver detalles y agregarlo al carrito.</p>';
   res.style.display = 'block';
   res.innerHTML = html;
+  // Agregar productos con event listeners reales (evita problemas de comillas en onclick)
+  var prodContainer = res.querySelector('.recom-prods');
+  if (!prodContainer) {
+    prodContainer = document.createElement('div');
+    prodContainer.className = 'recom-prods';
+    prodContainer.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+    res.appendChild(prodContainer);
+  }
+  if (prodsRec.length === 0) {
+    prodContainer.innerHTML = '<p style="color:#888">No hay productos en stock para este objetivo ahora.</p>';
+  } else {
+    prodsRec.forEach(function(p) {
+      var div = document.createElement('div');
+      div.className = 'calc-prod-item';
+      div.style.cssText = 'cursor:pointer;border-radius:8px;transition:background .2s';
+      div.innerHTML = '<div class="calc-prod-emoji">' + p.emoji + '</div>'
+        + '<div class="calc-prod-info">'
+        + '<div class="calc-prod-nombre">' + p.name + '</div>'
+        + '<div class="calc-prod-razon">' + p.brand + ' &mdash; $' + p.price.toLocaleString('es-AR') + ' efectivo</div>'
+        + '</div>'
+        + '<span style="color:var(--cyan);font-size:.9rem;font-weight:700">Ver &rarr;</span>';
+      div.addEventListener('mouseover', function() { this.style.background = 'rgba(0,200,255,.08)'; });
+      div.addEventListener('mouseout',  function() { this.style.background = ''; });
+      (function(pid) {
+        div.addEventListener('click', function() { openProdModal(pid); });
+      })(p.id);
+      prodContainer.appendChild(div);
+    });
+  }
+  var note = document.createElement('p');
+  note.style.cssText = 'color:#555;font-size:.75rem;margin-top:14px';
+  note.textContent = 'Hace clic en cada producto para ver detalles y agregarlo al carrito.';
+  res.appendChild(note);
 }
 
 // ══════════════════════════════════════════════════════════
