@@ -396,9 +396,9 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 @media(max-width:600px){
   .footer-inner{grid-template-columns:1fr}
   .hero{padding:100px 16px 48px}
-  .cart-fab{bottom:18px;right:14px;width:54px;height:54px}
+  .cart-fab{bottom:18px;right:16px;width:54px;height:54px}
   .form-row{grid-template-columns:1fr}
-  #productsGrid{grid-template-columns:repeat(2,1fr)!important;gap:10px}
+  #productsGrid{grid-template-columns:repeat(3,1fr)!important;gap:8px}
   .prod-name{font-size:.82rem!important}
   .prod-price-val{font-size:1.3rem!important}
 }
@@ -549,6 +549,11 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   box-shadow:0 4px 20px rgba(37,211,102,.4);cursor:pointer;
   transition:transform .2s;text-decoration:none;font-size:1.5rem}
 .wa-float:hover{transform:scale(1.1)}
+
+@media(max-width:600px){
+  .wa-float{right:16px;bottom:84px;width:48px;height:48px;font-size:1.3rem}
+  .scroll-top-btn{right:16px;bottom:142px}
+}
 
 /* ── STOCK BADGE URGENTE ── */
 .stock-urgente{background:rgba(255,0,0,.15);border:1px solid rgba(255,50,50,.4);
