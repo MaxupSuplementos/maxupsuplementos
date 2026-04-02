@@ -924,6 +924,8 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
       </div>
     </div>
     <div class="cart-summary" id="cartSummary" style="display:none">
+      <div id="promoBar" style="font-size:.82rem;text-align:center;padding:6px 10px;
+        background:rgba(0,200,255,.06);border-radius:8px;margin-bottom:10px;min-height:28px"></div>
       <div class="cart-total-row">
         <span class="cart-total-label">Total</span>
         <span class="cart-total-val" id="cartTotal">$0</span>
@@ -4559,6 +4561,22 @@ function clearCart(){ cart=[]; saveCart(); renderCart(); updateBadge(); }
 function cartTotal(){ return cart.reduce((s,i)=>s+i.price*i.qty,0); }
 function cartCount(){ return cart.reduce((s,i)=>s+i.qty,0); }
 
+// ── DESCUENTO POR MONTO ──────────────────────────────────────
+const DESCUENTOS_MONTO = [
+  { minimo: 180000, pct: 0.15, label: '15% off por compra +$180.000' },
+  { minimo: 130000, pct: 0.10, label: '10% off por compra +$130.000' },
+  { minimo:  90000, pct: 0.05, label: '5% off por compra +$90.000'  },
+];
+function getDescuentoMonto(total){
+  for(const d of DESCUENTOS_MONTO){ if(total >= d.minimo) return d; }
+  return null;
+}
+function cartTotalConDescuento(){
+  const base = cartTotal();
+  const desc = getDescuentoMonto(base);
+  return desc ? Math.round(base * (1 - desc.pct)) : base;
+}
+
 function renderCart(){
   const container = document.getElementById('cartItemsContainer');
   const empty = document.getElementById('cartEmpty');
@@ -4566,7 +4584,31 @@ function renderCart(){
   container.querySelectorAll('.cart-item').forEach(e=>e.remove());
   if(cart.length===0){ empty.style.display='block'; summary.style.display='none'; return; }
   empty.style.display='none'; summary.style.display='block';
-  document.getElementById('cartTotal').textContent = fmt(cartTotal());
+  const base = cartTotal();
+  const desc = getDescuentoMonto(base);
+  const totalFinal = desc ? Math.round(base*(1-desc.pct)) : base;
+  // Mostrar descuento aplicado
+  let totalHTML = '';
+  if(desc){
+    totalHTML = `<span style="text-decoration:line-through;font-size:1.2rem;color:#888">${fmt(base)}</span> <span style="color:var(--cyan)">${fmt(totalFinal)}</span>`;
+    document.getElementById('cartTotal').innerHTML = totalHTML;
+  } else {
+    document.getElementById('cartTotal').textContent = fmt(base);
+  }
+  // Mostrar barra de progreso hacia próximo descuento
+  const promoBar = document.getElementById('promoBar');
+  if(promoBar){
+    const siguiente = DESCUENTOS_MONTO.slice().reverse().find(d => d.minimo > base);
+    if(desc && desc.pct===0.15){
+      promoBar.innerHTML = `<span style="color:var(--cyan)">🎉 ${desc.label} aplicado!</span>`;
+    } else if(siguiente){
+      const falta = siguiente.minimo - base;
+      const pct_sig = siguiente.pct*100 + '%';
+      promoBar.innerHTML = `<span style="color:#aaa">Agregá <strong style="color:var(--cyan)">${fmt(falta)}</strong> más y obtenés <strong style="color:var(--pink)">${pct_sig} de descuento</strong></span>`;
+    } else {
+      promoBar.innerHTML = '';
+    }
+  }
   cart.forEach(item=>{
     const el=document.createElement('div'); el.className='cart-item';
     const k = item.key.replace(/'/g,"\\'");
@@ -4617,8 +4659,18 @@ function closeCheckout(){ document.getElementById('checkoutOverlay').classList.r
 
 function buildMiniList(){
   const el=document.getElementById('orderMiniList');
-  el.innerHTML = cart.map(i=>`<div class="omi"><span>${i.emoji} ${i.name} — ${i.flavor} x${i.qty}</span><span>${fmt(i.price*i.qty)}</span></div>`).join('')
-    + `<div class="omi"><span><strong>TOTAL</strong></span><span>${fmt(cartTotal())}</span></div>`;
+  const base = cartTotal();
+  const desc = getDescuentoMonto(base);
+  const totalFinal = desc ? Math.round(base*(1-desc.pct)) : base;
+  let totalRow = '';
+  if(desc){
+    totalRow = `<div class="omi" style="margin-top:6px"><span><strong>Subtotal</strong></span><span>${fmt(base)}</span></div>`
+      + `<div class="omi" style="color:var(--cyan)"><span>🎉 ${desc.label}</span><span>-${fmt(base-totalFinal)}</span></div>`
+      + `<div class="omi" style="border-top:1px solid rgba(0,200,255,.2);margin-top:4px;padding-top:6px"><span><strong>TOTAL</strong></span><span style="color:var(--cyan);font-size:1.1em">${fmt(totalFinal)}</span></div>`;
+  } else {
+    totalRow = `<div class="omi"><span><strong>TOTAL</strong></span><span>${fmt(base)}</span></div>`;
+  }
+  el.innerHTML = cart.map(i=>`<div class="omi"><span>${i.emoji} ${i.name} — ${i.flavor} x${i.qty}</span><span>${fmt(i.price*i.qty)}</span></div>`).join('') + totalRow;
 }
 
 function toggleAddress(){
@@ -4650,7 +4702,11 @@ function finalizarPedido(){
   if(email) msg+=`📧 *Email:* ${email}\n`;
   msg+=`\n📦 *Detalle:*\n`;
   cart.forEach(i=>{ msg+=`  • ${i.emoji} ${i.name} — ${i.flavor} × ${i.qty}  →  ${fmt(i.price*i.qty)}\n`; });
-  msg+=`\n💰 *TOTAL: ${fmt(cartTotal())}*\n`;
+  const _baseTotal = cartTotal();
+  const _desc = getDescuentoMonto(_baseTotal);
+  const _totalFinal = _desc ? Math.round(_baseTotal*(1-_desc.pct)) : _baseTotal;
+  if(_desc) msg+=`\n🎉 *Descuento: ${_desc.label}* (-${fmt(_baseTotal-_totalFinal)})\n`;
+  msg+=`\n💰 *TOTAL: ${fmt(_totalFinal)}*\n`;
   msg+=`\n🚚 *Entrega:* ${delivery==='envio'?'Envío a domicilio':'Retiro en local'}\n`;
   if(delivery==='envio'&&address) msg+=`📍 *Dirección:* ${address}\n`;
   msg+=`💳 *Pago:* ${pay.charAt(0).toUpperCase()+pay.slice(1)}\n`;
@@ -4666,7 +4722,8 @@ function finalizarPedido(){
     entrega:  delivery,
     direccion:address,
     pago:     pay,
-    total:    cartTotal(),
+    total:    cartTotalConDescuento(),
+    descuento: _desc ? _desc.label : '',
     items: cart.map(i=>({
       nombre:   i.name,
       marca:    i.brand||'',
