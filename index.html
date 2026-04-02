@@ -5272,66 +5272,99 @@ function calcularRecomendacion() {
   var res = document.getElementById('calcResultado');
   if (!peso || !objetivo || !nivel) {
     res.style.display = 'block';
-    res.innerHTML = '<p style="color:#FF0099">⚠️ Completá todos los campos.</p>';
+    res.innerHTML = '<p style="color:#FF0099">Completa todos los campos para ver tu recomendacion.</p>';
     return;
   }
+
+  // IDs especificos por objetivo — en orden de prioridad
   var RECS = {
-    masa:        { cats: ['proteina','gainer','creatina','aminoacido'],
-                   tips: ['Necesitás ~'+(peso*2).toFixed(0)+'g de proteína diaria para ganar masa.',
-                          'La creatina aumenta tu fuerza y potencia en un 10-15%.',
-                          'Los BCAA protegen el músculo durante el entrenamiento.'] },
-    definir:     { cats: ['quemador','proteina','aminoacido','vitaminas'],
-                   tips: ['Necesitás ~'+(peso*2.2).toFixed(0)+'g de proteína para mantener músculo.',
-                          'Los termogénicos aceleran el metabolismo y la quema de grasa.',
-                          'La L-Carnitina convierte grasa en energía durante el cardio.'] },
-    resistencia: { cats: ['hidratacion','aminoacido','colageno','vitaminas'],
-                   tips: ['Los electrolitos son clave en entrenamientos largos.',
-                          'Los BCAA retrasan la fatiga muscular.',
-                          'El Colágeno protege tus articulaciones del impacto.'] },
-    salud:       { cats: ['vitaminas','colageno','aminoacido','proteina'],
-                   tips: ['El Omega-3 reduce la inflamación y protege el corazón.',
-                          'El Colágeno mejora piel, pelo, uñas y articulaciones.',
-                          'Un multivitamínico cubre todas las deficiencias nutricionales.'] },
-    recuperacion:{ cats: ['colageno','vitaminas','aminoacido','proteina'],
-                   tips: ['El Colágeno hidrolizado repara cartílagos y tendones.',
-                          'La Glutamina acelera la recuperación muscular.',
-                          'El Magnesio reduce calambres y mejora el sueño.'] }
+    masa: {
+      ids:  ['sn_plat_2lb','sn_creat_pote','sn_mutant','sn_mtor'],
+      tips: ['Proteina Whey para alcanzar los '+(peso*2).toFixed(0)+'g diarios que necesitas.',
+             'Creatina para ganar fuerza y potencia en un 10-15%.',
+             'Gainer para sumar calorias y masa cuando cuesta comer suficiente.',
+             'BCAA para proteger el musculo durante el entrenamiento.']
+    },
+    definir: {
+      ids:  ['sn_thermo','sn_plat_2lb','sn_mtor','sn_multi'],
+      tips: ['Termogenico para acelerar el metabolismo y quemar mas grasa.',
+             'Proteina para mantener los '+(peso*2.2).toFixed(0)+'g diarios y no perder musculo.',
+             'BCAA para preservar masa muscular en deficit calorico.',
+             'Multivitaminico para cubrir deficiencias durante la dieta.']
+    },
+    resistencia: {
+      ids:  ['sn_hydroplus','sn_mtor','wo_colageno','sn_multi'],
+      tips: ['Hidratacion con electrolitos, clave en entrenamientos de larga duracion.',
+             'BCAA para retrasar la fatiga muscular.',
+             'Colageno para proteger articulaciones del impacto repetido.',
+             'Multivitaminico para mantener energia y recuperacion.']
+    },
+    salud: {
+      ids:  ['sn_omega3','sn_multi','wo_colageno','sn_zma'],
+      tips: ['Omega-3 para reducir la inflamacion y proteger el corazon.',
+             'Multivitaminico para cubrir todas las deficiencias nutricionales.',
+             'Colageno para mejorar piel, pelo, unas y articulaciones.',
+             'ZMA para mejorar el sueno, recuperacion y niveles de testosterona.']
+    },
+    recuperacion: {
+      ids:  ['wo_colageno','sn_glut','sn_zma','sn_omega3'],
+      tips: ['Colageno hidrolizado para reparar cartilagos y tendones.',
+             'Glutamina para acelerar la recuperacion muscular post-entreno.',
+             'ZMA para reducir calambres y mejorar el sueno reparador.',
+             'Omega-3 para reducir la inflamacion y el dolor muscular.']
+    }
   };
+
   var rec = RECS[objetivo];
   if (!rec) return;
+
+  // Buscar productos por ID especifico, con fallback a categoria si no hay stock
+  var cats = {masa:['proteina','creatina','gainer','aminoacido'],
+    definir:['quemador','proteina','aminoacido','vitamin'],
+    resistencia:['hidratacion','aminoacido','colageno','vitamin'],
+    salud:['vitamin','colageno','aminoacido','proteina'],
+    recuperacion:['colageno','aminoacido','vitamin','proteina']};
+
   var prodsRec = [];
   var usados = {};
-  for (var ci = 0; ci < rec.cats.length && prodsRec.length < 4; ci++) {
-    var cat = rec.cats[ci];
-    for (var pi = 0; pi < PRODUCTS.length; pi++) {
-      var p = PRODUCTS[pi];
-      if (p.cat === cat && !usados[p.id] && p.flavors.some(function(f){ return f.stock > 0; })) {
-        prodsRec.push(p); usados[p.id] = true; break;
-      }
+  for (var i = 0; i < rec.ids.length && prodsRec.length < 4; i++) {
+    var pid = rec.ids[i];
+    var prod = PRODUCTS.find(function(p){ return p.id === pid && p.flavors.some(function(f){ return f.stock > 0; }); });
+    if (prod) { prodsRec.push(prod); usados[prod.id] = true; }
+    else {
+      // fallback: buscar por categoria correspondiente
+      var catFallback = cats[objetivo][i];
+      var fallback = PRODUCTS.find(function(p){ return p.cat === catFallback && !usados[p.id] && p.flavors.some(function(f){ return f.stock > 0; }); });
+      if (fallback) { prodsRec.push(fallback); usados[fallback.id] = true; }
     }
   }
-  for (var pi2 = 0; pi2 < PRODUCTS.length && prodsRec.length < 4; pi2++) {
-    var p2 = PRODUCTS[pi2];
-    if (!usados[p2.id] && rec.cats.indexOf(p2.cat) >= 0 && p2.flavors.some(function(f){ return f.stock > 0; })) {
-      prodsRec.push(p2); usados[p2.id] = true;
-    }
-  }
-  var objTexto = {masa:'Ganar masa muscular', definir:'Definición / bajar grasa',
+
+  var objTexto = {masa:'Ganar masa muscular', definir:'Definicion y bajar grasa',
     resistencia:'Resistencia y rendimiento', salud:'Salud y bienestar general',
-    recuperacion:'Recuperación'}[objetivo] || objetivo;
+    recuperacion:'Recuperacion'}[objetivo] || objetivo;
   var nivTexto = {principiante:'Principiante', intermedio:'Intermedio', avanzado:'Avanzado'}[nivel];
-  var html = '<h4>💡 Recomendación para '+nivTexto+' — Objetivo: '+objTexto+'</h4>'
-    + '<ul style="color:#aaa;font-size:.85rem;margin:0 0 16px 16px;line-height:1.8">'
-    + rec.tips.map(function(t){ return '<li>'+t+'</li>'; }).join('') + '</ul>'
-    + '<div style="display:flex;flex-direction:column;gap:8px">';
+
+  var html = '<h4 style="color:#fff;text-shadow:none;letter-spacing:.05em">Recomendacion para <span style="color:var(--cyan)">'
+    + nivTexto + '</span> &mdash; Objetivo: <span style="color:var(--pink)">' + objTexto + '</span></h4>'
+    + '<ul style="color:#bbb;font-size:.88rem;margin:0 0 16px 18px;line-height:2">';
+
+  for (var t = 0; t < rec.tips.length && t < prodsRec.length; t++) {
+    html += '<li>' + rec.tips[t] + '</li>';
+  }
+  html += '</ul><div style="display:flex;flex-direction:column;gap:8px">';
+
   prodsRec.forEach(function(p) {
-    html += '<div class="calc-prod-item" onclick="openProdModal(\'' + p.id + '\')" style="cursor:pointer">'
-      + '<div class="calc-prod-emoji">'+p.emoji+'</div>'
-      + '<div class="calc-prod-info"><div class="calc-prod-nombre">'+p.name+'</div>'
-      + '<div class="calc-prod-razon">'+p.brand+' — $'+p.price.toLocaleString('es-AR')+' efectivo</div></div>'
-      + '<span style="color:var(--cyan);font-size:.85rem;font-weight:700">Ver →</span></div>';
+        html += '<div class="calc-prod-item" onclick="openProdModal(&quot;' + p.id + '&quot;)" style="cursor:pointer">'
+      + '<div class="calc-prod-emoji">' + p.emoji + '</div>'
+      + '<div class="calc-prod-info">'
+      + '<div class="calc-prod-nombre">' + p.name + '</div>'
+      + '<div class="calc-prod-razon">' + p.brand + ' &mdash; $' + p.price.toLocaleString('es-AR') + ' efectivo</div>'
+      + '</div>'
+      + '<span style="color:var(--cyan);font-size:.9rem;font-weight:700">Ver &rarr;</span>'
+      + '</div>';
   });
-  html += '</div>';
+
+  html += '</div><p style="color:#555;font-size:.75rem;margin-top:14px">Hace clic en cada producto para ver detalles y agregarlo al carrito.</p>';
   res.style.display = 'block';
   res.innerHTML = html;
 }
