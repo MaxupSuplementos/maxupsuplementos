@@ -5325,7 +5325,7 @@ function calcularRecomendacion() {
     + rec.tips.map(function(t){ return '<li>'+t+'</li>'; }).join('') + '</ul>'
     + '<div style="display:flex;flex-direction:column;gap:8px">';
   prodsRec.forEach(function(p) {
-    html += '<div class="calc-prod-item" onclick="openProdModal(''+p.id+'')" style="cursor:pointer">'
+    html += '<div class="calc-prod-item" onclick="openProdModal(\'' + p.id + '\')" style="cursor:pointer">'
       + '<div class="calc-prod-emoji">'+p.emoji+'</div>'
       + '<div class="calc-prod-info"><div class="calc-prod-nombre">'+p.name+'</div>'
       + '<div class="calc-prod-razon">'+p.brand+' — $'+p.price.toLocaleString('es-AR')+' efectivo</div></div>'
