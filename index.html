@@ -547,6 +547,10 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 .fab-group{position:fixed;bottom:24px;right:20px;z-index:900;
   display:flex;flex-direction:column;align-items:center;gap:10px}
 
+/* Carrito dentro del grupo */
+.cart-fab{position:static!important;width:56px!important;height:56px!important;
+  box-shadow:0 4px 24px rgba(0,200,255,.45)!important}
+
 /* WA */
 .wa-float{background:#25D366;border-radius:50%;width:52px;height:52px;
   display:flex;align-items:center;justify-content:center;
@@ -562,13 +566,11 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 .scroll-top-btn.visible{display:flex}
 .scroll-top-btn:hover{background:rgba(0,200,255,.3);transform:translateY(-3px)}
 
-/* Carrito — lo movemos al grupo también en mobile */
 @media(max-width:600px){
-  .cart-fab{position:static!important;width:52px!important;height:52px!important;
-    box-shadow:0 4px 24px rgba(0,200,255,.45)}
-  .fab-group{bottom:20px;right:14px;gap:8px}
-  .wa-float{width:48px;height:48px;font-size:1.3rem}
-  .scroll-top-btn{width:42px;height:42px}
+  .fab-group{bottom:16px;right:12px;gap:8px}
+  .cart-fab{width:50px!important;height:50px!important}
+  .wa-float{width:46px;height:46px;font-size:1.2rem}
+  .scroll-top-btn{width:40px;height:40px}
 }
 
 /* ── STOCK BADGE URGENTE ── */
