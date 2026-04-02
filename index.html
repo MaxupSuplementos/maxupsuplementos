@@ -5275,86 +5275,62 @@ function calcularRecomendacion() {
     res.innerHTML = '<p style="color:#FF0099">Completa todos los campos para ver tu recomendacion.</p>';
     return;
   }
-
-  // IDs especificos por objetivo — en orden de prioridad
   var RECS = {
-    masa: {
-      ids:  ['sn_plat_2lb','sn_creat_pote','sn_mutant','sn_mtor'],
-      tips: ['Proteina Whey para alcanzar los '+(peso*2).toFixed(0)+'g diarios que necesitas.',
-             'Creatina para ganar fuerza y potencia en un 10-15%.',
-             'Gainer para sumar calorias y masa cuando cuesta comer suficiente.',
-             'BCAA para proteger el musculo durante el entrenamiento.']
-    },
-    definir: {
-      ids:  ['sn_thermo','sn_plat_2lb','sn_mtor','sn_multi'],
-      tips: ['Termogenico para acelerar el metabolismo y quemar mas grasa.',
-             'Proteina para mantener los '+(peso*2.2).toFixed(0)+'g diarios y no perder musculo.',
-             'BCAA para preservar masa muscular en deficit calorico.',
-             'Multivitaminico para cubrir deficiencias durante la dieta.']
-    },
-    resistencia: {
-      ids:  ['sn_hydroplus','sn_mtor','wo_colageno','sn_multi'],
-      tips: ['Hidratacion con electrolitos, clave en entrenamientos de larga duracion.',
-             'BCAA para retrasar la fatiga muscular.',
-             'Colageno para proteger articulaciones del impacto repetido.',
-             'Multivitaminico para mantener energia y recuperacion.']
-    },
-    salud: {
-      ids:  ['sn_omega3','sn_multi','wo_colageno','sn_zma'],
-      tips: ['Omega-3 para reducir la inflamacion y proteger el corazon.',
-             'Multivitaminico para cubrir todas las deficiencias nutricionales.',
-             'Colageno para mejorar piel, pelo, unas y articulaciones.',
-             'ZMA para mejorar el sueno, recuperacion y niveles de testosterona.']
-    },
-    recuperacion: {
-      ids:  ['wo_colageno','sn_glut','sn_zma','sn_omega3'],
-      tips: ['Colageno hidrolizado para reparar cartilagos y tendones.',
-             'Glutamina para acelerar la recuperacion muscular post-entreno.',
-             'ZMA para reducir calambres y mejorar el sueno reparador.',
-             'Omega-3 para reducir la inflamacion y el dolor muscular.']
-    }
+    masa: { slots: [
+      { ids: ['sn_plat_2lb','sn_plat_3kg','sn_wh3y','sn_justwhey','sn_whey_dp','ena_truemade'], tip: 'Proteina Whey para alcanzar los '+(peso*2).toFixed(0)+'g diarios que necesitas para ganar masa.' },
+      { ids: ['sn_creat_pote','sn_creat_doy','sn_creat_500','sn_creat_1kg','ena_creat','gen_creat'], tip: 'Creatina para aumentar tu fuerza y potencia en un 10-15%.' },
+      { ids: ['sn_mutant','ena_ultramass','xtr_nitrogain','gn_gainer','mer_gainer'], tip: 'Gainer para sumar calorias cuando cuesta comer suficiente.' },
+      { ids: ['sn_mtor','ena_bcaa','sn_eaas'], tip: 'BCAA para proteger el musculo durante el entrenamiento.' }
+    ]},
+    definir: { slots: [
+      { ids: ['sn_thermo','wo_fatburner','gen_tx3','gn_lipo','nlab_thermo120','nlab_thermo240'], tip: 'Termogenico para acelerar el metabolismo y quemar mas grasa.' },
+      { ids: ['sn_plat_2lb','sn_justwhey','sn_wh3y','sn_whey_dp','wo_prot','ena_truemade'], tip: 'Proteina para mantener los '+(peso*2.2).toFixed(0)+'g diarios sin perder musculo.' },
+      { ids: ['sn_mtor','ena_bcaa','sn_eaas'], tip: 'BCAA para preservar masa muscular en deficit calorico.' },
+      { ids: ['sn_multi','sn_omega3','sn_zma'], tip: 'Multivitaminico para cubrir deficiencias durante la dieta.' }
+    ]},
+    resistencia: { slots: [
+      { ids: ['sn_hydroplus','nmax_hmax600','nmax_hmax1320','mer_sport','nmax_recov540'], tip: 'Hidratacion con electrolitos, clave en entrenamientos de larga duracion.' },
+      { ids: ['sn_mtor','ena_bcaa','sn_eaas'], tip: 'BCAA para retrasar la fatiga muscular.' },
+      { ids: ['wo_colageno','sn_col210','sn_col_sport','gn_col200p','mer_col'], tip: 'Colageno para proteger articulaciones del impacto repetido.' },
+      { ids: ['sn_multi','sn_omega3','sn_zma'], tip: 'Multivitaminico para mantener energia y recuperacion.' }
+    ]},
+    salud: { slots: [
+      { ids: ['sn_omega3','gn_omega3'], tip: 'Omega-3 para reducir la inflamacion y proteger el corazon.' },
+      { ids: ['sn_multi'], tip: 'Multivitaminico para cubrir todas las deficiencias nutricionales.' },
+      { ids: ['wo_colageno','sn_col210','sn_col_sport','gn_col200p','mer_col'], tip: 'Colageno para mejorar piel, pelo, unas y articulaciones.' },
+      { ids: ['sn_zma','sn_citr60','sn_citr500'], tip: 'ZMA o Magnesio para mejorar el sueno y la recuperacion.' }
+    ]},
+    recuperacion: { slots: [
+      { ids: ['wo_colageno','sn_col210','sn_col_sport','gn_col200p','mer_col'], tip: 'Colageno hidrolizado para reparar cartilagos y tendones.' },
+      { ids: ['sn_glut'], tip: 'Glutamina para acelerar la recuperacion muscular post-entreno.' },
+      { ids: ['sn_zma','sn_citr60','sn_citr500'], tip: 'ZMA o Magnesio para reducir calambres y mejorar el sueno.' },
+      { ids: ['sn_omega3','gn_omega3'], tip: 'Omega-3 para reducir la inflamacion y el dolor muscular.' }
+    ]}
   };
-
   var rec = RECS[objetivo];
   if (!rec) return;
-
-  // Buscar productos por ID especifico, con fallback a categoria si no hay stock
-  var cats = {masa:['proteina','creatina','gainer','aminoacido'],
-    definir:['quemador','proteina','aminoacido','vitamin'],
-    resistencia:['hidratacion','aminoacido','colageno','vitamin'],
-    salud:['vitamin','colageno','aminoacido','proteina'],
-    recuperacion:['colageno','aminoacido','vitamin','proteina']};
-
   var prodsRec = [];
+  var tipsRec = [];
   var usados = {};
-  for (var i = 0; i < rec.ids.length && prodsRec.length < 4; i++) {
-    var pid = rec.ids[i];
-    var prod = PRODUCTS.find(function(p){ return p.id === pid && p.flavors.some(function(f){ return f.stock > 0; }); });
-    if (prod) { prodsRec.push(prod); usados[prod.id] = true; }
-    else {
-      // fallback: buscar por categoria correspondiente
-      var catFallback = cats[objetivo][i];
-      var fallback = PRODUCTS.find(function(p){ return p.cat === catFallback && !usados[p.id] && p.flavors.some(function(f){ return f.stock > 0; }); });
-      if (fallback) { prodsRec.push(fallback); usados[fallback.id] = true; }
+  rec.slots.forEach(function(slot) {
+    for (var i = 0; i < slot.ids.length; i++) {
+      var pid = slot.ids[i];
+      if (usados[pid]) continue;
+      var prod = PRODUCTS.find(function(p) { return p.id === pid && p.flavors.some(function(f) { return f.stock > 0; }); });
+      if (prod) { prodsRec.push(prod); tipsRec.push(slot.tip); usados[prod.id] = true; break; }
     }
-  }
-
+  });
   var objTexto = {masa:'Ganar masa muscular', definir:'Definicion y bajar grasa',
     resistencia:'Resistencia y rendimiento', salud:'Salud y bienestar general',
     recuperacion:'Recuperacion'}[objetivo] || objetivo;
   var nivTexto = {principiante:'Principiante', intermedio:'Intermedio', avanzado:'Avanzado'}[nivel];
-
-  var html = '<h4 style="color:#fff;text-shadow:none;letter-spacing:.05em">Recomendacion para <span style="color:var(--cyan)">'
+  var html = '<h4 style="color:#fff;letter-spacing:.04em;margin-bottom:14px">Recomendacion para <span style="color:var(--cyan)">'
     + nivTexto + '</span> &mdash; Objetivo: <span style="color:var(--pink)">' + objTexto + '</span></h4>'
     + '<ul style="color:#bbb;font-size:.88rem;margin:0 0 16px 18px;line-height:2">';
-
-  for (var t = 0; t < rec.tips.length && t < prodsRec.length; t++) {
-    html += '<li>' + rec.tips[t] + '</li>';
-  }
+  tipsRec.forEach(function(tip) { html += '<li>' + tip + '</li>'; });
   html += '</ul><div style="display:flex;flex-direction:column;gap:8px">';
-
   prodsRec.forEach(function(p) {
-        html += '<div class="calc-prod-item" onclick="openProdModal(&quot;' + p.id + '&quot;)" style="cursor:pointer">'
+    html += '<div class="calc-prod-item" onclick="openProdModal(&quot;' + p.id + '&quot;)" style="cursor:pointer;border-radius:8px">'
       + '<div class="calc-prod-emoji">' + p.emoji + '</div>'
       + '<div class="calc-prod-info">'
       + '<div class="calc-prod-nombre">' + p.name + '</div>'
@@ -5363,7 +5339,6 @@ function calcularRecomendacion() {
       + '<span style="color:var(--cyan);font-size:.9rem;font-weight:700">Ver &rarr;</span>'
       + '</div>';
   });
-
   html += '</div><p style="color:#555;font-size:.75rem;margin-top:14px">Hace clic en cada producto para ver detalles y agregarlo al carrito.</p>';
   res.style.display = 'block';
   res.innerHTML = html;
