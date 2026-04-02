@@ -5275,62 +5275,79 @@ function calcularRecomendacion() {
     res.innerHTML = '<p style="color:#FF0099">Completa todos los campos para ver tu recomendacion.</p>';
     return;
   }
+
+  // Buscar por palabras clave en el nombre del producto (compatible con datos de Sheets)
+  function findProd(keywords, usados) {
+    for (var k = 0; k < keywords.length; k++) {
+      var kw = keywords[k].toLowerCase();
+      for (var pi = 0; pi < PRODUCTS.length; pi++) {
+        var p = PRODUCTS[pi];
+        if (usados[p.id]) continue;
+        var nameMatch = p.name.toLowerCase().indexOf(kw) >= 0;
+        var catMatch = p.cat && p.cat.toLowerCase().indexOf(kw) >= 0;
+        var hasStock = p.flavors && p.flavors.some(function(f) { return f.stock > 0; });
+        if ((nameMatch || catMatch) && hasStock) return p;
+      }
+    }
+    return null;
+  }
+
   var RECS = {
     masa: { slots: [
-      { ids: ['sn_plat_2lb','sn_plat_3kg','sn_wh3y','sn_justwhey','sn_whey_dp','ena_truemade'], tip: 'Proteina Whey para alcanzar los '+(peso*2).toFixed(0)+'g diarios que necesitas para ganar masa.' },
-      { ids: ['sn_creat_pote','sn_creat_doy','sn_creat_500','sn_creat_1kg','ena_creat','gen_creat'], tip: 'Creatina para aumentar tu fuerza y potencia en un 10-15%.' },
-      { ids: ['sn_mutant','ena_ultramass','xtr_nitrogain','gn_gainer','mer_gainer'], tip: 'Gainer para sumar calorias cuando cuesta comer suficiente.' },
-      { ids: ['sn_mtor','ena_bcaa','sn_eaas'], tip: 'BCAA para proteger el musculo durante el entrenamiento.' }
+      { kw: ['whey platinum','whey protein','proteina','protein'], tip: 'Proteina Whey para alcanzar los '+(peso*2).toFixed(0)+'g diarios que necesitas para ganar masa.' },
+      { kw: ['creatina','creatine'], tip: 'Creatina para aumentar tu fuerza y potencia en un 10-15%.' },
+      { kw: ['mutant','gainer','mass','ultra mass'], tip: 'Gainer para sumar calorias cuando cuesta comer suficiente.' },
+      { kw: ['bcaa','mtor','eaa'], tip: 'BCAA para proteger el musculo durante el entrenamiento.' }
     ]},
     definir: { slots: [
-      { ids: ['sn_thermo','wo_fatburner','gen_tx3','gn_lipo','nlab_thermo120','nlab_thermo240'], tip: 'Termogenico para acelerar el metabolismo y quemar mas grasa.' },
-      { ids: ['sn_plat_2lb','sn_justwhey','sn_wh3y','sn_whey_dp','wo_prot','ena_truemade'], tip: 'Proteina para mantener los '+(peso*2.2).toFixed(0)+'g diarios sin perder musculo.' },
-      { ids: ['sn_mtor','ena_bcaa','sn_eaas'], tip: 'BCAA para preservar masa muscular en deficit calorico.' },
-      { ids: ['sn_multi','sn_omega3','sn_zma'], tip: 'Multivitaminico para cubrir deficiencias durante la dieta.' }
+      { kw: ['thermo','termogenic','fat burner','lipo','quemador'], tip: 'Termogenico para acelerar el metabolismo y quemar mas grasa.' },
+      { kw: ['whey','proteina','protein'], tip: 'Proteina para mantener los '+(peso*2.2).toFixed(0)+'g diarios sin perder musculo.' },
+      { kw: ['bcaa','mtor','eaa'], tip: 'BCAA para preservar masa muscular en deficit calorico.' },
+      { kw: ['multivitaminico','multi','omega 3','omega3'], tip: 'Multivitaminico para cubrir deficiencias durante la dieta.' }
     ]},
     resistencia: { slots: [
-      { ids: ['sn_hydroplus','nmax_hmax600','nmax_hmax1320','mer_sport','nmax_recov540'], tip: 'Hidratacion con electrolitos, clave en entrenamientos de larga duracion.' },
-      { ids: ['sn_mtor','ena_bcaa','sn_eaas'], tip: 'BCAA para retrasar la fatiga muscular.' },
-      { ids: ['wo_colageno','sn_col210','sn_col_sport','gn_col200p','mer_col'], tip: 'Colageno para proteger articulaciones del impacto repetido.' },
-      { ids: ['sn_multi','sn_omega3','sn_zma'], tip: 'Multivitaminico para mantener energia y recuperacion.' }
+      { kw: ['hydroplus','hydromax','isoton','sport drink','recovery'], tip: 'Hidratacion con electrolitos, clave en entrenamientos de larga duracion.' },
+      { kw: ['bcaa','mtor','eaa'], tip: 'BCAA para retrasar la fatiga muscular.' },
+      { kw: ['colag','collagen'], tip: 'Colageno para proteger articulaciones del impacto repetido.' },
+      { kw: ['multivitaminico','multi','omega 3','omega3'], tip: 'Multivitaminico para mantener energia y recuperacion.' }
     ]},
     salud: { slots: [
-      { ids: ['sn_omega3','gn_omega3'], tip: 'Omega-3 para reducir la inflamacion y proteger el corazon.' },
-      { ids: ['sn_multi'], tip: 'Multivitaminico para cubrir todas las deficiencias nutricionales.' },
-      { ids: ['wo_colageno','sn_col210','sn_col_sport','gn_col200p','mer_col'], tip: 'Colageno para mejorar piel, pelo, unas y articulaciones.' },
-      { ids: ['sn_zma','sn_citr60','sn_citr500'], tip: 'ZMA o Magnesio para mejorar el sueno y la recuperacion.' }
+      { kw: ['omega 3','omega3','fish oil'], tip: 'Omega-3 para reducir la inflamacion y proteger el corazon.' },
+      { kw: ['multivitaminico','multi vitamin'], tip: 'Multivitaminico para cubrir todas las deficiencias nutricionales.' },
+      { kw: ['colag','collagen'], tip: 'Colageno para mejorar piel, pelo, unas y articulaciones.' },
+      { kw: ['zma','magnesio','citrato'], tip: 'ZMA o Magnesio para mejorar el sueno y la recuperacion.' }
     ]},
     recuperacion: { slots: [
-      { ids: ['wo_colageno','sn_col210','sn_col_sport','gn_col200p','mer_col'], tip: 'Colageno hidrolizado para reparar cartilagos y tendones.' },
-      { ids: ['sn_glut'], tip: 'Glutamina para acelerar la recuperacion muscular post-entreno.' },
-      { ids: ['sn_zma','sn_citr60','sn_citr500'], tip: 'ZMA o Magnesio para reducir calambres y mejorar el sueno.' },
-      { ids: ['sn_omega3','gn_omega3'], tip: 'Omega-3 para reducir la inflamacion y el dolor muscular.' }
+      { kw: ['colag','collagen'], tip: 'Colageno hidrolizado para reparar cartilagos y tendones.' },
+      { kw: ['glutamina','glutamine'], tip: 'Glutamina para acelerar la recuperacion muscular post-entreno.' },
+      { kw: ['zma','magnesio','citrato'], tip: 'ZMA o Magnesio para reducir calambres y mejorar el sueno.' },
+      { kw: ['omega 3','omega3','fish oil'], tip: 'Omega-3 para reducir la inflamacion y el dolor muscular.' }
     ]}
   };
+
   var rec = RECS[objetivo];
   if (!rec) return;
+
   var prodsRec = [];
   var tipsRec = [];
   var usados = {};
   rec.slots.forEach(function(slot) {
-    for (var i = 0; i < slot.ids.length; i++) {
-      var pid = slot.ids[i];
-      if (usados[pid]) continue;
-      var prod = PRODUCTS.find(function(p) { return p.id === pid && p.flavors.some(function(f) { return f.stock > 0; }); });
-      if (prod) { prodsRec.push(prod); tipsRec.push(slot.tip); usados[prod.id] = true; break; }
-    }
+    var prod = findProd(slot.kw, usados);
+    if (prod) { prodsRec.push(prod); tipsRec.push(slot.tip); usados[prod.id] = true; }
   });
+
   var objTexto = {masa:'Ganar masa muscular', definir:'Definicion y bajar grasa',
     resistencia:'Resistencia y rendimiento', salud:'Salud y bienestar general',
     recuperacion:'Recuperacion'}[objetivo] || objetivo;
   var nivTexto = {principiante:'Principiante', intermedio:'Intermedio', avanzado:'Avanzado'}[nivel];
+
   var html = '<h4 style="color:#fff;letter-spacing:.04em;margin-bottom:14px">Recomendacion para <span style="color:var(--cyan)">'
     + nivTexto + '</span> &mdash; Objetivo: <span style="color:var(--pink)">' + objTexto + '</span></h4>'
     + '<ul style="color:#bbb;font-size:.88rem;margin:0 0 16px 18px;line-height:2">';
   tipsRec.forEach(function(tip) { html += '<li>' + tip + '</li>'; });
   html += '</ul><div style="display:flex;flex-direction:column;gap:8px">';
   prodsRec.forEach(function(p) {
-    html += '<div class="calc-prod-item" onclick="openProdModal(&quot;' + p.id + '&quot;)" style="cursor:pointer;border-radius:8px">'
+    html += '<div class="calc-prod-item" onclick="openProdModal(' + JSON.stringify(p.id) + ')" style="cursor:pointer;border-radius:8px">'
       + '<div class="calc-prod-emoji">' + p.emoji + '</div>'
       + '<div class="calc-prod-info">'
       + '<div class="calc-prod-nombre">' + p.name + '</div>'
@@ -5339,6 +5356,9 @@ function calcularRecomendacion() {
       + '<span style="color:var(--cyan);font-size:.9rem;font-weight:700">Ver &rarr;</span>'
       + '</div>';
   });
+  if (prodsRec.length === 0) {
+    html += '<p style="color:#888">No hay productos en stock para este objetivo ahora.</p>';
+  }
   html += '</div><p style="color:#555;font-size:.75rem;margin-top:14px">Hace clic en cada producto para ver detalles y agregarlo al carrito.</p>';
   res.style.display = 'block';
   res.innerHTML = html;
