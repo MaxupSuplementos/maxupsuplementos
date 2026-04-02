@@ -1034,6 +1034,11 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
       <span>🎉</span>
       <h3>¡Pedido Enviado!</h3>
       <p>Se abrió WhatsApp con el detalle completo de tu pedido.<br>Te contactamos a la brevedad para confirmar.</p>
+      <div id="codigoPedidoBox" style="background:rgba(0,200,255,.08);border:1px solid rgba(0,200,255,.3);border-radius:10px;padding:14px;margin:14px 0;text-align:center">
+        <p style="color:#999;font-size:.8rem;margin-bottom:4px">Tu código de pedido</p>
+        <p id="codigoPedidoTexto" style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--cyan);letter-spacing:.1em">MXP-0000</p>
+        <a id="linkEstadoPedido" href="#" target="_blank" style="color:var(--pink);font-size:.85rem;font-weight:600">📋 Ver estado de mi pedido →</a>
+      </div>
       <button class="wa-btn" id="waRepeatBtn">📲 Abrir WhatsApp nuevamente</button>
       <button class="clear-cart-btn" style="margin-top:10px" onclick="resetAfterOrder()">Seguir comprando</button>
     </div>
@@ -4732,13 +4737,23 @@ function finalizarPedido(){
       cantidad: i.qty
     }))
   };
-  // Registrar en Sheets y recargar stock cuando responde
+  // Registrar en Sheets — mostrar código cuando responde
   fetch(API_URL, {
     method:'POST',
     body: JSON.stringify(payload)
-  }).then(function() {
-    // Esperar 2s extra por si Apps Script sigue procesando y recargar
-    setTimeout(function(){ cargarDesdeSheets(); }, 2000);
+  }).then(function(r){ return r.json(); })
+  .then(function(data) {
+    if (data && data.mensaje) {
+      try {
+        var parsed = JSON.parse(data.mensaje);
+        if (parsed.codigo) {
+          document.getElementById('codigoPedidoTexto').textContent = parsed.codigo;
+          document.getElementById('linkEstadoPedido').href =
+            'https://maxupsuplementos.github.io/maxupsuplementos/estado.html?pedido=' + parsed.codigo;
+        }
+      } catch(e) {}
+    }
+    setTimeout(function(){ cargarDesdeSheets(); }, 5000);
   }).catch(function(){});
 
   const url=`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`;
