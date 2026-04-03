@@ -617,7 +617,9 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <li><a href="#catalogo">Catálogo</a></li>
     <li><a href="#comparador">Comparar</a></li>
     <li><a href="#recomendador">Recomendación</a></li>
+    <li><a href="#liquidaciones" onclick="mostrarLiquidaciones()">🔥 Ofertas</a></li>
     <li><a href="#nosotros">Nosotros</a></li>
+    <li><a href="#liquidaciones" style="color:#FF0099">🔥 Ofertas</a></li>
     <li><a href="https://wa.me/5491168461457" target="_blank" class="nav-cta nav-wa">📲 WhatsApp</a></li>
   </ul>
 </nav>
@@ -627,6 +629,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   <a href="#catalogo">🏪 Catálogo</a>
   <a href="#comparador">⚖️ Comparar</a>
   <a href="#recomendador">🎯 Recomendación</a>
+  <a href="#liquidaciones" style="color:#FF0099;border-color:rgba(255,0,153,.3)">🔥 Ofertas</a>
   <a href="https://wa.me/5491168461457" target="_blank">📲 WhatsApp</a>
 </div>
 
@@ -659,14 +662,6 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 </div>
 
 <!-- ── CATALOG ── -->
-<!-- ── LIQUIDACIONES ── -->
-<section id="liquidaciones" style="display:none;position:relative;z-index:1;padding:40px 32px 0;max-width:1440px;margin:0 auto">
-  <div style="text-align:center;margin-bottom:20px">
-    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:.08em;background:linear-gradient(135deg,#FF0099,#FF6B00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🔥 Liquidaciones</h2>
-    <p style="color:#999;font-size:.9rem;margin-top:6px">Productos próximos a vencer — ¡últimas unidades a precio especial!</p>
-  </div>
-  <div id="liquidacionesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px"></div>
-</section>
 
 <section class="catalog-section" id="catalogo">
   <div class="section-header">
@@ -705,6 +700,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <p>Sin resultados. Probá con otro término o categoría.</p>
   </div>
 </section>
+
 
 <!-- ── CALCULADORA DE PROTEÍNA ── -->
 <section class="calc-section" id="recomendador">
@@ -830,6 +826,15 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   </div>
 </section>
 <div class="grad-line"></div>
+
+<!-- ── LIQUIDACIONES ── -->
+<section id="liquidaciones" style="display:none;position:relative;z-index:1;padding:60px 32px;max-width:1440px;margin:0 auto">
+  <div style="text-align:center;margin-bottom:24px">
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:.08em;background:linear-gradient(135deg,#FF0099,#FF6B00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🔥 Liquidaciones</h2>
+    <p style="color:#999;font-size:.9rem;margin-top:6px">Productos próximos a vencer — ¡últimas unidades a precio especial!</p>
+  </div>
+  <div id="liquidacionesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px"></div>
+</section>
 
 <!-- ── FOOTER ── -->
 <footer>
@@ -4768,6 +4773,11 @@ function finalizarPedido(){
 
 cargarLiquidaciones();
 
+function mostrarLiquidaciones() {
+  var sec = document.getElementById('liquidaciones');
+  if (sec) sec.style.display = 'block';
+}
+
 // ── ACCESO SECRETO AL ADMIN (5 clicks en el logo) ────────────
 (function() {
   var clicks = 0, timer;
@@ -4795,7 +4805,7 @@ async function cargarLiquidaciones() {
 
     var seccion = document.getElementById('liquidaciones');
     var grid = document.getElementById('liquidacionesGrid');
-    seccion.style.display = 'block';
+    // No mostrar automáticamente — el usuario entra por el botón del nav
 
     var URGENCIA_CONFIG = {
       vencido:  { color:'#FF3D3D', bg:'rgba(255,61,61,.12)',  label:'💀 VENCIDO',         border:'rgba(255,61,61,.4)' },
