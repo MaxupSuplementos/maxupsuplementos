@@ -199,6 +199,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <button class="tab" onclick="switchTab('pedidos',this)">📦 Pedidos <span class="badge" id="badgePedidos"></span></button>
     <button class="tab" onclick="switchTab('stock',this)">⚠️ Stock bajo</button>
     <button class="tab" onclick="switchTab('descuentos',this)">🎁 Descuentos</button>
+    <button class="tab" onclick="switchTab('vencer',this)">⏰ Por vencer <span class="badge" id="badgeVencer"></span></button>
   </div>
 
   <div class="content">
@@ -206,6 +207,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <div id="tabPedidos" style="display:none"></div>
     <div id="tabStock" style="display:none"></div>
     <div id="tabDescuentos" style="display:none"></div>
+    <div id="tabVencer" style="display:none"></div>
   </div>
 </div>
 
@@ -243,13 +245,14 @@ function switchTab(tab, el) {
   tabActual = tab;
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('activo'); });
   el.classList.add('activo');
-  ['resumen','pedidos','stock','descuentos'].forEach(function(t){
+  ['resumen','pedidos','stock','descuentos','vencer'].forEach(function(t){
     document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === tab ? 'block' : 'none';
   });
   if (tab === 'resumen')     cargarResumen();
   if (tab === 'pedidos')     cargarPedidos();
   if (tab === 'stock')       cargarStock();
   if (tab === 'descuentos')  cargarDescuentos();
+  if (tab === 'vencer')      cargarVencer();
 }
 
 function recargarTab() {
@@ -257,6 +260,7 @@ function recargarTab() {
   if (tabActual === 'pedidos')    cargarPedidos();
   if (tabActual === 'stock')      cargarStock();
   if (tabActual === 'descuentos') cargarDescuentos();
+  if (tabActual === 'vencer')     cargarVencer();
 }
 
 // ── HELPERS ──────────────────────────────────────────────────
@@ -441,6 +445,41 @@ function cargarDescuentos() {
         + '<div class="cliente-tel">📱 ' + c.telefono + ' · Total 3 meses: ' + fmt(c.total3m) + '</div>'
         + '</div>'
         + '<span class="cliente-badge">10% OFF</span>'
+        + '</div>';
+    });
+    el.innerHTML = html;
+  }).catch(function(){ el.innerHTML = '<div class="empty-txt">⚠️ No se pudo conectar.</div>'; });
+}
+
+// ── POR VENCER ───────────────────────────────────────────────
+function cargarVencer() {
+  var el = document.getElementById('tabVencer');
+  el.innerHTML = '<div class="loading-txt">Verificando vencimientos...</div>';
+  api('accion=admin_vencer&dias=50').then(function(data) {
+    if (!data.ok) { el.innerHTML = '<div class="empty-txt">Error: ' + (data.error||'') + '</div>'; return; }
+    var prods = data.productos || [];
+    var criticos = prods.filter(function(p){ return p.diasRestantes <= 7; }).length;
+    var badge = document.getElementById('badgeVencer');
+    if (criticos > 0) { badge.textContent = criticos; badge.style.display='inline'; }
+    else badge.style.display = 'none';
+
+    if (prods.length === 0) {
+      el.innerHTML = '<div class="empty-txt">✅ Todo bien — ningún producto vence en los próximos 50 días.</div>';
+      return;
+    }
+
+    var html = '<div class="section-title">Productos por vencer <span>(' + prods.length + ')</span></div>';
+    prods.forEach(function(p) {
+      var color = p.urgencia==='vencido' ? '#FF3D3D' : p.urgencia==='critico' ? '#FF3D3D' : p.urgencia==='urgente' ? '#FFA500' : p.urgencia==='pronto' ? '#FFD700' : '#00C8FF';
+      var icon  = p.urgencia==='vencido' ? '💀' : p.urgencia==='critico' ? '🚨' : p.urgencia==='urgente' ? '⚠️' : p.urgencia==='pronto' ? '🟡' : '🔵';
+      var diasTxt = p.diasRestantes < 0 ? 'VENCIDO hace ' + Math.abs(p.diasRestantes) + ' días' : 'Vence en ' + p.diasRestantes + ' días (' + p.fechaVence + ')';
+      html += '<div class="stock-item" style="border-left:3px solid ' + color + '">'
+        + '<div style="font-size:1.3rem;width:28px">' + icon + '</div>'
+        + '<div style="flex:1">'
+        + '<div class="stock-nombre">' + p.nombre + '</div>'
+        + '<div class="stock-marca">' + p.marca + ' · Stock: ' + p.stock + ' · $' + Number(p.precio).toLocaleString('es-AR') + '</div>'
+        + '<div style="font-size:.78rem;color:' + color + ';font-weight:700;margin-top:2px">' + diasTxt + '</div>'
+        + '</div>'
         + '</div>';
     });
     el.innerHTML = html;
