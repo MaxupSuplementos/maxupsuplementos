@@ -986,9 +986,13 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
           <option value="retiro">Retiro en local</option>
         </select>
       </div>
-      <div id="addressGroup" class="form-group">
-        <label>Dirección completa</label>
-        <input type="text" id="clientAddress" placeholder="Calle, número, ciudad, provincia">
+      <div id="addressGroup" class="form-group" style="display:none">
+        <label>Dirección completa (calle, número, ciudad, provincia)</label>
+        <input type="text" id="clientAddress" placeholder="Ej: San Martín 456, Córdoba Capital, Córdoba">
+        <div id="avisoEnvio" style="margin-top:10px;background:rgba(0,200,255,.07);border:1px solid rgba(0,200,255,.2);border-radius:8px;padding:12px 14px;font-size:.82rem;color:#aaa;line-height:1.6">
+          📦 <strong style="color:var(--cyan)">El costo de envío se cotiza por WhatsApp</strong> según el peso y medidas del paquete.<br>
+          Te contactamos a la brevedad con el valor exacto. Enviamos por <strong>Correo Argentino</strong> a todo el país.
+        </div>
       </div>
       <div class="form-group">
         <label>Notas (sabor, horario, etc.)</label>
@@ -4761,8 +4765,11 @@ function finalizarPedido(){
   if(_desc) msg+='\n🎉 *Descuento: '+_desc.label+'* (-'+fmt(_baseTotal-_totalConMonto)+')\n';
   if(_esClienteNuevo && !_desc) msg+='\n🎉 *Descuento bienvenida: 5%* (-'+fmt(_baseTotal-_totalFinal)+')\n';
   msg+='\n💰 *TOTAL: '+fmt(_totalFinal)+'*\n';
-  msg+=`\n🚚 *Entrega:* ${delivery==='envio'?'Envío a domicilio':'Retiro en local'}\n`;
-  if(delivery==='envio'&&address) msg+=`📍 *Dirección:* ${address}\n`;
+  msg+='\n🚚 *Entrega:* ' + (delivery==='envio' ? 'Envío a domicilio 📦' : 'Retiro en local 🏪') + '\n';
+  if(delivery==='envio'&&address) {
+    msg+='📍 *Dirección:* ' + address + '\n';
+    msg+='💡 *Recordá cotizar el envío por Correo Argentino según peso/medidas del paquete.*\n';
+  }
   msg+=`💳 *Pago:* ${pay.charAt(0).toUpperCase()+pay.slice(1)}\n`;
   if(notes) msg+=`📝 *Notas:* ${notes}\n`;
   msg+=`\n¡Gracias por tu compra! 💪`;
