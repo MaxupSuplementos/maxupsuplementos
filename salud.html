@@ -4,425 +4,227 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Guía de Salud y Suplementos — MAXUP Suplementos</title>
-<meta name="description" content="Guía clínica completa sobre el uso de suplementos deportivos según tu condición de salud. Hipertensión, diabetes, tiroides, colesterol y más.">
+<meta name="description" content="Guía clínica completa sobre el uso de suplementos deportivos según tu condición de salud.">
 <link rel="icon" type="image/png" href="favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --cyan:#00C8FF;--pink:#FF0099;--green:#00E676;--orange:#FFA500;--red:#FF3D3D;
-  --dark:#0a0a0a;--dark2:#111;--dark3:#1a1a1a;--white:#fff;--gray:#999;
-  --grad:linear-gradient(135deg,var(--cyan),var(--pink))
-}
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
+:root{--cyan:#00C8FF;--pink:#FF0099;--green:#00E676;--orange:#FFA500;--red:#FF3D3D;--dark:#0a0a0a;--dark2:#111;--dark3:#1a1a1a;--white:#fff;--gray:#999;--grad:linear-gradient(135deg,var(--cyan),var(--pink))}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
 body{background:var(--dark);color:var(--white);font-family:'Rajdhani',sans-serif;min-height:100vh}
-body::before{content:'';position:fixed;inset:0;
-  background-image:linear-gradient(rgba(0,200,255,.02) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,200,255,.02) 1px,transparent 1px);
-  background-size:60px 60px;pointer-events:none;z-index:0}
-
-/* NAV */
-nav{position:sticky;top:0;z-index:200;background:rgba(0,0,0,.95);
-  backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,200,255,.1);
-  padding:12px 24px;display:flex;align-items:center;gap:14px}
-.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.1em;
-  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,.02) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0}
+nav{position:sticky;top:0;z-index:200;background:rgba(0,0,0,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,200,255,.1);padding:12px 24px;display:flex;align-items:center;gap:14px}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.1em;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
 .nav-title{color:var(--gray);font-size:.85rem;font-weight:600;letter-spacing:.06em}
-.nav-back{margin-left:auto;color:var(--gray);font-size:.82rem;font-weight:600;
-  text-decoration:none;letter-spacing:.05em;transition:color .2s;
-  border:1px solid rgba(0,200,255,.2);padding:6px 14px;border-radius:20px}
+.nav-back{margin-left:auto;color:var(--gray);font-size:.82rem;font-weight:600;text-decoration:none;letter-spacing:.05em;transition:color .2s;border:1px solid rgba(0,200,255,.2);padding:6px 14px;border-radius:20px}
 .nav-back:hover{color:var(--cyan);border-color:var(--cyan)}
-
-/* HERO */
 .hero{text-align:center;padding:60px 24px 40px;position:relative;z-index:1}
-.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);
-  letter-spacing:.06em;background:var(--grad);-webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;margin-bottom:12px}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);letter-spacing:.06em;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px}
 .hero p{color:var(--gray);font-size:.95rem;max-width:600px;margin:0 auto 8px;line-height:1.7}
-.disclaimer{background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);
-  border-radius:10px;padding:12px 20px;max-width:680px;margin:20px auto 0;
-  font-size:.82rem;color:#FFA500;line-height:1.6;text-align:left}
+.disclaimer{background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);border-radius:10px;padding:12px 20px;max-width:680px;margin:20px auto 0;font-size:.82rem;color:#FFA500;line-height:1.6;text-align:left}
 .disclaimer strong{color:#FFB833}
-
-/* BÚSQUEDA Y CONDICIONES */
 .main{max-width:900px;margin:0 auto;padding:24px;position:relative;z-index:1}
-.search-section{margin-bottom:32px}
-.search-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;
-  color:var(--gray);margin-bottom:14px}
+.search-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:var(--gray);margin-bottom:14px}
 .search-input-wrap{position:relative;margin-bottom:20px}
-.search-input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(0,200,255,.2);
-  color:var(--white);font-family:'Rajdhani',sans-serif;font-size:1rem;
-  padding:13px 16px 13px 44px;border-radius:10px;outline:none;transition:border .2s}
+.search-input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(0,200,255,.2);color:var(--white);font-family:'Rajdhani',sans-serif;font-size:1rem;padding:13px 16px 13px 44px;border-radius:10px;outline:none;transition:border .2s}
 .search-input:focus{border-color:var(--cyan)}
 .search-input::placeholder{color:rgba(255,255,255,.3)}
-.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);
-  color:var(--gray);font-size:1.1rem;pointer-events:none}
-
-/* CATEGORÍAS */
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gray);font-size:1.1rem;pointer-events:none}
 .cats-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
-.cat-btn{padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.1);
-  background:rgba(255,255,255,.04);color:var(--gray);font-family:'Rajdhani',sans-serif;
-  font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.04em}
+.cat-btn{padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--gray);font-family:'Rajdhani',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.04em}
 .cat-btn:hover,.cat-btn.activo{background:rgba(0,200,255,.1);border-color:var(--cyan);color:var(--cyan)}
-
-/* CONDICIONES GRID */
 .conds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:32px}
-.cond-card{background:var(--dark2);border:1px solid rgba(255,255,255,.07);border-radius:12px;
-  padding:14px 16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.cond-card{background:var(--dark2);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
 .cond-card:hover{border-color:rgba(0,200,255,.3);background:rgba(0,200,255,.05)}
 .cond-card.activo{border-color:var(--cyan);background:rgba(0,200,255,.08)}
 .cond-icon{font-size:1.6rem;flex-shrink:0}
-.cond-info{}
 .cond-nombre{font-weight:700;font-size:.88rem;line-height:1.2}
 .cond-tag{font-size:.68rem;color:var(--gray);margin-top:2px;letter-spacing:.04em}
-
-/* ANÁLISIS */
 .analisis-section{display:none}
-.analisis-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;
-  padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.07)}
+.analisis-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.07)}
 .analisis-icon{font-size:2.5rem}
 .analisis-titulo{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.06em}
-.analisis-badge{background:var(--grad);color:#000;font-size:.65rem;font-weight:700;
-  padding:3px 10px;border-radius:20px;letter-spacing:.06em;white-space:nowrap}
-
-/* CONTENIDO IA */
 .ia-content{font-size:.92rem;line-height:1.9;color:#ccc}
-.ia-content h3{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.06em;
-  color:var(--cyan);margin:28px 0 10px;padding-left:12px;
-  border-left:3px solid var(--cyan)}
-.ia-content h4{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:.05em;
-  color:var(--white);margin:20px 0 8px}
+.ia-content h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.06em;color:var(--cyan);margin:24px 0 10px;padding-left:12px;border-left:3px solid var(--cyan)}
+.ia-content h4{font-weight:700;color:var(--white);margin:16px 0 6px;font-size:.95rem}
 .ia-content strong{color:var(--white)}
-.ia-content p{margin-bottom:12px}
-.ia-content ul{margin:8px 0 14px 20px}
-.ia-content li{margin-bottom:6px}
-.ia-content .tag-ok{background:rgba(0,230,118,.12);color:var(--green);
-  border:1px solid rgba(0,230,118,.3);padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:700}
-.ia-content .tag-cuidado{background:rgba(255,165,0,.12);color:var(--orange);
-  border:1px solid rgba(255,165,0,.3);padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:700}
-.ia-content .tag-evitar{background:rgba(255,61,61,.12);color:var(--red);
-  border:1px solid rgba(255,61,61,.3);padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:700}
-
-/* LOADING */
-.loading-wrap{text-align:center;padding:48px 24px}
-.spinner{display:inline-block;width:48px;height:48px;border:3px solid rgba(0,200,255,.15);
-  border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:16px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-txt{color:var(--gray);font-size:.9rem}
-.loading-sub{color:rgba(255,255,255,.3);font-size:.78rem;margin-top:6px}
-
-/* WA BTN */
-.wa-cta{display:flex;align-items:center;gap:12px;background:rgba(37,211,102,.08);
-  border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:16px 20px;margin-top:28px}
+.ia-content p{margin-bottom:10px}
+.ia-content ul{margin:6px 0 12px 20px}
+.ia-content li{margin-bottom:5px}
+.ok{display:inline-block;background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.3);padding:2px 8px;border-radius:20px;font-size:.72rem;font-weight:700;margin:2px}
+.cuidado{display:inline-block;background:rgba(255,165,0,.12);color:var(--orange);border:1px solid rgba(255,165,0,.3);padding:2px 8px;border-radius:20px;font-size:.72rem;font-weight:700;margin:2px}
+.evitar{display:inline-block;background:rgba(255,61,61,.12);color:var(--red);border:1px solid rgba(255,61,61,.3);padding:2px 8px;border-radius:20px;font-size:.72rem;font-weight:700;margin:2px}
+.wa-cta{display:flex;align-items:center;gap:12px;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:16px 20px;margin-top:28px}
 .wa-cta-text{flex:1;font-size:.88rem;color:#aaa;line-height:1.5}
 .wa-cta-text strong{color:var(--white)}
-.wa-btn{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;
-  border-radius:8px;padding:10px 20px;font-family:'Bebas Neue',sans-serif;font-size:.9rem;
-  letter-spacing:.08em;cursor:pointer;white-space:nowrap;text-decoration:none;
-  display:inline-block;transition:opacity .2s}
+.wa-btn{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:.08em;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block;transition:opacity .2s}
 .wa-btn:hover{opacity:.85}
-
-/* VOLVER */
-.volver-btn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-  color:var(--gray);border-radius:8px;padding:10px 20px;font-family:'Rajdhani',sans-serif;
-  font-size:.88rem;font-weight:600;cursor:pointer;margin-top:16px;transition:all .2s}
+.volver-btn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--gray);border-radius:8px;padding:10px 20px;font-family:'Rajdhani',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;margin-top:16px;transition:all .2s}
 .volver-btn:hover{color:var(--white);border-color:rgba(255,255,255,.3)}
-
-@media(max-width:600px){
-  .conds-grid{grid-template-columns:repeat(2,1fr)}
-  .analisis-titulo{font-size:1.4rem}
-  .hero{padding:40px 16px 28px}
-  .main{padding:16px}
-}
+@media(max-width:600px){.conds-grid{grid-template-columns:repeat(2,1fr)}.analisis-titulo{font-size:1.3rem}.hero{padding:40px 16px 28px}.main{padding:16px}}
 </style>
 </head>
 <body>
-
 <nav>
   <a href="https://maxupsuplementos.github.io/maxupsuplementos/" class="nav-logo">MAXUP</a>
-  <span class="nav-title">/ Guía de Salud</span>
-  <a href="https://maxupsuplementos.github.io/maxupsuplementos/" class="nav-back">← Volver al catálogo</a>
+  <span class="nav-title">/ Guia de Salud</span>
+  <a href="https://maxupsuplementos.github.io/maxupsuplementos/" class="nav-back">← Volver al catalogo</a>
 </nav>
-
 <div class="hero">
-  <h1>🏥 Guía de Salud y Suplementos</h1>
-  <p>Información clínica detallada sobre qué suplementos son seguros, cuáles evitar y por qué, según tu condición de salud.</p>
+  <h1>Guia de Salud y Suplementos</h1>
+  <p>Informacion clinica detallada sobre que suplementos son seguros, cuales evitar y por que, segun tu condicion de salud.</p>
   <div class="disclaimer">
-    <strong>⚕️ Aviso importante:</strong> Esta guía es de carácter informativo y educativo. La información aquí presentada está basada en evidencia científica actualizada, pero <strong>no reemplaza la consulta con tu médico o profesional de la salud</strong>. Antes de iniciar cualquier suplementación con una condición de salud diagnosticada, consultá siempre con tu médico tratante.
+    <strong>Aviso importante:</strong> Esta guia es educativa e informativa, basada en evidencia cientifica actualizada. <strong>No reemplaza la consulta con tu medico.</strong> Antes de iniciar cualquier suplementacion con una condicion de salud diagnosticada, consulta con tu medico tratante.
   </div>
 </div>
-
 <div class="main">
-
-  <!-- BÚSQUEDA -->
-  <div class="search-section">
-    <div class="search-title">Buscá tu condición de salud</div>
+  <div id="listaSection">
+    <div class="search-title">Busca tu condicion de salud</div>
     <div class="search-input-wrap">
-      <span class="search-icon">🔍</span>
-      <input type="text" class="search-input" id="searchCond" placeholder="Ej: diabetes, hipertensión, tiroides..." oninput="filtrarCondiciones()">
+      <span class="search-icon">&#128269;</span>
+      <input type="text" class="search-input" id="searchCond" placeholder="Ej: diabetes, hipertension, tiroides..." oninput="filtrarCondiciones()">
     </div>
-
-    <!-- CATEGORÍAS -->
     <div class="cats-grid" id="catsGrid">
       <button class="cat-btn activo" onclick="setCat('todas',this)">Todas</button>
-      <button class="cat-btn" onclick="setCat('cardiovascular',this)">❤️ Cardiovascular</button>
-      <button class="cat-btn" onclick="setCat('metabolica',this)">⚡ Metabólica</button>
-      <button class="cat-btn" onclick="setCat('hormonal',this)">🧬 Hormonal</button>
-      <button class="cat-btn" onclick="setCat('renal',this)">🫘 Renal</button>
-      <button class="cat-btn" onclick="setCat('digestiva',this)">🌿 Digestiva</button>
-      <button class="cat-btn" onclick="setCat('osea',this)">🦴 Ósea/Articular</button>
-      <button class="cat-btn" onclick="setCat('neurologica',this)">🧠 Neurológica</button>
-      <button class="cat-btn" onclick="setCat('autoinmune',this)">🛡️ Autoinmune</button>
+      <button class="cat-btn" onclick="setCat('cardiovascular',this)">Cardiovascular</button>
+      <button class="cat-btn" onclick="setCat('metabolica',this)">Metabolica</button>
+      <button class="cat-btn" onclick="setCat('hormonal',this)">Hormonal</button>
+      <button class="cat-btn" onclick="setCat('renal',this)">Renal</button>
+      <button class="cat-btn" onclick="setCat('digestiva',this)">Digestiva</button>
+      <button class="cat-btn" onclick="setCat('osea',this)">Osea/Articular</button>
+      <button class="cat-btn" onclick="setCat('neurologica',this)">Neurologica</button>
     </div>
-
-    <!-- GRID DE CONDICIONES -->
     <div class="conds-grid" id="condsGrid"></div>
   </div>
-
-  <!-- ANÁLISIS -->
   <div class="analisis-section" id="analisisSection">
     <div class="analisis-header">
       <div class="analisis-icon" id="analisisIcon"></div>
-      <div>
-        <div class="analisis-titulo" id="analysisTitulo"></div>
-        <span class="analisis-badge">✨ Análisis con IA</span>
-      </div>
+      <div><div class="analisis-titulo" id="analysisTitulo"></div></div>
     </div>
-    <div id="analisisContent"></div>
+    <div class="ia-content" id="analisisContent"></div>
     <div class="wa-cta">
-      <div class="wa-cta-text">
-        <strong>¿Tenés dudas específicas sobre tu caso?</strong><br>
-        Consultanos por WhatsApp. Te asesoramos personalmente según tus necesidades y el tratamiento que estés siguiendo.
-      </div>
-      <a href="https://wa.me/5491168461457?text=Hola%20MAXUP!%20Quisiera%20asesoramiento%20sobre%20suplementos%20según%20mi%20condición%20de%20salud." target="_blank" class="wa-btn">📲 Consultar</a>
+      <div class="wa-cta-text"><strong>Tenes dudas sobre tu caso especifico?</strong><br>Consultanos por WhatsApp. Te asesoramos personalmente.</div>
+      <a href="https://wa.me/5491168461457?text=Hola%20MAXUP!%20Quisiera%20asesoramiento%20sobre%20suplementos%20segun%20mi%20condicion%20de%20salud." target="_blank" class="wa-btn">Consultar</a>
     </div>
-    <button class="volver-btn" onclick="volverALista()">← Ver otras condiciones</button>
+    <button class="volver-btn" onclick="volverALista()">Ver otras condiciones</button>
   </div>
-
 </div>
-
 <script>
-const CONDICIONES = [
-  // CARDIOVASCULAR
-  { id:'hipertension',      nombre:'Hipertensión arterial',    icon:'🫀', cat:'cardiovascular', tag:'Presión alta' },
-  { id:'colesterol',        nombre:'Colesterol alto',          icon:'🩸', cat:'cardiovascular', tag:'Dislipemia' },
-  { id:'arritmia',          nombre:'Arritmias cardíacas',      icon:'💓', cat:'cardiovascular', tag:'Cardíaco' },
-  { id:'insuf_cardiaca',    nombre:'Insuficiencia cardíaca',   icon:'❤️', cat:'cardiovascular', tag:'Cardíaco' },
-  { id:'trombosis',         nombre:'Trombosis / Anticoagulación', icon:'🩹', cat:'cardiovascular', tag:'Coagulación' },
-  { id:'varices',           nombre:'Varices / Mala circulación', icon:'🦵', cat:'cardiovascular', tag:'Circulación' },
-
-  // METABÓLICA
-  { id:'diabetes_t1',       nombre:'Diabetes tipo 1',          icon:'💉', cat:'metabolica', tag:'Insulinodependiente' },
-  { id:'diabetes_t2',       nombre:'Diabetes tipo 2',          icon:'🍬', cat:'metabolica', tag:'Resistencia insulina' },
-  { id:'obesidad',          nombre:'Obesidad / Sobrepeso',     icon:'⚖️', cat:'metabolica', tag:'Metabólico' },
-  { id:'hipoglucemia',      nombre:'Hipoglucemia reactiva',    icon:'📉', cat:'metabolica', tag:'Azúcar baja' },
-  { id:'sindrome_metabolico',nombre:'Síndrome metabólico',     icon:'🔬', cat:'metabolica', tag:'Metabólico' },
-  { id:'gota',              nombre:'Gota / Hiperuricemia',     icon:'🦶', cat:'metabolica', tag:'Ácido úrico' },
-
-  // HORMONAL
-  { id:'hipotiroidismo',    nombre:'Hipotiroidismo',           icon:'🦋', cat:'hormonal', tag:'Tiroides baja' },
-  { id:'hipertiroidismo',   nombre:'Hipertiroidismo',          icon:'⚡', cat:'hormonal', tag:'Tiroides alta' },
-  { id:'hashimoto',         nombre:'Tiroiditis de Hashimoto',  icon:'🛡️', cat:'hormonal', tag:'Autoinmune tiroidea' },
-  { id:'hipercortisolismo', nombre:'Síndrome de Cushing',      icon:'🌙', cat:'hormonal', tag:'Cortisol alto' },
-  { id:'menopausia',        nombre:'Menopausia / Climaterio',  icon:'🌸', cat:'hormonal', tag:'Femenino' },
-  { id:'sop',               nombre:'Síndrome ovario poliquístico', icon:'🩺', cat:'hormonal', tag:'SOP' },
-  { id:'testosterona_baja', nombre:'Testosterona baja',        icon:'💪', cat:'hormonal', tag:'Andropenia' },
-  { id:'hiperprolactinemia',nombre:'Hiperprolactinemia',       icon:'🔬', cat:'hormonal', tag:'Hormonal' },
-
-  // RENAL
-  { id:'mono_renal',        nombre:'Monorreno (un riñón)',     icon:'🫘', cat:'renal', tag:'Riñón único' },
-  { id:'insuf_renal',       nombre:'Insuficiencia renal crónica', icon:'⚠️', cat:'renal', tag:'IRC' },
-  { id:'calculos_renales',  nombre:'Cálculos renales',         icon:'💎', cat:'renal', tag:'Litiasis' },
-  { id:'itu_recurrente',    nombre:'Infecciones urinarias recurrentes', icon:'🦠', cat:'renal', tag:'ITU' },
-
-  // DIGESTIVA
-  { id:'intolerancia_lactosa', nombre:'Intolerancia a la lactosa', icon:'🥛', cat:'digestiva', tag:'Sin lactosa' },
-  { id:'celiaquía',         nombre:'Celiaquía / Sin TACC',     icon:'🌾', cat:'digestiva', tag:'Sin gluten' },
-  { id:'sii',               nombre:'Síndrome intestino irritable', icon:'🫁', cat:'digestiva', tag:'SII' },
-  { id:'crohn',             nombre:'Enfermedad de Crohn',      icon:'🔥', cat:'digestiva', tag:'EII' },
-  { id:'colitis_ulcerosa',  nombre:'Colitis ulcerosa',         icon:'🌿', cat:'digestiva', tag:'EII' },
-  { id:'reflujo',           nombre:'Reflujo gastroesofágico',  icon:'🌡️', cat:'digestiva', tag:'ERGE' },
-  { id:'higado_graso',      nombre:'Hígado graso (NAFLD)',     icon:'🫀', cat:'digestiva', tag:'Hepático' },
-  { id:'hepatitis',         nombre:'Hepatitis crónica',        icon:'⚠️', cat:'digestiva', tag:'Hepático' },
-
-  // ÓSEA / ARTICULAR
-  { id:'osteoporosis',      nombre:'Osteoporosis',             icon:'🦴', cat:'osea', tag:'Densidad ósea' },
-  { id:'artritis',          nombre:'Artritis reumatoidea',     icon:'🤲', cat:'osea', tag:'Autoinmune' },
-  { id:'artrosis',          nombre:'Artrosis',                 icon:'🦵', cat:'osea', tag:'Degenerativa' },
-  { id:'lupus',             nombre:'Lupus eritematoso',        icon:'🦋', cat:'osea', tag:'Autoinmune' },
-  { id:'fibromialgia',      nombre:'Fibromialgia',             icon:'😣', cat:'osea', tag:'Dolor crónico' },
-
-  // NEUROLÓGICA
-  { id:'epilepsia',         nombre:'Epilepsia',                icon:'⚡', cat:'neurologica', tag:'Neurológico' },
-  { id:'migraña',           nombre:'Migraña crónica',         icon:'🤕', cat:'neurologica', tag:'Cefalea' },
-  { id:'depresion',         nombre:'Depresión / Ansiedad',    icon:'🧠', cat:'neurologica', tag:'Salud mental' },
-  { id:'parkinson',         nombre:'Parkinson',                icon:'🤝', cat:'neurologica', tag:'Neurológico' },
-  { id:'tda',               nombre:'TDA/TDAH',                 icon:'🎯', cat:'neurologica', tag:'Atención' },
-  { id:'insomnio',          nombre:'Insomnio crónico',         icon:'😴', cat:'neurologica', tag:'Sueño' },
-
-  // AUTOINMUNE
-  { id:'psoriasis',         nombre:'Psoriasis',                icon:'🌿', cat:'autoinmune', tag:'Piel' },
-  { id:'esclerosis',        nombre:'Esclerosis múltiple',      icon:'🧬', cat:'autoinmune', tag:'Neuroinmune' },
-  { id:'alergias',          nombre:'Alergias / Asma',          icon:'🤧', cat:'autoinmune', tag:'Inmunológico' },
-  { id:'anemia',            nombre:'Anemia (ferropénica / B12)', icon:'🩸', cat:'autoinmune', tag:'Hematológico' },
-  { id:'enfermedad_autoinmune', nombre:'Enfermedades autoinmunes', icon:'🛡️', cat:'autoinmune', tag:'Autoinmune' },
+var CONDICIONES = [
+  {id:'hipertension',     nombre:'Hipertension arterial',        icon:'&#129408;', cat:'cardiovascular', tag:'Presion alta'},
+  {id:'colesterol',       nombre:'Colesterol alto',              icon:'&#129754;', cat:'cardiovascular', tag:'Dislipemia'},
+  {id:'arritmia',         nombre:'Arritmias cardiacas',          icon:'&#128147;', cat:'cardiovascular', tag:'Cardiaco'},
+  {id:'diabetes_t1',      nombre:'Diabetes tipo 1',              icon:'&#128137;', cat:'metabolica',     tag:'Insulinodependiente'},
+  {id:'diabetes_t2',      nombre:'Diabetes tipo 2',              icon:'&#127852;', cat:'metabolica',     tag:'Resistencia insulina'},
+  {id:'obesidad',         nombre:'Obesidad / Sobrepeso',         icon:'&#9878;',   cat:'metabolica',     tag:'Metabolico'},
+  {id:'hipotiroidismo',   nombre:'Hipotiroidismo',               icon:'&#129411;', cat:'hormonal',       tag:'Tiroides baja'},
+  {id:'hipertiroidismo',  nombre:'Hipertiroidismo',              icon:'&#9889;',   cat:'hormonal',       tag:'Tiroides alta'},
+  {id:'sop',              nombre:'Sindrome Ovario Poliquístico', icon:'&#129658;', cat:'hormonal',       tag:'SOP'},
+  {id:'menopausia',       nombre:'Menopausia / Climaterio',      icon:'&#127800;', cat:'hormonal',       tag:'Femenino'},
+  {id:'mono_renal',       nombre:'Monorreno (un rinon)',         icon:'&#129386;', cat:'renal',          tag:'Rinon unico'},
+  {id:'insuf_renal',      nombre:'Insuficiencia Renal Cronica',  icon:'&#9888;',   cat:'renal',          tag:'IRC'},
+  {id:'calculos_renales', nombre:'Calculos renales',             icon:'&#128142;', cat:'renal',          tag:'Litiasis'},
+  {id:'intolerancia_lactosa', nombre:'Intolerancia a la lactosa',icon:'&#129371;', cat:'digestiva',      tag:'Sin lactosa'},
+  {id:'celiaquia',        nombre:'Celiaquía / Sin TACC',         icon:'&#127806;', cat:'digestiva',      tag:'Sin gluten'},
+  {id:'higado_graso',     nombre:'Higado Graso (NAFLD)',         icon:'&#129504;', cat:'digestiva',      tag:'Hepatico'},
+  {id:'sii',              nombre:'Sindrome intestino irritable', icon:'&#129321;', cat:'digestiva',      tag:'SII'},
+  {id:'artritis',         nombre:'Artritis Reumatoidea',         icon:'&#129306;', cat:'osea',           tag:'Autoinmune'},
+  {id:'artrosis',         nombre:'Artrosis',                     icon:'&#129459;', cat:'osea',           tag:'Degenerativa'},
+  {id:'osteoporosis',     nombre:'Osteoporosis',                 icon:'&#129460;', cat:'osea',           tag:'Densidad osea'},
+  {id:'fibromialgia',     nombre:'Fibromialgia',                 icon:'&#128547;', cat:'osea',           tag:'Dolor cronico'},
+  {id:'lupus',            nombre:'Lupus eritematoso',            icon:'&#129411;', cat:'osea',           tag:'Autoinmune'},
+  {id:'epilepsia',        nombre:'Epilepsia',                    icon:'&#9889;',   cat:'neurologica',    tag:'Neurologico'},
+  {id:'depresion',        nombre:'Depresion / Ansiedad',         icon:'&#129504;', cat:'neurologica',    tag:'Salud mental'},
+  {id:'migrania',         nombre:'Migrana cronica',              icon:'&#129296;', cat:'neurologica',    tag:'Cefalea'},
+  {id:'insomnio',         nombre:'Insomnio cronico',             icon:'&#128564;', cat:'neurologica',    tag:'Sueno'},
+  {id:'anemia',           nombre:'Anemia (ferropen. / B12)',     icon:'&#129754;', cat:'neurologica',    tag:'Hematologico'},
 ];
 
-var catActual = 'todas';
-var condActual = null;
+var GUIAS = {};
 
-// Renderizar condiciones
+GUIAS.hipertension = '<h3>Que es la Hipertension Arterial</h3><p>La hipertension arterial (HTA) es el aumento sostenido de la presion en las arterias por encima de 140/90 mmHg. Afecta directamente al corazon, rinones, cerebro y vasos sanguineos. El sistema cardiovascular bajo presion elevada sufre dano endotelial progresivo, aumentando el riesgo de infarto, ACV y enfermedad renal cronica.</p><h3>Suplementos SEGUROS y beneficiosos</h3><h4><span class="ok">MUY BENEFICIOSO</span> Omega-3 (EPA/DHA)</h4><p><strong>Por que funciona:</strong> Los acidos grasos omega-3 reducen los trigliceridos, mejoran la flexibilidad de las membranas celulares y tienen efecto vasodilatador leve. Estudios clinicos muestran reduccion de 2-5 mmHg en presion sistolica con dosis de 2-4g diarios. Tienen efecto antiinflamatorio que protege el endotelio vascular.</p><p><strong>Dosis:</strong> 2-4g de EPA+DHA diarios con las comidas. Efecto sostenido a partir de 4-8 semanas.</p><h4><span class="ok">BENEFICIOSO</span> Citrato de Magnesio</h4><p><strong>Por que funciona:</strong> El magnesio actua como antagonista natural del calcio, relajando la musculatura lisa vascular y reduciendo la vasoconstriccion. La deficiencia de magnesio es muy comun en hipertensos. Estudios muestran reduccion de 3-4 mmHg en presion sistolica. Tambien mejora la sensibilidad a la insulina y reduce calambres.</p><p><strong>Dosis:</strong> 300-400mg diarios. Preferentemente en la noche ya que tambien mejora el sueno.</p><h4><span class="ok">SEGURO</span> Proteina Whey moderada</h4><p>En dosis moderadas (25-30g por toma) no impacta la presion arterial. Verificar que el producto no tenga alto contenido de sodio. El aislado contiene peptidos bioactivos con leve efecto antihipertensivo.</p><h4><span class="ok">SEGURO</span> Colageno hidrolizado</h4><p>No afecta la presion arterial. Sin restricciones en hipertensos. Beneficioso para articulaciones y tejido conectivo.</p><h3>Suplementos con PRECAUCION</h3><h4><span class="cuidado">PRECAUCION</span> Creatina</h4><p>La creatina en si no eleva la presion arterial directamente. Sin embargo, causa retencion hidrica intracelular que puede aumentar el peso corporal 1-3 kg en las primeras semanas. Si la funcion renal esta comprometida por la HTA, consultar al medico antes de usar.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">EVITAR</span> Pre-entrenos con cafeina alta</h4><p><strong>Por que es peligroso:</strong> La cafeina en dosis altas (200mg+) eleva la presion arterial sistolica entre 5-15 mmHg de forma aguda. En hipertensos ya con presion elevada, esto puede desencadenar una crisis hipertensiva. Los pre-entrenos contienen ademas otros vasoactivos que potencian el efecto.</p><h4><span class="evitar">EVITAR</span> Termogenicos (Thermo Fuel, Fat Burner)</h4><p><strong>Por que es peligroso:</strong> Contienen cafeina, sinefrina, yerba mate y otros estimulantes que elevan la presion y la frecuencia cardiaca. Absolutamente contraindicados en hipertensos sin control medico explicito.</p><h3>Interacciones con medicamentos</h3><ul><li><strong>Enalapril/Losartan (IECA/ARA-II):</strong> La arginina puede potenciar el efecto hipotensor. No combinar en dosis altas sin consulta.</li><li><strong>Diureticos (furosemida, hidroclorotiazida):</strong> Pueden causar perdida de magnesio. Suplementar magnesio puede ser muy beneficioso.</li><li><strong>Beta-bloqueantes (atenolol, metoprolol):</strong> La cafeina antagoniza su efecto. Evitar completamente los estimulantes.</li></ul><h3>Recomendaciones</h3><ul><li>Medir la presion antes y despues del entrenamiento</li><li>Preferir ejercicio aerobico moderado sobre alta intensidad</li><li>Hidratarse bien — la deshidratacion puede elevar la presion</li><li>Dieta baja en sodio, rica en potasio y magnesio</li></ul>';
+
+GUIAS.colesterol = '<h3>Que es el Colesterol Alto (Dislipemia)</h3><p>La dislipemia es la alteracion de los lipidos en sangre: colesterol LDL elevado, HDL bajo o trigliceridos altos. El colesterol LDL oxidado se deposita en las paredes arteriales formando placas de ateroma. El HDL transporta el colesterol al higado para ser eliminado. Es uno de los principales factores de riesgo cardiovascular.</p><h3>Suplementos MUY BENEFICIOSOS</h3><h4><span class="ok">MUY BENEFICIOSO</span> Omega-3 (EPA/DHA)</h4><p><strong>Evidencia solida:</strong> Es el suplemento mas estudiado para dislipemia. Los omega-3 reducen los trigliceridos entre 20-50%, tienen efecto antiinflamatorio sobre el endotelio y mejoran levemente el HDL. El EPA inhibe la sintesis hepatica de VLDL. La AHA recomienda 2-4g diarios para hipertrigliceridemia.</p><p><strong>Dosis:</strong> 2-4g de EPA+DHA diarios. Resultados visibles en analisis a los 2-3 meses.</p><h4><span class="ok">BENEFICIOSO</span> L-Carnitina</h4><p>Favorece la oxidacion de acidos grasos en la mitocondria, pudiendo reducir los trigliceridos. Estudios con 2g diarios muestran reduccion de trigliceridos y leve mejora del HDL.</p><h4><span class="ok">SEGURO</span> Proteina Whey</h4><p>Estudios muestran que el aislado puede reducir levemente el LDL y los trigliceridos. Los peptidos bioactivos del suero tienen efecto similar a los IECA. Seguro y beneficioso con dieta saludable.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">EVITAR</span> Gainers con alto contenido graso</h4><p>Los gainers con alto contenido de grasas saturadas y azucares pueden elevar los trigliceridos y el LDL. Verificar composicion siempre.</p><h3>Interacciones</h3><ul><li><strong>Estatinas (atorvastatina, rosuvastatina):</strong> El omega-3 es complementario y seguro.</li><li><strong>Fibratos (gemfibrozil):</strong> El omega-3 es sinergico y muy seguro en combinacion.</li></ul>';
+
+GUIAS.diabetes_t2 = '<h3>Que es la Diabetes Tipo 2</h3><p>La diabetes tipo 2 es una enfermedad metabolica cronica caracterizada por resistencia a la insulina e insuficiencia relativa de su produccion pancreatica. Las celulas no responden adecuadamente a la insulina, generando hiperglucemia sostenida. A largo plazo dana vasos sanguineos, nervios, rinones y retina. El ejercicio fisico es uno de los pilares del tratamiento.</p><h3>Suplementos MUY BENEFICIOSOS</h3><h4><span class="ok">MUY BENEFICIOSO</span> Proteina Whey Aislada</h4><p><strong>Por que funciona:</strong> El aislado tiene bajo contenido de lactosa y carbohidratos, no eleva la glucemia significativamente. Ademas, estimula la secrecion de GLP-1 (incretina) y puede mejorar la respuesta insulinica postprandial. Importante para preservar masa muscular en diabeticos que suelen tener mayor catabolismo proteico.</p><p><strong>Dosis:</strong> 25-30g post-entrenamiento. Preferir aislado sobre concentrado. Verificar que no tenga azucares anadidos.</p><h4><span class="ok">MUY BENEFICIOSO</span> Citrato de Magnesio</h4><p><strong>Por que funciona:</strong> La deficiencia de magnesio es muy comun en diabeticos (hasta 40% de los casos) y agrava la resistencia a la insulina. El magnesio es cofactor de mas de 300 enzimas involucradas en el metabolismo de la glucosa. La suplementacion mejora la sensibilidad a la insulina y puede reducir la HbA1c levemente.</p><h4><span class="ok">BENEFICIOSO</span> Omega-3</h4><p>Reduce la inflamacion sistemica (componente clave de la resistencia insulinica), mejora el perfil lipidico y protege la funcion cardiovascular y renal.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">EVITAR</span> Gainers (Mass Gainers)</h4><p><strong>Por que es peligroso:</strong> Los gainers contienen maltodextrina, dextrosa y otros carbohidratos de alto indice glucemico. Una porcion puede aportar 80-100g de carbohidratos que elevan la glucemia abruptamente. Absolutamente contraindicados en diabeticos tipo 2.</p><h4><span class="evitar">EVITAR</span> Termogenicos sin consulta medica</h4><p>Los estimulantes pueden interferir con el control glucemico y la medicacion antidiabetica.</p><h3>Interacciones con medicamentos</h3><ul><li><strong>Metformina:</strong> Puede reducir la absorcion de vitamina B12. El magnesio y omega-3 son seguros y complementarios.</li><li><strong>Insulina:</strong> El ejercicio intenso puede causar hipoglucemia. Ajustar dosis con el medico.</li><li><strong>SGLT-2 (empagliflozina):</strong> Mayor riesgo de deshidratacion en ejercicio. Hidratarse bien.</li></ul>';
+
+GUIAS.hipotiroidismo = '<h3>Que es el Hipotiroidismo</h3><p>El hipotiroidismo es la produccion insuficiente de hormonas tiroideas (T3 y T4). Estas hormonas regulan el metabolismo basal de todas las celulas del cuerpo. Su deficit genera enlentecimiento metabolico generalizado: aumento de peso, fatiga, frio, constipacion, caida del cabello, depresion y colesterol elevado. La causa mas comun es la tiroiditis de Hashimoto (autoinmune).</p><h3>IMPACTO CRITICO: Absorcion de levotiroxina</h3><p><strong>El punto mas importante:</strong> La levotiroxina (Eutirox, Tiroidex) NUNCA debe tomarse junto con suplementos. El calcio, magnesio, hierro y otros minerales quelatan la levotiroxina reduciendo su absorcion hasta un 50%. Tomar la levotiroxina en ayunas y esperar MINIMO 2-3 horas antes de cualquier suplemento.</p><h3>Suplementos BENEFICIOSOS</h3><h4><span class="ok">MUY BENEFICIOSO</span> Proteina Whey</h4><p>El hipotiroidismo genera mayor catabolismo muscular y dificultad para ganar musculo. La proteina whey ayuda a preservar y construir masa muscular. Tomar alejada de la levotiroxina (2-3 horas despues).</p><h4><span class="ok">BENEFICIOSO</span> Omega-3</h4><p>Efecto antiinflamatorio importante ya que el hipotiroidismo autoinmune (Hashimoto) cursa con inflamacion cronica. Ademas mejora el perfil lipidico que suele estar alterado.</p><h4><span class="ok">BENEFICIOSO</span> Magnesio</h4><p>El hipotiroidismo suele asociarse a deficiencia de magnesio. Mejora la calidad del sueno (afectada en hipotiroideos), reduce calambres y mejora la funcion muscular. Tomar alejado de la levotiroxina.</p><h4><span class="ok">BENEFICIOSO</span> Colageno hidrolizado</h4><p>El hipotiroidismo afecta la sintesis de colageno, generando problemas articulares y cutaneos. Seguro tomado con las comidas, alejado de la medicacion.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">EVITAR</span> Termogenicos</h4><p>Pueden generar arritmias o palpitaciones en personas con funcion cardiaca comprometida por el hipotiroidismo. No usar sin autorizacion medica explicita.</p><h4><span class="cuidado">PRECAUCION</span> Proteinas de soja</h4><p>Los fitoestrогenos de la soja pueden interferir con la absorcion de levotiroxina. Evitar o consumir alejadas de la medicacion.</p>';
+
+GUIAS.sop = '<h3>Sindrome de Ovario Poliquístico (SOP)</h3><p>El SOP es el trastorno endocrino mas frecuente en mujeres en edad reproductiva (10-15%). Se caracteriza por hiperandrogenismo (exceso de hormonas masculinas), irregularidad menstrual y resistencia a la insulina (70-80% de las afectadas). Genera acne, hirsutismo, dificultad para adelgazar y puede afectar la fertilidad.</p><h3>Suplementos MUY BENEFICIOSOS</h3><h4><span class="ok">MUY BENEFICIOSO</span> Omega-3</h4><p>Reduce los androgenos circulantes, mejora la sensibilidad a la insulina, disminuye la inflamacion sistemica y mejora el perfil lipidico. Estudios muestran reduccion de testosterona libre y mejora del ciclo menstrual con 3g diarios.</p><h4><span class="ok">MUY BENEFICIOSO</span> Magnesio</h4><p>Mejora la sensibilidad a la insulina (componente clave del SOP), reduce el cortisol (que empeora el hiperandrogenismo), mejora el sueno y reduce la ansiedad frecuente en SOP.</p><h4><span class="ok">BENEFICIOSO</span> Proteina Whey Aislada</h4><p>El ejercicio de fuerza con buena ingesta proteica es una de las mejores intervenciones no farmacologicas para el SOP. Preferir aislado por menor contenido de carbohidratos.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">EVITAR</span> Gainers y productos con alto indice glucemico</h4><p>La resistencia a la insulina en SOP hace que los carbohidratos de alto IG sean muy problematicos. Aumentan los picos de insulina que estimulan la produccion ovarica de androgenos.</p><h4><span class="cuidado">PRECAUCION</span> Proteina de soja</h4><p>Los fitoestrогenos de la soja pueden interferir con el equilibrio hormonal en SOP. En mujeres con alteraciones hormonales marcadas, es prudente limitar la proteina de soja.</p>';
+
+GUIAS.mono_renal = '<h3>Que significa ser Monorreno</h3><p>Una persona monorrena tiene un solo rinon funcionante, ya sea por extirpacion quirurgica, donacion de organo, agenesia renal o perdida funcional de uno. El rinon restante suele hipertrofiarse compensatoriamente. La reserva funcional renal es menor, requiriendo mayor cuidado con sustancias que sometan al rinon a mayor trabajo.</p><h3>Suplementos SEGUROS</h3><h4><span class="ok">SEGURO</span> Omega-3</h4><p>Tiene efecto nefroprotector documentado. Reduce la inflamacion renal y mejora el flujo glomerular. Especialmente beneficioso en monorrenos.</p><h4><span class="ok">SEGURO con moderacion</span> Proteina Whey</h4><p><strong>Aclaracion importante:</strong> El mito de que la proteina destruye los rinones fue refutado en personas con funcion renal normal. En monorrenos, ingestas moderadas (hasta 1.2g/kg de peso corporal) son seguras. Las dietas hiperproteicas extremas (mas de 2g/kg) si pueden sobrecargar el rinon restante.</p><p><strong>Dosis segura:</strong> Maximo 1-1.5g de proteina total por kg/dia (incluyendo dieta). Controles de creatinina cada 6 meses.</p><h3>Suplementos con PRECAUCION IMPORTANTE</h3><h4><span class="cuidado">CONSULTAR AL MEDICO</span> Creatina</h4><p>La creatina aumenta los niveles de creatinina serica (marcador de funcion renal) pero esto es efecto directo del metabolismo de la creatina, NO dano renal real. Sin embargo, en monorrenos puede confundir al medico en los analisis. Si usas creatina, informar SIEMPRE al medico. En monorrenos con funcion renal normal, es generalmente segura a 3-5g diarios. CONSULTAR antes de iniciar.</p><h3>Recomendaciones clave</h3><ul><li>Hidratacion abundante: minimo 2-2.5 litros de agua por dia mas durante ejercicio</li><li>Controles de funcion renal (creatinina, urea, proteinuria) cada 6-12 meses</li><li>Informar siempre al medico cualquier suplemento que inicies</li><li>Evitar AINEs (ibuprofeno, diclofenac) que reducen el flujo renal</li></ul>';
+
+GUIAS.intolerancia_lactosa = '<h3>Que es la Intolerancia a la Lactosa</h3><p>La intolerancia a la lactosa es la incapacidad de digerir la lactosa (azucar de la leche) por deficit de la enzima lactasa intestinal. La lactosa no digerida llega al colon donde es fermentada por bacterias, produciendo gases, hinchazon, dolor abdominal y diarrea osmotica. Afecta al 65-70% de la poblacion adulta mundial.</p><h3>Suplementos COMPLETAMENTE SEGUROS</h3><h4><span class="ok">IDEAL</span> Proteina Whey AISLADA (WPI)</h4><p><strong>Por que es diferente:</strong> El proceso de aislamiento ultrafiltrado elimina practicamente toda la lactosa (menos de 0.1g por porcion). La mayoria de los intolerantes toleran perfectamente el aislado de proteina de suero. Es la mejor opcion para intolerantes que quieren proteina de origen animal con el maximo perfil de aminoacidos.</p><h4><span class="ok">IDEAL</span> Proteina Vegetal (Pea Protein)</h4><p>100% libre de lactosa. Las proteinas de arveja, arroz, canamo y soja son excelentes alternativas. La proteina de arveja tiene un perfil de aminoacidos muy completo.</p><h4><span class="ok">SEGURO</span> Creatina, BCAA, Omega-3, Magnesio</h4><p>Todos son libres de lactosa en sus formas puras. Verificar siempre el etiquetado de excipientes.</p><h3>Suplementos con PRECAUCION</h3><h4><span class="cuidado">VERIFICAR</span> Proteina Whey Concentrada (WPC)</h4><p>El concentrado retiene entre 3-8% de lactosa por porcion. Con intolerancia leve puede tolerarse. Con intolerancia severa, preferir el aislado o la proteina vegetal.</p><h3>Consejos practicos</h3><ul><li>Preferir siempre el aislado (WPI) sobre el concentrado (WPC)</li><li>Buscar en el etiquetado: "aislado", "isolate", "WPI" o "libre de lactosa"</li><li>Si hay duda, probar con dosis pequenas y ver tolerancia</li></ul>';
+
+GUIAS.celiaquia = '<h3>Que es la Celiaquía</h3><p>La celiaquia es una enfermedad autoinmune cronica donde la ingesta de gluten (proteina del trigo, cebada y centeno) desencadena una respuesta inmune que dana las vellosidades del intestino delgado. Esto genera malabsorcion de nutrientes esenciales (hierro, calcio, vitaminas B, D, K). A diferencia de la sensibilidad al gluten, en la celiaquía el dano intestinal es real y permanente si no se sigue dieta estricta sin TACC.</p><h3>Suplementos SEGUROS y necesarios</h3><h4><span class="ok">NECESARIO</span> Multivitaminico sin gluten</h4><p>La celiaqia genera deficiencias de hierro, acido folico, vitamina B12, vitamina D, calcio y zinc. Un multivitaminico completo certificado sin TACC es fundamental. Verificar certificacion sin gluten.</p><h4><span class="ok">MUY BENEFICIOSO</span> Omega-3</h4><p>Efecto antiinflamatorio sobre la mucosa intestinal, favoreciendo la recuperacion de las vellosidades. Corrige deficiencias de acidos grasos frecuentes en celiacos.</p><h4><span class="ok">SEGURO</span> Proteina Vegetal (arveja, arroz)</h4><p>Naturalmente sin gluten. Excelente opcion para celiacos que quieren suplementarse con proteina.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">EVITAR</span> Cualquier suplemento sin certificacion sin TACC</h4><p>La contaminacion cruzada en la fabricacion es el mayor riesgo. Siempre elegir productos certificados sin gluten, especialmente barras proteicas (frecuentemente contienen avena o derivados de trigo).</p><h3>Recomendaciones</h3><ul><li>Buscar siempre el sello "Sin TACC" o "Gluten Free" certificado</li><li>Los suplementos en capsulas pueden contener almidon de trigo como excipiente — verificar</li><li>Control anual de niveles de hierro, B12, vitamina D y densidad osea</li></ul>';
+
+GUIAS.higado_graso = '<h3>Higado Graso No Alcoholico (NAFLD)</h3><p>El higado graso no alcoholico es la acumulacion de grasa en los hepatocitos (mas del 5% de la masa hepatica) sin consumo excesivo de alcohol. Es la enfermedad hepatica mas prevalente mundialmente, ligada a obesidad, diabetes tipo 2 y sindrome metabolico. Puede progresar a hepatitis esteatosica, fibrosis y cirrosis.</p><h3>Suplementos BENEFICIOSOS</h3><h4><span class="ok">MUY BENEFICIOSO</span> Omega-3</h4><p>Los omega-3 reducen la sintesis hepatica de trigliceridos, mejoran la beta-oxidacion de acidos grasos y tienen efecto antiinflamatorio hepatico. Estudios muestran reduccion del contenido graso hepatico con 2-4g diarios de EPA+DHA.</p><h4><span class="ok">SEGURO</span> Proteina Whey</h4><p>Estudios sugieren que la proteina de suero puede reducir la acumulacion de grasa hepatica. El ejercicio de fuerza con buena ingesta proteica es fundamental en el tratamiento del NAFLD.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">EVITAR</span> Gainers caloricos</h4><p>El exceso calorico (especialmente de fructosa y grasas saturadas) alimenta directamente la acumulacion de grasa hepatica. Los gainers empeoran el NAFLD.</p><h4><span class="evitar">EVITAR</span> Suplementos herbales sin respaldo cientifico</h4><p>Con higado graso el higado ya esta bajo estres metabolico. Muchos suplementos "naturales" son hepatotoxicos.</p>';
+
+GUIAS.artritis = '<h3>Artritis Reumatoidea</h3><p>La artritis reumatoidea (AR) es una enfermedad autoinmune sistemica cronica donde el sistema inmune ataca el tejido articular, generando dolor, rigidez, hinchazon y deterioro progresivo. Afecta principalmente manos, munecas, codos, rodillas y pies de forma simetrica.</p><h3>Suplementos MUY BENEFICIOSOS</h3><h4><span class="ok">MUY BENEFICIOSO</span> Omega-3 (EPA/DHA)</h4><p><strong>Evidencia solida:</strong> Multiples ensayos clinicos demuestran que los omega-3 reducen la inflamacion articular, la rigidez matutina y el numero de articulaciones dolorosas en AR. El EPA compite con el acido araquidonico en la sintesis de prostaglandinas, reduciendo las proinflamatorias. Puede reducir la necesidad de AINEs.</p><p><strong>Dosis:</strong> 3-4g de EPA+DHA diarios. Efecto visible a los 3 meses.</p><h4><span class="ok">MUY BENEFICIOSO</span> Colageno hidrolizado</h4><p>El colageno tipo II es el componente principal del cartilago articular. Su suplementacion puede inducir tolerancia oral al colageno, reduciendo la respuesta autoinmune articular. Estudios muestran reduccion del dolor y la rigidez.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">EVITAR</span> Suplementos que estimulen el sistema inmune</h4><p>En enfermedades autoinmunes como la AR, estimular el sistema inmune puede empeorar la enfermedad. Evitar suplementos comercializados como "estimulantes inmunes".</p><h3>Interacciones</h3><ul><li><strong>Metotrexato:</strong> El omega-3 reduce los efectos secundarios gastrointestinales.</li><li><strong>Biologicos (adalimumab, etanercept):</strong> Sin interacciones conocidas con omega-3 o colageno.</li><li><strong>Corticoides:</strong> Aumentan la perdida de calcio y magnesio. Suplementar con guia medica.</li></ul>';
+
+GUIAS.osteoporosis = '<h3>Osteoporosis</h3><p>La osteoporosis es una enfermedad del esqueleto caracterizada por baja masa osea y deterioro de la microarquitectura del tejido oseo, aumentando la fragilidad y el riesgo de fracturas. Afecta principalmente a mujeres postmenopausicas pero tambien a hombres mayores y personas con deficiencias nutricionales.</p><h3>Suplementos FUNDAMENTALES</h3><h4><span class="ok">FUNDAMENTAL</span> Colageno hidrolizado</h4><p>El hueso no es solo mineral: un tercio de su masa es colageno tipo I que da flexibilidad y resistencia. Sin colageno adecuado, el hueso se vuelve rigido y quebradizo. Estudios con colаgeno hidrolizado (10g/dia) muestran aumento de la densidad osea y reduccion de marcadores de resorcion osea.</p><p><strong>Dosis:</strong> 10-15g diarios con vitamina C. Efecto acumulativo, evaluar a los 6-12 meses.</p><h4><span class="ok">FUNDAMENTAL</span> Calcio + Vitamina D</h4><p>La vitamina D facilita la absorcion intestinal de calcio y la mineralizacion osea. Sin vitamina D adecuada, el calcio no se absorbe correctamente. Consultar niveles sericos antes de suplementar.</p><h4><span class="ok">BENEFICIOSO</span> Magnesio</h4><p>Cofactor en la sintesis de vitamina D activa y en la mineralizacion osea. Su deficiencia empeora la osteoporosis.</p><h3>Interacciones</h3><ul><li><strong>Bifosfonatos (alendronato, risedronato):</strong> Tomar siempre en ayunas. El calcio y magnesio deben tomarse con AL MENOS 30 minutos de diferencia para no quelatar el bifosfonato.</li></ul>';
+
+GUIAS.fibromialgia = '<h3>Fibromialgia</h3><p>La fibromialgia es un sindrome de dolor cronico generalizado de origen central (sensibilizacion del sistema nervioso central) caracterizado por dolor musculoesqueletico difuso, fatiga persistente, alteraciones del sueno y deterioro cognitivo. No tiene causa organica identificable en tejidos, siendo un problema de procesamiento del dolor a nivel cerebral.</p><h3>Suplementos MUY BENEFICIOSOS</h3><h4><span class="ok">MUY BENEFICIOSO</span> Magnesio</h4><p>El magnesio bloquea receptores NMDA del glutamato (hiperactivados en fibromialgia), reduciendo la sensibilizacion central. Mejora el sueno profundo (severamente afectado), reduce la fatiga y los calambres. Estudios con magnesio malato muestran reduccion del dolor y la fatiga.</p><h4><span class="ok">BENEFICIOSO</span> Omega-3</h4><p>Reduce la neuroinflamacion, mejora el estado de animo (frecuentemente afectado) y puede reducir la intensidad del dolor cronico.</p><h4><span class="ok">BENEFICIOSO</span> Colageno hidrolizado</h4><p>Protege articulaciones y tendones que soportan mayor tension por las contracturas musculares caracteristicas de la fibromialgia.</p><h3>Suplementos con PRECAUCION</h3><h4><span class="cuidado">PRECAUCION</span> Pre-entrenos y cafeina</h4><p>La cafeina puede ser util para la fatiga a corto plazo pero genera rebote de mayor fatiga y puede empeorar el sueno. Usar con mucha moderacion, solo matutino.</p>';
+
+GUIAS.epilepsia = '<h3>Epilepsia y Suplementos Deportivos</h3><p>La epilepsia es una enfermedad neurologica cronica con predisposicion a generar crisis epilepticas. El tratamiento con antiepilépticos (AE) requiere niveles plasmaticos estables. Cualquier sustancia que altere su metabolismo hepatico puede descontrolar la epilepsia.</p><h3>Suplementos SEGUROS</h3><h4><span class="ok">SEGURO</span> Omega-3</h4><p>Estudios sugieren propiedades antiepilépticas del omega-3, posiblemente por estabilizacion de membranas neuronales. Es seguro y complementario al tratamiento.</p><h4><span class="ok">SEGURO</span> Magnesio</h4><p>El magnesio tiene efecto neuroprotector y anticonvulsivante (bloquea receptores NMDA). Su deficiencia puede bajar el umbral de crisis. Seguro en dosis estandar.</p><h3>Suplementos a EVITAR ABSOLUTAMENTE</h3><h4><span class="evitar">ABSOLUTAMENTE CONTRAINDICADO</span> Pre-entrenos con estimulantes</h4><p><strong>Extremadamente peligroso:</strong> La cafeina en dosis altas puede bajar el umbral de crisis epilepticas. Los pre-entrenos con cafeina, ginseng, guarana, taurina y otros estimulantes pueden desencadenar una crisis. Absolutamente contraindicados.</p><h4><span class="evitar">CONTRAINDICADO</span> Termogenicos</h4><p>Los estimulantes excitan el SNC y pueden desencadenar crisis epilepticas. Completamente prohibidos.</p><h3>Interacciones criticas</h3><ul><li><strong>Carbamazepina, fenitoina, fenobarbital:</strong> Son inductores enzimaticos que aceleran el metabolismo de muchas sustancias. Pueden reducir los niveles de vitamina D. Suplementar con guia medica.</li><li><strong>Acido valproico:</strong> El omega-3 puede potenciar levemente el efecto. Comunicar al neurologo.</li></ul>';
+
+GUIAS.depresion = '<h3>Depresion, Ansiedad y Suplementos</h3><p>La depresion mayor y los trastornos de ansiedad involucran desequilibrios en neurotransmisores (serotonina, dopamina, noradrenalina, GABA), inflamacion neuronal y alteraciones en el ritmo circadiano. El tratamiento es principalmente farmacologico y psicologico, pero varios nutrientes tienen impacto directo en la salud mental.</p><h3>Suplementos BENEFICIOSOS</h3><h4><span class="ok">MUY BENEFICIOSO</span> Omega-3 (EPA preferentemente)</h4><p>El EPA tiene propiedades antidepresivas documentadas en multiples meta-analisis. Reduce la inflamacion neuronal, mejora la fluidez de las membranas neuronales y potencia la senalizacion serotoninergica. Estudios muestran que 1-2g de EPA diarios como complemento al tratamiento antidepresivo mejoran la respuesta terapeutica.</p><h4><span class="ok">BENEFICIOSO</span> Magnesio</h4><p>Cofactor en la sintesis de serotonina, dopamina y GABA. Su deficiencia se asocia fuertemente con depresion y ansiedad. Suplementacion de 300-400mg diarios puede reducir la ansiedad y mejorar el sueno.</p><h4><span class="ok">BENEFICIOSO</span> ZMA (Zinc, Magnesio, B6)</h4><p>El zinc tiene efecto modulador del receptor NMDA. La B6 es cofactor en la sintesis de serotonina. Mejora el sueno profundo (muy afectado en depresion) y la recuperacion nocturna.</p><h3>Suplementos con PRECAUCION IMPORTANTE</h3><h4><span class="cuidado">MUCHA PRECAUCION</span> Pre-entrenos y cafeina</h4><p>La cafeina puede exacerbar la ansiedad significativamente. En personas con trastorno de panico o ansiedad generalizada, los estimulantes pueden desencadenar crisis. Consultar con el psiquiatra antes de usar cualquier pre-entreno.</p><h3>Interacciones criticas</h3><ul><li><strong>ISRS (fluoxetina, sertralina, escitalopram):</strong> El omega-3 es complementario y potencia el efecto antidepresivo. Seguro.</li><li><strong>IMAO (fenelzina):</strong> Consultar TODO con el medico. Interacciones multiples y peligrosas.</li><li><strong>Benzodiacepinas:</strong> El magnesio tiene efecto GABAérgico leve. Comunicar al medico.</li></ul>';
+
+GUIAS.diabetes_t1 = '<h3>Diabetes Tipo 1 y Suplementos</h3><p>La diabetes tipo 1 es una enfermedad autoinmune donde el sistema inmune destruye las celulas beta del pancreas, eliminando la produccion de insulina. Requiere insulina exogena de por vida. El control glucemico es mas complejo por la variabilidad de la insulina exogena.</p><h3>Suplementos SEGUROS</h3><h4><span class="ok">BENEFICIOSO</span> Omega-3</h4><p>Reduce la inflamacion sistemica, protege la funcion cardiovascular (mayor riesgo en DM1) y renal. Puede reducir levemente los requerimientos de insulina al mejorar la sensibilidad.</p><h4><span class="ok">SEGURO con monitoreo</span> Proteina Whey Aislada</h4><p>El aislado tiene minimos carbohidratos. Monitorear glucemia post-ingesta ya que la proteina puede estimular leve secrecion de glucagon. En DM1 la respuesta glucemica a la proteina es individual — testear con monitoreo.</p><h3>PRECAUCIONES ESPECIALES</h3><h4><span class="cuidado">MONITOREO INTENSIVO</span> Ejercicio fisico + suplementos</h4><p>El ejercicio aerobico baja la glucemia (riesgo de hipoglucemia). El ejercicio anaerobico puede elevarla transitoriamente por cortisol y adrenalina. Con DM1 y ejercicio intenso, tener siempre glucosa rapida disponible y ajustar la insulina con el endocrinologo.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">EVITAR ABSOLUTAMENTE</span> Gainers, maltodextrina, dextrosa</h4><p>Elevan la glucemia abruptamente e impredeciblemente. Absolutamente contraindicados.</p>';
+
+GUIAS.obesidad = '<h3>Obesidad / Sobrepeso y Suplementos</h3><p>La obesidad es una enfermedad metabolica cronica multifactorial caracterizada por exceso de tejido adiposo, especialmente visceral. Genera resistencia a la insulina, inflamacion cronica de bajo grado, dislipemia, hipertension y apnea del sueno. El pilar del tratamiento es la modificacion del estilo de vida (dieta + ejercicio).</p><h3>Suplementos BENEFICIOSOS</h3><h4><span class="ok">MUY BENEFICIOSO</span> Proteina Whey</h4><p>La proteina aumenta la saciedad (efecto termogenico mayor que carbohidratos y grasas), preserva la masa muscular durante el deficit calorico y mejora la composicion corporal. Fundamental para no perder musculo al bajar de peso.</p><h4><span class="ok">BENEFICIOSO</span> L-Carnitina</h4><p>Mejora el transporte de acidos grasos a la mitocondria. Mas util cuando se combina con ejercicio aerobico. Efecto modesto pero real en la oxidacion de grasa.</p><h4><span class="ok">BENEFICIOSO</span> Omega-3</h4><p>Reduce la inflamacion adiposa (el tejido graso en obesidad es inflamatorio), mejora la sensibilidad a la insulina y el perfil lipidico.</p><h3>Suplementos con PRECAUCION</h3><h4><span class="cuidado">CON GUIA</span> Termogenicos</h4><p>En personas con obesidad sin comorbilidades cardiovasculares, los termogenicos pueden acelerar la perdida de grasa. Sin embargo, en obesidad con hipertension, diabetes o problemas cardiacos, estan contraindicados. SIEMPRE consultar al medico antes.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">EVITAR</span> Gainers y Mass Gainers</h4><p>Son hipercaloricos y contraproducentes en obesidad. Aportan entre 600-1200 kcal por porcion.</p>';
+
+GUIAS.anemia = '<h3>Anemia (Ferropenica / por deficit de B12)</h3><p>La anemia es la reduccion de la concentracion de hemoglobina por debajo de los valores normales. La mas comun es la ferropenica (deficit de hierro) que afecta la sintesis de hemoglobina. La anemia por deficit de B12 (perniciosa) afecta la madurez de los globulos rojos.</p><h3>Impacto en el deporte</h3><p>La anemia reduce la capacidad de transporte de oxigeno, generando fatiga, falta de aire, disminucion del rendimiento deportivo y recuperacion lenta.</p><h3>Suplementos BENEFICIOSOS</h3><h4><span class="ok">BENEFICIOSO</span> Vitamina C</h4><p>Potencia la absorcion del hierro no hemo (de origen vegetal). Tomar junto con alimentos ricos en hierro o suplementos de hierro. Efecto muy significativo.</p><h4><span class="ok">SEGURO</span> Proteina Whey</h4><p>Aporta hierro hemo biodisponible. Seguro y beneficioso para personas con anemia que hacen deporte.</p><h3>Suplementos con PRECAUCION</h3><h4><span class="cuidado">PRECAUCION</span> Calcio</h4><p>El calcio inhibe la absorcion de hierro cuando se toman juntos. Separar la ingesta de calcio y hierro por al menos 2 horas.</p><h4><span class="cuidado">PRECAUCION</span> Pre-entrenos</h4><p>Con anemia severa, el ejercicio de alta intensidad puede ser peligroso por hipoxia tisular. Consultar al medico sobre la intensidad apropiada.</p>';
+
+GUIAS.menopausia = '<h3>Menopausia / Climaterio y Suplementos</h3><p>La menopausia es el cese definitivo de la menstruacion por agotamiento folicular ovarico. La caida de estrogenos y progesterona genera sofocos, insomnio, cambios de humor, sequedad vaginal, perdida de masa osea (osteoporosis), aumento de grasa visceral y mayor riesgo cardiovascular.</p><h3>Suplementos MUY BENEFICIOSOS</h3><h4><span class="ok">MUY BENEFICIOSO</span> Colageno hidrolizado</h4><p>El deficit de estrogenos acelera la degradacion del colageno cutaneo y articular. La suplementacion (10-15g diarios) mejora la elasticidad de la piel, reduce las arrugas y protege articulaciones y huesos.</p><h4><span class="ok">MUY BENEFICIOSO</span> Omega-3</h4><p>Reduce los sofocos, mejora el estado de animo, protege la salud cardiovascular (mayor riesgo post-menopausia) y tiene efecto antiinflamatorio general.</p><h4><span class="ok">BENEFICIOSO</span> Magnesio</h4><p>Mejora el sueno (frecuentemente alterado), reduce la ansiedad y los calambres, y es cofactor en la mineralizacion osea.</p><h4><span class="ok">BENEFICIOSO</span> Proteina Whey</h4><p>La caida de estrogenos acelera la perdida de masa muscular. El ejercicio de fuerza con buena ingesta proteica es fundamental para mantener la composicion corporal.</p><h3>Suplementos con PRECAUCION</h3><h4><span class="cuidado">VERIFICAR</span> Proteina de soja y fitoestrогenos</h4><p>Los fitoestrогenos de la soja pueden tener efecto estrogenico leve. En mujeres con antecedente de cancer de mama hormonodependiente, consultar al oncologo antes de consumir.</p>';
+
+GUIAS.arritmia = '<h3>Arritmias Cardiacas y Suplementos</h3><p>Las arritmias son alteraciones del ritmo cardiaco normal. Pueden ser benignas (taquicardia sinusal, extrasistoles) o potencialmente peligrosas (fibrilacion auricular, taquicardia ventricular). Cualquier sustancia que afecte la conduccion electrica cardiaca o el equilibrio de electrolitos puede desencadenar o empeorar una arritmia.</p><h3>Suplementos SEGUROS</h3><h4><span class="ok">BENEFICIOSO</span> Omega-3</h4><p>Tiene propiedades antiarritmicas documentadas. Estabiliza las membranas de los cardiomiocitos y reduce la excitabilidad electrica anormal. Estudios muestran reduccion del riesgo de muerte subita cardiaca con 1-2g diarios.</p><h4><span class="ok">BENEFICIOSO</span> Magnesio</h4><p>El magnesio es fundamental para la conduccion electrica cardiaca normal. Su deficiencia puede desencadenar arritmias. Seguro y beneficioso en dosis estandar (300-400mg diarios).</p><h3>Suplementos a EVITAR ABSOLUTAMENTE</h3><h4><span class="evitar">ABSOLUTAMENTE CONTRAINDICADO</span> Pre-entrenos con estimulantes y cafeina alta</h4><p>La cafeina eleva la frecuencia cardiaca y puede desencadenar arritmias en personas predispuestas. Los pre-entrenos con dosis altas de cafeina (200mg+), sinefrina, guarana o taurina estan absolutamente contraindicados en personas con arritmias diagnosticadas.</p><h4><span class="evitar">CONTRAINDICADO</span> Termogenicos</h4><p>Por las mismas razones que los pre-entrenos. Cualquier estimulante cardiaco esta contraindicado.</p><h3>Interacciones criticas</h3><ul><li><strong>Anticoagulantes (warfarina, acenocumarol):</strong> El omega-3 en dosis altas (mas de 3g) puede aumentar el riesgo de sangrado. Usar con supervision medica.</li><li><strong>Antiarritmicos (amiodarona, flecainida):</strong> Consultar TODO con el cardiologo antes de cualquier suplementacion.</li></ul>';
+
+GUIAS.calculos_renales = '<h3>Calculos Renales (Litiasis) y Suplementos</h3><p>Los calculos renales son depositos minerales duros que se forman en los rinones. Los mas comunes son los de oxalato de calcio (75-80%), seguidos por los de acido urico. La formacion depende de la concentracion urinaria de minerales, el pH urinario y la hidratacion.</p><h3>Suplementos SEGUROS</h3><h4><span class="ok">SEGURO</span> Omega-3</h4><p>Reduce la excrecion urinaria de oxalato y calcio levemente. Puede ser beneficioso en litiasis de oxalato.</p><h4><span class="ok">SEGURO con moderacion</span> Proteina Whey</h4><p>El consumo excesivo de proteina animal puede aumentar la excrecion urinaria de calcio y acido urico, ambos factores de riesgo para calculos. En personas con antecedente de calculos, mantener ingesta proteica moderada (maximo 1.2g/kg) y hidratacion excelente.</p><h3>Suplementos con PRECAUCION</h3><h4><span class="cuidado">PRECAUCION</span> Vitamina C en dosis altas</h4><p>La vitamina C en dosis mayores a 1g diario puede aumentar la produccion de oxalato, incrementando el riesgo de calculos de oxalato de calcio. Usar dosis estandar (250-500mg).</p><h4><span class="cuidado">PRECAUCION</span> Calcio en suplemento</h4><p>El calcio en suplemento tomado con las comidas puede REDUCIR la absorcion intestinal de oxalato (beneficioso). El calcio tomado lejos de las comidas puede AUMENTAR el calcio urinario (perjudicial). Tomar siempre con las comidas.</p><h3>Recomendaciones clave</h3><ul><li>Hidratacion es lo mas importante: 2.5-3 litros de agua diarios para diluir la orina</li><li>Reducir la ingesta de sal (aumenta la excrecion urinaria de calcio)</li><li>Reducir alimentos ricos en oxalato (espinaca, remolacha, frutos secos)</li></ul>';
+
+GUIAS.sii = '<h3>Sindrome del Intestino Irritable (SII)</h3><p>El SII es un trastorno funcional intestinal caracterizado por dolor abdominal cronico o recurrente asociado a cambios en los habitos intestinales (diarrea, constipacion o alternancia), sin causa organica identificable. Involucra hipersensibilidad visceral, alteracion de la motilidad intestinal y disbiosis de la microbiota.</p><h3>Suplementos BENEFICIOSOS</h3><h4><span class="ok">BENEFICIOSO</span> Omega-3</h4><p>Tiene efecto antiinflamatorio sobre la mucosa intestinal y puede mejorar la disbiosis asociada al SII. Generalmente bien tolerado.</p><h4><span class="ok">SEGURO con prueba</span> Proteina Whey Aislada</h4><p>El aislado tiene muy baja lactosa. Sin embargo, en SII cada persona tiene distintos triggers. Probar con dosis pequenas. Si genera hinchazon o distension, cambiar a proteina vegetal (arveja) que es mejor tolerada en SII.</p><h3>Suplementos con PRECAUCION</h3><h4><span class="cuidado">PROBAR TOLERANCIA</span> Proteina de arveja</h4><p>Aunque es vegetal, algunas personas con SII son sensibles a las leguminosas. Probar con dosis pequenas.</p><h4><span class="cuidado">PRECAUCION</span> BCAA en polvo con edulcorantes</h4><p>Muchos BCAAs en polvo contienen edulcorantes artificiales (sorbitol, manitol, xilitol) que son altamente fermentables (FODMAPs) y pueden desencadenar sintomas de SII. Preferir BCAA en capsulas.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">EVITAR</span> Gainers con lactosa y edulcorantes</h4><p>Los gainers suelen tener alto contenido de lactosa y edulcorantes fermentables que empeoran el SII drasticamente.</p>';
+
+
+</script>
+<script>
+var catActual = 'todas';
 function renderCondiciones(lista) {
   var grid = document.getElementById('condsGrid');
-  if (lista.length === 0) {
-    grid.innerHTML = '<div style="color:var(--gray);font-size:.88rem;grid-column:1/-1;padding:16px 0">No se encontraron condiciones. Probá con otro término.</div>';
-    return;
-  }
+  if (!lista.length) { grid.innerHTML = '<div style="color:var(--gray);grid-column:1/-1;padding:16px">No se encontraron condiciones.</div>'; return; }
   grid.innerHTML = lista.map(function(c) {
-    return '<div class="cond-card" id="card-'+c.id+'" onclick="seleccionarCondicion(\''+c.id+'\')">'
-      + '<div class="cond-icon">'+c.icon+'</div>'
-      + '<div class="cond-info"><div class="cond-nombre">'+c.nombre+'</div>'
-      + '<div class="cond-tag">'+c.tag+'</div></div>'
-      + '</div>';
+    return '<div class="cond-card" id="card-'+c.id+'" onclick="seleccionarCondicion(\'''+c.id+'\')">'+'<div class="cond-icon">'+c.icon+'</div><div><div class="cond-nombre">'+c.nombre+'</div><div class="cond-tag">'+c.tag+'</div></div></div>';
   }).join('');
 }
-
 function filtrarCondiciones() {
   var q = document.getElementById('searchCond').value.toLowerCase().trim();
-  var filtradas = CONDICIONES.filter(function(c) {
-    var matchCat = catActual === 'todas' || c.cat === catActual;
-    var matchQ = !q || c.nombre.toLowerCase().indexOf(q) >= 0 || c.tag.toLowerCase().indexOf(q) >= 0;
-    return matchCat && matchQ;
+  var f = CONDICIONES.filter(function(c) {
+    return (catActual==='todas'||c.cat===catActual) && (!q||c.nombre.toLowerCase().indexOf(q)>=0||c.tag.toLowerCase().indexOf(q)>=0);
   });
-  renderCondiciones(filtradas);
+  renderCondiciones(f);
 }
-
 function setCat(cat, btn) {
   catActual = cat;
   document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('activo'); });
   btn.classList.add('activo');
   filtrarCondiciones();
 }
-
-function volverALista() {
-  document.getElementById('analisisSection').style.display = 'none';
-  document.getElementById('searchCond').value = '';
-  catActual = 'todas';
-  document.querySelectorAll('.cat-btn').forEach(function(b,i){ b.classList.toggle('activo', i===0); });
-  filtrarCondiciones();
-  window.scrollTo({top:0, behavior:'smooth'});
-}
-
-async function seleccionarCondicion(id) {
-  var cond = CONDICIONES.find(function(c){ return c.id === id; });
+function seleccionarCondicion(id) {
+  var cond = CONDICIONES.find(function(c){ return c.id===id; });
   if (!cond) return;
-  condActual = cond;
-
-  // Activar card
   document.querySelectorAll('.cond-card').forEach(function(c){ c.classList.remove('activo'); });
   var card = document.getElementById('card-'+id);
   if (card) card.classList.add('activo');
-
-  // Mostrar sección de análisis
-  var sec = document.getElementById('analisisSection');
-  sec.style.display = 'block';
   document.getElementById('analisisIcon').textContent = cond.icon;
   document.getElementById('analysisTitulo').textContent = cond.nombre;
-
-  // Scroll al análisis
-  setTimeout(function(){ sec.scrollIntoView({behavior:'smooth', block:'start'}); }, 100);
-
-  // Loading
-  var content = document.getElementById('analisisContent');
-  content.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Generando análisis clínico completo...</div><div class="loading-sub">Esto puede tardar unos segundos</div></div>';
-
-  // Generar con IA
-  await generarAnalisisClinico(cond);
+  document.getElementById('analisisContent').innerHTML = GUIAS[id] || '<p style="color:var(--gray)">Guia en construccion. Consultanos por WhatsApp.</p>';
+  var sec = document.getElementById('analisisSection');
+  sec.style.display = 'block';
+  setTimeout(function(){ sec.scrollIntoView({behavior:'smooth',block:'start'}); }, 100);
 }
-
-async function generarAnalisisClinico(cond) {
-  var content = document.getElementById('analisisContent');
-
-  var prompt = 'Sos un médico especialista en nutrición clínica y deportiva con 20 años de experiencia. '
-    + 'Necesito que generes una guía clínica completa y detallada en español argentino (tuteo) sobre el uso de suplementos deportivos para una persona con la siguiente condición de salud: '
-    + cond.nombre + ' (' + cond.tag + ').\n\n'
-    + 'La guía debe ser EXTENSA, CLÍNICA y EDUCATIVA. Incluye TODO lo siguiente:\n\n'
-    + '### ¿Qué es ' + cond.nombre + '?\n'
-    + 'Explicá la condición en detalle: fisiopatología, cómo afecta al metabolismo y al cuerpo en general, por qué impacta en la respuesta a los suplementos, qué mecanismos fisiológicos están comprometidos.\n\n'
-    + '### ¿Cómo afecta al entrenamiento y la suplementación?\n'
-    + 'Explicá específicamente cómo esta condición altera la absorción, el metabolismo y la respuesta a los suplementos deportivos. Consideraciones sobre ejercicio físico con esta condición.\n\n'
-    + '### Suplementos SEGUROS y recomendados\n'
-    + 'Para cada suplemento que sea seguro o beneficioso, explicá:\n'
-    + '- Por qué es seguro o incluso beneficioso para esta condición\n'
-    + '- Mecanismo de acción específico en relación a la condición\n'
-    + '- Dosis recomendada y momento de ingesta\n'
-    + '- Evidencia científica que lo respalda\n'
-    + '- Consideraciones especiales o monitoreo recomendado\n\n'
-    + '### Suplementos a usar con PRECAUCIÓN\n'
-    + 'Para cada suplemento que requiere cuidado, explicá:\n'
-    + '- Por qué puede ser problemático en ciertos casos\n'
-    + '- En qué circunstancias sí se puede usar y cuándo no\n'
-    + '- Interacciones con medicamentos comunes para esta condición\n'
-    + '- Síntomas de alarma que requieren suspender su uso\n\n'
-    + '### Suplementos a EVITAR\n'
-    + 'Para cada suplemento contraindicado, explicá:\n'
-    + '- Por qué está contraindicado (mecanismo fisiopatológico)\n'
-    + '- Qué riesgos concretos implica su consumo\n'
-    + '- Interacciones medicamentosas peligrosas si las hay\n\n'
-    + '### Interacciones con medicamentos comunes\n'
-    + 'Listá los medicamentos más frecuentes para esta condición y explicá sus interacciones con suplementos deportivos comunes.\n\n'
-    + '### Recomendaciones generales y de estilo de vida\n'
-    + 'Consejos prácticos sobre nutrición, hidratación, timing de suplementos y ejercicio específicamente para alguien con esta condición.\n\n'
-    + '### Cuándo consultar al médico\n'
-    + 'Señales de alarma específicas y situaciones en que la persona debe consultar antes de iniciar suplementación.\n\n'
-    + 'Sé muy específico con los nombres de suplementos (proteína whey, creatina, BCAA, L-carnitina, pre-entrenos con cafeína, colágeno, omega-3, vitaminas, etc.). '
-    + 'Usa un lenguaje clínico pero accesible. No tengas miedo de ser extenso — más información es mejor para que la persona tome decisiones informadas.';
-
-  try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    var data = await response.json();
-    var texto = data.content && data.content[0] ? data.content[0].text : 'No se pudo generar el análisis.';
-    content.innerHTML = '<div class="ia-content">' + formatearClinico(texto) + '</div>';
-  } catch(e) {
-    content.innerHTML = '<div style="color:#888;padding:24px;text-align:center">⚠️ No se pudo cargar el análisis. Revisá tu conexión e intentá de nuevo.</div>';
-  }
+function volverALista() {
+  document.getElementById('analisisSection').style.display = 'none';
+  document.querySelectorAll('.cond-card').forEach(function(c){ c.classList.remove('activo'); });
+  window.scrollTo({top:0,behavior:'smooth'});
 }
-
-function formatearClinico(texto) {
-  var html = texto;
-  // Títulos ###
-  var lines = html.split('\n');
-  for (var i = 0; i < lines.length; i++) {
-    var l = lines[i];
-    if (l.indexOf('### ') === 0) {
-      lines[i] = '<h3>' + l.slice(4) + '</h3>';
-    } else if (l.indexOf('#### ') === 0) {
-      lines[i] = '<h4>' + l.slice(5) + '</h4>';
-    } else if (l.indexOf('## ') === 0) {
-      lines[i] = '<h3>' + l.slice(3) + '</h3>';
-    }
-  }
-  html = lines.join('\n');
-  // Negritas
-  html = html.replace(/\*\*([^*\n]+)\*\*/g, function(m, t){ return '<strong>' + t + '</strong>'; });
-  // Listas
-  html = html.replace(/^[-•]\s+(.+)$/gm, function(m, t){ return '<li>' + t + '</li>'; });
-  html = html.replace(/(<li>.*<\/li>\n?)+/g, function(m){ return '<ul>' + m + '</ul>'; });
-  // Párrafos
-  html = html.split('\n\n').join('</p><p>');
-  html = html.split('\n').join('<br>');
-  return '<p>' + html + '</p>';
-}
-
-// Init
 renderCondiciones(CONDICIONES);
 </script>
 </body>
