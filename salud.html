@@ -204,10 +204,19 @@ GUIAS.sii = '<h3>Sindrome del Intestino Irritable (SII)</h3><p>El SII es un tras
 var catActual = 'todas';
 function renderCondiciones(lista) {
   var grid = document.getElementById('condsGrid');
-  if (!lista.length) { grid.innerHTML = '<div style="color:var(--gray);grid-column:1/-1;padding:16px">No se encontraron condiciones.</div>'; return; }
-  grid.innerHTML = lista.map(function(c) {
-    return '<div class="cond-card" id="card-'+c.id+'" onclick="seleccionarCondicion(\'''+c.id+'\')">'+'<div class="cond-icon">'+c.icon+'</div><div><div class="cond-nombre">'+c.nombre+'</div><div class="cond-tag">'+c.tag+'</div></div></div>';
-  }).join('');
+  grid.innerHTML = '';
+  if (!lista.length) {
+    grid.innerHTML = '<div style="color:var(--gray);grid-column:1/-1;padding:16px">No se encontraron condiciones.</div>';
+    return;
+  }
+  lista.forEach(function(c) {
+    var div = document.createElement('div');
+    div.className = 'cond-card';
+    div.id = 'card-' + c.id;
+    div.innerHTML = '<div class="cond-icon">' + c.icon + '</div><div><div class="cond-nombre">' + c.nombre + '</div><div class="cond-tag">' + c.tag + '</div></div>';
+    div.addEventListener('click', (function(id){ return function(){ seleccionarCondicion(id); }; })(c.id));
+    grid.appendChild(div);
+  });
 }
 GUIAS.hipertiroidismo = '<h3>Que es el Hipertiroidismo</h3><p>El hipertiroidismo es la produccion excesiva de hormonas tiroideas (T3 y T4), acelerando el metabolismo de todas las celulas del cuerpo. La causa mas comun es la enfermedad de Graves (autoinmune). Genera taquicardia, perdida de peso involuntaria, temblores, nerviosismo, insomnio, intolerancia al calor y debilidad muscular. El exceso de T3/T4 aumenta el catabolismo proteico y oseo.</p><h3>Como afecta a la suplementacion</h3><p>El metabolismo acelerado consume mas proteinas y minerales. Sin embargo, varios suplementos pueden empeorar los sintomas o interactuar con la medicacion antitiroidea.</p><h3>Suplementos SEGUROS</h3><h4><span class="ok">BENEFICIOSO</span> Proteina Whey</h4><p>El hipertiroidismo aumenta el catabolismo proteico muscular significativamente. La suplementacion con proteina es fundamental para contrarrestar la perdida muscular. Dosis: 1.5-2g/kg de peso corporal.</p><h4><span class="ok">BENEFICIOSO</span> Colageno hidrolizado</h4><p>El hipertiroidismo acelera la resorcion osea (riesgo de osteoporosis). El colageno protege huesos y articulaciones. Seguro y recomendado.</p><h4><span class="ok">SEGURO</span> Omega-3</h4><p>Efecto antiinflamatorio y cardioprotector. Importante ya que el hipertiroidismo genera estres cardiovascular cronico.</p><h3>Suplementos a EVITAR</h3><h4><span class="evitar">ABSOLUTAMENTE CONTRAINDICADO</span> Termogenicos y estimulantes</h4><p><strong>Extremadamente peligroso:</strong> El hipertiroidismo ya genera un estado hiperestimulado del sistema cardiovascular (taquicardia, hipertension, temblores). Agregar cafeina, sinefrina o cualquier estimulante puede desencadenar crisis tirotoxica, arritmias graves o infarto. Completamente prohibidos.</p><h4><span class="evitar">EVITAR</span> Suplementos con yodo</h4><p>El yodo es el sustrato para sintetizar hormonas tiroideas. En hipertiroidismo, el exceso de yodo empeora la produccion hormonal. Evitar algas marinas, multivitaminicos con yodo alto.</p><h3>Interacciones criticas</h3><ul><li><strong>Metimazol/Propiltiouracilo (antitiroideos):</strong> Consultar cualquier suplemento con el endocrinologo.</li><li><strong>Propranolol (beta-bloqueante para controlar taquicardia):</strong> La cafeina antagoniza su efecto. Evitar todo estimulante.</li></ul>';
 
