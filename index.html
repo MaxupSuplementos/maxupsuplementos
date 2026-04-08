@@ -599,6 +599,19 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 .comp-tabla td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06);color:#ddd}
 .comp-tabla tr:hover td{background:rgba(255,255,255,.03)}
 .comp-tabla .mejor{color:#00FF88;font-weight:700}
+.comp-ia{margin-top:20px;background:rgba(0,200,255,.04);border:1px solid rgba(0,200,255,.15);border-radius:12px;padding:24px;display:none}
+.comp-ia-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.comp-ia-titulo{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.08em;color:var(--cyan)}
+.comp-ia-badge{background:var(--grad);color:#000;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.06em}
+.comp-ia-content{font-size:.9rem;color:#ccc;line-height:1.8}
+.comp-ia-content h4{font-family:'Bebas Neue',sans-serif;color:var(--cyan);font-size:1rem;letter-spacing:.06em;margin:16px 0 6px}
+.comp-ia-content strong{color:#fff}
+.comp-ia-content .tag-mejor{background:rgba(0,255,136,.12);color:#00FF88;border:1px solid rgba(0,255,136,.3);padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:700}
+.comp-ia-content .tag-precio{background:rgba(0,200,255,.12);color:var(--cyan);border:1px solid rgba(0,200,255,.3);padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:700}
+.comp-ia-content .tag-calidad{background:rgba(255,0,153,.12);color:var(--pink);border:1px solid rgba(255,0,153,.3);padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:700}
+.comp-ia-loading{text-align:center;padding:32px;color:var(--gray)}
+.comp-ia-loading .spinner{display:inline-block;width:32px;height:32px;border:3px solid rgba(0,200,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
 .comp-btn{padding:11px 28px;background:var(--grad);color:#000;border:none;
   border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;cursor:pointer}
 
@@ -693,6 +706,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <li><a href="#catalogo">Catálogo</a></li>
     <li><a href="#comparador">Comparar</a></li>
     <li><a href="#recomendador">Recomendación</a></li>
+    <li><a href="salud.html" style="color:var(--green)">🏥 Salud</a></li>
     <li><a href="#nosotros">Nosotros</a></li>
     <li><a href="#liquidaciones" style="color:#FF0099" onclick="mostrarLiquidaciones()">🔥 Ofertas</a></li>
     <li><a href="https://wa.me/5491168461457" target="_blank" class="nav-cta nav-wa">📲 WhatsApp</a></li>
@@ -705,6 +719,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   <a href="#comparador">⚖️ Comparar</a>
   <a href="#recomendador">🎯 Recomendación</a>
   <a href="#liquidaciones" style="color:#FF0099;border-color:rgba(255,0,153,.3)" onclick="mostrarLiquidaciones()">🔥 Ofertas</a>
+  <a href="salud.html" style="color:var(--green);border-color:rgba(0,230,118,.3)">🏥 Salud</a>
   <a href="https://wa.me/5491168461457" target="_blank">📲 WhatsApp</a>
 </div>
 
@@ -821,6 +836,13 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
       <select class="comp-select" id="comp3" onchange="actualizarComparador()"><option value="">— Producto 3 (opcional) —</option></select>
     </div>
     <div class="comp-tabla" id="compTabla"></div>
+    <div class="comp-ia" id="compIA">
+      <div class="comp-ia-header">
+        <div class="comp-ia-titulo">Análisis Inteligente</div>
+        <span class="comp-ia-badge">✨ IA</span>
+      </div>
+      <div class="comp-ia-content" id="compIAContent"></div>
+    </div>
   </div>
 </section>
 
@@ -4422,7 +4444,7 @@ function buildCard(p){
   const flavorOpts = p.flavors.map(f=>{
     const tag = f.stock===0?' (Agotado)':f.stock<=3&&f.stock>0?` (Últimas ${f.stock})`:'';
     return `<option value="${f.name}" data-stock="${f.stock}" class="${f.stock===0?'agotado':''}">${f.name}${tag}</option>`;
-  }).join('');
+  }).join('\n');
 
   const flavorSel = multiFlav ? `
     <div class="flavor-label">Sabor / Presentación</div>
@@ -5710,26 +5732,94 @@ function poblarComparador() {
 }
 
 function actualizarComparador() {
-  const ids = ['comp1','comp2','comp3'].map(id => document.getElementById(id)?.value).filter(Boolean);
-  const tabla = document.getElementById('compTabla');
-  if (ids.length < 2) { tabla.style.display = 'none'; return; }
+  var ids = ['comp1','comp2','comp3'].map(function(id){ var el=document.getElementById(id); return el?el.value:''; }).filter(Boolean);
+  var tabla = document.getElementById('compTabla');
+  var iaDiv = document.getElementById('compIA');
+  if (ids.length < 2) { tabla.style.display='none'; iaDiv.style.display='none'; return; }
 
-  const prods = ids.map(id => getProduct(id)).filter(Boolean);
-  const precios = prods.map(p => p.price);
-  const minPrecio = Math.min(...precios);
-  const maxStock = Math.max(...prods.map(p => p.flavors.reduce((s,f)=>s+f.stock,0)));
+  var prods = ids.map(function(id){ return getProduct(id); }).filter(Boolean);
+  var precios = prods.map(function(p){ return p.price; });
+  var minPrecio = Math.min.apply(null, precios);
+  var maxStock = Math.max.apply(null, prods.map(function(p){ return p.flavors.reduce(function(s,f){ return s+f.stock; },0); }));
 
   tabla.style.display = 'block';
-  tabla.innerHTML = `<table>
-    <tr><th>Característica</th>${prods.map(p=>`<th>${p.name}</th>`).join('')}</tr>
-    <tr><td>Marca</td>${prods.map(p=>`<td>${p.brand}</td>`).join('')}</tr>
-    <tr><td>Categoría</td>${prods.map(p=>`<td>${p.cat}</td>`).join('')}</tr>
-    <tr><td>Precio efectivo</td>${prods.map(p=>`<td class="${p.price===minPrecio?'mejor':''}">$${p.price.toLocaleString('es-AR')}${p.price===minPrecio?' ✓ Mejor precio':''}</td>`).join('')}</tr>
-    <tr><td>Precio tarjeta</td>${prods.map(p=>`<td>$${(p.price_tarjeta||Math.round(p.price*1.08)).toLocaleString('es-AR')}</td>`).join('')}</tr>
-    <tr><td>Stock total</td>${prods.map(p=>{const s=p.flavors.reduce((x,f)=>x+f.stock,0);return`<td class="${s===maxStock?'mejor':''}">${s} ud.${s===maxStock?' ✓ Más stock':''}</td>`}).join('')}</tr>
-    <tr><td>Sabores</td>${prods.map(p=>`<td>${p.flavors.length} opción${p.flavors.length>1?'es':''}</td>`).join('')}</tr>
-    <tr><td></td>${prods.map(p=>`<td><button class="comp-btn" onclick="openProdModal('${p.id}')">Ver producto</button></td>`).join('')}</tr>
-  </table>`;
+
+  var headers = '<tr><th>Característica</th>' + prods.map(function(p){ return '<th>'+p.name+'</th>'; }).join('') + '</tr>';
+  var rowMarca = '<tr><td>Marca</td>' + prods.map(function(p){ return '<td>'+p.brand+'</td>'; }).join('') + '</tr>';
+  var rowCat = '<tr><td>Tipo</td>' + prods.map(function(p){ return '<td>'+p.cat+'</td>'; }).join('') + '</tr>';
+  var rowPrecio = '<tr><td>Precio efectivo</td>' + prods.map(function(p){ return '<td class="'+(p.price===minPrecio?'mejor':'')+'">$'+p.price.toLocaleString('es-AR')+(p.price===minPrecio?' ✓ Mejor precio':'')+'</td>'; }).join('') + '</tr>';
+  var rowTarjeta = '<tr><td>Precio tarjeta</td>' + prods.map(function(p){ return '<td>$'+(p.price_tarjeta||Math.round(p.price*1.08)).toLocaleString('es-AR')+'</td>'; }).join('') + '</tr>';
+  var rowStock = '<tr><td>Stock total</td>' + prods.map(function(p){ var s=p.flavors.reduce(function(x,f){ return x+f.stock; },0); return '<td class="'+(s===maxStock?'mejor':'')+'">'+s+' ud.'+(s===maxStock?' ✓ Más stock':'')+'</td>'; }).join('') + '</tr>';
+  var rowSabores = '<tr><td>Sabores/Presentaciones</td>' + prods.map(function(p){ return '<td>'+p.flavors.length+' opción'+(p.flavors.length>1?'es':'')+'</td>'; }).join('') + '</tr>';
+  var rowBtn = '<tr><td></td>' + prods.map(function(p){ return '<td><button class="comp-btn" onclick="openProdModal('+JSON.stringify(p.id)+')">Ver producto</button></td>'; }).join('') + '</tr>';
+
+  tabla.innerHTML = '<table>' + headers + rowMarca + rowCat + rowPrecio + rowTarjeta + rowStock + rowSabores + rowBtn + '</table>';
+
+  // Análisis IA
+  generarAnalisisIA(prods);
+}
+
+async function generarAnalisisIA(prods) {
+  var iaDiv = document.getElementById('compIA');
+  var iaContent = document.getElementById('compIAContent');
+  iaDiv.style.display = 'block';
+  iaContent.innerHTML = '<div class="comp-ia-loading"><div class="spinner"></div><div>Analizando productos...</div></div>';
+
+  var detalles = prods.map(function(p){
+    var stock = p.flavors.reduce(function(s,f){ return s+f.stock; }, 0);
+    return p.name + ' (' + p.brand + ') - Categoria: ' + p.cat + ' - Precio: $' + p.price.toLocaleString('es-AR') + ' - Stock: ' + stock + ' uds - Descripcion: ' + (p.desc||'Sin descripcion');
+  }).join('\n');
+
+  var prompt = 'Sos un experto en nutricion deportiva y suplementos con 15 años de experiencia. '
+    + 'Un cliente en Argentina esta comparando estos productos en una tienda de suplementos:\n\n'
+    + detalles + '\n\n'
+    + 'Genera un analisis tecnico completo y detallado en español argentino (tuteo). El analisis debe incluir:\n\n'
+    + '### ¿Que es cada producto y para que sirve?\n'
+    + 'Explica en detalle que es cada suplemento, como funciona en el cuerpo, sus ingredientes activos principales y sus beneficios especificos.\n\n'
+    + '### Diferencias tecnicas\n'
+    + 'Explica las diferencias en composicion, proceso de elaboracion, biodisponibilidad, velocidad de absorcion y perfil nutricional. Usa terminos tecnicos pero explicalos.\n\n'
+    + '### ¿Para quien es cada uno?\n'
+    + 'Segun objetivo (ganar masa, definir, rendimiento, salud), nivel de entrenamiento (principiante, intermedio, avanzado), edad, sexo, condicion fisica, ¿cual conviene a cada perfil?\n\n'
+    + '### Relacion calidad-precio\n'
+    + 'Analiza el costo por porcion/servicio, la cantidad de activos por dosis y el valor real que ofrece cada uno.\n\n'
+    + '### Recomendacion final\n'
+    + 'Di directamente cual elegirias en cada situacion: si buscas precio, calidad maxima, rendimiento deportivo, bienestar general. Se especifico y directo.\n\n'
+    + 'Si los productos son de categorias muy diferentes, primero explica para que sirve cada uno y si son complementarios o excluyentes segun el objetivo del cliente. Se extenso — mas informacion es mejor.';
+
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    var data = await response.json();
+    var texto = data.content && data.content[0] ? data.content[0].text : 'No se pudo generar el analisis.';
+    iaContent.innerHTML = formatearAnalisis(texto);
+  } catch(e) {
+    iaContent.innerHTML = '<p style="color:#888">No se pudo cargar el analisis. Revisa tu conexion.</p>';
+  }
+}
+
+function formatearAnalisis(texto) {
+  var html = texto;
+  // Titulos ### 
+  var lines = html.split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i].indexOf('### ') === 0) {
+      lines[i] = '<h4>' + lines[i].slice(4) + '</h4>';
+    }
+  }
+  html = lines.join('\n');
+  // Negritas **texto**
+  html = html.replace(/\*\*([^*]+)\*\*/g, function(m, t){ return '<strong>' + t + '</strong>'; });
+  // Párrafos
+  html = html.split('\n\n').join('</p><p>');
+  html = html.split('\n').join('<br>');
+  return '<p>' + html + '</p>';
 }
 
 // ══════════════════════════════════════════════════════════
