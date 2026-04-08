@@ -611,6 +611,13 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 .comp-ia-content .tag-calidad{background:rgba(255,0,153,.12);color:var(--pink);border:1px solid rgba(255,0,153,.3);padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:700}
 .comp-ia-loading{text-align:center;padding:32px;color:var(--gray)}
 .comp-ia-loading .spinner{display:inline-block;width:32px;height:32px;border:3px solid rgba(0,200,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:12px}
+.comp-tag-ok{display:inline-block;background:rgba(0,255,136,.12);color:#00FF88;border:1px solid rgba(0,255,136,.3);padding:2px 8px;border-radius:20px;font-size:.72rem;font-weight:700;margin:2px}
+.comp-tag-cuidado{display:inline-block;background:rgba(255,165,0,.12);color:#FFA500;border:1px solid rgba(255,165,0,.3);padding:2px 8px;border-radius:20px;font-size:.72rem;font-weight:700;margin:2px}
+.comp-ia-content h3{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.06em;color:var(--cyan);margin:20px 0 8px;padding-left:10px;border-left:3px solid var(--cyan)}
+.comp-ia-content h4{font-weight:700;color:var(--white);margin:14px 0 6px}
+.comp-ia-content p{margin-bottom:10px;line-height:1.8}
+.comp-ia-content ul{margin:6px 0 12px 20px}
+.comp-ia-content li{margin-bottom:5px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .comp-btn{padding:11px 28px;background:var(--grad);color:#000;border:none;
   border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;cursor:pointer}
@@ -5759,50 +5766,559 @@ function actualizarComparador() {
   generarAnalisisIA(prods);
 }
 
-async function generarAnalisisIA(prods) {
+function generarHTML(secciones) {
+  var html = '';
+  secciones.forEach(function(s) {
+    html += '<h4>' + s.titulo + '</h4><p>' + s.texto + '</p>';
+  });
+  return html;
+}
+
+function generarAnalisisIA(prods) {
   var iaDiv = document.getElementById('compIA');
   var iaContent = document.getElementById('compIAContent');
   iaDiv.style.display = 'block';
-  iaContent.innerHTML = '<div class="comp-ia-loading"><div class="spinner"></div><div>Analizando productos...</div></div>';
 
-  var detalles = prods.map(function(p){
-    var stock = p.flavors.reduce(function(s,f){ return s+f.stock; }, 0);
-    return p.name + ' (' + p.brand + ') - Categoria: ' + p.cat + ' - Precio: $' + p.price.toLocaleString('es-AR') + ' - Stock: ' + stock + ' uds - Descripcion: ' + (p.desc||'Sin descripcion');
-  }).join('\n');
+  var ids = prods.map(function(p){ return p.id; }).sort();
+  var clave = ids.join('|');
 
-  var prompt = 'Sos un experto en nutricion deportiva y suplementos con 15 años de experiencia. '
-    + 'Un cliente en Argentina esta comparando estos productos en una tienda de suplementos:\n\n'
-    + detalles + '\n\n'
-    + 'Genera un analisis tecnico completo y detallado en español argentino (tuteo). El analisis debe incluir:\n\n'
-    + '### ¿Que es cada producto y para que sirve?\n'
-    + 'Explica en detalle que es cada suplemento, como funciona en el cuerpo, sus ingredientes activos principales y sus beneficios especificos.\n\n'
-    + '### Diferencias tecnicas\n'
-    + 'Explica las diferencias en composicion, proceso de elaboracion, biodisponibilidad, velocidad de absorcion y perfil nutricional. Usa terminos tecnicos pero explicalos.\n\n'
-    + '### ¿Para quien es cada uno?\n'
-    + 'Segun objetivo (ganar masa, definir, rendimiento, salud), nivel de entrenamiento (principiante, intermedio, avanzado), edad, sexo, condicion fisica, ¿cual conviene a cada perfil?\n\n'
-    + '### Relacion calidad-precio\n'
-    + 'Analiza el costo por porcion/servicio, la cantidad de activos por dosis y el valor real que ofrece cada uno.\n\n'
-    + '### Recomendacion final\n'
-    + 'Di directamente cual elegirias en cada situacion: si buscas precio, calidad maxima, rendimiento deportivo, bienestar general. Se especifico y directo.\n\n'
-    + 'Si los productos son de categorias muy diferentes, primero explica para que sirve cada uno y si son complementarios o excluyentes segun el objetivo del cliente. Se extenso — mas informacion es mejor.';
+  // 1. Par especifico predefinido
+  var html = COMPARACIONES_PARES[clave] || '';
 
-  try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    var data = await response.json();
-    var texto = data.content && data.content[0] ? data.content[0].text : 'No se pudo generar el analisis.';
-    iaContent.innerHTML = formatearAnalisis(texto);
-  } catch(e) {
-    iaContent.innerHTML = '<p style="color:#888">No se pudo cargar el analisis. Revisa tu conexion.</p>';
+  // 2. Si no hay par exacto, construir analisis dinamico
+  if (!html) {
+    var cats = prods.map(function(p){ return p.cat; });
+    html = generarAnalisisDinamico(prods, cats);
   }
+
+  // 3. Siempre agregar complementariedad si son categorias distintas
+  var cats2 = prods.map(function(p){ return p.cat; });
+  var misma = cats2.every(function(x){ return x === cats2[0]; });
+  if (!misma) {
+    var compClave = cats2.slice().sort().join('|');
+    var comp = COMPLEMENTOS[compClave];
+    if (!comp) {
+      // buscar pares dentro de 3 productos
+      for (var i = 0; i < cats2.length; i++) {
+        for (var j = i+1; j < cats2.length; j++) {
+          var k = [cats2[i],cats2[j]].sort().join('|');
+          if (COMPLEMENTOS[k]) { comp = COMPLEMENTOS[k]; break; }
+        }
+        if (comp) break;
+      }
+    }
+    if (comp) {
+      html += '<h4 style="color:var(--cyan);margin-top:20px">Son complementarios?</h4><p>' + comp + '</p>';
+    }
+  }
+
+  iaContent.innerHTML = html;
 }
+
+var catLabels = {
+  proteina:'Proteina', creatina:'Creatina', aminoacido:'Aminoacidos',
+  preworkout:'Pre-entreno', quemador:'Quemador/Termogenico', gainer:'Gainer',
+  colageno:'Colageno', vitamin:'Vitaminas y Minerales', hidratacion:'Hidratacion',
+  barra:'Barra proteica', accesorio:'Accesorio'
+};
+
+function generarAnalisisDinamico(prods, cats) {
+  var misma = cats.every(function(x){ return x === cats[0]; });
+  var html = '';
+
+  if (misma) {
+    var cat = cats[0];
+    var catInfo = INFO_CATEGORIAS[cat] || '';
+    html += '<h3>Que son los ' + (catLabels[cat]||cat) + '</h3><p>' + catInfo + '</p>';
+    html += '<h3>Analizando los productos seleccionados</h3>';
+    prods.forEach(function(p) {
+      html += '<h4>' + p.name + ' — ' + p.brand + '</h4>';
+      html += '<p>' + (p.desc || 'Producto de alta calidad de marca reconocida.') + '</p>';
+    });
+    // Consejos de categoria
+    var consejofn = CONSEJOS_CAT[cat];
+    if (consejofn) html += consejofn(prods);
+    // Comparacion de precio por gramo si misma cat
+    html += generarComparacionPrecio(prods);
+  } else {
+    html += '<h3>Productos de categorias distintas</h3>';
+    html += '<p>Estos productos tienen funciones diferentes. Te explicamos cada uno para que sepas si los necesitas juntos o tenes que priorizar.</p>';
+    prods.forEach(function(p) {
+      html += '<h3>' + (catLabels[p.cat]||p.cat) + ': ' + p.name + '</h3>';
+      html += '<p><strong>Marca:</strong> ' + p.brand + '</p>';
+      var info = INFO_CATEGORIAS[p.cat];
+      if (info) html += '<p>' + info + '</p>';
+      html += '<p><strong>Este producto especificamente:</strong> ' + (p.desc || '') + '</p>';
+    });
+  }
+  return html;
+}
+
+function generarComparacionPrecio(prods) {
+  var html = '<h4>Comparacion de valor</h4><ul>';
+  prods.forEach(function(p) {
+    var stock = p.flavors.reduce(function(s,f){ return s+f.stock; }, 0);
+    var kg = p.name.toLowerCase().indexOf('1 kg') >= 0 ? 1 :
+             p.name.toLowerCase().indexOf('500g') >= 0 ? 0.5 :
+             p.name.toLowerCase().indexOf('300g') >= 0 ? 0.3 :
+             p.name.toLowerCase().indexOf('200g') >= 0 ? 0.2 : null;
+    var pgram = kg ? Math.round(p.price / (kg * 1000)) : null;
+    html += '<li><strong>' + p.name + '</strong> (' + p.brand + '): $' + p.price.toLocaleString('es-AR');
+    if (pgram) html += ' — <span style="color:var(--cyan)">$' + pgram + ' por gramo</span>';
+    html += ' — Stock: ' + stock + ' uds</li>';
+  });
+  html += '</ul>';
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════
+//  BASE DE CONOCIMIENTO: COMPARACIONES PREDEFINIDAS
+// ═══════════════════════════════════════════════════════
+
+
+// ── PROTEÍNAS vs PROTEÍNAS ──────────────────────────────
+
+// Whey concentrado vs aislado (par más consultado)
+COMPARACIONES['sn_whey_dp|sn_plat_2lb'] = generarHTML([
+  {titulo: 'Whey Doypack (Star Nutrition) — Concentrado', texto: 'Es la proteína de suero concentrada (WPC). Contiene entre 70-80% de proteína por porción, más lactosa, más grasas y carbohidratos residuales que el aislado. El proceso de filtración es menos intenso, lo que conserva más componentes bioactivos del suero (lactoferrina, inmunoglobulinas) que pueden ser beneficiosos. Es la opción más accesible económicamente y funciona muy bien para la mayoría de las personas que no tienen intolerancia a la lactosa.'},
+  {titulo: 'Platinum Whey Protein (Star Nutrition) — Concentrado + Aislado', texto: 'Fórmula premium que combina concentrado y aislado de proteína de suero. El aislado aporta mayor concentración de proteína por porción (85-90%), menor lactosa y menor contenido graso. La mezcla de ambos da un perfil proteico más completo: absorción rápida del aislado más los péptidos bioactivos del concentrado. Mejor digestibilidad y más apta para intolerantes leves a la lactosa.'},
+  {titulo: 'Diferencias técnicas clave', texto: 'El concentrado tiene mayor contenido de lactosa (puede causar molestias digestivas). El Platinum tiene mejor perfil aminoacídico por porción y mayor biodisponibilidad. Ambos son fuentes completas de proteína con todos los aminoácidos esenciales. La diferencia en resultados musculares entre ambos es marginal si la proteína total diaria es adecuada.'},
+  {titulo: '¿Para quién es cada uno?', texto: 'Doypack: principiantes, personas sin problemas digestivos, quienes buscan el mejor precio. Ideal para el día a día como batido post-entrenamiento. Platinum: personas con leve intolerancia a la lactosa, atletas intermedios/avanzados que quieren mayor calidad y digestibilidad, quienes priorizan la relación calidad-proteína por porción.'},
+  {titulo: 'Recomendación final', texto: 'Si buscás precio: Doypack es imbatible. Si buscás calidad y digestibilidad: Platinum. Para resultados musculares concretos, ambos funcionan igual de bien si cubrís tu objetivo proteico diario (1.6-2.2g/kg). La diferencia es más en digestibilidad y comodidad que en resultados.'}
+]);
+
+COMPARACIONES['sn_plat_2lb|sn_plat_3kg'] = generarHTML([
+  {titulo: '2 Lb vs 3 Kg: Mismo producto, diferente escala', texto: 'El Platinum Whey 2Lb y el 3Kg son la misma fórmula de Star Nutrition — concentrado + aislado microfiltrado. La diferencia es exclusivamente el formato y el precio por porción. El 3Kg ofrece un costo por porción significativamente menor, ideal para consumo sostenido.'},
+  {titulo: '¿Cuándo elegir 2 Lb?', texto: 'Primera vez que probás el producto y querés ver si te cae bien. Si no tenés certeza de mantener el consumo regular. Si el espacio de almacenamiento es limitado. Para viajes o consumo esporádico.'},
+  {titulo: '¿Cuándo elegir 3 Kg?', texto: 'Si ya sabés que el producto te sienta bien. Si entrenás regularmente y consumís al menos 1 porción diaria. El ahorro por porción en el 3Kg puede ser de 15-25% respecto al 2Lb. Para atletas serios que consumen proteína todos los días, el 3Kg es la opción inteligente.'},
+  {titulo: 'Cálculo de consumo', texto: 'Si tomás 1 porción de 30g por día: el 2Lb (aprox 908g) dura ~30 días. El 3Kg dura ~100 días. Para consumo regular, el 3Kg es claramente la mejor inversión.'}
+]);
+
+COMPARACIONES['ena_truemade|sn_whey_dp'] = generarHTML([
+  {titulo: 'ENA TrueMade — Blend de Proteínas (Isolada + Concentrada)', texto: 'TrueMade de ENA es una fórmula blend que combina proteína aislada de suero (WPI) con concentrada (WPC). La presencia del aislado como componente principal le da mayor concentración proteica por porción y menor lactosa. ENA es una marca argentina reconocida, con buena relación calidad-precio y control de calidad local.'},
+  {titulo: 'Star Nutrition Whey Doypack — Concentrado Clásico', texto: 'El Whey Doypack de Star es un concentrado puro (WPC). Más económico, mayor contenido de lactosa y grasas residuales. Star Nutrition es la marca de referencia en Argentina con décadas de trayectoria. El doypack es un formato conveniente y popular.'},
+  {titulo: 'Diferencia principal: Composición', texto: 'TrueMade tiene mayor % de proteína por porción por el aislado. Menor lactosa (mejor para intolerantes leves). Star Doypack tiene más carbohidratos y grasas por porción pero es más económico. Ambos proveen todos los aminoácidos esenciales con alto contenido de leucina para la síntesis proteica.'},
+  {titulo: '¿Para quién es cada uno?', texto: 'TrueMade: personas que buscan mayor calidad proteica, intolerantes leves a la lactosa, definición muscular donde importa más la proteína neta. Doypack: volumen/ganancia de masa donde las calorías extra no molestan, quienes priorizan precio, principiantes.'},
+  {titulo: 'Recomendación', texto: 'Para calidad y digestibilidad: TrueMade. Para mejor precio con buena calidad: Doypack. En términos de resultados musculares, la diferencia es pequeña si ambos cubren tus necesidades proteicas diarias.'}
+]);
+
+COMPARACIONES['gn_isogold|ena_truemade'] = generarHTML([
+  {titulo: 'Gold Nutrition Iso Gold — Aislado Puro (WPI)', texto: 'Iso Gold es proteína de suero aislada al 100%. El proceso de micro e ultrafiltración elimina prácticamente toda la lactosa y las grasas, dejando >90% de proteína por porción. Es la forma más pura de proteína de suero disponible. Digestión más rápida, menor carga calórica, ideal para intolerantes a la lactosa.'},
+  {titulo: 'ENA TrueMade — Blend (WPI + WPC)', texto: 'TrueMade combina aislado y concentrado. Tiene alta proteína por porción pero no tan pura como el Iso Gold. La mezcla de ambas proteínas da un perfil de absorción más sostenido: el aislado se absorbe rápido (ideal post-entreno) y el concentrado un poco más lento.'},
+  {titulo: 'WPI vs WPI+WPC: ¿Importa la diferencia?', texto: 'Para el 90% de las personas, la diferencia práctica es mínima si la ingesta proteica total es correcta. El aislado puro brilla en: intolerancia a la lactosa, dietas muy estrictas de definición donde cada caloría cuenta, personas con digestión muy sensible. El blend es igualmente efectivo para ganancia de masa muscular y cuesta menos.'},
+  {titulo: 'Recomendación', texto: 'Iso Gold: si sos intolerante a la lactosa, estás en fase de definición estricta o tu digestión es sensible. TrueMade: si buscás excelente calidad a mejor precio con digestión normal. Para ganancia muscular pura, ambos son equivalentes.'}
+]);
+
+COMPARACIONES['gn_vegetal|nfit_vegprot'] = generarHTML([
+  {titulo: 'Proteínas Vegetales: Vegetal Protein vs Proteína Vegetal Isolate', texto: 'Ambos son proteínas 100% vegetales, sin lactosa, sin gluten, aptos para veganos y personas con intolerancia a la leche. La diferencia está en la fuente y el proceso de elaboración.'},
+  {titulo: 'Gold Nutrition Vegetal Protein', texto: 'Blend de proteínas vegetales (típicamente arveja + arroz o similar). La combinación de fuentes vegetales complementa los perfiles aminoacídicos: la arveja es alta en lisina pero baja en metionina; el arroz es alto en metionina pero bajo en lisina. Juntos forman un perfil más completo.'},
+  {titulo: 'NucleoFit Proteína Vegetal Isolate', texto: 'Proteína vegetal en formato aislado. El proceso de aislamiento aumenta el porcentaje de proteína por porción y reduce carbohidratos y grasas. El "isolate" vegetal es más puro y tiene mejor digestibilidad.'},
+  {titulo: 'Calidad de proteína vegetal vs animal', texto: 'Las proteínas vegetales tienen un score PDCAAS (digestibilidad y aminoácidos) levemente inferior al whey, pero la diferencia práctica en ganancia muscular es mínima si se consume suficiente cantidad. Estudios recientes muestran resultados equivalentes entre proteína de arveja y whey para hipertrofia cuando las dosis son iguales.'},
+  {titulo: 'Recomendación', texto: 'Ambos son excelentes opciones veganas. El Isolate tiene mayor proteína por porción y mejor digestibilidad. El blend puede ofrecer mejor perfil aminoacídico completo. Si sos vegano o intolerante a la lactosa, cualquiera de los dos funciona perfectamente.'}
+]);
+
+COMPARACIONES['pp_pea|gn_vegetal'] = generarHTML([
+  {titulo: 'Protein Project Pea Isolate — Aislado de Arveja', texto: 'Proteína aislada de arveja al 100%. La arveja amarilla es actualmente la fuente de proteína vegetal con mayor evidencia científica para ganancia muscular. Estudios directos comparan proteína de arveja vs whey para hipertrofia y muestran resultados equivalentes. Alta en leucina, lisina y arginina. Sin lectinas ni fitatos (removidos en el proceso de aislamiento).'},
+  {titulo: 'Gold Nutrition Vegetal Protein — Blend Vegetal', texto: 'Mezcla de fuentes vegetales para un perfil aminoacídico más completo. Los blends vegetales compensan las deficiencias individuales de cada fuente proteica.'},
+  {titulo: 'Arveja sola vs Blend vegetal', texto: 'La arveja aislada tiene ventaja en pureza y concentración proteica. El blend tiene ventaja en variedad de aminoácidos. Para síntesis proteica muscular, la leucina es el aminoácido más crítico (trigger del mTORC1), y la arveja tiene buena concentración de leucina (~8% del perfil).'},
+  {titulo: 'Recomendación', texto: 'Para máxima proteína por porción y mejor evidencia científica: Pea Isolate. Para una dieta vegana variada con perfil aminoacídico más completo: Blend vegetal. Ambos son opciones sólidas para veganos y personas con intolerancia láctea.'}
+]);
+
+// ── CREATINAS ──────────────────────────────────────────
+
+COMPARACIONES['on_creat|sn_creat_pote'] = generarHTML([
+  {titulo: 'Optimum Nutrition Creatine vs Star Nutrition Creatina', texto: 'Una de las comparaciones más frecuentes del mercado argentino: la creatina importada premium vs la nacional de calidad.'},
+  {titulo: 'ON Creatine Powder — El estándar internacional', texto: 'Optimum Nutrition usa Creapure®, la creatina monohidrato alemana considerada el gold standard mundial. Creapure es producida por AlzChem bajo certificación ISO, con pureza >99.9% y sin contaminantes. Ha sido la creatina de referencia en estudios clínicos. ON también tiene tercera certificación Informed Sport (libre de sustancias prohibidas).'},
+  {titulo: 'Star Nutrition Creatina — Nacional de alta calidad', texto: 'Star Nutrition produce creatina monohidrato de alta pureza en Argentina. El proceso de micronización permite mejor disolución y absorción. Para el consumidor promedio, la diferencia con Creapure es prácticamente imperceptible en resultados. Star es accesible, confiable y tiene excelente trayectoria en el mercado local.'},
+  {titulo: 'La verdad sobre las creatinas', texto: 'La creatina monohidrato es la misma molécula independientemente de la marca. La diferencia está en la pureza y el proceso de fabricación. Ambas marcas ofrecen creatina de alta calidad. Los efectos (aumento de fuerza, potencia y masa muscular) son los mismos con cualquier creatina de calidad cuando se toma la dosis correcta (3-5g diarios).'},
+  {titulo: 'Recomendación', texto: 'Si buscás la mejor creatina sin restricciones de presupuesto o competís en deportes con control antidoping: ON Creatine (Creapure certificada). Si buscás excelente calidad al mejor precio posible: Star Nutrition Creatina. Los resultados son prácticamente idénticos.'}
+]);
+
+COMPARACIONES['sn_creat_300|ena_creat'] = generarHTML([
+  {titulo: 'Star Nutrition vs ENA Creatina Micronizada', texto: 'Dos de las marcas nacionales más populares en creatina.'},
+  {titulo: 'Star Nutrition Creatina 300g', texto: 'Creatina monohidrato ultramicronizada. Star es la marca más vendida de Argentina con décadas de respaldo. Su proceso de micronización garantiza rápida disolución y buena biodisponibilidad. Sin aditivos innecesarios.'},
+  {titulo: 'ENA Creatina Micronizada 300g', texto: 'ENA también ofrece creatina monohidrato micronizada. ENA tiene larga trayectoria en el mercado argentino y buen control de calidad. Su micronización es comparable a Star en términos de disolución y absorción.'},
+  {titulo: 'Diferencia real', texto: 'Ambas son creatina monohidrato micronizada de alta calidad de marcas argentinas reconocidas. La diferencia en resultados es mínima. El factor decisivo es el precio por gramo en el momento de la compra y la disponibilidad.'},
+  {titulo: 'Recomendación', texto: 'Elegí la que tenga mejor precio en el momento. Ambas funcionan igual de bien. La constancia en el consumo (3-5g diarios sostenidos) importa mucho más que la marca.'}
+]);
+
+COMPARACIONES['sn_creat_pote|sn_creat_1kg'] = generarHTML([
+  {titulo: '300g vs 1 Kg: Misma creatina, diferente compromiso', texto: 'Ambos son Star Nutrition Creatina Monohidrato. La única diferencia es el tamaño.'},
+  {titulo: '¿Por qué comprar 1 Kg?', texto: 'A 5g diarios (dosis estándar), los 300g duran 60 días. El 1Kg dura 200 días (6-7 meses). El precio por gramo del 1Kg es significativamente menor. Si ya sabés que la creatina te funciona bien (no causa molestias digestivas ni retención hídrica problemática), el 1Kg es la inversión más inteligente.'},
+  {titulo: '¿Cuándo elegir 300g?', texto: 'Primera vez que usás creatina y querés probar cómo responde tu cuerpo. Si tu presupuesto mensual es ajustado. Si no estás seguro de mantener el hábito de consumo diario.'},
+  {titulo: 'La creatina y la carga', texto: 'El protocolo de carga (20g/día por 5-7 días) satura los músculos más rápido pero el mantenimiento (3-5g/día) llega al mismo punto en 3-4 semanas. Con 1Kg el protocolo de carga no supone un gasto extra significativo.'}
+]);
+
+// ── PRE-ENTRENOS ──────────────────────────────────────
+
+COMPARACIONES['sn_tnt|sn_pumpv8'] = generarHTML([
+  {titulo: 'TNT Dynamite vs Pump V8 — El duelo de los pre-entrenos de Star', texto: 'Star Nutrition tiene dos pre-entrenos con filosofías completamente diferentes. Esta es una de las comparaciones más importantes de su línea.'},
+  {titulo: 'TNT Dynamite — Pre-entreno Estimulante Clásico', texto: 'TNT es el pre-entreno de energía y enfoque. Contiene cafeína (estimulante del SNC), beta-alanina (reduce la fatiga muscular), citrulina malato (vasodilatador, bomba muscular), arginina y otros ingredientes. La cafeína eleva la adrenalina, dopamina y noradrenalina, generando mayor alertamiento mental, reducción de la percepción de esfuerzo y mayor rendimiento en ejercicio de alta intensidad. El hormigueo (parestesia) de la beta-alanina es normal.'},
+  {titulo: 'Pump V8 — Pre-entreno Sin Estimulantes (Stim-Free)', texto: 'Pump V8 es radicalmente diferente: NO contiene cafeína ni estimulantes. Su fórmula se centra en 8 ingredientes vasodilatadores: citrulina malato (alta dosis), agmatina, glicerol, norvaline y otros. El objetivo exclusivo es maximizar la bomba muscular (vasodilatación extrema), la hidratación intracelular muscular y el flujo sanguíneo. Sin estimulantes, no genera tolerancia ni interfiere con el sueño.'},
+  {titulo: 'Diferencia fundamental', texto: 'TNT = energía + bomba. Pump V8 = solo bomba, sin energía. Con TNT sentís más energía, más agresividad y foco. Con Pump V8 la diferencia es visual (venas, congestión muscular) sin el buzz mental. Pump V8 se puede tomar de noche sin afectar el sueño.'},
+  {titulo: '¿Para quién es cada uno?', texto: 'TNT: entrenamiento matutino o vespertino, personas que necesitan motivación y energía, ejercicio de alta intensidad (HIIT, CrossFit, powerlifting). Pump V8: entrenamientos nocturnos, personas sensibles a la cafeína, quienes ya toman cafeína por separado y quieren sumar vasodilatadores, bodybuilders que priorizan la congestión muscular.'},
+  {titulo: 'Recomendación', texto: 'Para energía y rendimiento general: TNT Dynamite. Para máxima bomba sin estimulantes: Pump V8. Para el máximo rendimiento absoluto: algunos atletas avanzados los combinan (media dosis de cada uno), aunque esto requiere tolerancia establecida y no se recomienda para principiantes.'}
+]);
+
+COMPARACIONES['gn_prework|sn_tnt'] = generarHTML([
+  {titulo: 'Gold Nutrition Pre Work vs Star TNT Dynamite', texto: 'Dos pre-entrenos estimulantes de marcas nacionales de referencia.'},
+  {titulo: 'Star TNT Dynamite', texto: 'Fórmula bien establecida con cafeína, beta-alanina, citrulina malato y arginina. Star tiene décadas de trayectoria y TNT es uno de los pre-entrenos más vendidos de Argentina. La dosificación está bien equilibrada para la mayoría de los usuarios.'},
+  {titulo: 'Gold Nutrition Pre Work Gold', texto: 'Pre-entreno de Gold Nutrition con perfil estimulante similar. GN es una marca argentina sólida. Su fórmula incluye ingredientes similares al TNT aunque con variaciones en dosis y fuentes de cafeína o adaptógenos adicionales según la versión.'},
+  {titulo: '¿Cómo elegir entre pre-entrenos similares?', texto: 'Cuando dos pre-entrenos tienen perfiles similares, los factores decisivos son: (1) precio por porción, (2) sabor que preferís (ya que lo vas a tomar frecuentemente), (3) cómo responde tu cuerpo específicamente, (4) si contienen ingredientes que valorás o que preferís evitar.'},
+  {titulo: 'Recomendación', texto: 'Probá el de mejor precio y si te funciona bien en términos de energía y tolerancia digestiva, quedate con ese. Ambas marcas tienen buena calidad. La diferencia de rendimiento entre pre-entrenos similares de marcas nacionales de calidad es mínima.'}
+]);
+
+COMPARACIONES['sn_tnt|wo_preentreno'] = generarHTML([
+  {titulo: 'TNT Dynamite vs Pre Entreno con Quemador — Dos filosofías distintas', texto: 'El TNT es un pre-entreno puro de rendimiento. El Pre Entreno Con Quemador agrega función termogénica al estímulo pre-entrenamiento.'},
+  {titulo: 'TNT Dynamite — Rendimiento puro', texto: 'Optimizado para maximizar el rendimiento deportivo: fuerza, potencia, resistencia, foco mental. Los ingredientes están doseados para el entrenamiento intenso.'},
+  {titulo: 'Pre Entreno Con Quemador — Doble función', texto: 'Combina los estimulantes del pre-entreno con ingredientes termogénicos (extractos quema grasa, L-carnitina, CLA o similares). La idea es entrenar con energía mientras se potencia la oxidación de grasa simultáneamente.'},
+  {titulo: 'La verdad sobre los "quemadores" en pre-entrenos', texto: 'Los ingredientes termogénicos en un pre-entreno tienen efecto más modesto que un termogénico dedicado, ya que las dosis son menores para no comprometer el perfil pre-entrenamiento. Es una solución "2 en 1" conveniente pero no maximiza ninguna de las dos funciones.'},
+  {titulo: 'Recomendación', texto: 'Si tu objetivo principal es el RENDIMIENTO deportivo: TNT Dynamite. Si buscás perder grasa y entrenar con más energía sin querer tomar dos suplementos por separado: Pre Entreno con Quemador. Para resultados óptimos en cada función, es mejor un pre-entreno puro (TNT) + un quemador separado.'}
+]);
+
+// ── QUEMADORES ──────────────────────────────────────
+
+COMPARACIONES['sn_thermo|gn_lipo_hc'] = generarHTML([
+  {titulo: 'Thermo Fuel Max (Star) vs Lipo Burn Hardcore (Gold Nutrition)', texto: 'Los dos termogénicos más potentes de sus respectivas marcas. Esta comparación es para usuarios que buscan el máximo efecto termogénico.'},
+  {titulo: 'Star Nutrition Thermo Fuel Max', texto: 'El termogénico insignia de Star. Contiene cafeína anhidra (estimulante principal), yerba mate (cafeína natural + antioxidantes), CLA (ácido linoleico conjugado, anti-lipogénico), L-Tirosina (precursor de dopamina y noradrenalina, mejora el foco) y otros termogénicos. Fórmula sólida, bien dosificada, con años de respaldo en el mercado.'},
+  {titulo: 'Gold Nutrition Lipo Burn Hardcore', texto: 'El termogénico máxima potencia de GN. Formato Hardcore implica dosis más altas de estimulantes. Contiene múltiples fuentes de cafeína y termogénicos adicionales para mayor intensidad. Indicado para usuarios con tolerancia establecida a los estimulantes.'},
+  {titulo: 'Termogénicos: ¿Qué hacen realmente?', texto: 'Los termogénicos aumentan la temperatura basal del cuerpo (termogénesis), aceleran el metabolismo, reducen el apetito y aumentan la oxidación de grasas. El efecto real sobre la pérdida de grasa es de 3-5% adicional sobre la dieta y el ejercicio. No son la solución mágica, son un complemento que potencia los resultados de una dieta con déficit calórico.'},
+  {titulo: '¿Para quién NO son aptos?', texto: 'Personas con hipertensión, arritmias, problemas cardíacos, ansiedad severa, insomnio, embarazadas o lactantes. No deben combinarse con otros estimulantes ni tomarse después de las 3pm para no afectar el sueño.'},
+  {titulo: 'Recomendación', texto: 'Para iniciarse en termogénicos: Thermo Fuel Max (fórmula balanceada). Para usuarios avanzados con tolerancia establecida que buscan máxima potencia: Lipo Burn Hardcore. Empezar siempre con media dosis para evaluar tolerancia.'}
+]);
+
+COMPARACIONES['wo_fatburner|sn_thermo'] = generarHTML([
+  {titulo: 'Fat Burner Woman vs Thermo Fuel Max — Termogénico femenino vs unisex', texto: 'Una comparación importante: el termogénico diseñado para la mujer vs el termogénico general de alta potencia.'},
+  {titulo: 'Woman Fat Burner — Formulado para la mujer', texto: 'Termogénico con dosis moderadas de estimulantes y componentes específicos para el metabolismo femenino: extracto de té verde (EGCG, antioxidante y termogénico suave), CLA (anti-lipogénico, preserva masa muscular), L-Carnitina (transporte de grasas a la mitocondria) y cafeína natural en dosis moderada. Diseñado para ser efectivo sin generar los efectos secundarios que las mujeres suelen reportar con termogénicos de alta potencia (ansiedad excesiva, palpitaciones, insomnio).'},
+  {titulo: 'Star Thermo Fuel Max — Alta potencia general', texto: 'Termogénico de mayor potencia con cafeína anhidra en dosis más altas. Más agresivo en su efecto estimulante. Muy efectivo para pérdida de grasa pero puede generar mayor ansiedad, insomnio y tolerancia más rápida.'},
+  {titulo: 'Diferencias hormonales que importan', texto: 'Las mujeres tienen mayor sensibilidad a los estimulantes que los hombres en promedio. Las variaciones hormonales del ciclo menstrual afectan la tolerancia a la cafeína. En la fase lútea (post-ovulación), la sensibilidad a la cafeína aumenta. El Fat Burner femenino considera estas particularidades con dosis más moderadas.'},
+  {titulo: 'Recomendación', texto: 'Para mujeres: Fat Burner es la primera opción, especialmente si nunca usaron termogénicos o son sensibles a los estimulantes. Si ya tienen tolerancia establecida y buscan mayor potencia, Thermo Fuel Max puede ser una opción evaluando tolerancia con media dosis.'}
+]);
+
+// ── GAINERS ──────────────────────────────────────────
+
+COMPARACIONES['ena_ultramass|sn_mutant'] = generarHTML([
+  {titulo: 'ENA Ultra Mass vs Star MutantMass — Gainers para volumen', texto: 'Comparación de dos de los gainers nacionales más vendidos. Ambos están diseñados para el objetivo de ganar masa muscular y peso corporal.'},
+  {titulo: 'Star Nutrition MutantMass', texto: 'Gainer de Star con alta densidad calórica. Combina proteína de suero con carbohidratos de alta y media absorción (maltodextrina, avena). Aporte calórico alto por porción (500-700 kcal dependiendo la dosis). Buena fuente de proteínas con perfil aminoacídico completo. Clásico en el mercado argentino.'},
+  {titulo: 'ENA Ultra Mass', texto: 'Gainer de ENA con filosofía similar: altas calorías, proteína moderada, carbohidratos como sustrato principal. ENA tiene buena reputación en el mercado local. La composición es competitiva con MutantMass.'},
+  {titulo: '¿Quién necesita un gainer realmente?', texto: 'Los gainers están pensados para personas con metabolismo muy acelerado (hardgainers) que tienen dificultad para aumentar de peso y cubrir sus requerimientos calóricos solo con la dieta. Si sos del tipo que engorda con relativa facilidad, los gainers pueden generar más grasa que músculo. En ese caso, es mejor subir las calorías de la dieta o usar una proteína pura.'},
+  {titulo: 'Recomendación', texto: 'Ambos gainers cumplen su función. Elegí por precio y sabor. Importante: usarlos como complemento calórico cuando la dieta no alcanza, no como sustituto de comidas. La dosis real que funciona es la que completa tu objetivo calórico diario, no necesariamente la que indica el envase.'}
+]);
+
+COMPARACIONES['gn_gainer|idn_massfusion'] = generarHTML([
+  {titulo: 'Gold Nutrition Gainer Gold vs IDN Mass Fusion', texto: 'Dos gainers con enfoques nutricionales ligeramente diferentes.'},
+  {titulo: 'Gold Nutrition Gainer Gold 5Lb', texto: 'Gainer con mayor volumen por envase, económico en precio por porción. GN tiene larga trayectoria. Su fórmula prioriza el aporte calórico a través de carbohidratos complejos y proteína de suero. El formato de 5 Lb es conveniente para consumo regular y largo plazo.'},
+  {titulo: 'IDN Mass Fusion', texto: 'Gainer con mezcla de proteínas (whey + caseína en algunos formatos) que puede dar absorción más sostenida. IDN es una marca nacional con buena relación calidad-precio.'},
+  {titulo: 'Cómo evaluar un gainer', texto: 'Los factores clave son: (1) proteína por porción (mínimo 25-30g), (2) calidad de proteína (whey vs mezcla), (3) tipo de carbohidratos (preferir complejos sobre azúcares simples), (4) precio por porción y (5) sabor. Revisar la etiqueta nutricional y no solo el marketing del envase.'},
+  {titulo: 'Recomendación', texto: 'Para mayor volumen económico: Gainer Gold. Para una fórmula más balanceada: evaluar el Mass Fusion. En definitiva, el mejor gainer es el que más te gusta en sabor y el que mejor tolera tu sistema digestivo, ya que la constancia es clave.'}
+]);
+
+// ── COLÁGENOS ──────────────────────────────────────
+
+COMPARACIONES['sn_col_sport|sn_col_plus'] = generarHTML([
+  {titulo: 'Collagen Sport vs Collagen Plus — El duelo interno de Star', texto: 'Star tiene dos colágenos premium y la diferencia es importante según tu objetivo.'},
+  {titulo: 'Collagen Sport Naranja 360g — Para el deportista', texto: 'Formulado específicamente para atletas y personas con alta demanda articular. Contiene colágeno hidrolizado tipo I y III + Magnesio + Fósforo + Vitamina C. El magnesio mejora la función muscular y reduce calambres. El fósforo es importante para la mineralización ósea. La vitamina C es cofactor indispensable para la síntesis de colágeno endógeno. Ideal para desgaste articular por entrenamiento intenso.'},
+  {titulo: 'Collagen Plus Limón 360g — Formulación avanzada', texto: 'Colágeno plus con una formulación más completa. Además del colágeno hidrolizado, agrega componentes para la salud articular integral: puede incluir vitamina C, minerales y en algunas versiones ácido hialurónico u otros agentes condroprotectores. Dirigido a quienes buscan la recuperación articular más completa.'},
+  {titulo: 'Tipos de colágeno: Tipo I vs Tipo II vs Tipo III', texto: 'Tipo I: el más abundante del cuerpo. Piel, tendones, ligamentos, huesos. Tipo II: cartílago articular. Tipo III: piel joven, vasos sanguíneos. Los colágenos hidrolizados de Star son principalmente tipo I y III. Para condroprotección (cartílago) pura, el tipo II es más específico.'},
+  {titulo: 'Recomendación', texto: 'Para deportistas con alta exigencia articular y muscular (entrenamiento intenso, levantamiento de pesas): Collagen Sport por su magnesio y fósforo adicionales. Para recuperación articular general, piel y bienestar integral: Collagen Plus. Ambos requieren consumo sostenido de al menos 3 meses para ver resultados.'}
+]);
+
+COMPARACIONES['sn_col210|sn_col_sport'] = generarHTML([
+  {titulo: 'Colágeno Hidrolizado 210g vs Collagen Sport — Básico vs Deportivo', texto: 'La diferencia entre el colágeno básico y el deportivo de Star.'},
+  {titulo: 'Colágeno Hidrolizado 210g — El clásico', texto: 'Colágeno hidrolizado tipo I y III puro. Ideal como primera opción o para quienes buscan los beneficios base: articulaciones, tendones, piel, uñas, cabello. Formato más pequeño y precio más accesible. Para personas que no practican deporte intenso o que priorizan la salud de la piel y el bienestar general.'},
+  {titulo: 'Collagen Sport 360g — Potenciado para el deporte', texto: 'El mismo colágeno base pero con el triple de ingredientes complementarios: magnesio, fósforo y vitamina C. El formato más grande (360g) da mayor duración. La vitamina C es especialmente importante — sin vitamina C suficiente, el colágeno no se sintetiza correctamente en el cuerpo.'},
+  {titulo: 'Importancia de la Vitamina C con colágeno', texto: 'La vitamina C es el cofactor de la prolil-hidroxilasa y lisil-hidroxilasa, enzimas que estabilizan la triple hélice del colágeno. Sin vitamina C, el colágeno que tomás no se incorpora eficientemente al tejido. Siempre tomar colágeno con vitamina C — si tu colágeno no la incluye, tomá la vitamina C por separado.'},
+  {titulo: 'Recomendación', texto: 'Para uso general (piel, uñas, bienestar): Colágeno 210g. Para deportistas con entrenamiento regular y desgaste articular: Collagen Sport. La diferencia de precio se justifica si entrenás intensamente.'}
+]);
+
+COMPARACIONES['gn_col200p|sn_col_sport'] = generarHTML([
+  {titulo: 'GN Colágeno 200g vs Star Collagen Sport', texto: 'Dos colágenos de marcas nacionales de referencia con diferentes enfoques.'},
+  {titulo: 'Gold Nutrition Colágeno Hidrolizado 200g', texto: 'Colágeno hidrolizado puro de GN. Formato práctico (pote 200g). GN es marca confiable con buena relación calidad-precio. Para los beneficios base del colágeno: articulaciones, piel, tendones.'},
+  {titulo: 'Star Collagen Sport 360g', texto: 'Mayor cantidad y fórmula enriquecida con magnesio, fósforo y vitamina C. Para deportistas que entrenan frecuentemente y necesitan mayor soporte articular y muscular.'},
+  {titulo: 'Recomendación', texto: 'Para uso regular no deportivo: GN Colágeno (buen precio). Para deportistas con entrenamiento intenso: Collagen Sport. Si elegís el GN, asegurate de tomar vitamina C por separado para maximizar la síntesis de colágeno.'}
+]);
+
+// ── AMINOÁCIDOS ───────────────────────────────────────
+
+COMPARACIONES['sn_mtor|sn_eaas'] = generarHTML([
+  {titulo: 'BCAA (MTOR) vs EAA — La comparación más importante en aminoácidos', texto: 'Esta es una de las preguntas más frecuentes en nutrición deportiva actual. ¿BCAAs o EAAs? La ciencia ha evolucionado y la respuesta es clara.'},
+  {titulo: 'MTOR BCAA 2:1:1 — Los tres ramificados', texto: 'Los BCAAs son 3 aminoácidos esenciales: Leucina (2), Isoleucina (1) y Valina (1). La leucina es el principal activador del mTORC1, la vía de síntesis proteica muscular. Los BCAAs se oxidan directamente en el músculo como fuente de energía durante el ejercicio. Históricamente fueron el suplemento aminoacídico #1.'},
+  {titulo: 'EAA — Los 9 aminoácidos esenciales completos', texto: 'Los EAAs incluyen los 3 BCAAs más Histidina, Lisina, Metionina, Fenilalanina, Treonina y Triptófano. Para sintetizar nueva proteína muscular, el cuerpo necesita los 9 aminoácidos esenciales. Si falta cualquiera de los 9, la síntesis proteica se detiene — como construir una pared a la que le faltan ladrillos específicos.'},
+  {titulo: 'La ciencia actual: EAAs ganan', texto: 'Estudios recientes demuestran que los EAAs estimulan la síntesis proteica muscular significativamente más que los BCAAs solos. Los BCAAs sin los otros 6 aminoácidos esenciales tienen un efecto limitado porque el cuerpo necesita "robarlos" de otros tejidos para completar la síntesis. Los EAAs proveen el perfil completo para una síntesis proteica óptima.'},
+  {titulo: '¿Para qué sí sirven los BCAAs?', texto: 'Los BCAAs siguen siendo útiles en contextos específicos: entrenamiento en ayunas (para proteger músculo), ejercicio de muy larga duración donde la oxidación de BCAAs como combustible es alta, y como fuente de leucina adicional post-entrenamiento.'},
+  {titulo: 'Recomendación', texto: 'Si ya tomás proteína whey completa antes/después de entrenar: los BCAAs adicionales tienen poco beneficio incremental (el whey ya tiene todos los EAAs). Si entrenás en ayunas o querés suplementar aminoácidos específicamente: los EAAs son superiores a los BCAAs por la completitud del perfil. El MTOR BCAA es un excelente suplemento; los EAAs son simplemente más completos.'}
+]);
+
+COMPARACIONES['sn_glut|ena_glut'] = generarHTML([
+  {titulo: 'L-Glutamina Star vs ENA — ¿Importa la marca?', texto: 'Comparación de glutamina pura de dos marcas nacionales de referencia.'},
+  {titulo: 'L-Glutamina 300g (Star Nutrition)', texto: 'Glutamina pura de Star. El aminoácido más abundante en el plasma y en el músculo esquelético. Función principal: recuperación muscular, salud intestinal (combustible preferido de los enterocitos), función inmune (sustrato para linfocitos), y reducción del dolor muscular post-esfuerzo intenso. Star garantiza alta pureza.'},
+  {titulo: 'ENA Glutamina 300g en Pote', texto: 'Glutamina de ENA con el mismo principio activo. ENA tiene tradición y buen control de calidad. El pote es conveniente para almacenamiento y dosificación.'},
+  {titulo: 'La realidad sobre la glutamina', texto: 'La evidencia científica sobre la glutamina para rendimiento deportivo en personas sanas es mixta. El cuerpo sintetiza glutamina endógenamente y la dieta proteica la provee en abundancia. Los beneficios más documentados son: salud intestinal (especialmente en períodos de estrés o entrenamiento muy intenso), recuperación inmune después de ejercicio prolongado de alta intensidad, y apoyo a la salud de la mucosa intestinal.'},
+  {titulo: 'Recomendación', texto: 'La glutamina de Star y ENA son prácticamente idénticas en calidad. Elegí por precio. Si tenés presupuesto limitado, priorizá proteína completa sobre glutamina extra: el whey ya contiene glutamina en abundancia. La glutamina separada es más útil para: intestino permeable, períodos de entrenamiento muy intenso, o durante infecciones/enfermedad.'}
+]);
+
+COMPARACIONES['sn_lcarnitina|ena_lcarnitina'] = generarHTML([
+  {titulo: 'L-Carnitina Star (60 cápsulas) vs ENA (60 cápsulas)', texto: 'L-Carnitina pura de dos marcas nacionales. Una comparación de formato y concentración.'},
+  {titulo: 'Star Nutrition L-Carnitina 60 Caps', texto: 'L-Carnitina estándar en cápsulas. La carnitina es un aminoácido condicional que transporta ácidos grasos de cadena larga a través de la membrana mitocondrial interna para su oxidación. Es el "taxi" de las grasas hacia la mitocondria. Sin carnitina suficiente, las grasas no pueden entrar a la mitocondria para quemarse como energía.'},
+  {titulo: 'ENA L-Carnitina 1500mg x60 Caps', texto: 'ENA ofrece L-Carnitina de mayor concentración por cápsula (1500mg). Mayor dosis por cápsula significa potencialmente mayor efecto o la posibilidad de tomar menos cápsulas. La alta dosis es relevante porque los estudios que muestran efectos positivos usaron 2-3g diarios.'},
+  {titulo: 'La verdad sobre la L-Carnitina', texto: 'El cuerpo sano sintetiza suficiente carnitina endógenamente. Los estudios muestran beneficios modestos en oxidación de grasa, principalmente cuando: (1) los niveles de carnitina están depletados (vegetarianos, personas mayores, déficit renal), (2) se combina con ejercicio aeróbico, (3) se toman dosis de 2-3g diarios por períodos sostenidos. No es un "quema grasa" mágico.'},
+  {titulo: 'Recomendación', texto: 'Para mayor efectividad buscar la dosis de 2-3g diarios. La ENA 1500mg tiene ventaja en concentración. Si la dosis de la Star es menor por cápsula, necesitarás más cápsulas para llegar a la dosis efectiva. Comparar el costo por gramo de carnitina activa.'}
+]);
+
+COMPARACIONES['gen_carnit|ena_lcarnitina'] = generarHTML([
+  {titulo: 'Carnitina Líquida vs Carnitina en Cápsulas', texto: 'Una comparación sobre la forma de administración más que sobre la marca.'},
+  {titulo: 'Carnitina Líquida (General Nutrition)', texto: 'La L-Carnitina en forma líquida tiene biodisponibilidad ligeramente mayor que las cápsulas, siendo absorbida más rápidamente. El inicio de acción es más rápido. Ideal para tomar 30-40 minutos antes del ejercicio aeróbico. El sabor suele ser agradable. Mayor concentración por toma en menos volumen.'},
+  {titulo: 'ENA Carnitina en Cápsulas', texto: 'Las cápsulas tienen absorción más lenta pero sostenida. Son más convenientes para llevar, no requieren refrigeración y tienen vida útil más larga. La biodisponibilidad es ligeramente menor que la líquida pero la diferencia práctica en resultados es mínima.'},
+  {titulo: 'Recomendación', texto: 'Para máxima conveniencia y vida útil: cápsulas. Para máxima absorción pre-ejercicio: líquida. La diferencia en resultados entre ambas formas es pequeña. Elegí por conveniencia y precio por gramo.'}
+]);
+
+// ── VITAMINAS Y SUPLEMENTOS ───────────────────────────
+
+COMPARACIONES['sn_omega3|ge_omega3'] = generarHTML([
+  {titulo: 'Star Omega 3 60 Caps vs Good Energy Omega 3 200 Caps', texto: 'La misma molécula esencial, diferente escala. Una comparación de costo-beneficio importante.'},
+  {titulo: 'Star Nutrition Omega 3 60 Caps', texto: 'Omega 3 Fish Oil de Star. EPA y DHA de pescado de agua profunda. 60 cápsulas. Para uso inicial o si querés probar el producto. Star garantiza calidad y control en el proceso.'},
+  {titulo: 'Good Energy Omega 3 1000mg 200 Caps', texto: '200 cápsulas del mismo principio activo. El Good Energy ofrece mayor volumen a menor precio por cápsula. Ideal para consumo regular de largo plazo (el omega 3 debe tomarse de forma continua para sus beneficios — mínimo 3 meses para ver cambios en perfil lipídico).'},
+  {titulo: 'Dosis efectiva de Omega 3', texto: 'La dosis efectiva depende del objetivo: Bienestar general: 1g EPA+DHA diario. Reducción de triglicéridos: 2-4g diarios. Efecto antiinflamatorio articular: 3-4g diarios. Efecto antidepresivo: 1-2g de EPA diario. Asegurarse que el producto indique el contenido de EPA y DHA específicamente, no solo "aceite de pescado".'},
+  {titulo: 'Recomendación', texto: 'Para consumo regular sostenido: Good Energy 200 caps por el costo por cápsula significativamente menor. Si es tu primera vez con omega 3 y querés probar tolerancia digestiva: 60 caps de cualquier marca. Una vez confirmada la buena tolerancia, pasá al formato mayor.'}
+]);
+
+COMPARACIONES['sn_zma|gn_zma'] = generarHTML([
+  {titulo: 'ZMA Star 90 Caps vs ZMA Gold Nutrition 60 Caps', texto: 'ZMA es una fórmula patentada con Zinc, Magnesio y Vitamina B6. Una comparación entre los dos más vendidos.'},
+  {titulo: 'ZMA: ¿Qué hace realmente?', texto: 'ZMA fue desarrollado originalmente para atletas con deficiencias de zinc y magnesio (muy comunes en personas que sudan mucho). Zinc: cofactor en la síntesis de testosterona y GH. Magnesio: regulación del sueño profundo (ondas delta), función muscular. Vitamina B6: síntesis de neurotransmisores y cofactor metabólico. Los estudios muestran mejora en la calidad del sueño profundo y potencial mejora en niveles de testosterona en personas con deficiencias previas.'},
+  {titulo: 'Star ZMA 90 Caps', texto: 'Fórmula ZMA clásica de Star. 90 cápsulas es el formato estándar. Dosis típica: 3 cápsulas antes de dormir. Star usa las formas estándar de zinc y magnesio bien absorbibles.'},
+  {titulo: 'Gold Nutrition ZMA 60 Caps', texto: 'Fórmula ZMA de GN. 60 cápsulas. Puede tener variaciones en las formas específicas de zinc y magnesio (aspartato, gluconato, citrato). Las formas de mayor biodisponibilidad son el zinc bisglicinato y el magnesio citrato o glicinato.'},
+  {titulo: 'Recomendación', texto: 'Ambos cumplen la función del ZMA. Star tiene más cápsulas por envase (mejor precio por dosis). GN es igualmente confiable. Evaluar las formas de zinc y magnesio en la etiqueta: preferir citrato/bisglicinato/glicinato sobre óxido. Tomar siempre con el estómago vacío antes de dormir (el calcio interfiere con la absorción del zinc y el magnesio).'}
+]);
+
+COMPARACIONES['sn_citr60|lap_mag'] = generarHTML([
+  {titulo: 'Citrato de Magnesio Star vs Bisglicinato de Magnesio Lapa — Formas de magnesio', texto: 'Esta comparación es sobre la forma química del magnesio, no solo la marca. Y hace una diferencia real.'},
+  {titulo: 'Citrato de Magnesio (Star Nutrition)', texto: 'El magnesio citrato es una sal del magnesio con ácido cítrico. Biodisponibilidad media-alta (~25-30%). Es la forma más estudiada y probada. Tiene leve efecto laxante que puede ser positivo para personas con constipación o negativo para personas con digestión sensible. Es la forma más común y accesible en el mercado.'},
+  {titulo: 'Bisglicinato de Magnesio (Lapa)', texto: 'El magnesio bisglicinato (quelado con glicina) tiene la mayor biodisponibilidad de todas las formas de magnesio (~35-40%). La glicina además tiene efectos sedantes y mejora la calidad del sueño de forma independiente. Prácticamente sin efecto laxante. Es la forma premium de magnesio, más cara pero más efectiva por miligramo absorbido.'},
+  {titulo: 'Comparación por objetivo', texto: 'Para sueño y recuperación nocturna: Bisglicinato (la glicina suma al efecto). Para función muscular y calambres generales: ambos funcionan. Para constipación ocasional: Citrato (el efecto laxante leve es beneficioso). Para personas con intestino sensible: Bisglicinato por su gentileza digestiva.'},
+  {titulo: 'Recomendación', texto: 'Si el objetivo principal es mejorar el sueño y la recuperación: Bisglicinato (la diferencia es notable). Si buscás una opción más económica y efectiva para función muscular general: Citrato. En términos de biodisponibilidad pura, el bisglicinato es superior.'}
+]);
+
+COMPARACIONES['lap_ashwa|sn_zma'] = generarHTML([
+  {titulo: 'Ashwagandha + Vit C vs ZMA — Adaptógeno vs Minerales para la recuperación', texto: 'Dos enfoques muy distintos para apoyar la recuperación, el sueño y el rendimiento hormonal.'},
+  {titulo: 'Ashwagandha con Vitamina C (Lapa)', texto: 'La ashwagandha (Withania somnifera) es un adaptógeno con las siguientes acciones documentadas: reducción del cortisol sérico (hormona del estrés catabólica), mejora de la resistencia al estrés, aumento de la testosterona y la fuerza muscular (meta-análisis muestran +10-15% de fuerza en 8 semanas), mejora de la calidad del sueño por efecto GABAérgico y reducción de la ansiedad. La vitamina C es antioxidante y cofactor en la síntesis de cortisol adrenal.'},
+  {titulo: 'ZMA (Zinc, Magnesio, B6)', texto: 'Actúa principalmente a través de la corrección de deficiencias minerales. El zinc optimiza la síntesis de testosterona, el magnesio mejora el sueño profundo y la recuperación muscular, y la B6 actúa como cofactor en la síntesis de neurotransmisores.'},
+  {titulo: 'Mecanismos diferentes, objetivos similares', texto: 'ZMA corrige deficiencias y optimiza la fisiología base. Ashwagandha actúa directamente sobre el eje HPA (hipotálamo-hipófisis-suprarrenal), reduciendo el cortisol y mejorando la respuesta adaptativa al estrés del entrenamiento.'},
+  {titulo: 'Evidencia científica', texto: 'Ashwagandha tiene fuerte evidencia para reducción de cortisol, mejora del sueño y aumento de testosterona. ZMA tiene evidencia principalmente en personas con deficiencias de zinc y magnesio (atletas que sudan mucho). Si ya tenés niveles adecuados de zinc y magnesio, el ZMA tendrá menor efecto que la ashwagandha.'},
+  {titulo: 'Recomendación', texto: 'Para estrés crónico, cortisol alto y querer mejorar la testosterona de forma más directa: Ashwagandha es superior. Para optimizar el sueño profundo y la recuperación muscular básica: ZMA. Para máximos resultados: pueden combinarse (son mecanismos complementarios).'}
+]);
+
+// ── DIFERENTES CATEGORÍAS ─────────────────────────────
+
+COMPARACIONES['sn_whey_dp|sn_creat_pote'] = generarHTML([
+  {titulo: 'Proteína Whey + Creatina — El stack fundamental', texto: 'Estos no son competidores — son los dos suplementos más importantes del fitness y se complementan perfectamente. Si solo pudieras elegir 2 suplementos, la ciencia dice que serían exactamente estos.'},
+  {titulo: 'Proteína Whey — El constructor', texto: 'La proteína de suero provee los aminoácidos (especialmente leucina) que activan el mTORC1, la vía principal de síntesis proteica muscular. Sin suficiente proteína, el entrenamiento rompe el músculo pero el cuerpo no tiene los materiales para reconstruirlo y hacerlo más grande. Es el suplemento #1 en respaldo científico para hipertrofia muscular.'},
+  {titulo: 'Creatina — El potenciador de rendimiento', texto: 'La creatina monohidrato es el suplemento más estudiado en la historia de la nutrición deportiva con más de 1000 estudios. Aumenta los fosfocreatos intramusculares que regeneran el ATP durante ejercicio de alta intensidad. Resultado: más repeticiones, más peso, mayor volumen de entrenamiento. Y más volumen = más estímulo = más músculo. También tiene efectos directos sobre la síntesis proteica.'},
+  {titulo: 'Sinergia documentada', texto: 'Múltiples estudios combinando proteína + creatina muestran mayor ganancia de masa muscular que cada uno por separado. La creatina te permite entrenar más intenso, la proteína te da los materiales para construir el tejido generado por ese entrenamiento más intenso.'},
+  {titulo: 'Protocolo recomendado', texto: 'Creatina: 3-5g diarios todos los días (con o sin entrenamiento), cualquier momento del día. La consistencia diaria importa más que el timing. Proteína: 25-30g post-entrenamiento como mínimo, cubriendo un total de 1.6-2.2g/kg de peso corporal por día incluyendo la dieta.'},
+  {titulo: 'Recomendación', texto: 'Si solo pudieras comprar uno: proteína (más impacto en principiantes). Si ya consumís proteína adecuada en la dieta: agregá creatina como prioridad. Ambos juntos: el dúo insuperable para cualquier persona que quiera resultados músculares reales.'}
+]);
+
+COMPARACIONES['sn_tnt|sn_whey_dp'] = generarHTML([
+  {titulo: 'Pre-entreno vs Proteína — ¿Cuál es más importante?', texto: 'Una pregunta frecuente de quienes tienen presupuesto limitado y deben elegir. La respuesta tiene base científica clara.'},
+  {titulo: 'Proteína Whey — La base fundamental', texto: 'La proteína es el material de construcción del músculo. Sin suficiente proteína, no hay crecimiento muscular posible independientemente de qué tan bien entrenes. Es el suplemento con mayor respaldo científico para la hipertrofia.'},
+  {titulo: 'Pre-entreno TNT — El potenciador', texto: 'El pre-entreno mejora la calidad del entrenamiento: más energía, más fuerza percibida, mejor enfoque, mayor tolerancia al dolor muscular. Pero potencia lo que ya existe — si el entrenamiento básico y la nutrición no están bien, el pre-entreno no construye músculo por sí solo.'},
+  {titulo: 'Jerarquía de suplementos para crecimiento muscular', texto: '1° Dieta con suficiente proteína y calorías. 2° Proteína en polvo si la dieta no alcanza los requerimientos. 3° Creatina. 4° Pre-entreno. El pre-entreno es el 4° escalón: útil, pero construís sobre una base sólida de los primeros tres.'},
+  {titulo: 'Recomendación', texto: 'Con presupuesto limitado, siempre elegí proteína sobre pre-entreno. La proteína tiene impacto directo en el resultado (músculo). El pre-entreno mejora la experiencia del entrenamiento pero sin la base nutricional correcta, su efecto es limitado. Cuando ya cubrís tu proteína diaria con dieta + suplemento, el pre-entreno se convierte en la adición con mayor impacto percibido.'}
+]);
+
+COMPARACIONES['sn_thermo|sn_lcarnitina'] = generarHTML([
+  {titulo: 'Termogénico vs L-Carnitina para perder grasa — Mecanismos distintos', texto: 'Dos suplementos con el objetivo común de ayudar a quemar grasa, pero con mecanismos completamente diferentes.'},
+  {titulo: 'Thermo Fuel Max — Termogénico estimulante', texto: 'Actúa principalmente aumentando el metabolismo basal (termogénesis), reduciendo el apetito y movilizando ácidos grasos desde el tejido adiposo. La cafeína eleva el AMPc y activa la lipasa hormono-sensible que libera grasa de los adipocitos. Efecto más rápido y perceptible (sentís que funciona). La tolerancia se desarrolla con el tiempo.'},
+  {titulo: 'L-Carnitina — Transportador de grasas', texto: 'La L-carnitina actúa en el paso posterior: una vez que los ácidos grasos están movilizados, la carnitina los transporta dentro de la mitocondria para ser quemados. Sin carnitina suficiente, los ácidos grasos no pueden entrar a la mitocondria. Efecto más sutil, acumulativo, sin estimulación del SNC.'},
+  {titulo: 'Complementariedad', texto: 'Son complementarios, no competidores. El termogénico moviliza la grasa desde el tejido adiposo. La carnitina asegura que esa grasa llegue a la mitocondria para quemarse. Muchos termogénicos incluyen carnitina en su fórmula justamente por esta sinergia.'},
+  {titulo: 'Para quién es cada uno', texto: 'Termogénico: personas sanas sin condiciones cardíacas que toleran bien la cafeína y buscan un efecto más pronunciado y rápido. L-Carnitina: personas sensibles a los estimulantes, hipertensas, con arritmias, o como complemento suave a la dieta y ejercicio.'},
+  {titulo: 'Recomendación', texto: 'Para mayor efecto en pérdida de grasa: Termogénico (más potente). Para un enfoque más suave y sostenible: Carnitina. Para máximos resultados seguros: combinar ambos (la carnitina complementa sin sumar estimulantes). Recordar: ninguno reemplaza el déficit calórico y el ejercicio.'}
+]);
+
+COMPARACIONES['sn_col_sport|sn_creat_pote'] = generarHTML([
+  {titulo: 'Colágeno vs Creatina — Para articulaciones vs Para músculo', texto: 'Dos suplementos con funciones completamente distintas. Esta comparación es clave para entender para qué sirve cada uno.'},
+  {titulo: 'Collagen Sport — Protege la estructura', texto: 'El colágeno hidrolizado es el sustrato para regenerar y mantener el tejido conectivo: cartílagos, tendones, ligamentos, huesos y piel. El entrenamiento intenso genera microtraumas en estas estructuras. El colágeno aporta los aminoácidos específicos (glicina, prolina, hidroxiprolina) que el cuerpo usa para repararlos. Previene lesiones y mejora la recuperación articular a largo plazo.'},
+  {titulo: 'Creatina — Potencia el rendimiento', texto: 'La creatina actúa en la fase energética del ejercicio: aumenta el ATP disponible para contracciones musculares de alta intensidad. Genera más fuerza, más repeticiones, más volumen de entrenamiento. También tiene evidencia de aumento de masa muscular directa.'},
+  {titulo: 'Son complementarios — No compiten', texto: 'La creatina te ayuda a entrenar más intenso. El colágeno protege las articulaciones que soportan ese entrenamiento más intenso. Para alguien que levanta pesas regularmente, los dos juntos es el stack para rendir más y mantenerse sano por más tiempo.'},
+  {titulo: 'Prioridad según objetivo', texto: 'Si el objetivo principal es GANAR MÚSCULO y FUERZA: creatina primero. Si hay dolor articular, lesiones recurrentes o entrenás con alta frecuencia con peso: colágeno primero. Para alguien sin historial de lesiones que empieza: creatina tiene mayor impacto inicial. Para alguien de 35+ o con años de entrenamiento intenso: colágeno es igual o más importante.'}
+]);
+
+// ═══════════════════════════════════════════════════════
+//  COMPARACIONES POR CATEGORÍA (cuando no hay par exacto)
+// ═══════════════════════════════════════════════════════
+
+
+var INFO_CATEGORIAS = {
+  proteina: '<strong>Las proteinas en polvo</strong> proveen aminoacidos esenciales para la sintesis y recuperacion muscular. Son el suplemento mas respaldado cientificamente para hipertrofia. La dosis efectiva es de 25-40g por porcion, buscando un total de 1.6-2.2g/kg de peso corporal por dia. <br><br><strong>Tipos que vas a encontrar:</strong> Concentrado (WPC) — economico, tiene lactosa, 70-80% proteina. Aislado (WPI) — microfiltrado, sin lactosa, 90%+ proteina, absorcion mas rapida. Blend — mezcla de ambos. Proteina vegetal — apta para veganos e intolerantes a la lactosa.',
+
+  creatina: '<strong>La creatina monohidrato</strong> es el suplemento mas estudiado de la historia de la nutricion deportiva con mas de 500 estudios clinicos. Funciona aumentando los fosfocreatos intramusculares para regenerar ATP durante el ejercicio explosivo e intenso. Resultados comprobados: +5-15% en fuerza, +1-3kg de masa muscular en los primeros meses, mejor recuperacion entre series. <br><br><strong>Clave:</strong> Todas las creatinas monohidrato son quimicamente identicas. No hay diferencia entre marcas en terminos de molecula — la diferencia esta en la pureza (micronizacion) y el precio. No requiere fase de carga. Dosis: 3-5g diarios siempre, aunque no entrenes.',
+
+  preworkout: '<strong>Los pre-entrenos</strong> combinan multiples ingredientes activos para mejorar el rendimiento. Los ingredientes clave son: Cafeina (200-300mg) — aumenta el foco y reduce la percepcion del esfuerzo. Citrulina malato (6-8g) — aumenta el oxido nitrico para mayor congestion y resistencia muscular. Beta-alanina (3-6g) — aumenta la carnosina muscular, retrasando la fatiga. <br><br><strong>Dos grandes tipos:</strong> Con estimulantes (cafeina alta) — mas energia, mas agresivos, no tomar despues de las 3pm. Sin estimulantes (solo vasodilatadores) — mejor congestion sin efecto en el sueno, apto nocturno.',
+
+  aminoacido: '<strong>Los aminoacidos</strong> son los bloques constructores de las proteinas. La jerarquia de completitud es: EAAs (9 aminoacidos esenciales) > BCAAs (3 ramificados: leucina, isoleucina, valina) > aminoacidos individuales. <br><br>Los BCAAs son utiles principalmente si no consumes suficiente proteina total en el dia. Si ya tomas suficiente proteina (1.8-2.2g/kg), los BCAAs agregan poco. La leucina es el aminoacido mas anabolico — activa directamente mTOR, el interruptor del crecimiento muscular.',
+
+  quemador: '<strong>Los quemadores y termogenicos</strong> aceleran el metabolismo basal (3-7% adicional), reducen el apetito y aumentan la oxidacion de grasas. Su efecto es real pero modesto: sin deficit calorico no queman grasa sola. <br><br><strong>Mecanismos:</strong> Cafeina y estimulantes — elevan el metabolismo y la movilizacion de grasa. L-Carnitina — transporta acidos grasos a la mitocondria (mayor efecto con ejercicio aerobico). CLA — modula el metabolismo lipidico. Extractos vegetales (te verde, yerba mate) — sinergia con cafeina.',
+
+  gainer: '<strong>Los gainers</strong> son hipercaloricos disenados para personas con dificultad para ganar peso (hardgainers o ectomorfos). Combinan proteina con grandes cantidades de carbohidratos. Una porcion aporta entre 500-1200 kcal. <br><br><strong>Para quien son:</strong> Personas con metabolismo muy acelerado que no pueden comer suficiente, personas muy delgadas en etapa de volumen intenso. <strong>Para quien NO son:</strong> Personas con sobrepeso, resistencia a la insulina, diabetes o tendencia a ganar grasa facilmente.',
+
+  colageno: '<strong>El colageno hidrolizado</strong> provee los aminoacidos especificos (glicina, prolina, hidroxiprolina) que estimulan la sintesis de colageno endogeno en cartílagos, tendones, ligamentos, piel y huesos. Los resultados son acumulativos — minimo 3 meses de consumo sostenido para notar diferencia en articulaciones. <br><br><strong>Tipos:</strong> Tipo I y III (piel, tendones, huesos) — mas comun. Tipo II (cartilago articular) — especifico para rodillas y cadera. Siempre tomar con vitamina C que es cofactor indispensable para la sintesis de colageno.',
+
+  vitamin: '<strong>Las vitaminas y minerales</strong> son la base que permite que todos los demas suplementos funcionen. Los mas importantes para deportistas: Omega 3 (EPA/DHA) — antiinflamatorio, salud cardiovascular y cerebral. Magnesio — contraccion muscular, sintesis de proteinas, calidad del sueno. Zinc + B6 (ZMA) — produccion natural de testosterona, recuperacion nocturna. Vitamina C — antioxidante, sintesis de colageno, inmunidad.',
+
+  hidratacion: '<strong>Los suplementos de hidratacion</strong> reemplazan electrolitos (sodio, potasio, magnesio) perdidos en el sudor y proveen carbohidratos para mantener el rendimiento. Son fundamentales en sesiones de mas de 60 minutos, en condiciones de calor o para deportes de resistencia.',
+
+  barra: '<strong>Las barras proteicas</strong> son opciones convenientes de proteina para consumir fuera de casa. Evaluar siempre la relacion proteina/azucar: buscar al menos 15g de proteina y menos de 10g de azucar por barra.',
+
+  accesorio: '<strong>Los accesorios de entrenamiento</strong> mejoran la seguridad, el agarre y la experiencia del entrenamiento.'
+};
+
+var CONSEJOS_CAT = {
+  proteina: function(prods) {
+    var html = '<h4>Como elegir entre estas proteinas</h4>';
+    var vegetal = prods.filter(function(p){ return p.name.toLowerCase().indexOf('vegetal')>=0||p.name.toLowerCase().indexOf('pea')>=0||p.brand==='Nucleo Fit'||p.brand==='Protein Project'; });
+    var blend = prods.filter(function(p){ return p.name.toLowerCase().indexOf('blend')>=0||p.name.toLowerCase().indexOf('truemade')>=0; });
+    var isol = prods.filter(function(p){ return p.name.toLowerCase().indexOf('iso')>=0||p.name.toLowerCase().indexOf('platinum')>=0||p.name.toLowerCase().indexOf('isolate')>=0; });
+    if (vegetal.length) html += '<p><span class="comp-tag-ok">VEGANOS / SIN LACTOSA</span> ' + vegetal.map(function(p){return '<strong>'+p.name+'</strong>';}).join(', ') + ': proteina de origen vegetal (arveja, arroz). Sin lactosa, sin gluten, apta para intolerantes. Perfil de aminoacidos completo aunque levemente inferior al whey en absorcion.</p>';
+    if (isol.length) html += '<p><span class="comp-tag-ok">MAYOR PUREZA</span> ' + isol.map(function(p){return '<strong>'+p.name+'</strong>';}).join(', ') + ': proceso de aislamiento ultrafiltrado, 90%+ proteina, minima lactosa. Mayor precio pero maxima calidad proteica y absorcion mas rapida.</p>';
+    if (blend.length) html += '<p><span class="comp-tag-ok">MEJOR RELACION CALIDAD/PRECIO</span> ' + blend.map(function(p){return '<strong>'+p.name+'</strong>';}).join(', ') + ': mezcla de concentrado e isolado. Buen perfil de aminoacidos a precio intermedio. Tiene algo de lactosa — probar tolerancia si sos sensible.</p>';
+    html += '<p><strong>Regla de oro:</strong> La mejor proteina es la que tomas todos los dias. Prioriza la que mejor toleres digestivamente y te ajuste al presupuesto. El sabor importa — si no te gusta, no la vas a tomar.</p>';
+    return html;
+  },
+  creatina: function(prods) {
+    return '<h4>La verdad sobre comparar creatinas</h4><p>Todas las creatinas monohidrato que ves aqui son quimicamente la misma molecula. La diferencia entre marcas es principalmente la <strong>micronizacion</strong> (granulo mas fino = mejor disolucion) y el precio. No existe evidencia solida de que otras formas de creatina (HCl, etil ester, bufferada) sean superiores al monohidrato. <br><br><strong>Lo que SI importa comparar:</strong> Precio por gramo, envase (pote vs doypack), si viene saborizada o neutra. <br><br><strong>La ON (Optimum Nutrition)</strong> es la marca de referencia mundial con el estandar mas alto de pureza. Las marcas argentinas (Star, ENA, IDN) ofrecen excelente calidad a menor precio.</p>';
+  },
+  preworkout: function(prods) {
+    var sinestim = prods.filter(function(p){ return p.name.toLowerCase().indexOf('pump')>=0||p.id==='sn_pumpv8'; });
+    var conestim = prods.filter(function(p){ return p.name.toLowerCase().indexOf('tnt')>=0||p.name.toLowerCase().indexOf('dynamite')>=0||p.id==='sn_tnt'; });
+    var html = '<h4>Como elegir el pre-entreno correcto</h4>';
+    if (sinestim.length && conestim.length) {
+      html += '<p><strong>Con estimulantes vs Sin estimulantes:</strong> Si entrenais de manana o temprano, el pre-entrenamiento con cafeina (TNT Dynamite y similares) te va a dar mas energia y foco. Si entrenais de noche o sos sensible a la cafeina, el pre-entrenamiento vasodilatador sin estimulantes (Pump V8 y similares) te da la congestion y el rendimiento sin afectar el sueno.</p>';
+    }
+    html += '<p><strong>El orden de importancia de los ingredientes:</strong> 1) Citrulina malato (+6g) para la congestion. 2) Cafeina (150-250mg) para el foco. 3) Beta-alanina para la resistencia. Los que pican en la piel con beta-alanina es completamente normal (parestesia) — no es danino.</p>';
+    return html;
+  },
+  quemador: function(prods) {
+    var mujer = prods.filter(function(p){ return p.brand==='Woman'||p.name.toLowerCase().indexOf('fat burner')>=0||p.name.toLowerCase().indexOf('mujer')>=0; });
+    var html = '<h4>Como comparar quemadores</h4>';
+    if (mujer.length) html += '<p><span class="comp-tag-ok">FEMENINO</span> ' + mujer.map(function(p){return '<strong>'+p.name+'</strong>';}).join(', ') + ': formulado especificamente para metabolismo femenino con extractos hormonalmente beneficiosos como el CLA y la L-Carnitina. Estimulacion mas suave.</p>';
+    html += '<p><strong>Lo que mas importa al comparar termogenicos:</strong> Cantidad de cafeina total (si ya tomas cafe o pre-entrenamiento, sumarlo), ingredientes activos por capsula, numero de porciones reales por envase. Revisar siempre el etiquetado nutricional antes que el marketing.</p>';
+    html += '<p><strong>La verdad:</strong> Sin deficit calorico y ejercicio, ningun quemador va a eliminar grasa. Son potenciadores de un proceso que tiene que ocurrir en la dieta y el entrenamiento.</p>';
+    return html;
+  },
+  colageno: function(prods) {
+    var sport = prods.filter(function(p){ return p.name.toLowerCase().indexOf('sport')>=0; });
+    var plus = prods.filter(function(p){ return p.name.toLowerCase().indexOf('plus')>=0; });
+    var html = '<h4>Las diferencias entre tipos de colageno</h4>';
+    if (sport.length) html += '<p><span class="comp-tag-ok">DEPORTIVO</span> ' + sport.map(function(p){return '<strong>'+p.name+'</strong>';}).join(', ') + ': contiene colageno base + Magnesio y Fosforo. El Magnesio mejora la contraccion muscular y reduce calambres. Ideal para deportistas con alta carga de entrenamiento.</p>';
+    if (plus.length) html += '<p><span class="comp-tag-ok">COMPLETO</span> ' + plus.map(function(p){return '<strong>'+p.name+'</strong>';}).join(', ') + ': contiene colageno + Vitamina C ya incluida + otros activos. La vitamina C es cofactor indispensable para la sintesis de colageno endogeno. Conveniente si no queres tomar vitamina C por separado.</p>';
+    html += '<p><strong>Para articulaciones:</strong> Cualquier colageno hidrolizado tomado con vitamina C funciona. <strong>Para piel y cabello:</strong> Colágeno tipo I y III. <strong>Para cartilago:</strong> Buscar colageno tipo II especifico. Los resultados son acumulativos — minimo 3 meses para notar diferencia.</p>';
+    return html;
+  },
+  gainer: function(prods) {
+    return '<h4>Como elegir entre gainers</h4><p>Los gainers se diferencian principalmente por la <strong>ratio proteina/carbohidratos</strong> y el total de calorias por porcion. Un gainer con 30g proteina y 60g carbos es mas "limpio" (mejor ratio) que uno con 20g proteina y 100g carbos. <br><br><strong>Para ganar masa de calidad:</strong> Buscar al menos 25g de proteina por porcion. <strong>Para un volumen agresivo:</strong> El total de calorias importa mas. <br><br>El secreto de los gainers es beberlos ADEMAS de comer bien — no reemplazar comidas, sino agregar calorias encima de la dieta normal.</p>';
+  },
+  aminoacido: function(prods) {
+    var bcaa = prods.filter(function(p){ return p.name.toLowerCase().indexOf('bcaa')>=0; });
+    var eaa = prods.filter(function(p){ return p.name.toLowerCase().indexOf('eaa')>=0; });
+    var carn = prods.filter(function(p){ return p.name.toLowerCase().indexOf('carnitina')>=0||p.name.toLowerCase().indexOf('carnitine')>=0; });
+    var glut = prods.filter(function(p){ return p.name.toLowerCase().indexOf('glutamina')>=0||p.name.toLowerCase().indexOf('glutamine')>=0; });
+    var html = '<h4>Aminoacidos: entendiendo cada uno</h4>';
+    if (bcaa.length && eaa.length) {
+      html += '<p><strong>BCAA vs EAA:</strong> Los EAAs (aminoacidos esenciales) son superiores a los BCAAs porque contienen los 9 esenciales, incluyendo los 3 BCAAs. Si tenes que elegir entre ambos, los EAAs dan mas valor. Los BCAAs son util si ya tomas suficiente proteina y solo queres los 3 ramificados especificamente.</p>';
+    }
+    if (carn.length) html += '<p><strong>L-Carnitina:</strong> No es un estimulante — es un transportador de acidos grasos a la mitocondria. Su efecto en la quema de grasa es real pero requiere ejercicio aerobico para activarse. Mejor tomada 30-60 minutos antes del cardio.</p>';
+    if (glut.length) html += '<p><strong>L-Glutamina:</strong> El aminoacido mas abundante en el musculo. Util para recuperacion y permeabilidad intestinal. Mayor beneficio en personas que entrenan muy seguido o con alto volumen (puede reducir el dolor muscular tardio).</p>';
+    return html;
+  },
+  hidratacion: function(prods) {
+    return '<h4>Hidratacion: cuando usar cada opcion</h4><p>Para sesiones cortas (menos de 60 min): agua sola es suficiente. Para sesiones largas (60-120 min): bebida isotonica con electrolitos. Para entrenamiento de resistencia (+2hs) o condiciones de calor extremo: bebida isotonica + carbohidratos. <br><br>La <strong>maltodextrina/fructosa</strong> es para energia rapida (pre o durante). Los <strong>recovery drinks</strong> son para post-entreno con proteina + carbohidratos.</p>';
+  },
+  vitamin: function(prods) {
+    var omega = prods.filter(function(p){ return p.name.toLowerCase().indexOf('omega')>=0; });
+    var zma = prods.filter(function(p){ return p.name.toLowerCase().indexOf('zma')>=0; });
+    var mag = prods.filter(function(p){ return p.name.toLowerCase().indexOf('magnesio')>=0||p.name.toLowerCase().indexOf('magnesium')>=0; });
+    var html = '<h4>Guia de vitaminas y minerales</h4>';
+    if (omega.length) html += '<p><strong>Omega 3:</strong> Comparar siempre la cantidad de EPA+DHA (no el total de aceite de pescado). Buscar al menos 300mg de EPA+DHA por capsula. El omega 3 de 60 capsulas es para un mes; el de 200 capsulas para 3 meses — calcular el costo por dia para comparar correctamente.</p>';
+    if (zma.length || mag.length) html += '<p><strong>ZMA vs Magnesio solo:</strong> El ZMA agrega Zinc y B6 al Magnesio — interesante si ademas queres potenciar la recuperacion nocturna y los niveles de testosterona natural. El citrato de magnesio solo es suficiente si solo queres mejor sueno y funcion muscular.</p>';
+    return html;
+  },
+  barra: function(prods) {
+    return '<h4>Como elegir una barra proteica</h4><p>Lo que hay que mirar en el etiquetado: <strong>Proteina por barra</strong> (buscar 15g+), <strong>azucar total</strong> (menos de 10g), <strong>calorias totales</strong> (150-250 kcal es el rango ideal para snack). Evitar barras con mas azucar que proteina — son basicamente golosinas con marketing fitness.</p>';
+  }
+};
+
+var COMPLEMENTOS = {
+  'proteina|creatina': 'Son el duo clasico por excelencia. La proteina provee los aminoacidos para construir musculo y la creatina provee la energia para entrenar mas fuerte y estimular mas la sintesis proteica. Se potencian mutuamente — si tenes que elegir dos suplementos para empezar, estos son los dos.',
+  'proteina|preworkout': 'Se usan en momentos distintos: el pre-entreno antes del entrenamiento para rendir mas, la proteina despues para recuperarse mejor. Son completamente complementarios — no compiten entre si.',
+  'proteina|colageno': 'La proteina whey apunta al musculo (aminoacidos ramificados), el colageno apunta a tejidos conectivos (tendones, cartílagos, piel). Para una recuperacion completa, especialmente en personas que entrenan seguido o tienen mas de 35 anos, el duo es muy recomendable.',
+  'creatina|preworkout': 'Muchos pre-entrenos ya contienen creatina en su formula. Verificar el etiquetado del pre-entrenamiento para no duplicar la dosis. Si el pre-entreno no trae creatina (o trae menos de 3g), agregar creatina por separado es correcto.',
+  'creatina|aminoacido': 'La creatina y los aminoacidos (BCAAs/EAAs) operan en mecanismos distintos y son completamente complementarios. La creatina para la energia y la fuerza; los aminoacidos para la sintesis proteica y la recuperacion.',
+  'proteina|aminoacido': 'Si ya tomas una cantidad adecuada de proteina (1.8-2.2g/kg/dia), los BCAAs o EAAs adicionales agregan poco. Sin embargo, si tomas la proteina lejos de los entrenamientos, los aminoacidos en el peri-entreno (antes/durante) pueden ser utiles.',
+  'proteina|quemador': 'En etapa de definicion o perdida de grasa, el duo proteina + termogenico es el mas usado. La proteina preserva la masa muscular durante el deficit calorico (efecto anticatabolico) mientras el termogenico acelera la movilizacion de grasa.',
+  'quemador|aminoacido': 'En entrenamiento en ayunas o dietas muy restrictivas, los aminoacidos (especialmente BCAAs) protegen el musculo del catabolismo mientras el quemador trabaja. Buen combo para definicion extrema.',
+  'colageno|vitamin': 'La vitamina C es el cofactor indispensable para que el colageno funcione. Si el colageno que estas tomando no tiene vitamina C ya incluida, agregar vitamina C es fundamental para maximizar la sintesis de colageno endogeno.',
+  'preworkout|aminoacido': 'Muchos pre-entrenos ya contienen BCAAs o EAAs. Verificar el etiquetado para no duplicar. Si el pre-entreno no los incluye, tomar aminoacidos durante el entrenamiento (intra-workout) junto al pre-entreno es un stack popular.',
+  'gainer|proteina': 'Un gainer ya contiene proteina en su composicion. Si ademas tomas proteina separada, asegurarte de contar el total de proteina del dia para no excederte (maximo util: ~2.5g/kg/dia). El gainer es para las calorias extra; la proteina extra para completar el objetivo proteico si el gainer no alcanza.',
+  'quemador|preworkout': 'Ojo con esta combinacion: ambos suelen contener cafeina. Sumar los miligramos de cafeina de ambos para no exceder los 400mg diarios recomendados. En personas sensibles, puede generar taquicardia, ansiedad o problemas para dormir.',
+  'colageno|aminoacido': 'El colageno y los aminoacidos/BCAAs son complementarios sin superposicion. El colageno aporta glicina, prolina e hidroxiprolina (no ramificados) que no estan en los BCAAs. Pueden tomarse juntos sin problema.',
+  'vitamin|preworkout': 'Las vitaminas y minerales son la base de salud que hace que el pre-entrenamiento funcione mejor. El magnesio especificamente mejora la respuesta al entrenamiento y la recuperacion.',
+  'creatina|colageno': 'No compiten entre si y son complementarios. La creatina para el rendimiento muscular; el colageno para proteger las estructuras articulares que soportan el entrenamiento intenso. Stack muy recomendado para personas que entrenan fuerza regularmente.',
+};
+
+var COMPARACIONES_PARES = {
+  // PROTEINAS - Los pares más comparados
+  'sn_whey_dp|sn_plat_2lb': '<h3>Whey Doypack vs Platinum Whey Pote — Star Nutrition</h3><p>Ambas son de Star Nutrition pero con perfiles muy distintos.</p><h4>Whey Protein Doypack</h4><p><strong>Que es:</strong> Concentrado de proteina de suero de leche (WPC). Aproximadamente 70-75% de proteina por porcion. Contiene lactosa en cantidades moderadas. Es la proteina "base" de Star Nutrition — el producto mas vendido de la marca, con excelente relacion precio-calidad. <strong>Para quien:</strong> Cualquier persona que busca proteina de calidad a precio accesible, que tolere la lactosa y no requiera el perfil mas puro del mercado.</p><h4>Platinum Whey Pote</h4><p><strong>Que es:</strong> Blend de concentrado + aislado microfiltrado. Logra un perfil de aminoacidos superior al concentrado solo, con menor contenido de lactosa. El formato pote tiene mejor hermeticidad que el doypack — el polvo se conserva mejor y es mas facil de dosificar. <strong>Para quien:</strong> Personas que buscan mayor calidad proteica, que tienen algo de sensibilidad a la lactosa, o que quieren una proteina con mejor perfil de aminoacidos sin llegar al precio de un aislado puro.</p><h4>Recomendacion directa</h4><p>Si el presupuesto es el factor principal — Doypack. Si podes invertir un poco mas y queres mejor calidad y mejor envase — Platinum Pote. Para la mayoria de los que entrenan 3-4 veces por semana sin competencia, el Doypack es mas que suficiente.</p>',
+
+  'sn_whey_dp|ena_truemade': '<h3>Star Whey Doypack vs ENA TrueMade</h3><p>Dos de las proteinas mas populares del mercado argentino, con filosofias distintas.</p><h4>Star Whey Doypack</h4><p><strong>Que es:</strong> Concentrado de suero clasico. Perfil conocido, sabores bien logrados (especialmente chocolate). Marca con mayor distribucion en Argentina. <strong>Puntos fuertes:</strong> Precio, disponibilidad, sabores probados. <strong>Punto debil:</strong> Tiene lactosa — puede generar molestias digestivas en intolerantes.</p><h4>ENA TrueMade Whey</h4><p><strong>Que es:</strong> Blend de whey concentrado + aislado con proceso de filtracion avanzado. El "TrueMade" hace referencia a la transparencia en la composicion — ENA publica los ingredientes activos con claridad. Mayor fraccion de aislado que el whey basico, mejor perfil aminoacidico y menor lactosa. <strong>Puntos fuertes:</strong> Mejor digestibilidad, perfil proteico mas completo, marca nacional de alta confiabilidad. <strong>Punto debil:</strong> Precio algo mayor al Doypack de Star.</p><h4>Recomendacion directa</h4><p>Para principiantes o presupuesto ajustado: Star Doypack. Para alguien que ya tiene experiencia y quiere subir la calidad o tiene sensibilidad digestiva: ENA TrueMade. Las dos son excelentes proteinas nacionales — no vas a hacer una mala eleccion con ninguna.</p>',
+
+  'sn_plat_2lb|ena_truemade': '<h3>Star Platinum Whey vs ENA TrueMade — Nivel Premium Nacional</h3><p>Los dos referentes del segmento premium en proteinas nacionales.</p><h4>Star Platinum Whey</h4><p>Blend de concentrado + aislado microfiltrado. La bandera de calidad de Star Nutrition. Mayor fraccion de aislado que el Doypack, mejor digestibilidad, menor lactosa. Formato pote de alta calidad.</p><h4>ENA TrueMade</h4><p>ENA enfatiza la transparencia en ingredientes. El TrueMade tiene un proceso de elaboracion cuidado y publica informacion clara sobre sus fracciones proteicas. Muy buena digestibilidad y sabores bien logrados.</p><h4>Diferencia clave</h4><p>En este nivel ambas son proteinas de muy alta calidad. La decision puede venir por: sabor preferido (probar ambas si es posible), precio en el momento, o fidelidad a la marca. Star tiene mayor variedad de sabores; ENA tiene una reputacion muy solida en la industria argentina por transparencia y calidad de formulacion.</p>',
+
+  'gn_isogold|sn_plat_2lb': '<h3>Gold Nutrition Iso Gold vs Star Platinum — Aislado vs Blend</h3><p>Comparacion entre un aislado puro y un blend premium.</p><h4>Gold Nutrition Iso Gold (Aislado)</h4><p><strong>Que es:</strong> Proteina de suero aislada pura (WPI). Proceso de intercambio ionico o ultrafiltracion que elimina practicamente toda la lactosa (<1g por porcion) y la grasa. 90%+ de proteina por porcion. Absorcion mas rapida. <strong>Para quien:</strong> Intolerantes a la lactosa, personas en definicion que cuidan cada caloría, atletas que buscan la mayor pureza posible, personas con sistema digestivo sensible.</p><h4>Star Platinum Whey (Blend)</h4><p><strong>Que es:</strong> Mezcla de concentrado + aislado. Buena calidad proteica pero con algo mas de lactosa y calorias que el aislado puro. <strong>Para quien:</strong> La gran mayoria de personas que entrena — ofrece excelente calidad sin el sobreprecio del aislado puro.</p><h4>Recomendacion directa</h4><p>Si toleras bien la lactosa y estas en volumen (ganando masa): Star Platinum es suficiente y mas economico. Si sos intolerante a la lactosa, estas en definicion o queres la maxima pureza posible: el Iso Gold vale la diferencia de precio.</p>',
+
+  'gn_vegetal|nfit_vegprot': '<h3>Gold Nutrition Vegetal Protein vs Nucleo Fit Proteina Vegetal — Veganas</h3><p>Las dos opciones vegetales del catálogo — ideales para veganos e intolerantes.</p><h4>Gold Nutrition Vegetal Protein Isolate</h4><p>Aislado de proteina vegetal. Marca con gran trayectoria. El proceso de aislamiento eleva la concentracion proteica y mejora la digestibilidad. 100% libre de lactosa y gluten.</p><h4>Nucleo Fit Proteina Vegetal Isolate</h4><p>Proteina vegetal aislada en version chocolate. Marca mas nueva pero con formulacion cuidada. Opcion interesante para diversificar.</p><h4>Por que elegir proteina vegetal</h4><p>No solo para veganos — tambien es la mejor opcion para: intolerantes a la lactosa, celiacos (verificar certificacion), personas con sensibilidad a las proteinas de leche de vaca, o cualquiera que quiera variar su fuente proteica. El perfil de aminoacidos de la proteina de arveja es muy completo y muy cercano al del whey en terminos de efecto anabolico real.</p>',
+
+  // CREATINAS
+  'sn_creat_pote|on_creat': '<h3>Star Nutrition Creatina vs ON Creatine Powder — Nacional vs Internacional</h3><p>La duda clasica: marca nacional premium vs referente mundial.</p><h4>ON Creatine Powder (Optimum Nutrition)</h4><p><strong>Por que es el referente:</strong> Optimum Nutrition usa creatina Creapure (la marca mas pura del mundo, fabricada en Alemania con certificacion 99.9% monohidrato puro). Ha sido testeada independientemente en miles de estudios. El estandar de oro de la industria. <strong>Realidad:</strong> En terminos de efecto fisiologico, la diferencia con creatinas de calidad es minima para el usuario promedio.</p><h4>Star Nutrition Creatina</h4><p><strong>Por que es excelente:</strong> Star es la marca mas vendida de Argentina con los estandares de calidad mas altos del mercado nacional. Su creatina es monohidrato micronizado de alta pureza. A menor precio que la ON. <strong>Para quien:</strong> Cualquier persona que busca los beneficios de la creatina a precio accesible.</p><h4>Recomendacion directa</h4><p>Para el 99% de las personas que entrenan recreativamente, la creatina de Star Nutrition va a dar exactamente los mismos resultados que la ON. La ON tiene valor para atletas de competicion que necesitan el maximo estandar de pureza certificada. Si el precio no es factor, ON. Si queres el mejor precio-calidad del mercado argentino, Star.</p>',
+
+  'sn_creat_pote|sn_creat_doy': '<h3>Star Creatina Pote vs Doypack — Mismo producto, diferente envase</h3><p>La creatina es identica — la diferencia esta 100% en el envase y el precio por gramo.</p><h4>Pote</h4><p>Envase rigido hermetico. Mejor para conservacion a largo plazo. Mas facil de dosificar con cuchara o scoop. Ideal si compras el formato grande (500g o 1kg).</p><h4>Doypack</h4><p>Bolsa resellable. Mas economico en el formato 300g. Ocupa menos espacio. Algunas personas prefieren el formato saborizados (Frutos Rojos) que viene en doypack.</p><h4>Conclusion simple</h4><p>Si buscas el mejor precio por gramo: pote 500g o 1kg. Si quieres portabilidad o probar saborizados: doypack. El producto interno es identico.</p>',
+
+  'sn_creat_500|sn_creat_1kg': '<h3>Creatina 500g vs 1kg — La logica del volumen</h3><p>Misma creatina, diferente cantidad. La decision es puramente economica.</p><p>La creatina 1kg te da para aproximadamente 200 dias a 5g diarios. La de 500g para 100 dias. El precio por gramo del 1kg siempre es mas conveniente. <br><br><strong>Cuando elegir 1kg:</strong> Si ya sabes que usas creatina regularmente y quieres el mejor precio por gramo — el 1kg es la compra inteligente. <strong>Cuando elegir 500g:</strong> Si es tu primera vez con creatina y quieres probarla antes de comprometerte con mas cantidad.</p>',
+
+  // PRE-ENTRENOS
+  'sn_tnt|sn_pumpv8': '<h3>TNT Dynamite vs Pump V8 — La eleccion mas importante en pre-entrenos</h3><p>Estos dos productos de Star Nutrition representan las dos filosofias opuestas del pre-entrenamiento.</p><h4>TNT Dynamite — El explosivo</h4><p><strong>Que contiene:</strong> Cafeina anhidra en dosis alta (probablemente 200-300mg por porcion), beta-alanina, citrulina malato y arginina. <strong>El efecto:</strong> Energia inmediata y potente, foco laser, piel que pica (beta-alanina — normal), congestion decente. <strong>Duracion del efecto:</strong> 3-5 horas. <strong>Cuando usarlo:</strong> Entrenamientos matutinos o hasta las 3-4pm. Sesiones que requieren maxima intensidad. <strong>Cuando NO:</strong> Si entrenais de noche, si sos sensible a la cafeina, si tenes problemas de ansiedad o corazon.</p><h4>Pump V8 — El vasodilatador</h4><p><strong>Que contiene:</strong> 8 ingredientes vasodilatadores: citrulina malato en dosis alta, agmatina, glicerol y otros sin estimulantes. Sin cafeina o muy poca. <strong>El efecto:</strong> Congestion muscular ("pump") extrema, mayor resistencia muscular, mejor aporte de nutrientes al musculo. Sin pico de energia artificial. <strong>Cuando usarlo:</strong> Entrenamientos nocturnos, personas sensibles a la cafeina, dias de alto volumen donde queres congestion maxima sin los estimulantes, atletas que ya tienen mucha cafeina en su rutina.</p><h4>Recomendacion segun tu caso</h4><p><span class="comp-tag-ok">ENTRENAS DE MANANA/TARDE</span> — TNT Dynamite: la energia que da es un diferencial real para mover mas peso y durar mas en la sesion. <span class="comp-tag-cuidado">ENTRENAS DE NOCHE</span> — Pump V8: vas a tener la misma congestion y mejor recuperacion sin arruinar el sueno. <span class="comp-tag-ok">AVANZADO</span> — algunos stacks ambos: Pump V8 siempre + TNT Dynamite solo en sesiones de manana.</p>',
+
+  'sn_tnt|gn_prework': '<h3>TNT Dynamite (Star) vs Pre Work Gold (Gold Nutrition)</h3><p>Dos pre-entrenos de marcas nacionales premium.</p><h4>TNT Dynamite</h4><p>El pre-entrenamiento mas conocido de Star Nutrition. Formula explosiva, sabores muy logrados (especialmente Acai y Limón). Alta cafeina, bien tolerado por la mayoria.</p><h4>Pre Work Gold</h4><p>Gold Nutrition es una marca con muy buena reputacion en formulacion. Su pre-entreno tiene un perfil equilibrado entre estimulacion y vasodilatacion. Puede ser una opcion interesante para quienes encuentran el TNT muy agresivo.</p><h4>Como decidir</h4><p>Si es tu primer pre-entreno: TNT Dynamite tiene mayor historial de uso y mas opiniones disponibles. Si buscas algo un poco menos estimulante con igual performance: Pre Work Gold. Ambas son marcas confiables del mercado argentino.</p>',
+
+  // COLÁGENOS
+  'sn_col210|sn_col_sport': '<h3>Colageno Hidrolizado 210g vs Collagen Sport — Basico vs Deportivo</h3><p>Mismo colageno base, diferente enriquecimiento.</p><h4>Colageno Hidrolizado 210g</h4><p><strong>Que es:</strong> Colageno hidrolizado tipo I y III puro. La forma mas basica y economica. Ideal para quien quiere los beneficios del colageno sin ingredientes adicionales. Tomar siempre con vitamina C (que no viene incluida) para maximizar la absorcion.</p><h4>Collagen Sport 360g</h4><p><strong>Que agrega:</strong> Magnesio y Fosforo ademas del colageno base. El Magnesio mejora la contraccion muscular, reduce calambres post-ejercicio y mejora la calidad del sueno. El Fosforo interviene en la mineralizacion osea. <strong>Para quien:</strong> Deportistas con alta carga de entrenamiento que quieren un producto que cubra mas necesidades en una sola toma.</p><h4>Recomendacion</h4><p>Si ya tomas magnesio por separado: el colageno basico es suficiente y mas economico. Si no tomas magnesio y entrenais seguido con calambres o recuperacion lenta: el Collagen Sport te da dos en uno y puede ser mas conveniente en el total.</p>',
+
+  'sn_col_sport|sn_col_plus': '<h3>Collagen Sport vs Collagen Plus — Los dos premium de Star</h3><p>Ambos son superiores al colageno basico pero con enriquecimientos distintos.</p><h4>Collagen Sport</h4><p>Colageno + Magnesio + Fosforo. Orientado al rendimiento deportivo y la recuperacion muscular. El Magnesio es el diferencial principal — antiinflamatorio, reduce calambres, mejora el sueno de recuperacion.</p><h4>Collagen Plus</h4><p>Colageno + Vitamina C ya incluida + otros activos. La Vitamina C es el cofactor mas importante para que el colageno funcione — sin vitamina C, la sintesis de colageno endogeno es suboptima. El "Plus" te evita tener que suplementar vitamina C por separado.</p><h4>Decision practica</h4><p>Si ya tomas vitamina C en tu stack: Collagen Sport. Si no tomas vitamina C: Collagen Plus (la incluye y te ahorra un suplemento). Si tienes calambres frecuentes o entrenais mucho: Collagen Sport por el Magnesio.</p>',
+
+  // GAINERS
+  'sn_mutant|ena_ultramass': '<h3>MutantMass (Star) vs Ultra Mass (ENA) — Los dos gigantes del volumen</h3><p>Los gainers mas populares del mercado argentino, cara a cara.</p><h4>MutantMass Star Nutrition</h4><p><strong>Historia:</strong> MutantMass es una formula con anos de historia, originalmente canadiense y adaptada por Star para Argentina. Alta densidad calorica, buen perfil proteico. La variedad de sabores es amplia y muy bien lograda. <strong>Carbohidratos:</strong> Mix de fuentes de distinta velocidad de absorcion para un aporte sostenido.</p><h4>Ultra Mass ENA</h4><p><strong>Formulacion:</strong> ENA mantiene estandares muy altos de calidad en todos sus productos. El Ultra Mass tiene una relacion proteina/carbohidratos bien equilibrada. Transparencia en etiquetado — caracteristica sello ENA.</p><h4>Como elegir entre ambos</h4><p>Las dos son excelentes opciones para volumen. La decision final puede ser por: sabor preferido (el Chocolate y Cookies de MutantMass son muy populares), precio en el momento, o preferencia de marca. Para un hardgainer serio que quiere ganar peso rapidamente, ambas funcionan — lo que mas importa es tomarlas consistentemente con la dieta.</p>',
+
+  // QUEMADORES
+  'sn_thermo|wo_fatburner': '<h3>Thermo Fuel Max (Star) vs Fat Burner Woman — Unisex vs Femenino</h3><p>Dos enfoques diferentes al mismo objetivo: quemar grasa.</p><h4>Thermo Fuel Max — Star Nutrition</h4><p><strong>Para quien:</strong> Hombres y mujeres con buena tolerancia a los estimulantes. Formula mas agresiva con cafeina, yerba mate, CLA y L-Tirosina. Maximo efecto termogenico. <strong>Efecto esperado:</strong> Aumento notable del metabolismo, reduccion del apetito, mayor energia para entrenar. <strong>Precaucion:</strong> No tomar de noche, no combinar con otros estimulantes, no recomendado para personas con problemas cardiovasculares o hipertension.</p><h4>Fat Burner Woman — Woman</h4><p><strong>Para quien:</strong> Disenado especificamente para el metabolismo femenino. Estimulacion mas suave. Incluye ingredientes que abordan aspectos hormonales del metabolismo femenino (CLA, L-Carnitina). Mejor tolerado durante la menstruacion y en periodos de mayor sensibilidad hormonal. <strong>Efecto esperado:</strong> Mas suave que el Thermo Max pero con menos efectos secundarios.</p><h4>Recomendacion directa</h4><p>Mujer con buena tolerancia a estimulantes y que busca el maximo efecto: Thermo Fuel. Mujer que prefiere algo mas suave o que ha tenido efectos secundarios con otros termogenicos: Fat Burner Woman. Hombres: Thermo Fuel Max directamente.</p>',
+
+  // AMINOÁCIDOS
+  'sn_mtor|sn_eaas': '<h3>MTOR BCAA vs EAAs — BCAAs vs Aminoacidos Esenciales Completos</h3><p>La diferencia tecnica que muchos no entienden.</p><h4>MTOR BCAA 2:1:1</h4><p><strong>Que contiene:</strong> Solo los 3 aminoacidos ramificados: Leucina (el mas anabolico), Isoleucina y Valina en proporcion 2:1:1. <strong>Para que sirve:</strong> Estimular la sintesis proteica via mTOR (principalmente la Leucina), proteger el musculo del catabolismo en entrenamiento en ayunas o dietas restrictivas, apoyo intra-entrenamiento. <strong>Limitacion:</strong> Solo 3 de los 9 aminoacidos esenciales.</p><h4>EAAs (Aminoacidos Esenciales)</h4><p><strong>Que contiene:</strong> Los 9 aminoacidos esenciales que el cuerpo no puede sintetizar: Leucina, Isoleucina, Valina (los 3 BCAAs) + Lisina, Metionina, Fenilalanina, Treonina, Triptofano e Histidina. <strong>Por que es superior:</strong> Para construir musculo necesitas los 9 esenciales, no solo los 3 BCAAs. El cuerpo no puede completar la sintesis proteica si falta alguno de los 9.</p><h4>Recomendacion directa</h4><p>Si tenes que elegir uno: EAAs son superiores a los BCAAs en terminos de soporte a la sintesis proteica completa. Los BCAAs tienen valor especifico si ya consumes suficiente proteina y solo quieres el efecto anti-catabólico rapido. Para el usuario promedio: EAAs.</p>',
+
+  'sn_lcarnitina|gen_carnit': '<h3>L-Carnitina Caps (Star) vs Carnitina Liquida (Gentech)</h3><p>Misma molecula, diferente forma de presentacion.</p><h4>L-Carnitina en Capsulas — Star Nutrition</h4><p><strong>Ventajas:</strong> Conveniente, facil de dosificar, sin sabor, larga vida util. <strong>Absorcion:</strong> Algo mas lenta que la liquida pero efectiva. <strong>Para quien:</strong> Personas que prefieren simplicidad y conveniencia.</p><h4>Carnitina Liquida 500ml — Gentech</h4><p><strong>Ventajas:</strong> Absorcion mas rapida al ser liquida (no necesita digerirse el excipiente de la capsula). Mayor flexibilidad en la dosis. <strong>Para quien:</strong> Personas que buscan rapida absorcion pre-cardio o que prefieren la forma liquida.</p><h4>Recomendacion</h4><p>La diferencia de absorcion entre liquida y capsulas es real pero modesta en el resultado final. Ambas funcionan bien tomadas 30-60 minutos antes del ejercicio aerobico. La eleccion es principalmente de preferencia personal y precio.</p>',
+
+  // OMEGA 3
+  'sn_omega3|ge_omega3': '<h3>Omega 3 Star 60 caps vs Good Energy 200 caps — Formato corto vs largo</h3><p>Como comparar omega 3: lo que importa NO es la cantidad de capsulas sino la concentracion de EPA+DHA por capsula.</p><h4>Omega 3 Star Nutrition 60 Caps</h4><p>60 capsulas = 2 meses a 1 capsula/dia. Verificar en el etiquetado la cantidad de EPA+DHA por capsula (no solo el total de aceite de pescado).</p><h4>Omega 3 Good Energy 200 Caps</h4><p>200 capsulas = formato economico de larga duracion. Excelente relacion precio por capsula. Para quien quiere 4-6 meses de supply en una compra.</p><h4>Como comparar omega 3 correctamente</h4><p>El numero de capsulas no dice nada sin saber la concentracion. Un omega 3 de 60 capsulas con 600mg EPA+DHA por capsula es mejor que uno de 200 capsulas con 200mg EPA+DHA. <strong>Buscar siempre:</strong> al menos 300mg de EPA+DHA por capsula. <strong>Dosis efectiva:</strong> 1-3g de EPA+DHA diarios dependiendo del objetivo.</p>',
+
+  // ZMA / MAGNESIO
+  'sn_zma|sn_citr60': '<h3>ZMA vs Citrato de Magnesio — Testosterona vs Sueno</h3><p>Dos suplementos basados en magnesio con objetivos algo distintos.</p><h4>ZMA (Zinc + Magnesio + B6)</h4><p><strong>Para que sirve:</strong> El ZMA fue disenado para optimizar la produccion nocturna de testosterona y GH (hormona de crecimiento). El Zinc es cofactor indispensable en la sintesis de testosterona. La B6 potencia la absorcion del Magnesio y el Zinc. <strong>Para quien:</strong> Hombres que quieren potenciar los niveles naturales de testosterona, deportistas que buscan mejor recuperacion nocturna y calidad del sueno profundo.</p><h4>Citrato de Magnesio</h4><p><strong>Para que sirve:</strong> El citrato de magnesio puro es la forma mas biodisponible de magnesio. Mejora la contraccion muscular, reduce calambres, relaja el sistema nervioso y mejora el sueno. <strong>Para quien:</strong> Personas con calambres frecuentes, que tienen problemas para dormir, que entrenan mucho o que simplemente quieren corregir la deficiencia de magnesio (muy comun en deportistas).</p><h4>Recomendacion</h4><p>Hombre deportista que quiere testosterona + sueno + recuperacion: ZMA. Mujer o hombre que principalmente quiere eliminar calambres y mejorar el sueno sin el efecto androgénico del zinc: Citrato de Magnesio. El citrato de 500g en polvo es mucho mas economico que las capsulas si lo usas diariamente.</p>',
+
+  // HIDRATACION  
+  'sn_hydroplus|nmax_hmax600': '<h3>Hydroplus Endurance (Star) vs Hydromax (Nutremax) — Isotonicos</h3><p>Comparacion de bebidas isotonicas para rendimiento en resistencia.</p><h4>Hydroplus Endurance — Star Nutrition 700g</h4><p>Formula isotonica con electrolitos (sodio, potasio, magnesio), carbohidratos de rapida absorcion y vitaminas del complejo B. Disenado especificamente para actividades de resistencia prolongadas. La etiqueta "Endurance" indica que esta pensado para sesiones largas.</p><h4>Hydromax — Nutremax 600g</h4><p>Bebida isotonica de alta calidad de Nutremax. Electrolitos completos con buen perfil de carbohidratos para mantener el rendimiento. Disponible en formato 600g y 1320g para mayor economia.</p><h4>Como usarlos</h4><p>Ambos son muy similares en funcion. La diferencia puede estar en la concentracion de electrolitos y el sabor. Para sesiones de mas de 60 minutos o en condiciones de calor: cualquiera de los dos es una excelente opcion. El formato 1320g de Hydromax es mas economico por gramo si lo usas frecuentemente.</p>',
+};
+
+
+
+
+
 
 function formatearAnalisis(texto) {
   var html = texto;
