@@ -6232,28 +6232,91 @@ var DATOS_TEC = {
 // ══════════════════════════════════════════════════════════
 // FUNCIÓN DE ANÁLISIS TÉCNICO MEJORADA
 // ══════════════════════════════════════════════════════════
-function buscarDatosTec(p) {
-  // Buscar por ID exacto primero
-  if (DATOS_TEC[p.id]) return DATOS_TEC[p.id];
-  // Si no, buscar por nombre normalizado
-  var n = (p.name||'').toLowerCase()
-    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
-    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n');
-  var best = null, bestScore = 0;
+// ══════════════════════════════════════════════════════════
+// ANÁLISIS INTELIGENTE - SISTEMA COMPLETO
+// ══════════════════════════════════════════════════════════
+
+// Normaliza texto para comparación
+function _norm(s) {
+  return (s||'').toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e')
+    .replace(/[íìï]/g,'i').replace(/[óòö]/g,'o')
+    .replace(/[úùü]/g,'u').replace(/ñ/g,'n')
+    .replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+}
+
+// Busca datos técnicos por nombre del producto
+function buscarDatosTec(prod) {
+  var nombre = _norm(prod.name);
+  // 1. Buscar exacto por ID
+  if (DATOS_TEC[prod.id]) return DATOS_TEC[prod.id];
+  // 2. Buscar por nombre en productos estáticos
+  var mejor = null, mejorScore = 0;
   Object.keys(DATOS_TEC).forEach(function(key) {
-    // Buscar el producto estatico con ese ID para obtener su nombre
     var sp = PRODUCTS.find(function(x){ return x.id === key; });
     if (!sp) return;
-    var sn = (sp.name||'').toLowerCase()
-      .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
-      .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n');
-    var words = n.split(' ');
-    var score = 0;
-    words.forEach(function(w){ if(w.length>2 && sn.indexOf(w)>=0) score++; });
-    var pct = words.length > 0 ? score/words.length : 0;
-    if(pct > bestScore && pct >= 0.5) { bestScore = pct; best = DATOS_TEC[key]; }
+    var sn = _norm(sp.name);
+    var palabras = nombre.split(' ').filter(function(w){ return w.length > 2; });
+    if (palabras.length === 0) return;
+    var coincidencias = palabras.filter(function(w){ return sn.indexOf(w) >= 0; }).length;
+    var pct = coincidencias / palabras.length;
+    if (pct > mejorScore && pct >= 0.45) { mejorScore = pct; mejor = DATOS_TEC[key]; }
   });
-  return best;
+  return mejor;
+}
+
+// Busca clave de par predefinido por nombre
+function buscarParPredefinido(prods) {
+  // Mapear cada producto a su ID estático más cercano
+  var staticIds = prods.map(function(prod) {
+    if (DATOS_TEC[prod.id]) return prod.id; // ID exacto
+    var nombre = _norm(prod.name);
+    var mejor = null, mejorScore = 0;
+    PRODUCTS.forEach(function(sp) {
+      if (!DATOS_TEC[sp.id]) return; // solo los que tienen datos
+      var sn = _norm(sp.name);
+      var palabras = nombre.split(' ').filter(function(w){ return w.length > 2; });
+      if (palabras.length === 0) return;
+      var coincidencias = palabras.filter(function(w){ return sn.indexOf(w) >= 0; }).length;
+      var pct = coincidencias / palabras.length;
+      if (pct > mejorScore && pct >= 0.45) { mejorScore = pct; mejor = sp.id; }
+    });
+    return mejor || prod.id;
+  });
+  return staticIds.sort().join('|');
+}
+
+function generarAnalisisIA(prods) {
+  var iaDiv = document.getElementById('compIA');
+  var iaContent = document.getElementById('compIAContent');
+  iaDiv.style.display = 'block';
+
+  // Buscar par predefinido por nombre
+  var clave = buscarParPredefinido(prods);
+  var html = COMPARACIONES_PARES[clave] || '';
+
+  // Si no hay par exacto, análisis dinámico con datos técnicos
+  if (!html) {
+    var cats = prods.map(function(p){ return p.cat; });
+    html = generarAnalisisDinamico(prods, cats);
+  }
+
+  // Complementariedad entre categorías distintas
+  var cats2 = prods.map(function(p){ return p.cat; });
+  var misma = cats2.every(function(x){ return x === cats2[0]; });
+  if (!misma) {
+    for (var i = 0; i < cats2.length; i++) {
+      for (var j = i+1; j < cats2.length; j++) {
+        var k = [cats2[i],cats2[j]].sort().join('|');
+        if (COMPLEMENTOS[k]) {
+          html += '<h4 style="color:var(--cyan);margin-top:20px">¿Se complementan?</h4><p>' + COMPLEMENTOS[k] + '</p>';
+          break;
+        }
+      }
+    }
+  }
+
+  iaContent.innerHTML = html;
 }
 
 function generarAnalisisDinamico(prods, cats) {
@@ -6262,79 +6325,68 @@ function generarAnalisisDinamico(prods, cats) {
 
   if (misma) {
     var cat = cats[0];
-    // Info general de categoría
+    var label = catLabels[cat] || cat;
     var catInfo = INFO_CATEGORIAS[cat] || '';
-    html += '<h3>Que son los ' + (catLabels[cat]||cat) + '</h3><p>' + catInfo + '</p>';
-
-    // Análisis técnico detallado de cada producto
-    html += '<h3>Analisis tecnico de cada producto</h3>';
+    html += '<h3>Qué son los ' + label + '</h3><p>' + catInfo + '</p>';
+    html += '<h3>Análisis técnico de cada producto</h3>';
     prods.forEach(function(p) {
       var tec = buscarDatosTec(p);
       html += '<h4>' + p.name + ' (' + p.brand + ')</h4>';
       if (tec) {
-        // Tipo/clasificación
-        if (tec.tipo) html += '<p><strong>Tipo:</strong> ' + tec.tipo + '</p>';
-        // Datos nutricionales clave según categoría
-        if (tec.proteina_porcion) html += '<p><strong>Proteína por porción:</strong> ' + tec.proteina_porcion + '</p>';
-        if (tec.colageno_porcion) html += '<p><strong>Colágeno por porción:</strong> ' + tec.colageno_porcion + '</p>';
-        if (tec.cafeina) html += '<p><strong>Cafeína:</strong> ' + tec.cafeina + '</p>';
-        if (tec.citrulina) html += '<p><strong>Citrulina:</strong> ' + tec.citrulina + '</p>';
-        if (tec.leucina) html += '<p><strong>Leucina:</strong> ' + tec.leucina + '</p>';
-        if (tec.total_bcaa) html += '<p><strong>BCAAs totales:</strong> ' + tec.total_bcaa + '</p>';
-        if (tec.epa_dha) html += '<p><strong>EPA+DHA:</strong> ' + tec.epa_dha + '</p>';
-        if (tec.zinc) html += '<p><strong>Zinc:</strong> ' + tec.zinc + '</p>';
-        if (tec.magnesio) html += '<p><strong>Magnesio:</strong> ' + tec.magnesio + '</p>';
-        if (tec.calorias) html += '<p><strong>Calorías/porción:</strong> ' + tec.calorias + '</p>';
-        if (tec.carbohidratos) html += '<p><strong>Carbohidratos:</strong> ' + tec.carbohidratos + '</p>';
-        if (tec.lactosa) html += '<p><strong>Lactosa:</strong> ' + tec.lactosa + '</p>';
-        if (tec.filtrado) html += '<p><strong>Proceso de fabricación:</strong> ' + tec.filtrado + '</p>';
-        if (tec.vitamina_c) html += '<p><strong>Vitamina C:</strong> ' + tec.vitamina_c + '</p>';
-        if (tec.minerales) html += '<p><strong>Minerales/activos extra:</strong> ' + tec.minerales + '</p>';
-        if (tec.pureza) html += '<p><strong>Pureza:</strong> ' + tec.pureza + '</p>';
-        if (tec.dosis) html += '<p><strong>Dosis efectiva:</strong> ' + tec.dosis + '</p>';
-        if (tec.mecanismo) html += '<p><strong>Cómo funciona:</strong> ' + tec.mecanismo + '</p>';
-        if (tec.aditivos) html += '<p><strong>Aditivos:</strong> ' + tec.aditivos + '</p>';
-        if (tec.importante) html += '<p><strong>⚠️ Importante:</strong> ' + tec.importante + '</p>';
-        if (tec.cuando_tomar) html += '<p><strong>Cuándo tomarlo:</strong> ' + tec.cuando_tomar + '</p>';
-        if (tec.para_quien) html += '<p><span class="comp-tag-ok">IDEAL PARA</span> ' + tec.para_quien + '</p>';
-        if (tec.no_recomendado) html += '<p><span class="comp-tag-cuidado">EVITAR SI</span> ' + tec.no_recomendado + '</p>';
-        if (tec.no_usar) html += '<p><span class="comp-tag-cuidado">NO USAR SI</span> ' + tec.no_usar + '</p>';
-        if (tec.ventaja) html += '<p><span class="comp-tag-ok">VENTAJA CLAVE</span> ' + tec.ventaja + '</p>';
+        if (tec.tipo)              html += '<p><strong>Tipo/Clasificación:</strong> ' + tec.tipo + '</p>';
+        if (tec.proteina_porcion)  html += '<p><strong>Proteína por porción:</strong> ' + tec.proteina_porcion + '</p>';
+        if (tec.carbohidratos)     html += '<p><strong>Carbohidratos:</strong> ' + tec.carbohidratos + '</p>';
+        if (tec.calorias)          html += '<p><strong>Calorías/porción:</strong> ' + tec.calorias + '</p>';
+        if (tec.lactosa)           html += '<p><strong>Lactosa:</strong> ' + tec.lactosa + '</p>';
+        if (tec.filtrado)          html += '<p><strong>Proceso de fabricación:</strong> ' + tec.filtrado + '</p>';
+        if (tec.leucina)           html += '<p><strong>Leucina:</strong> ' + tec.leucina + '</p>';
+        if (tec.total_bcaa)        html += '<p><strong>BCAAs totales:</strong> ' + tec.total_bcaa + '</p>';
+        if (tec.eaas)              html += '<p><strong>Aminoácidos esenciales:</strong> ' + tec.eaas + '</p>';
+        if (tec.colageno_porcion)  html += '<p><strong>Colágeno por porción:</strong> ' + tec.colageno_porcion + '</p>';
+        if (tec.vitamina_c)        html += '<p><strong>Vitamina C:</strong> ' + tec.vitamina_c + '</p>';
+        if (tec.minerales)         html += '<p><strong>Minerales/activos extra:</strong> ' + tec.minerales + '</p>';
+        if (tec.cafeina)           html += '<p><strong>Cafeína:</strong> ' + tec.cafeina + '</p>';
+        if (tec.citrulina)         html += '<p><strong>Citrulina Malato:</strong> ' + tec.citrulina + '</p>';
+        if (tec.beta_alanina)      html += '<p><strong>Beta-Alanina:</strong> ' + tec.beta_alanina + '</p>';
+        if (tec.epa_dha)           html += '<p><strong>EPA+DHA:</strong> ' + tec.epa_dha + '</p>';
+        if (tec.zinc)              html += '<p><strong>Zinc:</strong> ' + tec.zinc + '</p>';
+        if (tec.magnesio)          html += '<p><strong>Magnesio:</strong> ' + tec.magnesio + '</p>';
+        if (tec.pureza)            html += '<p><strong>Pureza:</strong> ' + tec.pureza + '</p>';
+        if (tec.dosis)             html += '<p><strong>Dosis efectiva:</strong> ' + tec.dosis + '</p>';
+        if (tec.mecanismo)         html += '<p><strong>Cómo funciona en el cuerpo:</strong> ' + tec.mecanismo + '</p>';
+        if (tec.aditivos)          html += '<p><strong>Aditivos/excipientes:</strong> ' + tec.aditivos + '</p>';
+        if (tec.importante)        html += '<p><strong>⚠️ Importante:</strong> ' + tec.importante + '</p>';
+        if (tec.cuando_tomar)      html += '<p><strong>Cuándo tomarlo:</strong> ' + tec.cuando_tomar + '</p>';
+        if (tec.para_quien)        html += '<p><span class="comp-tag-ok">✓ IDEAL PARA</span> ' + tec.para_quien + '</p>';
+        if (tec.no_recomendado)    html += '<p><span class="comp-tag-cuidado">⚠ EVITAR SI</span> ' + tec.no_recomendado + '</p>';
+        if (tec.no_usar)           html += '<p><span class="comp-tag-cuidado">✗ NO USAR SI</span> ' + tec.no_usar + '</p>';
+        if (tec.ventaja)           html += '<p><span class="comp-tag-ok">★ VENTAJA CLAVE</span> ' + tec.ventaja + '</p>';
       } else {
-        // Sin datos técnicos específicos — usar descripción del producto
-        html += '<p>' + (p.desc || 'Producto de alta calidad de marca reconocida.') + '</p>';
+        html += '<p>' + (p.desc || 'Producto de alta calidad.') + '</p>';
       }
     });
-
-    // Consejos de categoría
     var consejofn = CONSEJOS_CAT[cat];
     if (consejofn) html += consejofn(prods);
-
-    // Comparación de precio
     html += generarComparacionPrecio(prods);
-
   } else {
-    // Categorías distintas
-    html += '<h3>Productos de categorias distintas</h3>';
-    html += '<p>Estos productos tienen funciones diferentes. Analizamos cada uno para que entiendas si los necesitas juntos o tenes que priorizar uno.</p>';
+    html += '<h3>Productos de categorías distintas</h3>';
+    html += '<p>Estos productos tienen funciones diferentes. Te explicamos cada uno para que sepas si los necesitas juntos o tenés que priorizar uno.</p>';
     prods.forEach(function(p) {
       var tec = buscarDatosTec(p);
       html += '<h3>' + (catLabels[p.cat]||p.cat) + ': ' + p.name + '</h3>';
       if (tec) {
-        if (tec.tipo) html += '<p><strong>Tipo:</strong> ' + tec.tipo + '</p>';
-        if (tec.mecanismo) html += '<p><strong>Como funciona:</strong> ' + tec.mecanismo + '</p>';
-        if (tec.para_quien) html += '<p><span class="comp-tag-ok">PARA QUIEN</span> ' + tec.para_quien + '</p>';
-        if (tec.ventaja) html += '<p><span class="comp-tag-ok">DIFERENCIAL</span> ' + tec.ventaja + '</p>';
+        if (tec.tipo)      html += '<p><strong>Tipo:</strong> ' + tec.tipo + '</p>';
+        if (tec.mecanismo) html += '<p><strong>Cómo funciona:</strong> ' + tec.mecanismo + '</p>';
+        if (tec.para_quien)html += '<p><span class="comp-tag-ok">✓ PARA QUIÉN</span> ' + tec.para_quien + '</p>';
+        if (tec.ventaja)   html += '<p><span class="comp-tag-ok">★ DIFERENCIAL</span> ' + tec.ventaja + '</p>';
       } else {
-        var info = INFO_CATEGORIAS[p.cat];
-        if (info) html += '<p>' + info + '</p>';
-        html += '<p><strong>Este producto:</strong> ' + (p.desc || '') + '</p>';
+        if (INFO_CATEGORIAS[p.cat]) html += '<p>' + INFO_CATEGORIAS[p.cat] + '</p>';
+        html += '<p>' + (p.desc || '') + '</p>';
       }
     });
   }
   return html;
 }
-
 
 function generarComparacionPrecio(prods) {
   var html = '<h4>Comparacion de valor</h4><ul>';
