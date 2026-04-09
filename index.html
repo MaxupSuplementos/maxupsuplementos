@@ -4514,6 +4514,9 @@ function renderAll(){
   const grid = document.getElementById('productsGrid');
   grid.innerHTML = PRODUCTS.map(p => buildCard(p)).join('');
   initScrollReveal();
+  poblarMarcas();
+  poblarComparador();
+  setTimeout(makeCardsClickable, 100);
 }
 
 function applyFilters(){
@@ -6417,22 +6420,12 @@ function aplicarFiltroPrecio() {
 // ══════════════════════════════════════════════════════════
 //  INIT — llamar todo después de que carguen los productos
 // ══════════════════════════════════════════════════════════
-const _origRenderAll = renderAll;
-renderAll = function() {
-  _origRenderAll();
-  poblarMarcas();
-  poblarComparador();
-  setTimeout(makeCardsClickable, 100);
-};
-
-// Llamada inicial — pobla el catálogo y el comparador inmediatamente
-document.addEventListener('DOMContentLoaded', function() {
-  renderAll();
+// Llamada inicial garantizada
+window.addEventListener('load', function() {
+  if (typeof PRODUCTS !== 'undefined' && PRODUCTS.length > 0) {
+    renderAll();
+  }
 });
-// Fallback por si DOMContentLoaded ya pasó
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  renderAll();
-}
 
 
 // ── Mostrar/ocultar botón scroll top ──
