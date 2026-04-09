@@ -5779,75 +5779,7 @@ function generarHTML(secciones) {
   return html;
 }
 
-function generarAnalisisIA(prods) {
-  var iaDiv = document.getElementById('compIA');
-  var iaContent = document.getElementById('compIAContent');
-  iaDiv.style.display = 'block';
 
-  // Normalizar nombre a ID estatico
-  function normalizarAId(nombre) {
-    var n = nombre.toLowerCase()
-      .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
-      .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
-      .trim();
-    // Buscar en PRODUCTS estaticos el que mas se parece
-    var best = null, bestScore = 0;
-    PRODUCTS.forEach(function(p) {
-      var pn = p.name.toLowerCase()
-        .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
-        .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
-        .trim();
-      // Calcular palabras en comun
-      var words = n.split(/\s+/);
-      var score = 0;
-      words.forEach(function(w){ if(w.length>2 && pn.indexOf(w)>=0) score++; });
-      var pct = words.length > 0 ? score/words.length : 0;
-      if(pct > bestScore && pct >= 0.5) { bestScore = pct; best = p.id; }
-    });
-    return best;
-  }
-
-  // Construir claves con IDs estaticos mapeados desde nombres
-  var staticIds = prods.map(function(p) {
-    // Si el ID ya coincide con PRODUCTS estatico, usarlo directo
-    var found = PRODUCTS.find(function(sp){ return sp.id === p.id; });
-    if(found) return p.id;
-    // Si no, mapear por nombre
-    return normalizarAId(p.name) || p.id;
-  }).sort();
-  var clave = staticIds.join('|');
-
-  // 1. Par especifico predefinido
-  var html = COMPARACIONES_PARES[clave] || '';
-
-  // 2. Si no hay par exacto, construir analisis dinamico con datos tecnicos
-  if (!html) {
-    var cats = prods.map(function(p){ return p.cat; });
-    html = generarAnalisisDinamico(prods, cats);
-  }
-
-  // 3. Complementariedad entre categorias distintas
-  var cats2 = prods.map(function(p){ return p.cat; });
-  var misma = cats2.every(function(x){ return x === cats2[0]; });
-  if (!misma) {
-    var compClave = cats2.slice().sort().join('|');
-    var comp = COMPLEMENTOS[compClave];
-    if (!comp) {
-      for (var i = 0; i < cats2.length; i++) {
-        for (var j = i+1; j < cats2.length; j++) {
-          var k = [cats2[i],cats2[j]].sort().join('|');
-          if (COMPLEMENTOS[k]) { comp = COMPLEMENTOS[k]; break; }
-        }
-        if (comp) break;
-      }
-    }
-    if (comp) {
-      html += '<h4 style="color:var(--cyan);margin-top:20px">Son complementarios?</h4><p>' + comp + '</p>';
-    }
-  }
-
-  iaContent.innerHTML = html;
-}
 
 
 var catLabels = {
