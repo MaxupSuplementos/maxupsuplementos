@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAXUP Mayorista — Canal de Distribución</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cyan:#00C8FF;--pink:#FF0099;--gold:#FFB800;--green:#00E676;
+  --dark:#08080f;--dark2:#0f0f1a;--dark3:#16162a;--white:#fff;--gray:#888;
+  --grad:linear-gradient(135deg,var(--cyan),var(--pink));
+  --grad-gold:linear-gradient(135deg,#FFB800,#FF6B00);
+  --minimo:350000;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--dark);color:var(--white);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* Grid fondo */
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(255,184,0,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,184,0,.03) 1px,transparent 1px);
+  background-size:50px 50px;pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:200;background:rgba(8,8,15,.96);
+  backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,184,0,.15);
+  padding:12px 24px;display:flex;align-items:center;gap:14px}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.1em;
+  background:var(--grad-gold);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  text-decoration:none}
+.nav-badge{background:var(--grad-gold);color:#000;font-size:.65rem;font-weight:700;
+  padding:3px 10px;border-radius:20px;letter-spacing:.08em}
+.nav-back{margin-left:auto;color:var(--gray);font-size:.82rem;font-weight:600;
+  text-decoration:none;border:1px solid rgba(255,184,0,.2);padding:6px 14px;border-radius:20px;
+  transition:all .2s}
+.nav-back:hover{color:var(--gold);border-color:var(--gold)}
+
+/* HERO MAYORISTA */
+.hero{text-align:center;padding:60px 24px 48px;position:relative;z-index:1}
+.hero-eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.2em;color:var(--gold);
+  margin-bottom:12px;opacity:.8}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,6vw,4rem);
+  letter-spacing:.04em;background:var(--grad-gold);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;margin-bottom:12px;line-height:1}
+.hero p{color:#aaa;font-size:1rem;max-width:520px;margin:0 auto 32px;line-height:1.7}
+.hero-stats{display:flex;justify-content:center;gap:32px;flex-wrap:wrap;margin-bottom:40px}
+.stat{text-align:center}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:2rem;background:var(--grad-gold);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.06em}
+.stat-label{font-size:.75rem;color:var(--gray);letter-spacing:.08em}
+
+/* TABS — Login / Registro */
+.tabs-wrap{max-width:900px;margin:0 auto;padding:0 24px 60px;position:relative;z-index:1}
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,.04);border-radius:12px;padding:4px;
+  margin-bottom:28px;border:1px solid rgba(255,184,0,.1)}
+.tab-btn{flex:1;padding:10px;border:none;background:transparent;color:var(--gray);
+  font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;
+  border-radius:8px;transition:all .2s;letter-spacing:.04em}
+.tab-btn.activo{background:var(--grad-gold);color:#000}
+
+/* PANELS */
+.panel{display:none}
+.panel.activo{display:block}
+
+/* FORM CARD */
+.form-card{background:var(--dark2);border:1px solid rgba(255,184,0,.12);
+  border-radius:16px;padding:32px;max-width:520px;margin:0 auto}
+.form-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.06em;
+  margin-bottom:6px;color:var(--gold)}
+.form-sub{font-size:.85rem;color:var(--gray);margin-bottom:24px;line-height:1.6}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:.8rem;font-weight:700;color:#bbb;
+  letter-spacing:.06em;margin-bottom:6px}
+.form-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  color:var(--white);font-family:'Rajdhani',sans-serif;font-size:.95rem;
+  padding:11px 14px;border-radius:8px;outline:none;transition:border .2s}
+.form-input:focus{border-color:var(--gold)}
+.form-input::placeholder{color:rgba(255,255,255,.25)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn-gold{width:100%;background:var(--grad-gold);color:#000;border:none;
+  border-radius:8px;padding:13px;font-family:'Bebas Neue',sans-serif;font-size:1rem;
+  letter-spacing:.1em;cursor:pointer;transition:opacity .2s;margin-top:8px}
+.btn-gold:hover{opacity:.88}
+.btn-gold:disabled{opacity:.4;cursor:not-allowed}
+.form-msg{padding:10px 14px;border-radius:8px;font-size:.85rem;margin-top:12px;
+  display:none;line-height:1.5}
+.form-msg.ok{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.25);color:var(--green)}
+.form-msg.err{background:rgba(255,61,61,.1);border:1px solid rgba(255,61,61,.25);color:#FF6B6B}
+.form-msg.warn{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.25);color:var(--gold)}
+
+/* PENDIENTE */
+.pending-card{background:var(--dark2);border:1px solid rgba(255,184,0,.2);border-radius:16px;
+  padding:40px 32px;max-width:480px;margin:0 auto;text-align:center}
+.pending-icon{font-size:3rem;margin-bottom:16px}
+.pending-title{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);
+  letter-spacing:.06em;margin-bottom:10px}
+
+/* ZONA MAYORISTA (logueado) */
+.mayorista-wrap{display:none}
+.mayorista-header{background:var(--dark2);border:1px solid rgba(255,184,0,.15);
+  border-radius:14px;padding:20px 24px;margin-bottom:24px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.mayorista-info{display:flex;align-items:center;gap:14px}
+.mayorista-avatar{width:46px;height:46px;background:var(--grad-gold);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;
+  font-size:1.2rem;color:#000}
+.mayorista-nombre{font-weight:700;font-size:1rem}
+.mayorista-empresa{font-size:.8rem;color:var(--gold)}
+.badge-mayo{background:var(--grad-gold);color:#000;font-size:.65rem;font-weight:700;
+  padding:3px 10px;border-radius:20px;letter-spacing:.06em}
+.btn-logout{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  color:var(--gray);border-radius:8px;padding:8px 16px;font-family:'Rajdhani',sans-serif;
+  font-size:.82rem;cursor:pointer;transition:all .2s}
+.btn-logout:hover{color:var(--white);border-color:rgba(255,255,255,.3)}
+
+/* FILTROS */
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.fil-btn{padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);color:var(--gray);font-family:'Rajdhani',sans-serif;
+  font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
+.fil-btn:hover,.fil-btn.activo{background:rgba(255,184,0,.1);border-color:var(--gold);color:var(--gold)}
+
+/* GRID PRODUCTOS */
+.mayo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:32px}
+.mayo-card{background:var(--dark2);border:1px solid rgba(255,255,255,.07);border-radius:12px;
+  overflow:hidden;transition:all .2s;cursor:pointer}
+.mayo-card:hover{border-color:rgba(255,184,0,.3);transform:translateY(-2px)}
+.mayo-img{width:100%;height:140px;object-fit:contain;background:rgba(255,255,255,.03);padding:12px}
+.mayo-body{padding:12px}
+.mayo-nombre{font-weight:700;font-size:.85rem;line-height:1.3;margin-bottom:4px}
+.mayo-marca{font-size:.72rem;color:var(--gray);margin-bottom:10px}
+.mayo-precios{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.mayo-precio-original{font-size:.75rem;color:var(--gray);text-decoration:line-through}
+.mayo-precio-mayo{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:.04em}
+.mayo-desc-badge{background:rgba(255,184,0,.12);color:var(--gold);border:1px solid rgba(255,184,0,.25);
+  font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:10px}
+.mayo-stock{font-size:.72rem;color:var(--gray);margin-bottom:10px}
+.mayo-stock.ok{color:var(--green)}
+.mayo-stock.bajo{color:#FFA500}
+.mayo-stock.agotado{color:#FF6B6B}
+.btn-agregar{width:100%;background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3);
+  color:var(--gold);border-radius:6px;padding:8px;font-family:'Rajdhani',sans-serif;
+  font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.04em}
+.btn-agregar:hover{background:rgba(255,184,0,.2)}
+.btn-agregar:disabled{opacity:.35;cursor:not-allowed}
+
+/* CARRITO MAYORISTA */
+.cart-mayo{position:fixed;bottom:24px;right:24px;z-index:300}
+.cart-mayo-btn{background:var(--grad-gold);border:none;border-radius:50px;
+  padding:14px 22px;display:flex;align-items:center;gap:10px;cursor:pointer;
+  font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.08em;
+  color:#000;box-shadow:0 8px 32px rgba(255,184,0,.3);transition:all .2s}
+.cart-mayo-btn:hover{transform:scale(1.04);box-shadow:0 12px 40px rgba(255,184,0,.4)}
+.cart-mayo-count{background:#000;color:var(--gold);border-radius:50%;width:22px;height:22px;
+  display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700}
+
+/* PANEL CARRITO LATERAL */
+.cart-panel{position:fixed;right:-440px;top:0;width:420px;height:100vh;
+  background:var(--dark2);border-left:1px solid rgba(255,184,0,.15);z-index:400;
+  transition:right .3s ease;display:flex;flex-direction:column;overflow:hidden}
+.cart-panel.open{right:0}
+.cart-panel-head{padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:center;justify-content:space-between}
+.cart-panel-titulo{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.06em;color:var(--gold)}
+.cart-close{background:rgba(255,255,255,.06);border:none;color:var(--gray);
+  width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;transition:all .2s}
+.cart-close:hover{color:var(--white);background:rgba(255,255,255,.12)}
+.cart-items{flex:1;overflow-y:auto;padding:16px 24px}
+.cart-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.cart-item-img{width:50px;height:50px;object-fit:contain;background:rgba(255,255,255,.04);
+  border-radius:6px;padding:4px;flex-shrink:0}
+.cart-item-info{flex:1}
+.cart-item-nombre{font-size:.82rem;font-weight:700;line-height:1.3;margin-bottom:2px}
+.cart-item-precio{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--gold);letter-spacing:.04em}
+.cart-item-orig{font-size:.72rem;color:var(--gray);text-decoration:line-through}
+.cart-qty{display:flex;align-items:center;gap:8px;margin-top:6px}
+.qty-btn{background:rgba(255,255,255,.08);border:none;color:var(--white);width:24px;height:24px;
+  border-radius:50%;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;
+  transition:background .2s}
+.qty-btn:hover{background:rgba(255,184,0,.2)}
+.qty-num{font-weight:700;font-size:.85rem;min-width:20px;text-align:center}
+
+.cart-footer{padding:16px 24px;border-top:1px solid rgba(255,255,255,.07)}
+.minimo-bar{margin-bottom:14px}
+.minimo-label{display:flex;justify-content:space-between;font-size:.78rem;color:var(--gray);margin-bottom:6px}
+.minimo-label span:last-child{color:var(--gold);font-weight:700}
+.minimo-progress{height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.minimo-fill{height:100%;background:var(--grad-gold);border-radius:3px;transition:width .3s}
+.cart-totales{margin-bottom:14px}
+.cart-row{display:flex;justify-content:space-between;font-size:.85rem;padding:3px 0;color:#bbb}
+.cart-row.total{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--white);
+  letter-spacing:.04em;border-top:1px solid rgba(255,255,255,.1);margin-top:8px;padding-top:8px}
+.cart-row.ahorro{color:var(--green);font-size:.8rem;font-weight:700}
+.btn-checkout-mayo{width:100%;background:var(--grad-gold);color:#000;border:none;
+  border-radius:8px;padding:13px;font-family:'Bebas Neue',sans-serif;font-size:1rem;
+  letter-spacing:.1em;cursor:pointer;transition:opacity .2s}
+.btn-checkout-mayo:hover{opacity:.88}
+.btn-checkout-mayo:disabled{background:rgba(255,255,255,.1);color:var(--gray);cursor:not-allowed}
+.minimo-warning{text-align:center;font-size:.78rem;color:#FFA500;margin-top:8px;display:none}
+
+/* CHECKOUT MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;
+  display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--dark2);border:1px solid rgba(255,184,0,.2);border-radius:16px;
+  padding:32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-titulo{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--gold);
+  letter-spacing:.06em;margin-bottom:6px}
+.modal-sub{font-size:.82rem;color:var(--gray);margin-bottom:24px}
+
+/* SUCCESS */
+.success-box{background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);
+  border-radius:12px;padding:28px;text-align:center;display:none}
+.success-icon{font-size:2.5rem;margin-bottom:12px}
+.success-titulo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--green);
+  letter-spacing:.06em;margin-bottom:8px}
+.success-codigo{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--gold);
+  letter-spacing:.12em;margin:12px 0}
+
+/* OVERLAY carrito */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:350;display:none}
+.overlay.open{display:block}
+
+@media(max-width:600px){
+  .form-row{grid-template-columns:1fr}
+  .cart-panel{width:100%;right:-100%}
+  .hero-stats{gap:20px}
+  .mayo-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .tabs-wrap{padding:0 16px 40px}
+  .form-card{padding:24px 18px}
+  .cart-mayo{bottom:80px;right:16px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="https://maxupsuplementos.github.io/maxupsuplementos/" class="nav-logo">MAXUP</a>
+  <span class="nav-badge">🏭 MAYORISTA</span>
+  <a href="https://maxupsuplementos.github.io/maxupsuplementos/" class="nav-back">← Tienda</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow">CANAL DE DISTRIBUCIÓN</div>
+  <h1>PRECIOS<br>MAYORISTAS</h1>
+  <p>Accedé a precios exclusivos para revendedores, gimnasios y distribuidores. Compra mínima $350.000.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">+170</div><div class="stat-label">PRODUCTOS</div></div>
+    <div class="stat"><div class="stat-num">$350K</div><div class="stat-label">COMPRA MÍNIMA</div></div>
+    <div class="stat"><div class="stat-num">HASTA 20%</div><div class="stat-label">DESCUENTO</div></div>
+    <div class="stat"><div class="stat-num">24/48hs</div><div class="stat-label">DESPACHO</div></div>
+  </div>
+</div>
+
+<div class="tabs-wrap">
+
+  <!-- TABS -->
+  <div class="tabs" id="tabsLogin" style="max-width:520px;margin:0 auto 28px">
+    <button class="tab-btn activo" onclick="switchTab('login',this)">Iniciar sesión</button>
+    <button class="tab-btn" onclick="switchTab('registro',this)">Quiero ser mayorista</button>
+  </div>
+
+  <!-- PANEL LOGIN -->
+  <div class="panel activo" id="panel-login">
+    <div class="form-card">
+      <div class="form-title">Acceso Mayoristas</div>
+      <div class="form-sub">Ingresá con tu email y contraseña para ver los precios mayoristas.</div>
+      <div class="form-group">
+        <label class="form-label">EMAIL</label>
+        <input class="form-input" type="email" id="loginEmail" placeholder="tu@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">CONTRASEÑA</label>
+        <input class="form-input" type="password" id="loginPass" placeholder="Tu contraseña">
+      </div>
+      <button class="btn-gold" onclick="loginMayorista()">Ingresar</button>
+      <div class="form-msg" id="loginMsg"></div>
+      <p style="text-align:center;margin-top:16px;font-size:.78rem;color:var(--gray)">
+        ¿No tenés cuenta? <a href="#" onclick="switchTab('registro',document.querySelectorAll('.tab-btn')[1]);return false" style="color:var(--gold)">Registrate acá</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- PANEL REGISTRO -->
+  <div class="panel" id="panel-registro">
+    <div class="form-card">
+      <div class="form-title">Solicitar Cuenta Mayorista</div>
+      <div class="form-sub">Completá el formulario. Revisamos tu solicitud y te habilitamos en 24-48 horas hábiles.</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">NOMBRE Y APELLIDO</label>
+          <input class="form-input" id="regNombre" placeholder="Juan Pérez">
+        </div>
+        <div class="form-group">
+          <label class="form-label">NOMBRE DEL NEGOCIO</label>
+          <input class="form-input" id="regNegocio" placeholder="Gym / Tienda / etc.">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">TELÉFONO (WhatsApp)</label>
+          <input class="form-input" id="regTel" type="tel" placeholder="3875xxxxxx">
+        </div>
+        <div class="form-group">
+          <label class="form-label">CIUDAD / PROVINCIA</label>
+          <input class="form-input" id="regCiudad" placeholder="Salta, Jujuy...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">EMAIL</label>
+        <input class="form-input" id="regEmail" type="email" placeholder="tu@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">CONTRASEÑA</label>
+        <input class="form-input" id="regPass" type="password" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="form-group">
+        <label class="form-label">¿A QUÉ TE DEDICÁS? (opcional)</label>
+        <input class="form-input" id="regRubro" placeholder="Ej: Gym, revendedor, nutricionista...">
+      </div>
+      <button class="btn-gold" onclick="registrarMayorista()">Enviar solicitud</button>
+      <div class="form-msg" id="regMsg"></div>
+    </div>
+  </div>
+
+  <!-- PENDIENTE DE APROBACIÓN -->
+  <div class="panel" id="panel-pendiente">
+    <div class="pending-card">
+      <div class="pending-icon">⏳</div>
+      <div class="pending-title">Solicitud en revisión</div>
+      <p style="color:var(--gray);font-size:.9rem;line-height:1.7;margin-bottom:20px">
+        Tu solicitud fue recibida. La estamos revisando y te habilitaremos en <strong style="color:var(--white)">24-48 horas hábiles</strong>.<br><br>
+        Cuando esté aprobada, te llegará un mensaje por WhatsApp y podrás ingresar con tu email y contraseña.
+      </p>
+      <a href="https://wa.me/5491168461457?text=Hola!%20Me%20registr%C3%A9%20como%20mayorista%20y%20quisiera%20consultar%20el%20estado%20de%20mi%20solicitud."
+         target="_blank" class="btn-gold" style="display:block;text-align:center;text-decoration:none;padding:12px;border-radius:8px;font-family:'Bebas Neue',sans-serif;letter-spacing:.08em;font-size:.95rem;color:#000">
+        📲 Consultar por WhatsApp
+      </a>
+    </div>
+  </div>
+
+  <!-- ZONA MAYORISTA (una vez logueado) -->
+  <div class="mayorista-wrap" id="mayoristaWrap">
+
+    <!-- Header usuario -->
+    <div class="mayorista-header">
+      <div class="mayorista-info">
+        <div class="mayorista-avatar" id="userAvatar">M</div>
+        <div>
+          <div class="mayorista-nombre" id="userName">—</div>
+          <div class="mayorista-empresa" id="userEmpresa">—</div>
+        </div>
+        <span class="badge-mayo">✓ MAYORISTA</span>
+      </div>
+      <button class="btn-logout" onclick="logoutMayorista()">Cerrar sesión</button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros" id="filtrosCat">
+      <button class="fil-btn activo" onclick="filtrarCat('todas',this)">Todas</button>
+      <button class="fil-btn" onclick="filtrarCat('proteina',this)">Proteína</button>
+      <button class="fil-btn" onclick="filtrarCat('creatina',this)">Creatina</button>
+      <button class="fil-btn" onclick="filtrarCat('aminoacido',this)">Aminoácidos</button>
+      <button class="fil-btn" onclick="filtrarCat('preworkout',this)">Pre-entreno</button>
+      <button class="fil-btn" onclick="filtrarCat('quemador',this)">Quemadores</button>
+      <button class="fil-btn" onclick="filtrarCat('gainer',this)">Gainers</button>
+      <button class="fil-btn" onclick="filtrarCat('colageno',this)">Colágeno</button>
+      <button class="fil-btn" onclick="filtrarCat('vitamin',this)">Vitaminas</button>
+    </div>
+
+    <!-- Grid productos -->
+    <div class="mayo-grid" id="mayoGrid"></div>
+
+  </div>
+</div>
+
+<!-- Botón carrito flotante -->
+<div class="cart-mayo" id="cartMayoBtn" style="display:none">
+  <button class="cart-mayo-btn" onclick="toggleCartPanel()">
+    🛒 Carrito
+    <span class="cart-mayo-count" id="cartCount">0</span>
+  </button>
+</div>
+
+<!-- Panel carrito lateral -->
+<div class="overlay" id="cartOverlay" onclick="toggleCartPanel()"></div>
+<div class="cart-panel" id="cartPanel">
+  <div class="cart-panel-head">
+    <span class="cart-panel-titulo">🛒 CARRITO MAYORISTA</span>
+    <button class="cart-close" onclick="toggleCartPanel()">✕</button>
+  </div>
+  <div class="cart-items" id="cartItemsList"></div>
+  <div class="cart-footer">
+    <div class="minimo-bar">
+      <div class="minimo-label">
+        <span>Mínimo mayorista</span>
+        <span id="minimoTexto">$0 / $350.000</span>
+      </div>
+      <div class="minimo-progress"><div class="minimo-fill" id="minimoFill" style="width:0%"></div></div>
+    </div>
+    <div class="cart-totales">
+      <div class="cart-row"><span>Precio lista</span><span id="totalLista">$0</span></div>
+      <div class="cart-row ahorro"><span>🏷 Tu ahorro mayorista</span><span id="totalAhorro">$0</span></div>
+      <div class="cart-row total"><span>TOTAL MAYORISTA</span><span id="totalMayo">$0</span></div>
+    </div>
+    <button class="btn-checkout-mayo" id="btnCheckoutMayo" onclick="abrirCheckout()" disabled>
+      Finalizar pedido
+    </button>
+    <div class="minimo-warning" id="minimoWarning">
+      Te faltan <span id="montoFaltante">$350.000</span> para el mínimo mayorista
+    </div>
+  </div>
+</div>
+
+<!-- Modal checkout -->
+<div class="modal-overlay" id="checkoutModal">
+  <div class="modal-box">
+    <div class="modal-titulo">Confirmar Pedido</div>
+    <div class="modal-sub">Revisá los datos antes de enviar tu pedido mayorista.</div>
+
+    <div id="checkoutForm">
+      <div class="form-group">
+        <label class="form-label">DIRECCIÓN DE ENTREGA</label>
+        <input class="form-input" id="chkDireccion" placeholder="Calle, número, ciudad">
+      </div>
+      <div class="form-group">
+        <label class="form-label">FORMA DE PAGO</label>
+        <select class="form-input" id="chkPago">
+          <option value="">Seleccioná...</option>
+          <option value="transferencia">Transferencia bancaria</option>
+          <option value="efectivo">Efectivo al retirar</option>
+          <option value="mercadopago">Mercado Pago</option>
+          <option value="cheque">Cheque</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">NOTAS / OBSERVACIONES (opcional)</label>
+        <input class="form-input" id="chkNotas" placeholder="Ej: Llamar antes de enviar...">
+      </div>
+      <div style="background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.15);border-radius:8px;padding:14px;margin:16px 0">
+        <div style="font-size:.8rem;color:var(--gray);margin-bottom:6px">RESUMEN DEL PEDIDO</div>
+        <div id="resumenPedido" style="font-size:.85rem;line-height:1.8"></div>
+      </div>
+      <button class="btn-gold" onclick="confirmarPedidoMayorista()">📲 Enviar pedido por WhatsApp</button>
+      <button onclick="document.getElementById('checkoutModal').classList.remove('open')"
+        style="width:100%;background:none;border:none;color:var(--gray);padding:10px;cursor:pointer;margin-top:8px;font-family:'Rajdhani',sans-serif;font-size:.85rem">
+        Cancelar
+      </button>
+      <div class="form-msg" id="chkMsg"></div>
+    </div>
+
+    <div class="success-box" id="successBox">
+      <div class="success-icon">🎉</div>
+      <div class="success-titulo">¡Pedido Enviado!</div>
+      <p style="color:var(--gray);font-size:.85rem;margin-bottom:10px">
+        Se abrió WhatsApp con el detalle completo. Te respondemos a la brevedad para coordinar el pago y el envío.
+      </p>
+      <div class="success-codigo" id="successCodigo">MXM-0000</div>
+      <p style="font-size:.75rem;color:var(--gray)">Guardá este código para hacer seguimiento</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
+var API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
+var WA_NUM  = '5491168461457';
+var MINIMO  = 350000;
+
+// ══════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════
+var sesionActual = null;   // {nombre, empresa, email, telefono}
+var productosmayo = [];    // productos con precio mayorista
+var carrito = [];          // [{prod, qty, precioMayo, precioOrig}]
+var catActual = 'todas';
+
+// ══════════════════════════════════════
+// TABS
+// ══════════════════════════════════════
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('activo'); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('activo'); });
+  if (btn) btn.classList.add('activo');
+  var panel = document.getElementById('panel-' + id);
+  if (panel) panel.classList.add('activo');
+}
+
+// ══════════════════════════════════════
+// REGISTRO
+// ══════════════════════════════════════
+function registrarMayorista() {
+  var nombre  = document.getElementById('regNombre').value.trim();
+  var negocio = document.getElementById('regNegocio').value.trim();
+  var tel     = document.getElementById('regTel').value.trim();
+  var ciudad  = document.getElementById('regCiudad').value.trim();
+  var email   = document.getElementById('regEmail').value.trim();
+  var pass    = document.getElementById('regPass').value;
+  var rubro   = document.getElementById('regRubro').value.trim();
+  var msg     = document.getElementById('regMsg');
+
+  if (!nombre || !negocio || !tel || !email || !pass) {
+    mostrarMsg(msg, 'err', 'Completá todos los campos obligatorios.');
+    return;
+  }
+  if (pass.length < 6) {
+    mostrarMsg(msg, 'err', 'La contraseña debe tener al menos 6 caracteres.');
+    return;
+  }
+
+  var btn = document.querySelector('#panel-registro .btn-gold');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  mostrarMsg(msg, 'warn', 'Enviando solicitud...');
+
+  fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      accion: 'registro_mayorista',
+      nombre: nombre, negocio: negocio, telefono: tel,
+      ciudad: ciudad, email: email, password: pass, rubro: rubro
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    btn.disabled = false;
+    btn.textContent = 'Enviar solicitud';
+    if (data.ok) {
+      mostrarMsg(msg, 'ok', '✓ Solicitud enviada. Te contactamos en 24-48 horas.');
+      setTimeout(function(){
+        document.getElementById('tabsLogin').style.display = 'none';
+        document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('activo'); });
+        document.getElementById('panel-pendiente').classList.add('activo');
+      }, 1500);
+    } else {
+      mostrarMsg(msg, 'err', data.error || 'Error al enviar. Intentá de nuevo.');
+    }
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.textContent = 'Enviar solicitud';
+    mostrarMsg(msg, 'err', 'Error de conexión. Intentá de nuevo.');
+  });
+}
+
+// ══════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════
+function loginMayorista() {
+  var email = document.getElementById('loginEmail').value.trim();
+  var pass  = document.getElementById('loginPass').value;
+  var msg   = document.getElementById('loginMsg');
+
+  if (!email || !pass) {
+    mostrarMsg(msg, 'err', 'Ingresá tu email y contraseña.');
+    return;
+  }
+
+  var btn = document.querySelector('#panel-login .btn-gold');
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+
+  fetch(API_URL + '?accion=login_mayorista&email=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(pass))
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    btn.disabled = false;
+    btn.textContent = 'Ingresar';
+    if (data.ok && data.estado === 'aprobado') {
+      sesionActual = data.usuario;
+      localStorage.setItem('maxup_mayo_sesion', JSON.stringify(sesionActual));
+      entrarZonaMayorista(data.productos || []);
+    } else if (data.ok && data.estado === 'pendiente') {
+      document.getElementById('tabsLogin').style.display = 'none';
+      document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('activo'); });
+      document.getElementById('panel-pendiente').classList.add('activo');
+    } else {
+      mostrarMsg(msg, 'err', data.error || 'Email o contraseña incorrectos.');
+    }
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.textContent = 'Ingresar';
+    mostrarMsg(msg, 'err', 'Error de conexión. Intentá de nuevo.');
+  });
+}
+
+// ══════════════════════════════════════
+// ZONA MAYORISTA
+// ══════════════════════════════════════
+function entrarZonaMayorista(productos) {
+  document.getElementById('tabsLogin').style.display = 'none';
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('activo'); });
+  document.getElementById('mayoristaWrap').style.display = 'block';
+  document.getElementById('cartMayoBtn').style.display = 'flex';
+
+  // Header usuario
+  document.getElementById('userName').textContent = sesionActual.nombre;
+  document.getElementById('userEmpresa').textContent = sesionActual.negocio || sesionActual.empresa || '';
+  document.getElementById('userAvatar').textContent = sesionActual.nombre.charAt(0).toUpperCase();
+
+  productosmayo = productos;
+  productosayo = productosmayo;
+  renderProductos('todas');
+}
+
+function logoutMayorista() {
+  sesionActual = null;
+  carrito = [];
+  localStorage.removeItem('maxup_mayo_sesion');
+  location.reload();
+}
+
+// ══════════════════════════════════════
+// RENDER PRODUCTOS
+// ══════════════════════════════════════
+function filtrarCat(cat, btn) {
+  catActual = cat;
+  document.querySelectorAll('.fil-btn').forEach(function(b){ b.classList.remove('activo'); });
+  if (btn) btn.classList.add('activo');
+  renderProductos(cat);
+}
+
+function renderProductos(cat) {
+  var grid = document.getElementById('mayoGrid');
+  var lista = cat === 'todas' ? productosayo : productosayo.filter(function(p){ return p.cat === cat; });
+
+  if (!lista || !lista.length) {
+    grid.innerHTML = '<div style="color:var(--gray);grid-column:1/-1;padding:20px;text-align:center">No hay productos en esta categoría con precio mayorista.</div>';
+    return;
+  }
+
+  grid.innerHTML = lista.map(function(p) {
+    var stockTotal = p.stock || 0;
+    var stockClass = stockTotal === 0 ? 'agotado' : stockTotal <= 3 ? 'bajo' : 'ok';
+    var stockTxt   = stockTotal === 0 ? 'Sin stock' : stockTotal <= 3 ? 'Últimas ' + stockTotal + ' unidades' : stockTotal + ' en stock';
+    var preciOrig  = p.precio_lista || p.precio;
+    var precioMayo = p.precio_mayorista || Math.round(p.precio * (1 - (p.desc_mayorista||15)/100));
+    var descPct    = p.desc_mayorista || Math.round((1 - precioMayo/preciOrig)*100);
+
+    return '<div class="mayo-card">'
+      + '<img class="mayo-img" src="' + (p.img||'') + '" onerror="this.style.display=\'none\'" loading="lazy">'
+      + '<div class="mayo-body">'
+      + '<div class="mayo-nombre">' + p.name + '</div>'
+      + '<div class="mayo-marca">' + p.brand + '</div>'
+      + '<div class="mayo-precios">'
+      + '<span class="mayo-precio-original">$' + preciOrig.toLocaleString('es-AR') + '</span>'
+      + '<span class="mayo-precio-mayo">$' + precioMayo.toLocaleString('es-AR') + '</span>'
+      + '<span class="mayo-desc-badge">-' + descPct + '%</span>'
+      + '</div>'
+      + '<div class="mayo-stock ' + stockClass + '">📦 ' + stockTxt + '</div>'
+      + '<button class="btn-agregar" ' + (stockTotal===0?'disabled':'') + ' onclick="agregarAlCarrito(' + JSON.stringify(p.id) + ')">'
+      + (stockTotal===0 ? 'Sin stock' : '+ Agregar') + '</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════
+// CARRITO
+// ══════════════════════════════════════
+function agregarAlCarrito(prodId) {
+  var prod = productosayo.find(function(p){ return p.id === prodId; });
+  if (!prod) return;
+
+  var item = carrito.find(function(i){ return i.id === prodId; });
+  if (item) {
+    item.qty++;
+  } else {
+    var precioOrig = prod.precio_lista || prod.precio;
+    var precioMayo = prod.precio_mayorista || Math.round(prod.precio * (1 - (prod.desc_mayorista||15)/100));
+    carrito.push({ id: prodId, prod: prod, qty: 1, precioMayo: precioMayo, precioOrig: precioOrig });
+  }
+  actualizarCarrito();
+  // Feedback visual
+  var btns = document.querySelectorAll('.btn-agregar');
+  btns.forEach(function(btn){
+    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').indexOf(prodId) >= 0) {
+      var orig = btn.textContent;
+      btn.textContent = '✓ Agregado';
+      setTimeout(function(){ btn.textContent = '+ Agregar'; }, 800);
+    }
+  });
+}
+
+function cambiarQty(idx, delta) {
+  carrito[idx].qty += delta;
+  if (carrito[idx].qty <= 0) carrito.splice(idx, 1);
+  actualizarCarrito();
+}
+
+function actualizarCarrito() {
+  var totalItems = carrito.reduce(function(s,i){ return s + i.qty; }, 0);
+  var totalMayo  = carrito.reduce(function(s,i){ return s + i.qty * i.precioMayo; }, 0);
+  var totalLista = carrito.reduce(function(s,i){ return s + i.qty * i.precioOrig; }, 0);
+  var ahorro     = totalLista - totalMayo;
+
+  // Botón flotante
+  document.getElementById('cartCount').textContent = totalItems;
+
+  // Progress mínimo
+  var pct = Math.min(100, (totalMayo / MINIMO) * 100);
+  document.getElementById('minimoFill').style.width = pct + '%';
+  document.getElementById('minimoTexto').textContent = '$' + totalMayo.toLocaleString('es-AR') + ' / $350.000';
+
+  // Totales
+  document.getElementById('totalLista').textContent = '$' + totalLista.toLocaleString('es-AR');
+  document.getElementById('totalAhorro').textContent = '-$' + ahorro.toLocaleString('es-AR');
+  document.getElementById('totalMayo').textContent  = '$' + totalMayo.toLocaleString('es-AR');
+
+  // Botón checkout
+  var btnChk = document.getElementById('btnCheckoutMayo');
+  var warning = document.getElementById('minimoWarning');
+  var faltante = MINIMO - totalMayo;
+  if (totalMayo >= MINIMO && totalItems > 0) {
+    btnChk.disabled = false;
+    warning.style.display = 'none';
+  } else {
+    btnChk.disabled = true;
+    warning.style.display = faltante > 0 && totalItems > 0 ? 'block' : 'none';
+    document.getElementById('montoFaltante').textContent = '$' + Math.max(0,faltante).toLocaleString('es-AR');
+  }
+
+  // Items del carrito
+  var lista = document.getElementById('cartItemsList');
+  if (carrito.length === 0) {
+    lista.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray)">El carrito está vacío</div>';
+    return;
+  }
+  lista.innerHTML = carrito.map(function(item, idx) {
+    return '<div class="cart-item">'
+      + '<img class="cart-item-img" src="' + (item.prod.img||'') + '" onerror="this.style.display=\'none\'">'
+      + '<div class="cart-item-info">'
+      + '<div class="cart-item-nombre">' + item.prod.name + '</div>'
+      + '<div class="cart-item-orig">$' + item.precioOrig.toLocaleString('es-AR') + '</div>'
+      + '<div class="cart-item-precio">$' + item.precioMayo.toLocaleString('es-AR') + ' c/u</div>'
+      + '<div class="cart-qty">'
+      + '<button class="qty-btn" onclick="cambiarQty(' + idx + ',-1)">−</button>'
+      + '<span class="qty-num">' + item.qty + '</span>'
+      + '<button class="qty-btn" onclick="cambiarQty(' + idx + ',1)">+</button>'
+      + '<span style="font-size:.75rem;color:var(--gray);margin-left:4px">= $' + (item.qty*item.precioMayo).toLocaleString('es-AR') + '</span>'
+      + '</div></div></div>';
+  }).join('');
+}
+
+function toggleCartPanel() {
+  var panel   = document.getElementById('cartPanel');
+  var overlay = document.getElementById('cartOverlay');
+  panel.classList.toggle('open');
+  overlay.classList.toggle('open');
+}
+
+// ══════════════════════════════════════
+// CHECKOUT
+// ══════════════════════════════════════
+function abrirCheckout() {
+  // Resumen
+  var totalMayo = carrito.reduce(function(s,i){ return s + i.qty * i.precioMayo; }, 0);
+  var resumen = carrito.map(function(i){
+    return i.qty + 'x ' + i.prod.name + ' — $' + (i.qty*i.precioMayo).toLocaleString('es-AR');
+  }).join('<br>') + '<br><strong>TOTAL: $' + totalMayo.toLocaleString('es-AR') + '</strong>';
+  document.getElementById('resumenPedido').innerHTML = resumen;
+  document.getElementById('checkoutModal').classList.add('open');
+  toggleCartPanel();
+}
+
+function confirmarPedidoMayorista() {
+  var direccion = document.getElementById('chkDireccion').value.trim();
+  var pago      = document.getElementById('chkPago').value;
+  var notas     = document.getElementById('chkNotas').value.trim();
+  var msg       = document.getElementById('chkMsg');
+
+  if (!direccion || !pago) {
+    mostrarMsg(msg, 'err', 'Completá la dirección y forma de pago.');
+    return;
+  }
+
+  var totalMayo  = carrito.reduce(function(s,i){ return s + i.qty * i.precioMayo; }, 0);
+  var totalLista = carrito.reduce(function(s,i){ return s + i.qty * i.precioOrig; }, 0);
+  var ahorro     = totalLista - totalMayo;
+  var codigo     = 'MXM-' + Date.now().toString().slice(-4);
+
+  // Construir mensaje WhatsApp
+  var items = carrito.map(function(i){
+    return i.qty + 'x ' + i.prod.name + ' (' + i.prod.brand + ') = $' + (i.qty*i.precioMayo).toLocaleString('es-AR');
+  }).join('\n');
+
+  var wa = 'PEDIDO MAYORISTA MAXUP\n'
+    + 'Código: ' + codigo + '\n'
+    + '─────────────────────\n'
+    + 'Cliente: ' + sesionActual.nombre + '\n'
+    + 'Negocio: ' + (sesionActual.negocio||sesionActual.empresa||'') + '\n'
+    + 'Tel: ' + sesionActual.telefono + '\n'
+    + 'Email: ' + sesionActual.email + '\n'
+    + '─────────────────────\n'
+    + 'PRODUCTOS:\n' + items + '\n'
+    + '─────────────────────\n'
+    + 'Precio lista: $' + totalLista.toLocaleString('es-AR') + '\n'
+    + 'Descuento mayorista: -$' + ahorro.toLocaleString('es-AR') + '\n'
+    + 'TOTAL MAYORISTA: $' + totalMayo.toLocaleString('es-AR') + '\n'
+    + '─────────────────────\n'
+    + 'Entrega: ' + direccion + '\n'
+    + 'Pago: ' + pago + '\n'
+    + (notas ? 'Notas: ' + notas : '');
+
+  // Registrar en Sheets
+  fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      accion: 'pedido_mayorista',
+      codigo: codigo,
+      cliente: sesionActual,
+      items: carrito.map(function(i){ return { id:i.id, nombre:i.prod.name, marca:i.prod.brand, qty:i.qty, precio_mayo:i.precioMayo, precio_orig:i.precioOrig }; }),
+      total_mayorista: totalMayo,
+      total_lista: totalLista,
+      ahorro: ahorro,
+      direccion: direccion,
+      pago: pago,
+      notas: notas
+    })
+  }).catch(function(){});
+
+  // Abrir WhatsApp
+  window.open('https://wa.me/' + WA_NUM + '?text=' + encodeURIComponent(wa), '_blank');
+
+  // Mostrar éxito
+  document.getElementById('checkoutForm').style.display = 'none';
+  var sb = document.getElementById('successBox');
+  sb.style.display = 'block';
+  document.getElementById('successCodigo').textContent = codigo;
+  carrito = [];
+  actualizarCarrito();
+}
+
+// ══════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════
+function mostrarMsg(el, tipo, texto) {
+  el.className = 'form-msg ' + tipo;
+  el.textContent = texto;
+  el.style.display = 'block';
+}
+
+// Array de productos mayoristas (alias de productosmayo)
+var productosayo = productosmayo;
+
+// ══════════════════════════════════════
+// INIT — restaurar sesión si hay
+// ══════════════════════════════════════
+(function init() {
+  var saved = localStorage.getItem('maxup_mayo_sesion');
+  if (saved) {
+    try {
+      sesionActual = JSON.parse(saved);
+      // Recargar productos frescos desde Sheets
+      fetch(API_URL + '?accion=catalogo_mayorista&email=' + encodeURIComponent(sesionActual.email))
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        if (data.ok && data.productos) {
+          productosmayo = data.productos;
+          productosayo = productosmayo;
+          entrarZonaMayorista(data.productos);
+        } else {
+          localStorage.removeItem('maxup_mayo_sesion');
+        }
+      })
+      .catch(function(){ localStorage.removeItem('maxup_mayo_sesion'); });
+    } catch(e) {
+      localStorage.removeItem('maxup_mayo_sesion');
+    }
+  }
+})();
+</script>
+</body>
+</html>
