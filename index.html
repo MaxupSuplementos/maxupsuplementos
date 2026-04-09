@@ -4381,6 +4381,8 @@ const PRODUCTS = [
     ]
   }
 ];
+var PRODUCTS_ESTATICO = PRODUCTS.slice(); // Copia estática para el comparador
+
 
 /* ════════════════════════════════════════════════════════
    RENDER ENGINE
@@ -6185,7 +6187,7 @@ function buscarDatosTec(prod) {
   // 2. Buscar por nombre en productos estáticos
   var mejor = null, mejorScore = 0;
   Object.keys(DATOS_TEC).forEach(function(key) {
-    var sp = PRODUCTS.find(function(x){ return x.id === key; });
+    var sp = PRODUCTS_ESTATICO.find(function(x){ return x.id === key; });
     if (!sp) return;
     var sn = _norm(sp.name);
     var palabras = nombre.split(' ').filter(function(w){ return w.length > 2; });
@@ -6204,7 +6206,7 @@ function buscarParPredefinido(prods) {
     if (DATOS_TEC[prod.id]) return prod.id; // ID exacto
     var nombre = _norm(prod.name);
     var mejor = null, mejorScore = 0;
-    PRODUCTS.forEach(function(sp) {
+    PRODUCTS_ESTATICO.forEach(function(sp) {
       if (!DATOS_TEC[sp.id]) return; // solo los que tienen datos
       var sn = _norm(sp.name);
       var palabras = nombre.split(' ').filter(function(w){ return w.length > 2; });
