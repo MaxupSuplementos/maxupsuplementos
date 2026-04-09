@@ -6426,7 +6426,13 @@ renderAll = function() {
 };
 
 // Llamada inicial — pobla el catálogo y el comparador inmediatamente
-renderAll();
+document.addEventListener('DOMContentLoaded', function() {
+  renderAll();
+});
+// Fallback por si DOMContentLoaded ya pasó
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  renderAll();
+}
 
 
 // ── Mostrar/ocultar botón scroll top ──
