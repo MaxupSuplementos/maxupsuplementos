@@ -520,9 +520,12 @@ function registrarMayorista() {
   btn.textContent = 'Enviando...';
   mostrarMsg(msg, 'warn', 'Enviando solicitud...');
 
-  fetch(API_URL, {
+fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    // 👇 1. CAMBIO ACÁ: text/plain en lugar de application/json
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    // 👇 2. CAMBIO ACÁ: agregamos esta línea que faltaba
+    redirect: 'follow', 
     body: JSON.stringify({
       accion: 'registro_mayorista',
       nombre: nombre, negocio: negocio, telefono: tel,
