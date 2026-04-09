@@ -5784,26 +5784,55 @@ function generarAnalisisIA(prods) {
   var iaContent = document.getElementById('compIAContent');
   iaDiv.style.display = 'block';
 
-  var ids = prods.map(function(p){ return p.id; }).sort();
-  var clave = ids.join('|');
+  // Normalizar nombre a ID estatico
+  function normalizarAId(nombre) {
+    var n = nombre.toLowerCase()
+      .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+      .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
+      .trim();
+    // Buscar en PRODUCTS estaticos el que mas se parece
+    var best = null, bestScore = 0;
+    PRODUCTS.forEach(function(p) {
+      var pn = p.name.toLowerCase()
+        .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+        .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
+        .trim();
+      // Calcular palabras en comun
+      var words = n.split(/\s+/);
+      var score = 0;
+      words.forEach(function(w){ if(w.length>2 && pn.indexOf(w)>=0) score++; });
+      var pct = words.length > 0 ? score/words.length : 0;
+      if(pct > bestScore && pct >= 0.5) { bestScore = pct; best = p.id; }
+    });
+    return best;
+  }
+
+  // Construir claves con IDs estaticos mapeados desde nombres
+  var staticIds = prods.map(function(p) {
+    // Si el ID ya coincide con PRODUCTS estatico, usarlo directo
+    var found = PRODUCTS.find(function(sp){ return sp.id === p.id; });
+    if(found) return p.id;
+    // Si no, mapear por nombre
+    return normalizarAId(p.name) || p.id;
+  }).sort();
+  var clave = staticIds.join('|');
 
   // 1. Par especifico predefinido
   var html = COMPARACIONES_PARES[clave] || '';
 
-  // 2. Si no hay par exacto, construir analisis dinamico
+  // 2. Si no hay par exacto, construir analisis dinamico con datos tecnicos
   if (!html) {
     var cats = prods.map(function(p){ return p.cat; });
     html = generarAnalisisDinamico(prods, cats);
   }
 
-  // 3. Siempre agregar complementariedad si son categorias distintas
+  // 3. Complementariedad entre categorias distintas
   var cats2 = prods.map(function(p){ return p.cat; });
   var misma = cats2.every(function(x){ return x === cats2[0]; });
   if (!misma) {
     var compClave = cats2.slice().sort().join('|');
     var comp = COMPLEMENTOS[compClave];
     if (!comp) {
-      // buscar pares dentro de 3 productos
       for (var i = 0; i < cats2.length; i++) {
         for (var j = i+1; j < cats2.length; j++) {
           var k = [cats2[i],cats2[j]].sort().join('|');
@@ -5819,6 +5848,7 @@ function generarAnalisisIA(prods) {
 
   iaContent.innerHTML = html;
 }
+
 
 var catLabels = {
   proteina:'Proteina', creatina:'Creatina', aminoacido:'Aminoacidos',
@@ -6202,6 +6232,30 @@ var DATOS_TEC = {
 // ══════════════════════════════════════════════════════════
 // FUNCIÓN DE ANÁLISIS TÉCNICO MEJORADA
 // ══════════════════════════════════════════════════════════
+function buscarDatosTec(p) {
+  // Buscar por ID exacto primero
+  if (DATOS_TEC[p.id]) return DATOS_TEC[p.id];
+  // Si no, buscar por nombre normalizado
+  var n = (p.name||'').toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n');
+  var best = null, bestScore = 0;
+  Object.keys(DATOS_TEC).forEach(function(key) {
+    // Buscar el producto estatico con ese ID para obtener su nombre
+    var sp = PRODUCTS.find(function(x){ return x.id === key; });
+    if (!sp) return;
+    var sn = (sp.name||'').toLowerCase()
+      .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+      .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n');
+    var words = n.split(' ');
+    var score = 0;
+    words.forEach(function(w){ if(w.length>2 && sn.indexOf(w)>=0) score++; });
+    var pct = words.length > 0 ? score/words.length : 0;
+    if(pct > bestScore && pct >= 0.5) { bestScore = pct; best = DATOS_TEC[key]; }
+  });
+  return best;
+}
+
 function generarAnalisisDinamico(prods, cats) {
   var misma = cats.every(function(x){ return x === cats[0]; });
   var html = '';
@@ -6215,7 +6269,7 @@ function generarAnalisisDinamico(prods, cats) {
     // Análisis técnico detallado de cada producto
     html += '<h3>Analisis tecnico de cada producto</h3>';
     prods.forEach(function(p) {
-      var tec = DATOS_TEC[p.id] || null;
+      var tec = buscarDatosTec(p);
       html += '<h4>' + p.name + ' (' + p.brand + ')</h4>';
       if (tec) {
         // Tipo/clasificación
@@ -6264,7 +6318,7 @@ function generarAnalisisDinamico(prods, cats) {
     html += '<h3>Productos de categorias distintas</h3>';
     html += '<p>Estos productos tienen funciones diferentes. Analizamos cada uno para que entiendas si los necesitas juntos o tenes que priorizar uno.</p>';
     prods.forEach(function(p) {
-      var tec = DATOS_TEC[p.id] || null;
+      var tec = buscarDatosTec(p);
       html += '<h3>' + (catLabels[p.cat]||p.cat) + ': ' + p.name + '</h3>';
       if (tec) {
         if (tec.tipo) html += '<p><strong>Tipo:</strong> ' + tec.tipo + '</p>';
