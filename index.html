@@ -5796,531 +5796,869 @@ var catLabels = {
 // DATOS TÉCNICOS POR PRODUCTO
 // Composición real, proteína/porción, tipo, aditivos, para quién
 // ══════════════════════════════════════════════════════════
-var DATOS_TEC = {
+// ══════════════════════════════════════════════════════════
+// BASE DE DATOS DE ANÁLISIS - MAXUP SUPLEMENTOS
+// Sin IA, sin internet. Todo embebido. Actualizado manualmente.
+// ══════════════════════════════════════════════════════════
 
-// ── PROTEÍNAS ──────────────────────────────────────────────
+var DB_ANALISIS = {
+
+// ─────────────────────────────────────────────
+// PROTEÍNAS
+// ─────────────────────────────────────────────
 'sn_whey_dp': {
-  tipo: 'Concentrado de suero (WPC)',
-  proteina_porcion: '24g por porción de 35g',
-  carbohidratos: '3-4g por porción',
+  tipo: 'Concentrado de suero (WPC 80%)',
+  proteina: '24g por porción de 35g',
+  carbs: '3-4g por porción',
   grasas: '2-3g por porción',
-  lactosa: 'Contiene lactosa (aprox 3g/porción)',
-  aminoacidos: 'Leucina 2.5g, BCAAs totales ~5.5g por porción',
+  lactosa: 'Alta (~3g/porción) — puede generar molestias',
+  aminoacidos: 'Leucina 2.5g · BCAAs totales ~5.5g/porción',
   filtrado: 'Filtración estándar — retiene algo de grasa y lactosa',
-  aditivos: 'Edulcorante (sucralosa), saborizantes naturales y artificiales',
-  para_quien: 'Ideal para principiantes o intermedios con buena tolerancia a la lactosa que buscan precio accesible sin sacrificar calidad.',
-  no_recomendado: 'Intolerantes a la lactosa, personas en definición extrema o que buscan máxima pureza proteica.',
-  ventaja: 'Mejor precio por gramo del mercado. Sabores muy bien logrados.',
+  absorcion: 'Media — 3 a 4 horas',
+  aditivos: 'Sucralosa, saborizantes nat. y art.',
+  ideal: 'Principiantes o intermedios con buena tolerancia a la lactosa que buscan el mejor precio sin sacrificar calidad.',
+  evitar: 'Intolerantes a la lactosa, personas en definición extrema.',
+  ventaja: 'Mejor precio por gramo del catálogo. 4 sabores. Mayor stock.',
 },
 'sn_plat_2lb': {
   tipo: 'Blend: Concentrado + Aislado microfiltrado (WPC+WPI)',
-  proteina_porcion: '25g por porción de 35g',
-  carbohidratos: '2-3g por porción',
+  proteina: '25g por porción de 35g',
+  carbs: '2-3g por porción',
   grasas: '1.5-2g por porción',
-  lactosa: 'Menor lactosa que el concentrado puro (aprox 1-2g/porción)',
-  aminoacidos: 'Leucina 2.7g, BCAAs totales ~6g por porción',
-  filtrado: 'Microfiltración de la fracción aislada — mejor pureza que WPC solo',
-  aditivos: 'Edulcorante (sucralosa), saborizantes. Lecitina de soja (emulsionante).',
-  para_quien: 'Deportistas intermedios/avanzados que quieren mejor calidad proteica sin llegar al precio del aislado puro.',
-  no_recomendado: 'Alérgicos a la soja (tiene lecitina). Intolerantes severos a la lactosa (mejor el aislado).',
-  ventaja: 'Mejor relación calidad/precio del segmento premium. Pote hermético de mejor conservación.',
+  lactosa: 'Baja (~1-2g/porción) por fracción aislada',
+  aminoacidos: 'Leucina 2.7g · BCAAs totales ~6g/porción',
+  filtrado: 'Microfiltración en fracción aislada — mejor pureza',
+  absorcion: 'Media-rápida — 2 a 3 horas',
+  aditivos: 'Sucralosa, lecitina de soja (emulsionante), saborizantes',
+  ideal: 'Intermedios/avanzados que buscan mayor calidad proteica con menor lactosa sin pagar precio de aislado puro.',
+  evitar: 'Alérgicos a la soja. Intolerantes severos (mejor aislado puro).',
+  ventaja: 'Mejor perfil aminoacídico que el concentrado. Pote hermético de mejor conservación.',
+},
+'sn_plat_3kg': {
+  tipo: 'Blend: Concentrado + Aislado microfiltrado (WPC+WPI) — Formato grande',
+  proteina: '25g por porción de 35g',
+  carbs: '2-3g por porción',
+  lactosa: 'Baja por fracción aislada',
+  aminoacidos: 'Leucina 2.7g · BCAAs ~6g/porción',
+  filtrado: 'Microfiltración',
+  absorcion: 'Media-rápida',
+  ideal: 'Uso diario constante. El formato 3kg ofrece el mejor precio por porción de toda la línea Platinum.',
+  ventaja: '~85 porciones. Ideal para consumo prolongado sin recompra frecuente.',
 },
 'ena_truemade': {
-  tipo: 'Blend premium: Concentrado + Aislado (TrueMade process)',
-  proteina_porcion: '26g por porción de 38g',
-  carbohidratos: '3g por porción',
+  tipo: 'Blend premium: Concentrado + Aislado (proceso TrueMade)',
+  proteina: '26g por porción de 38g',
+  carbs: '3g por porción',
   grasas: '2g por porción',
-  lactosa: 'Baja lactosa por fracción aislada incluida',
-  aminoacidos: 'Leucina 2.8g, BCAAs totales ~6.2g. Perfil completo de EAAs.',
-  filtrado: 'Proceso TrueMade: microfiltración avanzada con mayor transparencia en fracciones',
-  aditivos: 'Edulcorante (sucralosa), saborizantes. Sin colorantes artificiales.',
-  para_quien: 'Deportistas que valoran transparencia en ingredientes y formulación cuidada. Excelente para ganancia de masa o mantenimiento.',
-  no_recomendado: 'Presupuesto muy ajustado (precio mayor al Doypack de Star).',
-  ventaja: 'Marca con mayor reputación en transparencia de etiquetado del mercado argentino.',
+  lactosa: 'Baja — fracción aislada incluida',
+  aminoacidos: 'Leucina 2.8g · BCAAs ~6.2g/porción. Perfil completo de EAAs.',
+  filtrado: 'TrueMade: microfiltración avanzada con mayor transparencia en fracciones declaradas',
+  absorcion: 'Media-rápida — 2 a 3 horas',
+  aditivos: 'Sin colorantes artificiales. Sucralosa, saborizantes.',
+  ideal: 'Deportistas que valoran etiquetado transparente y formulación cuidada. Excelente para volumen o mantenimiento.',
+  evitar: 'Presupuesto muy ajustado.',
+  ventaja: 'Mayor proteína por porción del segmento 2 Lb. Marca referente en transparencia de etiquetado.',
 },
 'gn_isogold': {
-  tipo: 'Aislado puro (WPI) — Intercambio iónico',
-  proteina_porcion: '27g por porción de 30g (90%+ proteína)',
-  carbohidratos: '0-1g por porción',
+  tipo: 'Aislado puro (WPI 90%) — Intercambio iónico',
+  proteina: '27g por porción de 30g (90%+ proteína en peso)',
+  carbs: '0-1g por porción',
   grasas: '0.5g por porción',
-  lactosa: 'Menos de 0.5g por porción — apto intolerantes',
-  aminoacidos: 'Leucina 3g, BCAAs totales ~6.5g. La mayor concentración del mercado.',
-  filtrado: 'Intercambio iónico: elimina casi toda la lactosa, grasa e impurezas',
-  aditivos: 'Edulcorante (sucralosa). Mínimos aditivos.',
-  para_quien: 'Intolerantes a la lactosa, personas en definición que cuidan cada caloría, atletas de alto rendimiento o competidores.',
-  no_recomendado: 'Volumen sin restricción calórica (el concentrado es suficiente y más económico).',
-  ventaja: 'Máxima pureza proteica. Mejor velocidad de absorción. Apto intolerantes.',
+  lactosa: 'Menos de 0.5g/porción — APTO intolerantes',
+  aminoacidos: 'Leucina 3g · BCAAs ~6.5g/porción — el mayor del catálogo',
+  filtrado: 'Intercambio iónico: elimina casi toda lactosa, grasa e impurezas',
+  absorcion: 'Rápida — 1 a 2 horas (ideal post-entreno inmediato)',
+  aditivos: 'Mínimos. Sucralosa.',
+  ideal: 'Intolerantes a la lactosa, personas en definición extrema, atletas de alto rendimiento o competidores.',
+  evitar: 'Volumen sin restricción calórica (el concentrado es suficiente y más económico).',
+  ventaja: 'Máxima pureza proteica del catálogo. El de mayor leucina por porción.',
 },
 'gn_vegetal': {
-  tipo: 'Aislado de proteína vegetal (arveja + arroz)',
-  proteina_porcion: '25g por porción',
-  carbohidratos: '2-3g por porción',
+  tipo: 'Aislado vegetal (arveja + arroz)',
+  proteina: '25g por porción',
+  carbs: '2-3g por porción',
   grasas: '1.5g por porción',
   lactosa: 'Sin lactosa — 100% vegetal',
-  aminoacidos: 'Perfil completo. Ligero déficit en metionina (compensado por mezcla arveja+arroz)',
+  aminoacidos: 'Perfil completo. La mezcla arveja+arroz compensa el déficit de metionina del aislado de arveja solo.',
   filtrado: 'Proceso de aislamiento vegetal. Sin derivados animales.',
-  aditivos: 'Edulcorantes vegetales, saborizantes naturales.',
-  para_quien: 'Veganos, vegetarianos, intolerantes a la lactosa, alérgicos a la proteína de leche (APLV), o quienes quieren variar su fuente proteica.',
-  no_recomendado: 'Personas que priorizan el máximo estímulo anabólico (el whey tiene levemente mayor respuesta insulínica y absorción más rápida).',
-  ventaja: 'Sin lactosa, sin gluten, apta para todo tipo de dieta.',
+  absorcion: 'Media — 2 a 3 horas',
+  ideal: 'Veganos, vegetarianos, intolerantes a la lactosa, alérgicos a proteína de leche (APLV).',
+  evitar: 'Alérgicos a leguminosas.',
+  ventaja: 'Sin lactosa, sin gluten, sin derivados animales. Apta para cualquier dieta.',
 },
 'nfit_vegprot': {
-  tipo: 'Aislado de proteína vegetal (arveja)',
-  proteina_porcion: '24g por porción',
-  carbohidratos: '2g por porción',
-  grasas: '1g por porción',
+  tipo: 'Aislado de arveja (proteína vegetal)',
+  proteina: '24g por porción',
+  carbs: '2g por porción',
   lactosa: 'Sin lactosa — 100% vegetal',
-  aminoacidos: 'Buen perfil. Algo menor en metionina que la mezcla arveja+arroz.',
-  filtrado: 'Proceso de aislamiento vegetal puro.',
-  aditivos: 'Cacao alcalino (versión chocolate), edulcorantes vegetales.',
-  para_quien: 'Mismos casos que proteína vegetal GN. Disponible en chocolate para quienes prefieren ese sabor.',
-  no_recomendado: 'Personas con alergia a leguminosas.',
-  ventaja: 'Marca más nueva con formulación limpia. Buen precio.',
+  aminoacidos: 'Buen perfil. Solo arveja (sin arroz) — leve déficit en metionina.',
+  filtrado: 'Aislamiento vegetal puro',
+  ideal: 'Veganos, vegetarianos e intolerantes. Sabor chocolate disponible.',
+  ventaja: 'Formulación limpia. Buen precio.',
 },
 'wo_prot': {
-  tipo: 'Blend proteico femenino (concentrado + aislado)',
-  proteina_porcion: '22g por porción',
-  carbohidratos: '3g por porción',
-  grasas: '2g por porción',
-  lactosa: 'Contiene lactosa moderada',
-  aminoacidos: 'Perfil estándar de suero. Formulado para metabolismo femenino.',
-  filtrado: 'Blend estándar',
-  aditivos: 'Colágeno hidrolizado incluido (doble función: proteína + colágeno). Edulcorantes.',
-  para_quien: 'Mujeres que buscan proteína + beneficios del colágeno en un solo producto. Cómodo como all-in-one.',
-  no_recomendado: 'Personas que prefieren suplementos separados para controlar dosis individuales.',
-  ventaja: 'Proteína + Colágeno en una sola toma. Diseñado para el metabolismo femenino.',
+  tipo: 'Blend proteico femenino (concentrado + aislado + colágeno)',
+  proteina: '22g por porción',
+  carbs: '3g por porción',
+  lactosa: 'Moderada',
+  aminoacidos: 'Perfil estándar de suero',
+  filtrado: 'Blend con adición de colágeno hidrolizado',
+  ideal: 'Mujeres que buscan proteína + colágeno en un solo producto. Cómodo como all-in-one.',
+  evitar: 'Quienes prefieren controlar dosis de proteína y colágeno por separado.',
+  ventaja: 'Proteína + Colágeno en una sola toma. Diseñado para metabolismo femenino.',
+},
+'wo_protfit': {
+  tipo: 'Proteína + Colágeno hidrolizado (fórmula femenina)',
+  proteina: '20g por porción aprox.',
+  lactosa: 'Moderada',
+  ideal: 'Mujeres que quieren proteína muscular y beneficios del colágeno (piel, articulaciones) simultáneamente.',
+  ventaja: 'Doble función en un producto. Específico para necesidades femeninas.',
+},
+'gen_7900': {
+  tipo: 'Concentrado de suero (WPC)',
+  proteina: '24g por porción aprox.',
+  lactosa: 'Moderada-alta',
+  ideal: 'Deportistas que buscan una opción alternativa de concentrado a buen precio.',
+  ventaja: 'Precio competitivo. Formato pote.',
+},
+'gen_7900dp': {
+  tipo: 'Concentrado de suero (WPC)',
+  proteina: '24g por porción aprox.',
+  lactosa: 'Moderada-alta',
+  ideal: 'Misma fórmula que el pote, formato doypack portable.',
+  ventaja: 'Precio accesible. Fácil de transportar.',
+},
+'xtr_bestwhey': {
+  tipo: 'Blend: Concentrado + Aislado (Xtrenght)',
+  proteina: '24-25g por porción',
+  lactosa: 'Baja-moderada',
+  aminoacidos: 'Buen perfil de BCAAs',
+  ideal: 'Deportistas que buscan una alternativa al Platinum con buen precio.',
+  ventaja: 'Buena relación calidad-precio. Marca reconocida en el mercado nacional.',
+},
+'gn_ripped': {
+  tipo: 'Proteína con termogénicos y L-Carnitina (Whey Ripped)',
+  proteina: '22-24g por porción',
+  lactosa: 'Moderada',
+  otros: 'Incluye L-Carnitina + CLA + termogénicos para quemar grasa',
+  ideal: 'Personas en definición que quieren combinar proteína con suporte para perder grasa en una sola toma.',
+  evitar: 'Personas sensibles a estimulantes. Uso nocturno.',
+  ventaja: 'Proteína + quemador en un producto. Cómodo para fase de definición.',
+},
+'gn_100whey': {
+  tipo: 'Concentrado de suero 100% (Gold Nutrition)',
+  proteina: '24g por porción',
+  lactosa: 'Moderada-alta',
+  ideal: 'Uso general. Buena marca con larga trayectoria.',
+  ventaja: 'Marca Gold Nutrition con reputación establecida en el mercado.',
+},
+'mer_blend': {
+  tipo: 'Blend proteico (Mervick)',
+  proteina: '24g por porción aprox.',
+  lactosa: 'Moderada',
+  ideal: 'Deportistas que buscan alternativa a las marcas líderes con buena calidad.',
+  ventaja: 'Marca Mervick con buena reputación. Precio competitivo.',
 },
 
-// ── CREATINAS ──────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// CREATINAS
+// ─────────────────────────────────────────────
 'sn_creat_pote': {
-  tipo: 'Creatina Monohidrato micronizada',
+  tipo: 'Creatina Monohidrato micronizada — Pote 300g',
   pureza: '99.9%+ monohidrato puro',
-  dosis: '3-5g diarios. Sin fase de carga necesaria.',
-  particula: 'Micronizada (200 mesh) — mejor disolución en agua',
-  aditivos: 'Sin aditivos. Solo creatina monohidrato pura.',
-  efectos: '+5-15% fuerza máxima, +1-3kg masa muscular primeros 3 meses, mejor recuperación entre series',
-  para_quien: 'Cualquier persona que entrena fuerza. Sin distinción de nivel.',
-  ventaja: 'Formato pote hermético. Mejor conservación. Fácil dosificación con scoop.',
+  dosis: '3-5g diarios. Sin fase de carga obligatoria.',
+  particula: 'Micronizada 200 mesh — mejor disolución en agua',
+  aditivos: 'Sin aditivos. Solo creatina pura.',
+  efectos: '+5-15% fuerza máxima, +1-3kg masa muscular en primeros 3 meses, mejor recuperación entre series',
+  cuando: 'Cualquier hora del día. Muchos prefieren post-entreno con carbohidratos para mejor captación.',
+  ideal: 'Cualquier persona que entrena fuerza o potencia. El suplemento más estudiado después de la proteína.',
+  ventaja: 'Pote hermético de mejor conservación. Fácil dosificación con scoop.',
 },
 'sn_creat_doy': {
-  tipo: 'Creatina Monohidrato micronizada (mismo producto, distinto envase)',
+  tipo: 'Creatina Monohidrato micronizada — Doypack 300g',
   pureza: '99.9%+ monohidrato puro',
   dosis: '3-5g diarios',
-  particula: 'Micronizada — misma que el pote',
-  aditivos: 'Versión saborizada (Frutos Rojos): edulcorante y saborizante. Versión neutra: sin aditivos.',
+  particula: 'Micronizada — misma calidad que el pote',
+  aditivos: 'Versión saborizada: edulcorante y saborizante. Versión neutra: sin aditivos.',
   efectos: 'Idénticos al pote',
-  para_quien: 'Quienes prefieren formato portátil o sabor',
-  ventaja: 'Más conveniente para llevar. Versión saborizada facilita consumo para quienes no toleran el sabor neutro.',
+  ideal: 'Mismos casos que el pote. Quienes prefieren formato portátil o versión con sabor.',
+  ventaja: 'Doypack más conveniente para llevar. Versión saborizada facilita el consumo.',
+},
+'sn_creat_500': {
+  tipo: 'Creatina Monohidrato micronizada — Pote 500g',
+  pureza: '99.9%+ monohidrato',
+  dosis: '3-5g diarios (~100 a 166 días de uso)',
+  ideal: 'Uso diario regular. El mejor precio por gramo de creatina de toda la línea Star Nutrition.',
+  ventaja: 'Mayor duración sin recompra. Precio por gramo inferior al pote de 300g.',
+},
+'sn_creat_1kg': {
+  tipo: 'Creatina Monohidrato micronizada — Pote 1 Kg',
+  pureza: '99.9%+ monohidrato',
+  dosis: '3-5g diarios (~200 a 333 días de uso)',
+  ideal: 'Uso a largo plazo. Máxima economía por gramo del catálogo.',
+  ventaja: 'El precio por gramo más bajo de todo el catálogo. Para 6-12 meses de uso continuo.',
 },
 'on_creat': {
-  tipo: 'Creatina Monohidrato Creapure® (certificada)',
-  pureza: 'Creapure® = 99.99% monohidrato. El estándar más alto del mundo.',
+  tipo: 'Creatina Monohidrato Creapure® certificada (Optimum Nutrition)',
+  pureza: 'Creapure® = 99.99% monohidrato. El estándar de pureza más alto del mundo.',
   dosis: '3-5g diarios',
-  particula: 'Micronizada Creapure — el gránulo más fino del mercado',
-  aditivos: 'Sin aditivos. Solo creatina Creapure pura.',
-  efectos: 'Idénticos biológicamente al monohidrato estándar de calidad. La diferencia está en la pureza certificada.',
-  para_quien: 'Atletas de competición que requieren certificación anti-doping, o quienes quieren el máximo estándar de pureza garantizado.',
-  ventaja: 'Certificación Creapure® con análisis de pureza independiente. Referente mundial.',
+  particula: 'Micronizada Creapure® — el gránulo más fino y puro disponible',
+  aditivos: 'Sin aditivos. Solo Creapure puro.',
+  certificacion: 'Certificado NSF for Sport (apto para atletismo de competición)',
+  efectos: 'Biológicamente idénticos a cualquier monohidrato de calidad. La diferencia está en la pureza certificada.',
+  ideal: 'Atletas de competición que requieren certificación anti-doping. Quienes quieren el máximo estándar sin margen de duda.',
+  ventaja: 'Certificación Creapure® con análisis independiente de pureza. Referente mundial de calidad.',
+},
+'ena_creat': {
+  tipo: 'Creatina Micronizada (ENA)',
+  pureza: 'Monohidrato micronizado de buena calidad',
+  dosis: '3-5g diarios',
+  ideal: 'Deportistas que prefieren la marca ENA. Misma eficacia que otras creatinas de buena calidad.',
+  ventaja: 'Marca ENA con trayectoria nacional. Proceso micronizado.',
+},
+'gn_creat': {
+  tipo: 'Creatina Monohidrato (Gold Nutrition)',
+  pureza: 'Monohidrato estándar',
+  dosis: '3-5g diarios',
+  ideal: 'Precio accesible con buena calidad de marca reconocida.',
+  ventaja: 'Gold Nutrition es una marca establecida. Opción económica confiable.',
 },
 'mxf_creat': {
-  tipo: 'Creatina Monohidrato',
-  pureza: 'Monohidrato estándar de buena calidad',
+  tipo: 'Creatina Monohidrato (Max Force)',
+  pureza: 'Monohidrato estándar',
   dosis: '3-5g diarios',
-  aditivos: 'Sin aditivos',
-  para_quien: 'Personas con presupuesto ajustado que quieren los beneficios de la creatina sin gastar de más.',
-  ventaja: 'Mejor precio del mercado.',
+  ideal: 'Personas con presupuesto ajustado que quieren los beneficios de la creatina.',
+  ventaja: 'El precio más bajo de creatina del catálogo.',
+},
+'xtr_creat250': {
+  tipo: 'Creatina Monohidrato (Xtrenght 250g)',
+  pureza: 'Monohidrato estándar',
+  dosis: '3-5g diarios',
+  ideal: 'Opción intermedia de buena calidad.',
+  ventaja: 'Marca Xtrenght. Formato de prueba para quienes comienzan.',
+},
+'xtr_creat500': {
+  tipo: 'Creatina Monohidrato (Xtrenght 500g)',
+  pureza: 'Monohidrato estándar',
+  dosis: '3-5g diarios',
+  ideal: 'Uso regular. Mejor precio por gramo que la versión 250g.',
+  ventaja: 'Formato grande. Buena relación precio-calidad.',
 },
 
-// ── COLÁGENOS ──────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// COLÁGENOS
+// ─────────────────────────────────────────────
 'sn_col210': {
-  tipo: 'Colágeno hidrolizado tipo I y III',
-  colageno_porcion: '10g de colágeno hidrolizado por porción de 10g',
-  vitamina_c: 'NO incluida — tomar aparte para máxima absorción',
+  tipo: 'Colágeno hidrolizado tipo I y III — 210g',
+  colageno: '10g por porción de 10g',
+  vitc: '⚠ NO incluida — agregar 50-100mg aparte para maximizar síntesis',
   minerales: 'Sin minerales adicionales',
-  peso_molecular: 'Péptidos de bajo peso molecular — alta biodisponibilidad',
-  para_quien: 'Cualquier persona que quiere colágeno básico a buen precio. Articulaciones, piel, tendones.',
-  importante: 'SIEMPRE acompañar con vitamina C (50-100mg) — cofactor indispensable para síntesis de colágeno endógeno.',
-  ventaja: 'Precio más accesible. Mayor cantidad de colágeno puro por peso.',
+  peso_mol: 'Péptidos de bajo peso molecular — alta biodisponibilidad',
+  cuando: 'En ayunas o post-entreno, con vitamina C aparte',
+  ideal: 'Quienes ya toman vitamina C por separado. Articulaciones, piel, tendones, huesos.',
+  advertencia: 'Sin vitamina C la síntesis de colágeno endógeno es subóptima. Siempre combinarlo.',
+  ventaja: 'Mayor cantidad de colágeno puro por gramo. Precio más accesible.',
 },
 'sn_col_sport': {
-  tipo: 'Colágeno hidrolizado tipo I y III + Magnesio + Fósforo',
-  colageno_porcion: '10g de colágeno hidrolizado por porción',
-  vitamina_c: 'NO incluida — tomar aparte',
-  minerales: 'Magnesio: ~150mg/porción, Fósforo incluido',
-  peso_molecular: 'Péptidos de bajo peso molecular',
-  para_quien: 'Deportistas con alta carga de entrenamiento, personas con calambres frecuentes, quienes buscan también apoyo muscular además del articular.',
-  importante: 'El Magnesio mejora la contracción muscular, reduce calambres y mejora el sueño de recuperación. Dos suplementos en uno.',
-  ventaja: 'Colágeno + Magnesio en una sola toma. Ideal para quien no toma magnesio separado.',
+  tipo: 'Colágeno hidrolizado tipo I y III + Magnesio + Fósforo — 360g',
+  colageno: '10g por porción',
+  vitc: '⚠ NO incluida — agregar 50-100mg aparte',
+  minerales: 'Magnesio ~150mg/porción + Fósforo',
+  magnesio_efecto: 'Reduce calambres, mejora contracción muscular, potencia el sueño de recuperación. El 70% de los deportistas tiene déficit de Mg.',
+  cuando: 'En ayunas o post-entreno. Excelente tomarlo antes de dormir por el Magnesio.',
+  ideal: 'Deportistas con alta carga de entrenamiento, personas con calambres frecuentes, quienes no toman magnesio por separado.',
+  ventaja: 'Colágeno + Magnesio en una sola toma. Dos suplementos en uno.',
 },
 'sn_col_plus': {
-  tipo: 'Colágeno hidrolizado tipo I y III + Vitamina C + Activos extras',
-  colageno_porcion: '10g de colágeno hidrolizado por porción',
-  vitamina_c: 'SÍ INCLUIDA — 60-100mg de Vitamina C por porción',
+  tipo: 'Colágeno hidrolizado tipo I y III + Vitamina C + activos — 360g',
+  colageno: '10g por porción',
+  vitc: '✓ INCLUIDA ~80mg/porción — maximiza síntesis de colágeno endógeno',
   minerales: 'Vitamina C + activos complementarios',
-  peso_molecular: 'Péptidos de bajo peso molecular',
-  para_quien: 'Quienes quieren la combinación completa sin suplementar vitamina C aparte. Piel, articulaciones y máxima síntesis de colágeno.',
-  importante: 'La vitamina C ya incluida maximiza directamente la síntesis de colágeno endógeno. Es la combinación más completa.',
-  ventaja: 'Todo en uno: colágeno + vitamina C. No necesitás suplemento extra de vitamina C.',
+  vitc_efecto: 'La Vit C es cofactor de la enzima prolil-hidroxilasa que estabiliza la triple hélice del colágeno. Sin Vit C el colágeno sintetizado es estructuralmente débil.',
+  cuando: 'En ayunas o post-entreno. Ya contiene lo necesario para máxima síntesis.',
+  ideal: 'Quienes quieren el combo completo sin suplementar vitamina C aparte. Piel, articulaciones y tejidos.',
+  ventaja: 'Todo en uno. La formulación más completa para síntesis de colágeno.',
 },
 'gn_col200p': {
-  tipo: 'Colágeno hidrolizado',
-  colageno_porcion: '10g por porción',
-  vitamina_c: 'Verificar etiquetado — marca Gold Nutrition',
-  para_quien: 'Igual aplicación que colágeno estándar',
-  ventaja: 'Marca Gold Nutrition con buena reputación',
+  tipo: 'Colágeno hidrolizado — Pote 200g (Gold Nutrition)',
+  colageno: '10g por porción',
+  vitc: '⚠ Verificar etiqueta — generalmente no incluida',
+  ideal: 'Articulaciones, piel, tendones. Marca Gold Nutrition reconocida.',
+  ventaja: 'Formato pote. Marca establecida.',
+},
+'gn_col200d': {
+  tipo: 'Colágeno hidrolizado — Doypack 200g (Gold Nutrition)',
+  colageno: '10g por porción',
+  vitc: '⚠ Verificar etiqueta',
+  ideal: 'Formato portátil. Misma fórmula que el pote de Gold.',
+  ventaja: 'Más conveniente para llevar.',
 },
 'wo_colageno': {
-  tipo: 'Colágeno + Ácido Hialurónico',
-  colageno_porcion: 'Colágeno hidrolizado + Ácido Hialurónico',
-  vitamina_c: 'Verificar etiquetado',
-  minerales: 'Ácido Hialurónico — hidratación cutánea profunda',
-  para_quien: 'Principalmente mujeres enfocadas en piel y antienvejecimiento. El ácido hialurónico suma hidratación dérmica al efecto del colágeno.',
-  ventaja: 'Colágeno + Ácido Hialurónico para resultados estéticos superiores en piel.',
+  tipo: 'Colágeno hidrolizado + Ácido Hialurónico 454g (Woman)',
+  colageno: 'Colágeno hidrolizado por porción',
+  minerales: 'Ácido Hialurónico — hidratación profunda de piel y articulaciones',
+  ac_hialuronico: 'El Ácido Hialurónico retiene 1000 veces su peso en agua. Lubrica articulaciones y mejora la elasticidad e hidratación cutánea.',
+  ideal: 'Principalmente mujeres enfocadas en piel, antienvejecimiento e hidratación articular.',
+  ventaja: 'Colágeno + Ácido Hialurónico. Resultados estéticos superiores en piel.',
+},
+'nlab_collagen': {
+  tipo: 'Collagen Flex con activos articulares (Nutrilab)',
+  colageno: 'Colágeno hidrolizado por porción',
+  otros: 'Puede incluir glucosamina, condroitina u otros activos articulares según formulación',
+  ideal: 'Personas con dolor articular activo o en recuperación de lesiones.',
+  ventaja: 'Fórmula orientada a salud articular.',
 },
 
-// ── PRE-ENTRENOS ──────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// PRE-ENTRENOS
+// ─────────────────────────────────────────────
 'sn_tnt': {
   tipo: 'Pre-entreno estimulante completo',
-  cafeina: '~250mg de cafeína anhidra por porción',
-  citrulina: '~4g de Citrulina Malato',
-  beta_alanina: '~2.5g de Beta-alanina (causa picazón en piel — normal)',
+  cafeina: '~250mg cafeína anhidra/porción — estimulación alta',
+  citrulina: '~4g Citrulina Malato — vasodilatación moderada',
+  beta_alanina: '~2.5g Beta-alanina — causa picazón en piel (NORMAL, señal de que funciona)',
   arginina: 'Arginina incluida',
-  otros: 'L-Tirosina para foco mental',
-  aditivos: 'Colorantes, edulcorantes, saborizantes artificiales',
-  para_quien: 'Deportistas con buena tolerancia a estimulantes que entrenan de mañana o mediodía.',
-  no_usar: 'Después de las 3pm. Personas con hipertensión, arritmias o sensibilidad a la cafeína.',
+  tirosina: 'L-Tirosina — precursor de dopamina, mejora foco mental',
+  efectos: 'Energía intensa en 20-30 min, foco mental, mayor intensidad percibida',
+  cuando: 'Tomar 20-30 min antes del entreno. NO usar después de las 3pm.',
+  ideal: 'Deportistas con buena tolerancia a estimulantes que entrenan de mañana o mediodía.',
+  evitar: 'Hipertensión, arritmias, embarazo, sensibilidad a cafeína, ansiedad.',
   ventaja: 'El pre-entreno más vendido de Argentina. Sabores excelentes. Efecto muy notorio.',
 },
 'sn_pumpv8': {
-  tipo: 'Pre-entreno vasodilatador SIN estimulantes',
-  cafeina: 'SIN cafeína (o mínima)',
-  citrulina: '~6-8g de Citrulina Malato — dosis efectiva máxima',
-  beta_alanina: 'Incluida',
-  arginina: 'Agmatina + Glicerol + otros vasodilatadores',
-  otros: '8 ingredientes activos vasodilatadores — la mayor congestion del mercado',
-  aditivos: 'Colorantes, edulcorantes',
-  para_quien: 'Entrenamiento nocturno, personas sensibles a la cafeína, deportistas que quieren máxima congestión sin alterar el sueño.',
-  no_usar: 'Quien necesita el boost de energía de la cafeína.',
+  tipo: 'Pre-entreno vasodilatador SIN estimulantes (8 activos)',
+  cafeina: 'Sin cafeína — apto para entrenar a cualquier hora',
+  citrulina: '~6-8g Citrulina Malato — dosis máxima para congestión real',
+  agmatina: 'Agmatina sulfato — inhibe arginasa, mantiene óxido nítrico elevado más tiempo',
+  glicerol: 'Glicerol — retención hídrica intracelular, músculo más lleno visualmente',
+  otros: '8 ingredientes vasodilatadores en dosis completas',
+  efectos: 'Mayor congestión (pump) del catálogo. Sin pico ni bajada de energía.',
+  cuando: 'Cualquier hora, incluso noche.',
+  ideal: 'Entrenamiento nocturno, sensibles a cafeína, días de alto volumen, quienes priorizan la congestión.',
+  evitar: 'Quienes necesitan el boost energético de la cafeína.',
   ventaja: 'La mayor bomba muscular sin estimulantes. Apto para entrenar a cualquier hora.',
 },
 'gn_prework': {
-  tipo: 'Pre-entreno estimulante',
-  cafeina: 'Cafeína moderada (~200mg)',
+  tipo: 'Pre-entreno estimulante equilibrado (Gold Nutrition)',
+  cafeina: '~200mg cafeína — estimulación moderada',
   citrulina: 'Citrulina incluida',
   beta_alanina: 'Beta-alanina incluida',
-  para_quien: 'Deportistas que encuentran el TNT muy agresivo o buscan algo más equilibrado',
-  ventaja: 'Formulación balanceada entre estimulación y vasodilatación',
+  ideal: 'Deportistas que encuentran el TNT demasiado intenso. Buen balance estimulación/vasodilatación.',
+  ventaja: 'Formulación equilibrada. Buena tolerancia general.',
 },
 'nmax_prework': {
   tipo: 'Pre-entreno estimulante (Nutremax)',
-  cafeina: 'Cafeína incluida',
-  para_quien: 'Deportistas que quieren una alternativa nacional con buen precio',
-  ventaja: 'Precio competitivo. Marca Nutremax con buena reputación',
+  cafeina: 'Cafeína moderada',
+  ideal: 'Opción nacional de buen precio con efecto pre-entreno completo.',
+  ventaja: 'Precio competitivo. Marca Nutremax con buena reputación.',
+},
+'wo_preentreno': {
+  tipo: 'Pre-entreno femenino con quemador (Woman)',
+  cafeina: 'Cafeína moderada',
+  otros: 'Incluye ingredientes termogénicos orientados a metabolismo femenino',
+  ideal: 'Mujeres que quieren pre-entreno + apoyo para quemar grasa en la misma toma.',
+  ventaja: 'Formulado para metabolismo femenino. Doble función.',
 },
 
-// ── GAINERS ──────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// GAINERS
+// ─────────────────────────────────────────────
 'sn_mutant': {
   tipo: 'Mass Gainer hipercalórico',
   calorias: '~650 kcal por porción de 250g',
-  proteina_porcion: '~45g proteína por porción',
-  carbohidratos: '~110g por porción (maltodextrina + azúcares)',
+  proteina: '~45g proteína por porción',
+  carbs: '~110g carbohidratos (maltodextrina + azúcares)',
   grasas: '~10g por porción',
-  fuente_proteina: 'Blend de whey concentrado + caseína',
-  para_quien: 'Hardgainers (metabolismo acelerado, dificultad para subir de peso). Personas muy delgadas en etapa de volumen agresivo.',
-  no_usar: 'Personas con sobrepeso, resistencia a la insulina, diabetes o tendencia a ganar grasa fácilmente.',
-  ventaja: 'Sabores muy populares (Chocolate, Cookies). Fórmula con historial probado.',
+  fuente_prot: 'Blend de Whey concentrado + Caseína (liberación sostenida)',
+  ideal: 'Hardgainers (metabolismo acelerado, dificultad para subir de peso). Etapa de volumen agresivo.',
+  evitar: 'Personas con sobrepeso, resistencia a la insulina, diabetes o que ganan grasa fácilmente.',
+  ventaja: 'Sabores MutantMass muy populares (Chocolate, Cookies). Fórmula de historial probado.',
 },
 'ena_ultramass': {
-  tipo: 'Mass Gainer hipercalórico',
+  tipo: 'Mass Gainer hipercalórico (ENA)',
   calorias: '~600 kcal por porción',
-  proteina_porcion: '~40g proteína por porción',
-  carbohidratos: '~100g por porción',
-  fuente_proteina: 'Blend de whey con transparencia ENA',
-  para_quien: 'Mismos casos que MutantMass',
-  ventaja: 'Formulación transparente característica ENA. Buena calidad proteica.',
+  proteina: '~40g proteína por porción',
+  carbs: '~100g carbohidratos',
+  fuente_prot: 'Blend de whey con transparencia ENA',
+  ideal: 'Hardgainers en volumen. Misma aplicación que MutantMass.',
+  ventaja: 'Etiquetado transparente característico ENA. Buena calidad proteica.',
+},
+'xtr_nitrogain': {
+  tipo: 'Mass Gainer hipercalórico (Xtrenght)',
+  calorias: '~580 kcal por porción aprox.',
+  proteina: '~38-40g por porción',
+  ideal: 'Hardgainers. Alternativa al MutantMass con la marca Xtrenght.',
+  ventaja: 'Buen precio por porción. Sabor Cookies disponible.',
+},
+'gn_gainer': {
+  tipo: 'Mass Gainer formato grande 5 Lb (Gold Nutrition)',
+  calorias: 'Alta densidad calórica',
+  ideal: 'Hardgainers que buscan formato grande con Gold Nutrition.',
+  ventaja: '5 Lb = mayor duración y mejor precio por porción.',
 },
 
-// ── AMINOÁCIDOS ──────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// AMINOÁCIDOS
+// ─────────────────────────────────────────────
 'sn_mtor': {
   tipo: 'BCAAs 2:1:1 (Leucina:Isoleucina:Valina)',
-  leucina: '5g de Leucina por porción (el más anabólico)',
-  isoleucina: '2.5g de Isoleucina',
-  valina: '2.5g de Valina',
-  total_bcaa: '10g de BCAAs por porción',
-  eaas: 'Solo 3 de los 9 aminoácidos esenciales',
-  para_quien: 'Entrenamiento en ayunas, dietas muy restrictivas, o como intra-workout para anti-catabolismo.',
-  ventaja: 'Dosis alta de leucina. Sabores muy logrados.',
+  leucina: '5g de Leucina/porción — activa directamente mTOR (switch anabólico)',
+  isoleucina: '2.5g — mejora captación de glucosa muscular',
+  valina: '2.5g — energía muscular y recuperación',
+  total: '10g de BCAAs por porción',
+  limitacion: 'Solo 3 de los 9 aminoácidos esenciales — síntesis proteica incompleta sin los otros 6',
+  ideal: 'Entrenamiento en ayunas, cardio en ayunas, anti-catabolismo puntual.',
+  ventaja: 'Alta dosis de leucina. Sabores excelentes. Buena elección para intra-workout.',
 },
 'sn_eaas': {
   tipo: 'EAAs — 9 Aminoácidos Esenciales Completos',
-  leucina: 'Leucina incluida (~3-4g)',
-  isoleucina: 'Isoleucina incluida',
-  valina: 'Valina incluida',
-  total_bcaa: 'BCAAs incluidos + Lisina + Metionina + Fenilalanina + Treonina + Triptofano + Histidina',
-  eaas: 'Los 9 aminoácidos esenciales — no puede sintetizarlos el cuerpo',
-  para_quien: 'Cualquiera que quiera suplementar aminoácidos — superiores a los BCAAs porque cubren todos los esenciales para síntesis proteica completa.',
-  ventaja: 'Para construir músculo necesitás los 9 esenciales. Los EAAs son biológicamente superiores a los BCAAs solos.',
+  composicion: 'Los 3 BCAAs + Lisina + Metionina + Fenilalanina + Treonina + Triptofano + Histidina',
+  leucina: 'Leucina ~3-4g incluida',
+  por_que: 'Para sintetizar músculo necesitás los 9 esenciales. Con solo BCAAs la síntesis proteica no se completa.',
+  triptofano: 'Precursor de serotonina — mejora estado de ánimo durante el entreno',
+  ideal: 'Cualquiera que quiera suplementar aminoácidos. Superiores a BCAAs para síntesis muscular.',
+  ventaja: 'Biológicamente más completos que BCAAs. Para construir músculo cubrís todos los eslabones.',
+},
+'sn_glut': {
+  tipo: 'L-Glutamina pura 300g',
+  dosis: '5g por porción',
+  mecanismo: 'Aminoácido más abundante en el tejido muscular. Reduce catabolismo post-entreno, mejora permeabilidad intestinal, apoya inmunidad en esfuerzo intenso.',
+  cuando: 'Post-entreno o antes de dormir. También útil en períodos de alto estrés o recuperación de enfermedades.',
+  ideal: 'Deportistas con alto volumen de entrenamiento (5-7 días/semana), personas con problemas gastrointestinales asociados al ejercicio intenso.',
+  ventaja: 'Pura sin aditivos. Dosis generosa (300g = 60 porciones).',
+},
+'sn_arginine': {
+  tipo: 'L-Arginina pura 150g',
+  dosis: '3-6g por porción',
+  mecanismo: 'Precursor de óxido nítrico (NO). Mejora vasodilatación y flujo sanguíneo muscular.',
+  cuando: '30 min antes del entrenamiento',
+  ideal: 'Apoyo a vasodilatación y pump muscular. También tiene rol en producción de hormona de crecimiento.',
+  nota: 'La Citrulina Malato tiene mayor biodisponibilidad oral para producir NO que la Arginina directa.',
+  ventaja: 'Sin aditivos. Versátil — también se puede combinar con otros suplementos.',
 },
 'sn_lcarnitina': {
   tipo: 'L-Carnitina en cápsulas',
-  dosis: '500-1500mg de L-Carnitina por porción',
-  mecanismo: 'Transporta ácidos grasos de cadena larga a la mitocondria para ser quemados como energía',
-  aditivos: 'Excipientes de cápsula estándar',
-  absorcion: 'Moderada por vía oral (aprox 57-84%)',
-  para_quien: 'Personas en definición que hacen ejercicio aeróbico. El efecto es real pero requiere ejercicio para activarse.',
-  cuando_tomar: '30-60 minutos antes del cardio',
+  dosis: '500-1500mg por porción',
+  mecanismo: 'Transporta ácidos grasos de cadena larga a la mitocondria para ser oxidados como combustible energético.',
+  absorcion: '57-84% biodisponibilidad oral',
+  cuando: '30-60 min antes del cardio o entrenamiento. Sin ejercicio el efecto es mínimo.',
+  ideal: 'Personas en definición que realizan ejercicio aeróbico. El efecto es real pero requiere actividad física.',
+  evitar: 'Esperarlo como "quemador mágico" — sin ejercicio aeróbico no hay resultado.',
   ventaja: 'Cómodo en cápsula. Sin sabor. Fácil de transportar.',
 },
-'gen_carnit': {
-  tipo: 'L-Carnitina líquida',
-  dosis: '1500-2000mg por porción',
-  mecanismo: 'Mismo que cápsulas: transporte de ácidos grasos a mitocondria',
-  aditivos: 'Conservantes, saborizantes (formato líquido)',
-  absorcion: 'Levemente más rápida en formato líquido vs cápsulas',
-  para_quien: 'Mismos casos que L-Carnitina caps. Quienes prefieren líquido y mayor concentración.',
-  cuando_tomar: '30-60 minutos antes del cardio',
-  ventaja: 'Mayor concentración por toma. Absorción más rápida.',
-},
-'sn_glut': {
-  tipo: 'L-Glutamina pura',
-  dosis: '5g por porción',
-  mecanismo: 'Aminoácido más abundante en el músculo. Reduce catabolismo, mejora permeabilidad intestinal, apoya inmunidad post-esfuerzo.',
-  para_quien: 'Deportistas que entrenan con alto volumen (6-7 días/semana), personas con problemas intestinales asociados al ejercicio intenso.',
-  ventaja: 'Pura sin aditivos. Mayor cantidad (300g).',
-},
 'sn_betaal': {
-  tipo: 'Beta-Alanina pura',
-  dosis: '3.2g por porción (dosis efectiva validada)',
-  mecanismo: 'Se convierte en carnosina muscular que actúa como buffer (tampón) del ácido láctico, retrasando la fatiga muscular',
-  aditivos: 'Sin aditivos',
-  efectos: 'Picazón en piel (parestesia) es NORMAL y temporal — señal de que funciona',
-  para_quien: 'Deportistas de alta intensidad, HIIT, crossfit, artes marciales o cualquier deporte donde la resistencia al esfuerzo máximo sea clave.',
-  ventaja: 'La más estudiada después de creatina. Resultados en 4-6 semanas.',
+  tipo: 'Beta-Alanina pura 300g',
+  dosis: '3.2g por porción (dosis validada clínicamente)',
+  mecanismo: 'Se convierte en carnosina muscular que actúa como buffer del ácido láctico, retrasando la fatiga en esfuerzos de alta intensidad.',
+  efectos: 'Picazón en piel (parestesia) — NORMAL y pasajera, señal de que absorbiste correctamente.',
+  cuando: '30 min antes del entrenamiento',
+  ideal: 'HIIT, crossfit, natación, artes marciales, ciclismo — cualquier deporte donde la resistencia al esfuerzo máximo sea clave.',
+  ventaja: 'La más estudiada después de creatina. Resultados en 4-6 semanas de uso continuo.',
+},
+'ena_bcaa': {
+  tipo: 'BCAA 2:1:1 en cápsulas (ENA)',
+  dosis: 'Variable según porción',
+  ideal: 'Quienes prefieren BCAAs en cápsula (sin sabor, sin mezclar). Misma aplicación que MTOR.',
+  ventaja: 'Formato cápsula muy cómodo para llevar al gym o viajar.',
+},
+'ena_lcarnitina': {
+  tipo: 'L-Carnitina 1500mg en cápsulas (ENA)',
+  dosis: '1500mg por porción — dosis alta',
+  mecanismo: 'Misma que L-Carnitina Star: transporte de ácidos grasos a mitocondria',
+  cuando: '30-60 min antes del cardio',
+  ideal: 'Quienes buscan mayor concentración de carnitina por toma.',
+  ventaja: '1500mg es la dosis más estudiada para efecto clínico. Marca ENA reconocida.',
+},
+'gen_carnit': {
+  tipo: 'Carnitina Líquida 500ml (Gentech)',
+  dosis: '1500-2000mg por porción',
+  mecanismo: 'Misma que cápsulas. Formato líquido para absorción más rápida.',
+  absorcion: 'Levemente más rápida que cápsulas (sin barrera de cápsula)',
+  cuando: '30-60 min antes del cardio',
+  ideal: 'Quienes prefieren líquido o necesitan dosis alta con absorción rápida.',
+  ventaja: 'Mayor concentración por toma. Absorción más inmediata que cápsulas.',
 },
 
-// ── QUEMADORES ──────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// QUEMADORES
+// ─────────────────────────────────────────────
 'sn_thermo': {
-  tipo: 'Termogénico estimulante premium',
-  cafeina: '~200mg cafeína anhidra por porción',
-  otros_activos: 'Yerba mate, CLA, L-Tirosina, extracto de té verde',
-  mecanismo: 'Termogénesis aumentada + movilización de grasa + supresión del apetito',
-  aditivos: 'Colorantes, edulcorantes',
-  para_quien: 'Hombres y mujeres con buena tolerancia a estimulantes. Sin condiciones cardiovasculares.',
-  no_usar: 'Hipertensos, cardíacos, embarazadas, menores de edad, personas sensibles a cafeína.',
+  tipo: 'Termogénico estimulante completo (Star Nutrition)',
+  cafeina: '~200mg cafeína anhidra/porción',
+  otros: 'Yerba mate, CLA, L-Tirosina, extracto de té verde (EGCG)',
+  mecanismo: 'Termogénesis aumentada + movilización de grasa + supresión del apetito + foco mental',
+  cuando: 'Mañana o mediodía. NUNCA después de las 2-3pm (interfiere sueño).',
+  ideal: 'Hombres y mujeres con buena tolerancia a estimulantes en fase de definición.',
+  evitar: 'Hipertensión, problemas cardíacos, embarazo, lactancia, menores de 18, sensibilidad a cafeína.',
   ventaja: 'El termogénico más potente de Star Nutrition. Efecto notorio desde el primer uso.',
 },
 'wo_fatburner': {
-  tipo: 'Termogénico femenino suave',
-  cafeina: '~120-150mg cafeína (estimulación más suave)',
-  otros_activos: 'CLA, L-Carnitina, extracto de té verde, ingredientes hormonalmente beneficiosos para mujeres',
+  tipo: 'Termogénico femenino suave (Woman)',
+  cafeina: '~120-150mg cafeína — estimulación moderada',
+  otros: 'CLA, L-Carnitina, extracto de té verde, activos pro-femeninos',
   mecanismo: 'Termogénesis + movilización de grasa con perfil para metabolismo femenino',
-  aditivos: 'Estándar en cápsulas',
-  para_quien: 'Mujeres que buscan efecto termogénico más suave, o que han tenido efectos adversos con termogénicos fuertes.',
-  ventaja: 'Estimulación moderada. Menor riesgo de efectos secundarios. Formulado para metabolismo femenino.',
+  ideal: 'Mujeres que buscan efecto termogénico más suave o que han tenido reacciones adversas a termogénicos fuertes.',
+  ventaja: 'Estimulación moderada. Menor riesgo efectos secundarios. Formulado para mujer.',
+},
+'gen_tx3': {
+  tipo: 'Quemador estimulante (Gentech TX3)',
+  cafeina: 'Cafeína moderada-alta',
+  ideal: 'Deportistas que quieren una alternativa a Thermo Fuel con la marca Gentech.',
+  ventaja: 'Marca Gentech con buena trayectoria. Fórmula potente.',
+},
+'gn_lipo': {
+  tipo: 'Quemador Lipo Gold Elite (Gold Nutrition)',
+  cafeina: 'Moderada',
+  ideal: 'Fase de definición. Opción Gold Nutrition para quemadores.',
+  ventaja: 'Marca reconocida. Formulación orientada a definición muscular.',
+},
+'nlab_thermo120': {
+  tipo: 'Termogénico capsulas (Nutrilab 120 caps)',
+  ideal: 'Buena cantidad de dosis por envase. Marca Nutrilab.',
+  ventaja: '120 capsulas = mayor duración.',
+},
+'nlab_thermo240': {
+  tipo: 'Termogénico comprimidos (Nutrilab 240 comp)',
+  ideal: 'El mayor supply de termogénico del catálogo.',
+  ventaja: '240 comprimidos = el más económico por dosis de quemadores.',
 },
 
-// ── VITAMINAS/MINERALES ──────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// VITAMINAS Y MINERALES
+// ─────────────────────────────────────────────
+'sn_vitc': {
+  tipo: 'Vitamina C (Ácido Ascórbico puro)',
+  dosis: '500mg-1g por porción',
+  mecanismo: 'Antioxidante potente. Cofactor enzimático para síntesis de colágeno. Apoya inmunidad y absorción de hierro no hémico.',
+  cuando: 'Con las comidas, especialmente junto con colágeno.',
+  ideal: 'Uso general para inmunidad. ESENCIAL combinada con colágeno hidrolizado para maximizar síntesis.',
+  ventaja: 'Pura sin aditivos. Versátil. Ideal para combinar con cualquier colágeno que no la incluya.',
+},
 'sn_omega3': {
-  tipo: 'Omega 3 (EPA+DHA) de pescado de agua profunda',
+  tipo: 'Omega 3 de aceite de pescado de agua profunda — 60 caps',
   epa_dha: '~180mg EPA + 120mg DHA por cápsula (300mg totales)',
-  dosis_efectiva: '2-3 cápsulas diarias para efecto antiinflamatorio real',
-  certificacion: 'Star Nutrition estándar',
-  para_quien: 'Todo el mundo — es el suplemento de salud general más respaldado científicamente.',
-  ventaja: 'Precio accesible. Marca confiable. 60 cápsulas (1 mes a 2 caps/día).',
+  dosis_efectiva: '2-3 cápsulas/día para efecto antiinflamatorio real. 1 cápsula/día para mantenimiento.',
+  mecanismo: 'EPA y DHA reducen inflamación sistémica, protegen cardiovascular, mejoran función cerebral y disminuyen DOMS (dolor muscular post-entreno).',
+  ideal: 'TODO el mundo. Es el suplemento de salud general más respaldado científicamente.',
+  cuando: 'Con comidas que contengan grasa para mejor absorción.',
+  ventaja: 'Precio accesible. 1 mes a 2 caps/día. Marca Star Nutrition confiable.',
 },
 'ge_omega3': {
-  tipo: 'Omega 3 (EPA+DHA) — formato económico de larga duración',
+  tipo: 'Omega 3 de aceite de pescado — 200 cápsulas (Good Energy)',
   epa_dha: '~180mg EPA + 120mg DHA por cápsula (verificar etiqueta)',
-  dosis_efectiva: 'Misma — importante revisar mg de EPA+DHA, no solo "1000mg aceite"',
-  certificacion: 'Good Energy',
-  para_quien: 'Quienes quieren 3-6 meses de supply en una compra al mejor precio por cápsula.',
-  ventaja: '200 cápsulas = ~3-6 meses. Mejor precio por cápsula del catálogo.',
+  dosis_efectiva: 'Misma que cualquier Omega 3. Verificar mg de EPA+DHA, no solo "1000mg aceite".',
+  ideal: 'Quienes quieren 3-6 meses de supply en una sola compra.',
+  ventaja: '200 caps = hasta 3-6 meses a dosis de mantenimiento. Mejor precio por cápsula del catálogo.',
 },
 'sn_zma': {
-  tipo: 'ZMA — Zinc (30mg) + Magnesio (450mg) + Vitamina B6 (10.5mg)',
-  zinc: '30mg de Zinc (apoya síntesis de testosterona y función inmune)',
-  magnesio: '450mg de Magnesio (función muscular, sueño profundo)',
-  b6: '10.5mg B6 (potencia absorción de zinc y magnesio, cofactor en síntesis de serotonina)',
-  tomar: 'Antes de dormir en ayunas — el pico de testosterona es nocturno',
-  para_quien: 'Hombres deportistas que quieren optimizar testosterona natural, recuperación nocturna y calidad de sueño.',
-  ventaja: 'Triple efecto: testosterona + sueño + función muscular en una sola cápsula.',
+  tipo: 'ZMA — Zinc 30mg + Magnesio 450mg + Vitamina B6 10.5mg',
+  zinc: '30mg Zinc — síntesis de testosterona, inmunidad, cicatrización',
+  magnesio: '450mg Magnesio — función muscular, sueño profundo, más de 300 reacciones enzimáticas',
+  b6: '10.5mg B6 — potencia absorción de Zn y Mg. Cofactor en síntesis de serotonina y dopamina.',
+  cuando: 'Antes de dormir con el estómago vacío. El pico de testosterona y GH es nocturno.',
+  ideal: 'Hombres deportistas que quieren optimizar testosterona natural, recuperación nocturna y calidad del sueño.',
+  ventaja: 'Triple efecto: testosterona + sueño + función muscular en una sola cápsula nocturna.',
 },
 'sn_citr60': {
-  tipo: 'Citrato de Magnesio puro (cápsulas)',
-  magnesio: '~200-300mg de Magnesio elemental por porción',
-  forma: 'Citrato = forma más biodisponible de magnesio (mejor absorción que óxido)',
-  tomar: 'Antes de dormir para aprovechar efecto relajante',
-  para_quien: 'Personas con calambres, que duermen mal, o que entrenan mucho. El magnesio es el mineral más deficitario en deportistas.',
-  ventaja: 'Solo magnesio puro. Sin zinc ni otros minerales que interfieran.',
+  tipo: 'Citrato de Magnesio — 60 cápsulas',
+  magnesio: '~200-300mg Magnesio elemental por porción',
+  forma: 'Citrato = la forma más biodisponible de Magnesio (absorción 30% mayor que óxido)',
+  mecanismo: 'Antagonista natural del calcio intracelular. Permite relajación muscular completa. Bloquea receptores NMDA del glutamato (reduce excitación neuronal = mejor sueño).',
+  cuando: 'Antes de dormir. También útil en casos de calambres o estrés.',
+  ideal: 'Calambres frecuentes, sueño irregular, alta carga de entrenamiento. Para hombres Y mujeres.',
+  ventaja: 'Solo magnesio puro. Sin zinc ni otros minerales. Forma citrato de mejor absorción.',
 },
 'sn_citr500': {
-  tipo: 'Citrato de Magnesio en polvo (500g)',
-  magnesio: '~300-400mg de Magnesio elemental por porción',
-  forma: 'Citrato en polvo = absorción muy rápida y alta biodisponibilidad',
-  tomar: 'Disolver en agua y tomar antes de dormir',
-  para_quien: 'Consumo diario regular. Mucho más económico por gramo que las cápsulas.',
-  ventaja: 'El mejor precio por mg de magnesio del catálogo. Formato grande para uso prolongado.',
+  tipo: 'Citrato de Magnesio en polvo — 500g',
+  magnesio: '~300-400mg Magnesio elemental por porción',
+  forma: 'Polvo = absorción muy rápida. Citrato de alta biodisponibilidad.',
+  cuando: 'Disolver en agua, tomar antes de dormir.',
+  ideal: 'Uso diario regular a largo plazo. Mucho más económico que las cápsulas por gramo.',
+  ventaja: 'El mejor precio por mg de magnesio del catálogo. Para 4-6 meses de uso continuo.',
+},
+'sn_cla': {
+  tipo: 'CLA 1000mg — 90 cápsulas (Ácido Linoleico Conjugado)',
+  dosis: '1000mg CLA por cápsula. Dosis efectiva: 3-6g/día (3-6 cápsulas).',
+  mecanismo: 'Ácido graso omega-6 que puede reducir acumulación de grasa corporal y aumentar masa magra. Efectos modestos pero consistentes.',
+  cuando: 'Con las comidas principales.',
+  ideal: 'Complemento en fase de definición. Más eficaz combinado con ejercicio y dieta.',
+  ventaja: 'Complementa los efectos de dieta y ejercicio para composición corporal. Sin estimulantes.',
+},
+'sn_resv': {
+  tipo: 'Resveratrol 500mg — 60 cápsulas',
+  mecanismo: 'Polifenol antioxidante de alto potencial. Activa sirtuinas (proteínas relacionadas con longevidad). Efecto antiinflamatorio y cardiovascular.',
+  ideal: 'Salud general, antienvejecimiento, protección cardiovascular.',
+  ventaja: '500mg = dosis alta comparada con otras marcas. Star Nutrition estándar.',
+},
+'sn_cafeina30': {
+  tipo: 'Cafeína 200mg — 30 cápsulas',
+  dosis: '200mg cafeína anhidra por cápsula',
+  mecanismo: 'Estimulante del SNC. Bloquea receptores de adenosina (elimina sensación de cansancio). Mejora rendimiento físico y mental en 3-10%.',
+  cuando: '30-45 min antes del entrenamiento. Máximo 2 cápsulas/día.',
+  ideal: 'Pre-entreno económico y limpio. También útil para estudio o trabajo que requiera foco.',
+  evitar: 'Después de las 2-3pm, hipertensión, arritmias, embarazo.',
+  ventaja: 'El estimulante más investigado del mundo. Puro y económico.',
+},
+'lap_ashwa': {
+  tipo: 'Ashwagandha con Vitamina C — 60 cápsulas (LAPPIEL)',
+  mecanismo: 'Ashwagandha es un adaptógeno que reduce cortisol (hormona del estrés). Mejora tolerancia al estrés, calidad del sueño y puede apoyar niveles de testosterona.',
+  vitc: 'Vitamina C incluida — doble función inmunitaria y antioxidante',
+  cuando: 'Antes de dormir para maximizar reducción de cortisol nocturno.',
+  ideal: 'Personas con alto estrés (laboral, entrenamiento intenso). Apoya recuperación y sueño.',
+  ventaja: 'Adaptógeno + Vitamina C. Formulación LAPPIEL de calidad farmacéutica.',
+},
+'lap_mag': {
+  tipo: 'Bisglicinato de Magnesio — 60 comprimidos (LAPPIEL)',
+  magnesio: 'Bisglicinato = la forma con mayor biodisponibilidad y mejor tolerancia gastrointestinal de todas las formas de Mg',
+  cuando: 'Antes de dormir.',
+  ideal: 'Quienes tienen intolerancia digestiva al citrato o al óxido de Mg. La forma más gentil y eficiente.',
+  ventaja: 'Mayor biodisponibilidad que citrato. Sin efectos laxantes. Formulación premium LAPPIEL.',
+},
+'sn_multi': {
+  tipo: 'Multivitamínico completo — 60 cápsulas',
+  composicion: 'Vitaminas A, B1, B2, B3, B5, B6, B12, C, D, E, K + Minerales esenciales',
+  ideal: 'Cobertura de micronutrientes en deportistas con alta demanda o alimentación restringida.',
+  ventaja: 'Todo en uno. Base nutricional para deportistas.',
+},
+'gn_testo': {
+  tipo: 'Testo Gold — Estimulante natural de testosterona (Gold Nutrition)',
+  composicion: 'Tribulus terrestris, Zinc, Magnesio, B6 y otros activos anabólicos naturales',
+  mecanismo: 'Estimula producción natural de testosterona. Apoya recuperación, masa muscular y libido.',
+  ideal: 'Hombres adultos que quieren optimizar testosterona endógena de forma natural.',
+  ventaja: 'Fórmula combinada con múltiples activos. Marca Gold Nutrition.',
+},
+'lap_nad': {
+  tipo: 'NAD 500 + Resveratrol — 60 cápsulas (LAPPIEL)',
+  mecanismo: 'NAD+ es cofactor esencial en metabolismo energético celular. Declina con la edad. La suplementación busca restaurar niveles para mejor energía, función cognitiva y potencial antienvejecimiento.',
+  ideal: 'Personas mayores de 35 años interesadas en longevidad, energía celular y protección cognitiva.',
+  ventaja: 'Fórmula premium NAD+ + Resveratrol. LAPPIEL = calidad farmacéutica.',
+},
+
+// ─────────────────────────────────────────────
+// HIDRATACIÓN
+// ─────────────────────────────────────────────
+'sn_hydroplus': {
+  tipo: 'Bebida isotónica de alta performance — 700g',
+  composicion: 'Carbohidratos + Electrolitos (Sodio, Potasio, Magnesio, Calcio)',
+  mecanismo: 'Repone glucógeno y electrolitos perdidos en el sudor durante actividad prolongada.',
+  cuando: 'Durante o después de entrenamientos de +60 minutos o en condiciones de calor.',
+  ideal: 'Deportes de resistencia (running, ciclismo, fútbol, natación) o entrenamientos de alta duración.',
+  ventaja: '700g = excelente duración. Fórmula completa electrolitos + carbohidratos.',
+},
+'nmax_hmax600': {
+  tipo: 'Bebida isotónica deportiva (Nutremax Hydromax 600g)',
+  composicion: 'Carbohidratos + Electrolitos',
+  ideal: 'Misma aplicación que Hydroplus. Alternativa Nutremax a buen precio.',
+  ventaja: 'Buen precio. Formato adecuado para consumo moderado.',
+},
+'nmax_hmax1320': {
+  tipo: 'Bebida isotónica deportiva (Nutremax Hydromax 1320g)',
+  composicion: 'Carbohidratos + Electrolitos — formato grande',
+  ideal: 'Deportistas de alta frecuencia que consumen isotónico regularmente.',
+  ventaja: '1320g = mayor duración y mejor precio por porción.',
+},
+'sn_justcarb': {
+  tipo: 'Carbohidratos puros (Maltodextrina + Dextrosa) — Just Carb 2 Lb',
+  dosis: '50g carbohidratos por porción',
+  mecanismo: 'Fuente de energía de rápida absorción para reponer glucógeno muscular y hepático.',
+  cuando: 'Intra-workout (durante el entreno) o post-entreno inmediato junto con proteína.',
+  ideal: 'Deportistas de alto volumen que necesitan energía rápida. Excelente mezclado con Whey post-entreno.',
+  ventaja: 'Sin proteína ni grasa. Fuente limpia de carbohidratos para timing nutricional preciso.',
+},
+
+// ─────────────────────────────────────────────
+// BARRAS Y SNACKS
+// ─────────────────────────────────────────────
+'mer_lowcarb': {
+  tipo: 'Barra proteica Low Carbs (Mervick 46g)',
+  proteina: '~15-18g por barra',
+  carbs: 'Bajos en carbohidratos (~10-12g)',
+  ideal: 'Snack proteico en definición o para quienes controlan carbohidratos.',
+  ventaja: 'Alta proteína, bajos carbs. Conveniente para llevar.',
+},
+'mer_wheybar65': {
+  tipo: 'Barra proteica Whey Bar 65g (Mervick)',
+  proteina: '~20-22g por barra',
+  carbs: 'Moderados (~25g)',
+  ideal: 'Snack proteico completo para deportistas. Buen balance proteína/carbohidratos.',
+  ventaja: 'Tamaño generoso. Alta proteína por barra.',
+},
+'grg_pancake': {
+  tipo: 'Pancakes proteicos en polvo (Granger)',
+  proteina: '~10-12g por porción preparada',
+  ideal: 'Desayuno o merienda alta en proteína de fácil preparación.',
+  ventaja: 'Versátil. Preparación rápida. Alternativa sabrosa al batido de proteína.',
+},
+'mani_king': {
+  tipo: 'Pasta de Maní natural 350g',
+  proteina: '~7g por porción de 30g',
+  grasas: '~15g (mayormente grasas insaturadas saludables)',
+  carbs: '~5g por porción',
+  ideal: 'Fuente de proteína + grasas saludables + energía sostenida. Snack natural.',
+  ventaja: '100% natural sin agregados. Excelente relación nutricional. Versátil en cocina.',
 },
 };
 
 // ══════════════════════════════════════════════════════════
-// FUNCIÓN DE ANÁLISIS TÉCNICO MEJORADA
-// ══════════════════════════════════════════════════════════
-// ══════════════════════════════════════════════════════════
-// ANÁLISIS INTELIGENTE - SISTEMA COMPLETO
+// ANÁLISIS COMPARATIVO POR CATEGORÍA (texto fijo)
 // ══════════════════════════════════════════════════════════
 
-// Normaliza texto para comparación
-function _norm(s) {
-  return (s||'').toLowerCase()
-    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e')
-    .replace(/[íìï]/g,'i').replace(/[óòö]/g,'o')
-    .replace(/[úùü]/g,'u').replace(/ñ/g,'n')
-    .replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
-}
+var ANALISIS_CAT = {
+  proteina: 'Las proteínas en polvo se clasifican principalmente por su proceso de filtrado y fuente. El concentrado (WPC) es económico pero contiene más lactosa. El aislado (WPI) es más puro y bajo en lactosa. Los blends combinan ambos para un balance calidad-precio. La proteína vegetal es ideal para quien evita lácteos. Lo más importante no es la marca sino la dosis real de proteína por porción y el perfil de aminoácidos esenciales.',
+  creatina: 'La Creatina Monohidrato es el suplemento deportivo más estudiado de la historia — más de 1.000 estudios clínicos la respaldan. No hay diferencias significativas entre marcas si la pureza es alta. El formato (pote/doypack/1kg) y el precio por gramo son los factores decisivos para elegir. La dosis efectiva es 3-5g diarios sin necesidad de "fase de carga".',
+  colageno: 'El colágeno hidrolizado se absorbe mejor que el gelatin estándar. Los tipos I y III son los más relevantes para piel, tendones y articulaciones. La vitamina C es cofactor INDISPENSABLE para la síntesis de colágeno endógeno — siempre debe acompañar la toma si no está incluida. El Magnesio en algunos colágenos deportivos agrega beneficio muscular adicional.',
+  preworkout: 'Los pre-entrenos se dividen en dos familias: con estimulantes (cafeína, etc.) y sin estimulantes (vasodilatadores puros). Los estimulantes generan energía y foco pero no son aptos para uso nocturno ni para personas con sensibilidad cardiovascular. Los vasodilatadores (pump) ofrecen mayor congestión muscular a cualquier hora del día. La Citrulina Malato y la Beta-Alanina son los ingredientes con mayor evidencia científica.',
+  aminoacido: 'Los BCAAs son 3 de los 9 aminoácidos esenciales. Los EAAs incluyen los 9 esenciales y son biológicamente superiores para la síntesis proteica muscular completa. La L-Carnitina requiere ejercicio aeróbico para tener efecto. La Beta-Alanina y la Glutamina tienen aplicaciones muy específicas. Siempre considerar si la proteína diaria ya cubre las necesidades antes de agregar aminoácidos.',
+  gainer: 'Los gainers hipercalóricos están diseñados EXCLUSIVAMENTE para personas que tienen dificultades genuinas para subir de peso (hardgainers). Son de alta densidad calórica (600-800 kcal/porción) con predominio de carbohidratos. Para personas con metabolismo normal o tendencia a ganar grasa, suelen generar más grasa que músculo.',
+  quemador: 'Los termogénicos estimulantes aumentan el gasto calórico basal mediante termogénesis y movilizan ácidos grasos. Su efecto es real pero modesto (200-400 kcal/día extra). Son COMPLEMENTO de una dieta hipocalórica y ejercicio regular, no sustitutos. Los que contienen cafeína no deben usarse después de las 2-3pm. Las personas con condiciones cardiovasculares deben evitarlos.',
+  vitamin: 'Los micronutrientes (vitaminas y minerales) son cofactores de prácticamente todas las reacciones metabólicas del cuerpo. Los deportistas tienen demandas aumentadas, especialmente de Magnesio, Zinc y antioxidantes. El Omega 3 tiene el respaldo científico más sólido para salud general. El ZMA y el Magnesio son especialmente relevantes para recuperación nocturna y calidad del sueño.',
+  hidratacion: 'La hidratación adecuada es fundamental para el rendimiento deportivo. Las bebidas isotónicas reponen electrolitos y glucógeno durante el ejercicio prolongado. Son más relevantes en sesiones de más de 60 minutos o en condiciones de calor. Para entrenamientos cortos el agua es suficiente.',
+  colageno: 'Los colágenos hidrolizados son superiores a los no hidrolizados por su mejor absorción. La Vitamina C es esencial para la síntesis. El tipo I y III son los más documentados para tendones, piel y articulaciones.',
+};
 
-// Busca datos técnicos por nombre del producto
-function buscarDatosTec(prod) {
-  var nombre = _norm(prod.name);
-  // 1. Buscar exacto por ID
-  if (DATOS_TEC[prod.id]) return DATOS_TEC[prod.id];
-  // 2. Buscar por nombre en productos estáticos
+// ══════════════════════════════════════════════════════════
+// FUNCIONES DE ANÁLISIS QUE USAN LA BASE DE DATOS
+// ══════════════════════════════════════════════════════════
+
+function buscarEnDB(prod) {
+  // 1. ID exacto
+  if (DB_ANALISIS[prod.id]) return DB_ANALISIS[prod.id];
+  // 2. Buscar por nombre en PRODUCTS_ESTATICO
+  var n = _norm(prod.name);
   var mejor = null, mejorScore = 0;
-  Object.keys(DATOS_TEC).forEach(function(key) {
-    var sp = PRODUCTS_ESTATICO.find(function(x){ return x.id === key; });
-    if (!sp) return;
+  PRODUCTS_ESTATICO.forEach(function(sp) {
+    if (!DB_ANALISIS[sp.id]) return;
     var sn = _norm(sp.name);
-    var palabras = nombre.split(' ').filter(function(w){ return w.length > 2; });
-    if (palabras.length === 0) return;
-    var coincidencias = palabras.filter(function(w){ return sn.indexOf(w) >= 0; }).length;
-    var pct = coincidencias / palabras.length;
-    if (pct > mejorScore && pct >= 0.45) { mejorScore = pct; mejor = DATOS_TEC[key]; }
+    var palabras = n.split(' ').filter(function(w){ return w.length > 2; });
+    if (!palabras.length) return;
+    var score = palabras.filter(function(w){ return sn.indexOf(w) >= 0; }).length / palabras.length;
+    if (score > mejorScore && score >= 0.45) { mejorScore = score; mejor = DB_ANALISIS[sp.id]; }
   });
   return mejor;
 }
 
-// Busca clave de par predefinido por nombre
 function buscarParPredefinido(prods) {
-  // Mapear cada producto a su ID estático más cercano
   var staticIds = prods.map(function(prod) {
-    if (DATOS_TEC[prod.id]) return prod.id; // ID exacto
-    var nombre = _norm(prod.name);
+    if (DB_ANALISIS[prod.id]) return prod.id;
+    var n = _norm(prod.name);
     var mejor = null, mejorScore = 0;
     PRODUCTS_ESTATICO.forEach(function(sp) {
-      if (!DATOS_TEC[sp.id]) return; // solo los que tienen datos
+      if (!DB_ANALISIS[sp.id]) return;
       var sn = _norm(sp.name);
-      var palabras = nombre.split(' ').filter(function(w){ return w.length > 2; });
-      if (palabras.length === 0) return;
-      var coincidencias = palabras.filter(function(w){ return sn.indexOf(w) >= 0; }).length;
-      var pct = coincidencias / palabras.length;
-      if (pct > mejorScore && pct >= 0.45) { mejorScore = pct; mejor = sp.id; }
+      var palabras = n.split(' ').filter(function(w){ return w.length > 2; });
+      if (!palabras.length) return;
+      var score = palabras.filter(function(w){ return sn.indexOf(w) >= 0; }).length / palabras.length;
+      if (score > mejorScore && score >= 0.45) { mejorScore = score; mejor = sp.id; }
     });
     return mejor || prod.id;
   });
   return staticIds.sort().join('|');
 }
 
-function generarAnalisisIA(prods) {
-  var iaDiv = document.getElementById('compIA');
-  var iaContent = document.getElementById('compIAContent');
-  iaDiv.style.display = 'block';
-
-  // Buscar par predefinido por nombre
-  var clave = buscarParPredefinido(prods);
-  var html = COMPARACIONES_PARES[clave] || '';
-
-  // Si no hay par exacto, análisis dinámico con datos técnicos
-  if (!html) {
-    var cats = prods.map(function(p){ return p.cat; });
-    html = generarAnalisisDinamico(prods, cats);
-  }
-
-  // Complementariedad entre categorías distintas
-  var cats2 = prods.map(function(p){ return p.cat; });
-  var misma = cats2.every(function(x){ return x === cats2[0]; });
-  if (!misma) {
-    for (var i = 0; i < cats2.length; i++) {
-      for (var j = i+1; j < cats2.length; j++) {
-        var k = [cats2[i],cats2[j]].sort().join('|');
-        if (COMPLEMENTOS[k]) {
-          html += '<h4 style="color:var(--cyan);margin-top:20px">¿Se complementan?</h4><p>' + COMPLEMENTOS[k] + '</p>';
-          break;
-        }
-      }
+function renderDatosTec(tec) {
+  if (!tec) return '';
+  var html = '';
+  var campos = [
+    ['tipo',         'Tipo/Clasificación'],
+    ['proteina',     'Proteína por porción'],
+    ['colageno',     'Colágeno por porción'],
+    ['carbs',        'Carbohidratos'],
+    ['grasas',       'Grasas'],
+    ['calorias',     'Calorías/porción'],
+    ['lactosa',      'Lactosa'],
+    ['aminoacidos',  'Aminoácidos clave'],
+    ['leucina',      'Leucina'],
+    ['total',        'Total BCAAs'],
+    ['composicion',  'Composición'],
+    ['filtrado',     'Proceso de fabricación'],
+    ['absorcion',    'Velocidad de absorción'],
+    ['pureza',       'Pureza'],
+    ['certificacion','Certificación'],
+    ['cafeina',      'Cafeína'],
+    ['citrulina',    'Citrulina Malato'],
+    ['beta_alanina', 'Beta-Alanina'],
+    ['agmatina',     'Agmatina'],
+    ['glicerol',     'Glicerol'],
+    ['otros',        'Otros activos'],
+    ['vitc',         'Vitamina C'],
+    ['minerales',    'Minerales adicionales'],
+    ['magnesio',     'Magnesio'],
+    ['zinc',         'Zinc'],
+    ['b6',           'Vitamina B6'],
+    ['epa_dha',      'EPA + DHA'],
+    ['fuente_prot',  'Fuente proteica'],
+    ['dosis',        'Dosis efectiva'],
+    ['mecanismo',    'Cómo funciona en el cuerpo'],
+    ['efectos',      'Efectos'],
+    ['aditivos',     'Aditivos/excipientes'],
+    ['cuando',       'Cuándo tomarlo'],
+    ['advertencia',  '⚠ Importante'],
+    ['nota',         '📌 Nota técnica'],
+    ['limitacion',   '⚠ Limitación'],
+    ['evitar',       '✗ Evitar si'],
+  ];
+  campos.forEach(function(par) {
+    var campo = par[0], label = par[1];
+    if (tec[campo]) {
+      var esWarning = label.indexOf('⚠') >= 0 || label.indexOf('✗') >= 0 || campo === 'evitar' || campo === 'limitacion';
+      html += '<p><strong>' + label + ':</strong> <span style="color:' + (esWarning ? '#FF9900' : '#ccc') + '">' + tec[campo] + '</span></p>';
     }
-  }
-
-  iaContent.innerHTML = html;
+  });
+  if (tec.ideal)   html += '<p style="margin-top:8px"><span class="comp-tag-ok">✓ IDEAL PARA</span> ' + tec.ideal + '</p>';
+  if (tec.ventaja) html += '<p><span class="comp-tag-ok">★ VENTAJA CLAVE</span> ' + tec.ventaja + '</p>';
+  return html;
 }
 
 function generarAnalisisDinamico(prods, cats) {
   var misma = cats.every(function(x){ return x === cats[0]; });
   var html = '';
+  var cat = cats[0];
 
   if (misma) {
-    var cat = cats[0];
-    var label = catLabels[cat] || cat;
-    var catInfo = INFO_CATEGORIAS[cat] || '';
-    html += '<h3>Qué son los ' + label + '</h3><p>' + catInfo + '</p>';
-    html += '<h3>Análisis técnico de cada producto</h3>';
+    // Info general de categoría
+    if (ANALISIS_CAT[cat]) {
+      html += '<h3>Sobre los ' + (catLabels[cat]||cat) + '</h3>';
+      html += '<p style="color:#aaa;font-size:.88rem">' + ANALISIS_CAT[cat] + '</p>';
+    }
+    // Análisis de cada producto
+    html += '<h3 style="margin-top:20px">Análisis técnico comparado</h3>';
     prods.forEach(function(p) {
-      var tec = buscarDatosTec(p);
-      html += '<h4>' + p.name + ' (' + p.brand + ')</h4>';
+      var tec = buscarEnDB(p);
+      html += '<div style="border-left:3px solid var(--cyan);padding-left:14px;margin:16px 0">';
+      html += '<h4 style="color:#fff;margin-bottom:8px">' + p.name + ' <span style="color:#888;font-size:.8rem">— ' + p.brand + '</span></h4>';
       if (tec) {
-        if (tec.tipo)              html += '<p><strong>Tipo/Clasificación:</strong> ' + tec.tipo + '</p>';
-        if (tec.proteina_porcion)  html += '<p><strong>Proteína por porción:</strong> ' + tec.proteina_porcion + '</p>';
-        if (tec.carbohidratos)     html += '<p><strong>Carbohidratos:</strong> ' + tec.carbohidratos + '</p>';
-        if (tec.calorias)          html += '<p><strong>Calorías/porción:</strong> ' + tec.calorias + '</p>';
-        if (tec.lactosa)           html += '<p><strong>Lactosa:</strong> ' + tec.lactosa + '</p>';
-        if (tec.filtrado)          html += '<p><strong>Proceso de fabricación:</strong> ' + tec.filtrado + '</p>';
-        if (tec.leucina)           html += '<p><strong>Leucina:</strong> ' + tec.leucina + '</p>';
-        if (tec.total_bcaa)        html += '<p><strong>BCAAs totales:</strong> ' + tec.total_bcaa + '</p>';
-        if (tec.eaas)              html += '<p><strong>Aminoácidos esenciales:</strong> ' + tec.eaas + '</p>';
-        if (tec.colageno_porcion)  html += '<p><strong>Colágeno por porción:</strong> ' + tec.colageno_porcion + '</p>';
-        if (tec.vitamina_c)        html += '<p><strong>Vitamina C:</strong> ' + tec.vitamina_c + '</p>';
-        if (tec.minerales)         html += '<p><strong>Minerales/activos extra:</strong> ' + tec.minerales + '</p>';
-        if (tec.cafeina)           html += '<p><strong>Cafeína:</strong> ' + tec.cafeina + '</p>';
-        if (tec.citrulina)         html += '<p><strong>Citrulina Malato:</strong> ' + tec.citrulina + '</p>';
-        if (tec.beta_alanina)      html += '<p><strong>Beta-Alanina:</strong> ' + tec.beta_alanina + '</p>';
-        if (tec.epa_dha)           html += '<p><strong>EPA+DHA:</strong> ' + tec.epa_dha + '</p>';
-        if (tec.zinc)              html += '<p><strong>Zinc:</strong> ' + tec.zinc + '</p>';
-        if (tec.magnesio)          html += '<p><strong>Magnesio:</strong> ' + tec.magnesio + '</p>';
-        if (tec.pureza)            html += '<p><strong>Pureza:</strong> ' + tec.pureza + '</p>';
-        if (tec.dosis)             html += '<p><strong>Dosis efectiva:</strong> ' + tec.dosis + '</p>';
-        if (tec.mecanismo)         html += '<p><strong>Cómo funciona en el cuerpo:</strong> ' + tec.mecanismo + '</p>';
-        if (tec.aditivos)          html += '<p><strong>Aditivos/excipientes:</strong> ' + tec.aditivos + '</p>';
-        if (tec.importante)        html += '<p><strong>⚠️ Importante:</strong> ' + tec.importante + '</p>';
-        if (tec.cuando_tomar)      html += '<p><strong>Cuándo tomarlo:</strong> ' + tec.cuando_tomar + '</p>';
-        if (tec.para_quien)        html += '<p><span class="comp-tag-ok">✓ IDEAL PARA</span> ' + tec.para_quien + '</p>';
-        if (tec.no_recomendado)    html += '<p><span class="comp-tag-cuidado">⚠ EVITAR SI</span> ' + tec.no_recomendado + '</p>';
-        if (tec.no_usar)           html += '<p><span class="comp-tag-cuidado">✗ NO USAR SI</span> ' + tec.no_usar + '</p>';
-        if (tec.ventaja)           html += '<p><span class="comp-tag-ok">★ VENTAJA CLAVE</span> ' + tec.ventaja + '</p>';
+        html += renderDatosTec(tec);
       } else {
-        html += '<p>' + (p.desc || 'Producto de alta calidad.') + '</p>';
+        html += '<p>' + (p.desc || 'Producto de alta calidad de marca reconocida.') + '</p>';
       }
+      html += '</div>';
     });
-    var consejofn = CONSEJOS_CAT[cat];
-    if (consejofn) html += consejofn(prods);
+    // Consejos de categoría
+    if (CONSEJOS_CAT[cat]) html += CONSEJOS_CAT[cat](prods);
+    // Comparación de precio
     html += generarComparacionPrecio(prods);
   } else {
     html += '<h3>Productos de categorías distintas</h3>';
-    html += '<p>Estos productos tienen funciones diferentes. Te explicamos cada uno para que sepas si los necesitas juntos o tenés que priorizar uno.</p>';
+    html += '<p>Estos productos tienen funciones diferentes. Te explicamos cada uno para que puedas decidir si los necesitás juntos o tenés que priorizar uno.</p>';
     prods.forEach(function(p) {
-      var tec = buscarDatosTec(p);
-      html += '<h3>' + (catLabels[p.cat]||p.cat) + ': ' + p.name + '</h3>';
+      var tec = buscarEnDB(p);
+      html += '<div style="border-left:3px solid var(--cyan);padding-left:14px;margin:16px 0">';
+      html += '<h4>' + p.name + ' (' + p.brand + ')</h4>';
       if (tec) {
         if (tec.tipo)      html += '<p><strong>Tipo:</strong> ' + tec.tipo + '</p>';
         if (tec.mecanismo) html += '<p><strong>Cómo funciona:</strong> ' + tec.mecanismo + '</p>';
-        if (tec.para_quien)html += '<p><span class="comp-tag-ok">✓ PARA QUIÉN</span> ' + tec.para_quien + '</p>';
+        if (tec.ideal)     html += '<p><span class="comp-tag-ok">✓ IDEAL PARA</span> ' + tec.ideal + '</p>';
         if (tec.ventaja)   html += '<p><span class="comp-tag-ok">★ DIFERENCIAL</span> ' + tec.ventaja + '</p>';
       } else {
-        if (INFO_CATEGORIAS[p.cat]) html += '<p>' + INFO_CATEGORIAS[p.cat] + '</p>';
+        if (ANALISIS_CAT[p.cat]) html += '<p>' + ANALISIS_CAT[p.cat] + '</p>';
         html += '<p>' + (p.desc || '') + '</p>';
       }
+      html += '</div>';
     });
   }
   return html;
 }
+
 
 function generarComparacionPrecio(prods) {
   var html = '<h4>Comparacion de valor</h4><ul>';
