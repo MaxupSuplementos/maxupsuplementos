@@ -5752,25 +5752,112 @@ function actualizarComparador() {
   if (ids.length < 2) { tabla.style.display='none'; iaDiv.style.display='none'; return; }
 
   var prods = ids.map(function(id){ return getProduct(id); }).filter(Boolean);
+  if (prods.length < 2) { tabla.style.display='none'; iaDiv.style.display='none'; return; }
+
   var precios = prods.map(function(p){ return p.price; });
   var minPrecio = Math.min.apply(null, precios);
   var maxStock = Math.max.apply(null, prods.map(function(p){ return p.flavors.reduce(function(s,f){ return s+f.stock; },0); }));
 
+  // Obtener datos técnicos de cada producto
+  var tecsArr = prods.map(function(p){ return buscarEnDB(p); });
+
+  // Construir filas técnicas unificadas
+  // Definir qué campos mostrar y en qué orden
+  var camposTec = [
+    ['tipo',         '🏷 Tipo / Clasificación'],
+    ['proteina',     '💪 Proteína por porción'],
+    ['colageno',     '🦴 Colágeno por porción'],
+    ['carbs',        '🍞 Carbohidratos'],
+    ['grasas',       '🫐 Grasas'],
+    ['calorias',     '🔥 Calorías por porción'],
+    ['lactosa',      '🥛 Lactosa'],
+    ['aminoacidos',  '🧬 Aminoácidos clave'],
+    ['leucina',      '⚡ Leucina'],
+    ['total',        '⚡ Total BCAAs'],
+    ['composicion',  '📋 Composición'],
+    ['filtrado',     '🔬 Proceso de fabricación'],
+    ['absorcion',    '⏱ Absorción'],
+    ['pureza',       '✨ Pureza'],
+    ['certificacion','🏅 Certificación'],
+    ['cafeina',      '☕ Cafeína'],
+    ['citrulina',    '💊 Citrulina Malato'],
+    ['beta_alanina', '💊 Beta-Alanina'],
+    ['agmatina',     '💊 Agmatina'],
+    ['glicerol',     '💊 Glicerol'],
+    ['otros',        '➕ Otros activos'],
+    ['vitc',         '🍊 Vitamina C'],
+    ['minerales',    '⚗️ Minerales'],
+    ['magnesio',     '🧲 Magnesio'],
+    ['zinc',         '🔩 Zinc'],
+    ['b6',           '💊 Vitamina B6'],
+    ['epa_dha',      '🐟 EPA + DHA'],
+    ['fuente_prot',  '📦 Fuente proteica'],
+    ['dosis',        '⚖️ Dosis efectiva'],
+    ['mecanismo',    '🔬 Cómo funciona'],
+    ['efectos',      '⚡ Efectos'],
+    ['aditivos',     '🧪 Aditivos / Excipientes'],
+    ['cuando',       '⏰ Cuándo tomarlo'],
+    ['advertencia',  '⚠️ Importante'],
+    ['nota',         '📌 Nota técnica'],
+    ['limitacion',   '⚠️ Limitación'],
+    ['evitar',       '🚫 Evitar si'],
+    ['ideal',        '✅ Ideal para'],
+    ['ventaja',      '⭐ Ventaja clave'],
+  ];
+
   tabla.style.display = 'block';
+  iaDiv.style.display = 'none'; // Ocultar el bloque separado
 
-  var headers = '<tr><th>Característica</th>' + prods.map(function(p){ return '<th>'+p.name+'</th>'; }).join('') + '</tr>';
-  var rowMarca = '<tr><td>Marca</td>' + prods.map(function(p){ return '<td>'+p.brand+'</td>'; }).join('') + '</tr>';
-  var rowCat = '<tr><td>Tipo</td>' + prods.map(function(p){ return '<td>'+p.cat+'</td>'; }).join('') + '</tr>';
-  var rowPrecio = '<tr><td>Precio efectivo</td>' + prods.map(function(p){ return '<td class="'+(p.price===minPrecio?'mejor':'')+'">$'+p.price.toLocaleString('es-AR')+(p.price===minPrecio?' ✓ Mejor precio':'')+'</td>'; }).join('') + '</tr>';
-  var rowTarjeta = '<tr><td>Precio tarjeta</td>' + prods.map(function(p){ return '<td>$'+(p.price_tarjeta||Math.round(p.price*1.08)).toLocaleString('es-AR')+'</td>'; }).join('') + '</tr>';
-  var rowStock = '<tr><td>Stock total</td>' + prods.map(function(p){ var s=p.flavors.reduce(function(x,f){ return x+f.stock; },0); return '<td class="'+(s===maxStock?'mejor':'')+'">'+s+' ud.'+(s===maxStock?' ✓ Más stock':'')+'</td>'; }).join('') + '</tr>';
-  var rowSabores = '<tr><td>Sabores/Presentaciones</td>' + prods.map(function(p){ return '<td>'+p.flavors.length+' opción'+(p.flavors.length>1?'es':'')+'</td>'; }).join('') + '</tr>';
-  var rowBtn = '<tr><td></td>' + prods.map(function(p){ return '<td><button class="comp-btn" onclick="openProdModal('+JSON.stringify(p.id)+')">Ver producto</button></td>'; }).join('') + '</tr>';
+  var rows = '';
 
-  tabla.innerHTML = '<table>' + headers + rowMarca + rowCat + rowPrecio + rowTarjeta + rowStock + rowSabores + rowBtn + '</table>';
+  // Header
+  rows += '<tr><th style="width:200px">Característica</th>' + prods.map(function(p){ return '<th>'+p.name+'</th>'; }).join('') + '</tr>';
 
-  // Análisis por base de datos
-  mostrarAnalisis(prods);
+  // Separador visual
+  rows += '<tr><td colspan="'+(prods.length+1)+'" style="background:rgba(0,200,255,.08);padding:6px 12px;font-family:Bebas Neue,sans-serif;font-size:.85rem;letter-spacing:.1em;color:var(--cyan)">PRECIOS</td></tr>';
+
+  // Precio efectivo
+  rows += '<tr><td>Precio efectivo</td>' + prods.map(function(p){
+    var mejor = p.price === minPrecio;
+    return '<td class="'+(mejor?'mejor':'')+'">$'+p.price.toLocaleString('es-AR')+(mejor?'<br><span style="font-size:.75rem">✓ Mejor precio</span>':'')+'</td>';
+  }).join('') + '</tr>';
+
+  // Precio tarjeta
+  rows += '<tr><td>Precio tarjeta</td>' + prods.map(function(p){
+    return '<td>$'+(p.price_tarjeta||Math.round(p.price*1.08)).toLocaleString('es-AR')+'</td>';
+  }).join('') + '</tr>';
+
+  // Sabores
+  rows += '<tr><td>Sabores / Presentaciones</td>' + prods.map(function(p){
+    return '<td>'+p.flavors.length+' opción'+(p.flavors.length>1?'es':'')+'</td>';
+  }).join('') + '</tr>';
+
+  // Separador ficha técnica
+  rows += '<tr><td colspan="'+(prods.length+1)+'" style="background:rgba(0,200,255,.08);padding:6px 12px;font-family:Bebas Neue,sans-serif;font-size:.85rem;letter-spacing:.1em;color:var(--cyan)">FICHA TÉCNICA</td></tr>';
+
+  // Filas técnicas — solo mostrar las que al menos UN producto tiene dato
+  camposTec.forEach(function(par) {
+    var campo = par[0], label = par[1];
+    var hayDato = tecsArr.some(function(tec){ return tec && tec[campo]; });
+    if (!hayDato) return;
+
+    rows += '<tr><td>'+label+'</td>';
+    tecsArr.forEach(function(tec) {
+      var val = tec && tec[campo] ? tec[campo] : '—';
+      var isWarning = campo === 'evitar' || campo === 'limitacion' || campo === 'advertencia';
+      var isGood = campo === 'ideal' || campo === 'ventaja';
+      var color = isWarning ? '#FF9900' : isGood ? '#00FF88' : '';
+      rows += '<td style="'+(color?'color:'+color:'')+'">'+val+'</td>';
+    });
+    rows += '</tr>';
+  });
+
+  // Botones
+  rows += '<tr><td></td>' + prods.map(function(p){
+    return '<td><button class="comp-btn" onclick="openProdModal('+JSON.stringify(p.id)+')">Ver producto</button></td>';
+  }).join('') + '</tr>';
+
+  tabla.innerHTML = '<table>' + rows + '</table>';
 }
 
 function generarHTML(secciones) {
