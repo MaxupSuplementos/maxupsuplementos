@@ -6608,18 +6608,132 @@ var ANALISIS_CAT = {
 // ══════════════════════════════════════════════════════════
 
 function buscarEnDB(prod) {
-  // 1. ID exacto
+  // Mapa nombre estático → clave DB (hardcodeado para no depender de PRODUCTS_ESTATICO)
+  var NOMBRE_A_KEY = {
+    'whey protein doypack': 'sn_whey_dp',
+    'platinum whey protein 2 lb': 'sn_plat_2lb',
+    'platinum whey protein 3': 'sn_plat_3kg',
+    'wh3y platinum': 'sn_wh3y',
+    'just whey': 'sn_justwhey',
+    'whey protein truemade': 'ena_truemade',
+    '100% whey x 2': 'ena_100whey',
+    'truemade whey colageno': 'ena_truecol',
+    'proteina 7900 pote': 'gen_7900',
+    'proteina 7900 doypack': 'gen_7900dp',
+    'best whey x 2': 'xtr_bestwhey',
+    'whey advanced': 'xtr_advanced',
+    'whey ripped': 'gn_ripped',
+    'whey 100% protein': 'gn_100whey',
+    'iso gold': 'gn_isogold',
+    'vegetal protein isolate': 'gn_vegetal',
+    'proteina vegetal isolate': 'nfit_vegprot',
+    'protein isolate pea': 'pp_pea',
+    'proteina by pampita': 'wo_prot',
+    'proteina fit': 'wo_protfit',
+    'whey protein blend mervick': 'mer_blend',
+    'bio prot': 'hs_bioprot',
+    'creatina 300g pote': 'sn_creat_pote',
+    'creatina 300g doypack': 'sn_creat_doy',
+    'creatina 500g': 'sn_creat_500',
+    'creatina 1 kg': 'sn_creat_1kg',
+    'creatine powder': 'on_creat',
+    'creatina micronizada': 'ena_creat',
+    'creatina x300g': 'gn_creat',
+    'creatina monohidrato 300g max': 'mxf_creat',
+    'creatina 250g xtrenght': 'xtr_creat250',
+    'creatina 500g xtrenght': 'xtr_creat500',
+    'creatina 300g mervick': 'mer_creat',
+    'creatina 200g': 'pp_creat',
+    'collageno hidrolizado 210': 'sn_col210',
+    'collagen sport': 'sn_col_sport',
+    'collagen plus': 'sn_col_plus',
+    'colageno hidrolizado 200g pote': 'gn_col200p',
+    'colageno hidrolizado 200g doypack': 'gn_col200d',
+    'collagen flex': 'nlab_collagen',
+    'colageno hialuronico': 'wo_colageno',
+    'tnt dynamite': 'sn_tnt',
+    'pump v8': 'sn_pumpv8',
+    'pre work gold': 'gn_prework',
+    'pre work 240g': 'nmax_prework',
+    'pre entreno con quemador': 'wo_preentreno',
+    'mutantmass': 'sn_mutant',
+    'ultra mass': 'ena_ultramass',
+    'nitro gain': 'xtr_nitrogain',
+    'gainer gold': 'gn_gainer',
+    'gainer complex': 'mer_gainer',
+    'mass fusion': 'idn_massfusion',
+    'extreme mass': 'hs_extreme',
+    'mtor bcaa': 'sn_mtor',
+    "eaa's aminoacidos": 'sn_eaas',
+    'eaas aminoacidos': 'sn_eaas',
+    'l-glutamina 300g': 'sn_glut',
+    'l-arginina': 'sn_arginine',
+    'l-carnitina 60 comp': 'sn_lcarnitina',
+    'beta alanina': 'sn_betaal',
+    'bcaa 2:1:1 90': 'ena_bcaa',
+    'l-carnitina 1500': 'ena_lcarnitina',
+    'glutamina 300g en pote': 'ena_glut',
+    'carnitina liquida': 'gen_carnit',
+    'thermo fuel': 'sn_thermo',
+    'fat burner': 'wo_fatburner',
+    'tx3 black': 'gen_tx3',
+    'lipo gold elite': 'gn_lipo',
+    'lipo burn': 'gn_lipo_hc',
+    'thermogenic max 120': 'nlab_thermo120',
+    'termogenic max 240': 'nlab_thermo240',
+    'vitamina c': 'sn_vitc',
+    'multivitaminico 60': 'sn_multi',
+    'omega 3 fish oil 60': 'sn_omega3',
+    'omega 3 1000mg 200': 'ge_omega3',
+    'omega 3 con omega 6': 'lap_omega3',
+    'zma 90': 'sn_zma',
+    'zma 60': 'gn_zma',
+    'zma-b': 'hs_zmab',
+    'cla 1000': 'sn_cla',
+    'resveratrol 500': 'sn_resv',
+    'resveratrol by pampita': 'wo_resv',
+    'citrato de magnesio 60': 'sn_citr60',
+    'citrato magnesio x 500': 'sn_citr500',
+    'citrato de magnesio 144': 'grg_citr',
+    'citrato de magnesio 400': 'hs_citr400',
+    'bisglicinato de magnesio': 'lap_mag',
+    'cafeina 200mg 30': 'sn_cafeina30',
+    'cafeina 200mg 60': 'nmax_cafeina200',
+    'ashwagandha': 'lap_ashwa',
+    'nad 500': 'lap_nad',
+    'testo gold': 'gn_testo',
+    'hydroplus endurance': 'sn_hydroplus',
+    'hydromax 600': 'nmax_hmax600',
+    'hydromax 1320': 'nmax_hmax1320',
+    'just carb': 'sn_justcarb',
+    'low carbs protein bar': 'mer_lowcarb',
+    'whey bar 65': 'mer_wheybar65',
+    'pancakes proteicos': 'grg_pancake',
+    'pasta de mani': 'mani_king',
+  };
+
+  // 1. ID exacto en DB
   if (DB_ANALISIS[prod.id]) return DB_ANALISIS[prod.id];
-  // 2. Buscar por nombre en PRODUCTS_ESTATICO
-  var n = _norm(prod.name);
+
+  // 2. Buscar por nombre normalizado contra el mapa
+  var n = (prod.name || '').toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
+    .replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+
+  // Buscar coincidencia exacta en el mapa
+  if (NOMBRE_A_KEY[n] && DB_ANALISIS[NOMBRE_A_KEY[n]]) return DB_ANALISIS[NOMBRE_A_KEY[n]];
+
+  // 3. Buscar parcial — la clave del mapa que más palabras comparte con el nombre
   var mejor = null, mejorScore = 0;
-  PRODUCTS_ESTATICO.forEach(function(sp) {
-    if (!DB_ANALISIS[sp.id]) return;
-    var sn = _norm(sp.name);
+  Object.keys(NOMBRE_A_KEY).forEach(function(mapKey) {
+    var dbKey = NOMBRE_A_KEY[mapKey];
+    if (!DB_ANALISIS[dbKey]) return;
     var palabras = n.split(' ').filter(function(w){ return w.length > 2; });
     if (!palabras.length) return;
-    var score = palabras.filter(function(w){ return sn.indexOf(w) >= 0; }).length / palabras.length;
-    if (score > mejorScore && score >= 0.45) { mejorScore = score; mejor = DB_ANALISIS[sp.id]; }
+    var hits = palabras.filter(function(w){ return mapKey.indexOf(w) >= 0; }).length;
+    var score = hits / palabras.length;
+    if (score > mejorScore && score >= 0.4) { mejorScore = score; mejor = DB_ANALISIS[dbKey]; }
   });
   return mejor;
 }
