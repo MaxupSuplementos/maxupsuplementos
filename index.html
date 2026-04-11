@@ -695,6 +695,34 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   text-transform:uppercase;letter-spacing:.08em;animation:pulseRed 1.5s infinite}
 @keyframes pulseRed{0%,100%{opacity:1}50%{opacity:.6}}
 
+
+/* ── INDUMENTARIA ── */
+.indum-section{padding:70px 24px}
+.indum-inner{max-width:1400px;margin:0 auto}
+.indum-filtros{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 32px}
+.indum-filtro{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#aaa;padding:8px 18px;border-radius:20px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.04em}
+.indum-filtro:hover,.indum-filtro.activo{background:var(--cyan);border-color:var(--cyan);color:#000}
+.indum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.indum-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s,transform .2s;cursor:pointer}
+.indum-card:hover{border-color:rgba(0,200,255,.4);transform:translateY(-2px)}
+.indum-img{width:100%;aspect-ratio:1;overflow:hidden;background:rgba(255,255,255,.03)}
+.indum-img img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.indum-card:hover .indum-img img{transform:scale(1.04)}
+.indum-no-img{display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:#333}
+.indum-body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.indum-cat{font-size:.68rem;font-weight:700;letter-spacing:.1em;color:var(--cyan);text-transform:uppercase}
+.indum-nombre{font-size:.85rem;font-weight:600;color:#fff;line-height:1.35}
+.indum-color{font-size:.76rem;color:#aaa;display:flex;align-items:center;gap:5px}
+.indum-color::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--dot-color,#888);flex-shrink:0}
+.indum-precios{margin-top:2px}
+.indum-precio{font-size:1.05rem;font-weight:800;color:var(--cyan)}
+.indum-precio-tarjeta{font-size:.73rem;color:#666}
+.indum-stock{font-size:.7rem;padding:3px 8px;border-radius:10px;width:fit-content}
+.indum-stock.ok{background:rgba(0,255,136,.1);color:#00FF88;border:1px solid rgba(0,255,136,.2)}
+.indum-stock.last{background:rgba(255,165,0,.1);color:#FFA500;border:1px solid rgba(255,165,0,.2)}
+.indum-wa-btn{margin-top:auto;padding-top:4px;background:var(--grad);color:#000;border:none;border-radius:8px;padding:9px;font-size:.78rem;font-weight:700;cursor:pointer;letter-spacing:.04em;transition:opacity .2s;width:100%}
+.indum-wa-btn:hover{opacity:.85}
+@media(max-width:600px){.indum-grid{grid-template-columns:repeat(2,1fr);gap:10px}}
 </style>
 </head>
 <body>
@@ -725,6 +753,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 <div class="nav-mobile-bar">
   <a href="#catalogo">🏪 Catálogo</a>
   <a href="#comparador">⚖️ Comparar</a>
+  <a href="#indumentaria">👕 Indumentaria</a>
   <a href="#recomendador">🎯 Recomendación</a>
   <a href="#liquidaciones" style="color:#FF0099;border-color:rgba(255,0,153,.3)" onclick="mostrarLiquidaciones()">🔥 Ofertas</a>
   <a href="salud.html" style="color:var(--green);border-color:rgba(0,230,118,.3)">🏥 Salud</a>
@@ -856,6 +885,31 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 </section>
 
 <div class="grad-line"></div>
+
+
+<!-- ── INDUMENTARIA ── -->
+<div class="grad-line"></div>
+<section class="indum-section" id="indumentaria">
+  <div class="indum-inner">
+    <div class="section-header">
+      <span class="section-label">Ropa deportiva</span>
+      <h2 class="section-title">INDUMENTARIA</h2>
+      <p class="section-desc">Prendas deportivas de alta calidad. Consultá talles y colores disponibles.</p>
+    </div>
+    <!-- Filtros -->
+    <div class="indum-filtros" id="indumFiltros">
+      <button class="indum-filtro activo" onclick="filtrarIndum('all')">Todos</button>
+      <button class="indum-filtro" onclick="filtrarIndum('Short')">Short</button>
+      <button class="indum-filtro" onclick="filtrarIndum('Calza')">Calza</button>
+      <button class="indum-filtro" onclick="filtrarIndum('Catsuit')">Catsuit</button>
+      <button class="indum-filtro" onclick="filtrarIndum('Remera')">Remera</button>
+      <button class="indum-filtro" onclick="filtrarIndum('Top/Musculosa')">Top / Musculosa</button>
+      <button class="indum-filtro" onclick="filtrarIndum('Conjunto')">Conjunto</button>
+    </div>
+    <!-- Grilla -->
+    <div class="indum-grid" id="indumGrid"></div>
+  </div>
+</section>
 
 <!-- ── TESTIMONIOS ── -->
 <section class="testim-section" id="testimonios">
@@ -7558,89 +7612,106 @@ function mostrarAnalisis(prods) {
   iaContent.innerHTML = html;
 }
 
-</script>
 
-<!-- ══════════════════════════════════════════════════════
-╔══════════════════════════════════════════════════════════╗
-║        ✏️  GUÍA COMPLETA PARA EDITAR LA PÁGINA           ║
-╠══════════════════════════════════════════════════════════╣
-║                                                          ║
-║  ABRÍ ESTE ARCHIVO EN: VS Code, Bloc de Notas,           ║
-║  Notepad++ o cualquier editor de texto.                  ║
-║                                                          ║
-║ ─────────────────────────────────────────────────────    ║
-║  1. CAMBIAR PRECIO de un producto                        ║
-║  ─────────────────────────────────────────────────────   ║
-║  Buscá: "price": 49000  (el precio en ARS sin puntos)    ║
-║  El id del producto está al principio del objeto.        ║
-║  Ejemplo: buscar "sn_whey_dp" → cambiá "price": 49000   ║
-║                                                          ║
-║ ─────────────────────────────────────────────────────    ║
-║  2. CAMBIAR STOCK                                        ║
-║  ─────────────────────────────────────────────────────   ║
-║  Cada sabor tiene "stock": N                             ║
-║  Cambiá el número. Si ponés 0 → aparece "Agotado"        ║
-║  Ejemplo: {"name": "Chocolate", "stock": 5}              ║
-║                                                          ║
-║ ─────────────────────────────────────────────────────    ║
-║  3. CAMBIAR FOTO de un producto                          ║
-║  ─────────────────────────────────────────────────────   ║
-║  Buscá el id del producto, ej: "sn_whey_dp"              ║
-║  Encontrás: "img": "https://images.weserv.nl/?url=..."                         ║
-║  Pegá la nueva URL de imagen entre las comillas.         ║
-║  Si dejás "img": "" → muestra el emoji de respaldo.      ║
-║                                                          ║
-║  TRUCO PARA SACAR LA URL DE UNA FOTO:                    ║
-║  a) Buscá el producto en Google Imágenes                 ║
-║  b) Click derecho sobre la imagen → "Copiar dirección"   ║
-║  c) Pegá esa URL en "img":                               ║
-║                                                          ║
-║ ─────────────────────────────────────────────────────    ║
-║  4. AGREGAR un nuevo producto                            ║
-║  ─────────────────────────────────────────────────────   ║
-║  Copiá el bloque de un producto existente y pegalo       ║
-║  dentro del array PRODUCTS = [...].                      ║
-║  Cambiá: id (único), name, brand, cat, price, flavors.   ║
-║  Categorías disponibles: proteina | gainer | creatina    ║
-║    aminoacido | vitamin | preworkout | quemador          ║
-║    colageno | hidratacion | barra | accesorio            ║
-║                                                          ║
-║ ─────────────────────────────────────────────────────    ║
-║  5. CAMBIAR TUS NÚMEROS de WhatsApp                      ║
-║  ─────────────────────────────────────────────────────   ║
-║  Buscá: 5491168461457  y  5493875104606                  ║
-║  El formato es: 54 + código de área sin 0 + número       ║
-║  Buenos Aires: 54 + 11 + número sin 15                   ║
-║  Interior: 54 + 387 + número sin 15                      ║
-║                                                          ║
-║ ─────────────────────────────────────────────────────    ║
-║  6. CAMBIAR COLORES                                      ║
-║  ─────────────────────────────────────────────────────   ║
-║  Al principio del CSS encontrás:                         ║
-║  :root { --cyan: #00C8FF; --pink: #FF0099; }             ║
-║  Cambiá los valores hex por el color que quieras.        ║
-║                                                          ║
-║ ─────────────────────────────────────────────────────    ║
-║  7. PUBLICAR EN NETLIFY (GRATIS — en 2 minutos)          ║
-║  ─────────────────────────────────────────────────────   ║
-║  a) Guardá el archivo como  index.html                   ║
-║  b) Entrá a  app.netlify.com/drop                        ║
-║  c) Arrastrá el archivo  index.html  a la pantalla       ║
-║  d) En segundos tenés una URL pública:                   ║
-║     https://nombre-aleatorio.netlify.app                 ║
-║                                                          ║
-║  Para dominio propio (maxupsuplementos.com.ar):          ║
-║  Netlify → Sites → tu sitio → Domain settings           ║
-║                                                          ║
-║ ─────────────────────────────────────────────────────    ║
-║  8. PUBLICAR EN VERCEL                                   ║
-║  ─────────────────────────────────────────────────────   ║
-║  a) Creá carpeta con index.html adentro                  ║
-║  b) npm install -g vercel                                ║
-║  c) vercel  (desde la carpeta)                           ║
-║  d) Seguí los pasos → URL lista en 30 segundos           ║
-║                                                          ║
-╚════════════
+// ══════════════════════════════════════════════════════════
+// INDUMENTARIA
+// ══════════════════════════════════════════════════════════
+var INDUM_PRODS = [{"nombre": "Short Con Lineas Blancas Suplex","color": "AZUL MARINO","precio": 15000,"stock": 1,"cat": "Short"},{"nombre": "Catsuit Largo Liso Con Lineas Nue - M","color": "NEGRO","precio": 23000,"stock": 1,"cat": "Catsuit"},{"nombre": "Calza con faja L","color": "LILA","precio": 18000,"stock": 1,"cat": "Calza"},{"nombre": "Calza rasgada 2XL-3XL","color": "ROSADO","precio": 17000,"stock": 1,"cat": "Calza"},{"nombre": "Short Batik S-M","color": "FUCSIA","precio": 9000,"stock": 1,"cat": "Short"},{"nombre": "Calza Prelavada Total Black con cierreS-M","color": "NEGRO","precio": 18000,"stock": 2,"cat": "Calza"},{"nombre": "Calza Prelavada Total Black con cierreL-XL","color": "NEGRO","precio": 18000,"stock": 2,"cat": "Calza"},{"nombre": "Short Batik L-XL","color": "AZUL","precio": 9000,"stock": 1,"cat": "Short"},{"nombre": "Short Liso M","color": "FUCSIA","precio": 7000,"stock": 1,"cat": "Short"},{"nombre": "Short Liso XL","color": "MORADO","precio": 7000,"stock": 1,"cat": "Short"},{"nombre": "Calza Larga Degrade con Red - S","color": "ROSADO - LILA","precio": 17000,"stock": 1,"cat": "Calza"},{"nombre": "Calza Larga Degrade con Red - M","color": "NARANJA - AMARILLO","precio": 17000,"stock": 1,"cat": "Calza"},{"nombre": "Calza degrade S-M","color": "MORADO/CELESTE","precio": 22000,"stock": 1,"cat": "Calza"},{"nombre": "Calza Batik detalle en ambas piernas S-M","color": "MARRON CLARO","precio": 17000,"stock": 1,"cat": "Calza"},{"nombre": "Calza Batik detalle en ambas piernas L-XL","color": "MORADO","precio": 17000,"stock": 1,"cat": "Calza"},{"nombre": "Calza Batik detalle a una pierna S-M","color": "VERDE MANZANA","precio": 17000,"stock": 1,"cat": "Calza"},{"nombre": "Calza Batik detalle a una pierna L-XL","color": "FUCSIA","precio": 17000,"stock": 1,"cat": "Calza"},{"nombre": "Short ruche frontal S-M","color": "CELESTE","precio": 13000,"stock": 1,"cat": "Short"},{"nombre": "Short ruche frontal L-XL","color": "VERDE MANZANA","precio": 13000,"stock": 1,"cat": "Short"},{"nombre": "Calza Corta Prelavada S/M","color": "ROSADO","precio": 10000,"stock": 1,"cat": "Short"},{"nombre": "Calza Prelavada Total Black S-M","color": "NEGRO","precio": 18000,"stock": 2,"cat": "Calza"},{"nombre": "Calza Prelavada Total Black L-XL","color": "NEGRO","precio": 18000,"stock": 1,"cat": "Calza"},{"nombre": "Calza Oxford L-XL","color": "ROSA CHICLE","precio": 17000,"stock": 1,"cat": "Calza"},{"nombre": "Short a Rayas L","color": "CHOCOLATE","precio": 7500,"stock": 1,"cat": "Short"},{"nombre": "Conjunto detalle lateral S/M","color": "MARRON","precio": 20000,"stock": 1,"cat": "Conjunto"},{"nombre": "Conjunto detalle lateral L-XL","color": "AZUL","precio": 20000,"stock": 1,"cat": "Conjunto"},{"nombre": "Short Prelavado con red a los costados - S-M","color": "LILA","precio": 9000,"stock": 1,"cat": "Short"},{"nombre": "Short Prelavado con red a los costados - L-XL","color": "CHOCOLATE","precio": 9000,"stock": 2,"cat": "Short"},{"nombre": "Catsuit S-M","color": "AZUL DENIM","precio": 19000,"stock": 1,"cat": "Catsuit"},{"nombre": "Catsuit L-XL","color": "AZUL DENIM","precio": 19000,"stock": 1,"cat": "Catsuit"},{"nombre": "Catsuit S-M","color": "AZUL","precio": 18000,"stock": 1,"cat": "Catsuit"},{"nombre": "Catsuit L-XL","color": "VERDE OLIVA","precio": 18000,"stock": 1,"cat": "Catsuit"},{"nombre": "Conjunto S-M","color": "MANTECA","precio": 22000,"stock": 1,"cat": "Conjunto"},{"nombre": "Conjunto L-XL","color": "LILA","precio": 22000,"stock": 1,"cat": "Conjunto"},{"nombre": "Conjunto S-M","color": "FUCSIA","precio": 22500,"stock": 1,"cat": "Conjunto"},{"nombre": "Conjunto L-XL","color": "ROJO","precio": 22500,"stock": 1,"cat": "Conjunto"},{"nombre": "Catsuit Corto Taza Definida S-M","color": "LILA","precio": 19500,"stock": 1,"cat": "Catsuit"},{"nombre": "Catsuit Corto Taza Definida L-XL","color": "NEGRO","precio": 19500,"stock": 2,"cat": "Catsuit"},{"nombre": "Conjunto Corto S-M","color": "CHOCOLATE","precio": 22000,"stock": 1,"cat": "Conjunto"},{"nombre": "Conjunto Corto L-XL","color": "BEIGE","precio": 22000,"stock": 1,"cat": "Conjunto"},{"nombre": "Catsuit Corto Relieve - L-XL","color": "LILA","precio": 19500,"stock": 1,"cat": "Catsuit"},{"nombre": "Catsuit Corto Cierre al Frente L-XL","color": "NEGRO","precio": 20000,"stock": 1,"cat": "Catsuit"},{"nombre": "Top Morley S-M","color": "VERDE OLIVA","precio": 12000,"stock": 1,"cat": "Top/Musculosa"},{"nombre": "Top Morley L-XL","color": "NEGRO","precio": 12000,"stock": 2,"cat": "Top/Musculosa"},{"nombre": "Calza Corta Prelavada S/M","color": "NEGRO","precio": 10000,"stock": 1,"cat": "Short"},{"nombre": "Short Nuevo S-M","color": "CHOCOLATE","precio": 10000,"stock": 1,"cat": "Short"},{"nombre": "Short Nuevo L-XL","color": "FUCSIA","precio": 10000,"stock": 1,"cat": "Short"},{"nombre": "Short con relieve S-M","color": "CELESTE","precio": 9000,"stock": 1,"cat": "Short"},{"nombre": "Short con relieve L-XL","color": "AZUL CELESTE","precio": 9000,"stock": 1,"cat": "Short"},{"nombre": "Catsuit Corto Taza Blanca S-M","color": "CELESTE","precio": 19500,"stock": 1,"cat": "Catsuit"},{"nombre": "Catsuit Corto Taza Blanca L-XL","color": "CELESTE","precio": 19500,"stock": 1,"cat": "Catsuit"},{"nombre": "Biker Batik M","color": "NARANJA","precio": 7500,"stock": 1,"cat": "Otros"},{"nombre": "Short Batik Detalle L","color": "LILA","precio": 9000,"stock": 3,"cat": "Short"},{"nombre": "Short Batik Detalle XL","color": "VERDE AGUA","precio": 9000,"stock": 4,"cat": "Short"},{"nombre": "Short Batik Tigre - M","color": "BLANCO","precio": 7000,"stock": 1,"cat": "Short"},{"nombre": "Short Batik Tigre - L","color": "BLANCO","precio": 7000,"stock": 1,"cat": "Short"},{"nombre": "Short Corto Sin Frunce - M","color": "NEGRO","precio": 9000,"stock": 1,"cat": "Short"},{"nombre": "Short Corto Sin Frunce - L","color": "NEGRO","precio": 9000,"stock": 2,"cat": "Short"},{"nombre": "Short Corto Sin Frunce - XL","color": "VERDE AGUA","precio": 9000,"stock": 1,"cat": "Short"},{"nombre": "Catsuit Corto Prelavado - S","color": "CELESTE","precio": 19000,"stock": 1,"cat": "Catsuit"},{"nombre": "Catsuit Corto Prelavado - M","color": "NEGRO","precio": 19000,"stock": 1,"cat": "Catsuit"},{"nombre": "Catsuit Corto Prelavado - L","color": "BORDO","precio": 19000,"stock": 1,"cat": "Catsuit"},{"nombre": "Short Linea Blanca M","color": "VERDE","precio": 11000,"stock": 1,"cat": "Short"},{"nombre": "Short c/Cordel BATIK S","color": "VERDE","precio": 12000,"stock": 1,"cat": "Short"},{"nombre": "Short c/Cordel DEGRADÉ S","color": "AZUL/NEGRO","precio": 12000,"stock": 1,"cat": "Short"},{"nombre": "Conjunto Corto Morly - S","color": "NEGRO","precio": 20000,"stock": 1,"cat": "Conjunto"},{"nombre": "Conjunto Corto Morly - L","color": "AZUL","precio": 20000,"stock": 1,"cat": "Conjunto"},{"nombre": "Catsuit Largo Oxford - S","color": "NEGRO","precio": 24000,"stock": 1,"cat": "Catsuit"},{"nombre": "Catsuit Largo Oxford - M","color": "CHOCOLATE","precio": 24000,"stock": 1,"cat": "Catsuit"},{"nombre": "Short Prelavado S-M","color": "NEGRO","precio": 10000,"stock": 1,"cat": "Short"},{"nombre": "Short Morley Cruzado L-XL","color": "ROSADO","precio": 9000,"stock": 2,"cat": "Short"},{"nombre": "Catsuit Largo Linea Blanca - S","color": "NEGRO","precio": 22000,"stock": 1,"cat": "Catsuit"},{"nombre": "Catsuit Largo Linea Blanca - M","color": "NEGRO","precio": 22000,"stock": 2,"cat": "Catsuit"},{"nombre": "Catsuit Largo Linea Blanca - L","color": "NEGRO","precio": 22000,"stock": 2,"cat": "Catsuit"},{"nombre": "Conjunto S","color": "LILA","precio": 26000,"stock": 1,"cat": "Conjunto"},{"nombre": "Calza Larga Sin Frunce S","color": "NEGRO","precio": 18000,"stock": 1,"cat": "Calza"},{"nombre": "Calza Larga Sin Frunce L","color": "NEGRO","precio": 18000,"stock": 1,"cat": "Calza"},{"nombre": "Catsuit Corto Con Manga - S","color": "VERDE OLIVA","precio": 19500,"stock": 1,"cat": "Catsuit"},{"nombre": "Catsuit Corto Con Manga - L","color": "CHOCOLATE","precio": 19500,"stock": 1,"cat": "Catsuit"},{"nombre": "Conjunto Largo Liso - S","color": "NARANJA","precio": 15000,"stock": 1,"cat": "Conjunto"},{"nombre": "Conjunto Largo Liso - M","color": "VERDE","precio": 15000,"stock": 1,"cat": "Conjunto"},{"nombre": "Conjunto Largo Liso - L","color": "NARANJA","precio": 15000,"stock": 1,"cat": "Conjunto"},{"nombre": "Conjunto Largo Liso - XL","color": "VERDE","precio": 15000,"stock": 1,"cat": "Conjunto"},{"nombre": "Calza Larga Degrade M","color": "NEGRO/CELESTE","precio": 17000,"stock": 1,"cat": "Calza"},{"nombre": "Calza Oxford ZARA - M","color": "NEGRO","precio": 12000,"stock": 1,"cat": "Calza"},{"nombre": "Top Deportivo NEON M","color": "VERDE NEON","precio": 9500,"stock": 1,"cat": "Top/Musculosa"},{"nombre": "Short Liso Frente V - M","color": "NEGRO","precio": 15000,"stock": 1,"cat": "Short"},{"nombre": "Short Liso Frente V - L","color": "NEGRO","precio": 15000,"stock": 1,"cat": "Short"},{"nombre": "Short Liso Frente V - XL","color": "NEGRO","precio": 15000,"stock": 1,"cat": "Short"},{"nombre": "Short Faja Condon M-XL","color": "CORAL","precio": 13000,"stock": 1,"cat": "Short"},{"nombre": "Calza Prelavada S-M","color": "NEGRO","precio": 15000,"stock": 1,"cat": "Calza"},{"nombre": "Calza Larga Sin Frunce Bolsillo Lateral M-L","color": "NEGRO","precio": 13000,"stock": 1,"cat": "Calza"},{"nombre": "Calza Larga Sin Frunce Bolsillo Lateral XL-XXL","color": "NEGRO","precio": 13000,"stock": 1,"cat": "Calza"},{"nombre": "Conjunto Corto Short Pollera S-M","color": "AZUL","precio": 30000,"stock": 1,"cat": "Short"},{"nombre": "Conjunto Corto Short Pollera M-L","color": "GRIS","precio": 30000,"stock": 1,"cat": "Short"},{"nombre": "Remerón Superpoderosas","color": "NEGRO","precio": 11000,"stock": 1,"cat": "Otros"},{"nombre": "Remerón Bellota","color": "BORDÓ","precio": 11000,"stock": 1,"cat": "Otros"},{"nombre": "Remerón Tinkerbell","color": "CELESTE","precio": 11000,"stock": 1,"cat": "Otros"},{"nombre": "Remerón Burbuja","color": "CHOCOLATE","precio": 11000,"stock": 1,"cat": "Otros"},{"nombre": "Remerón Poderosa Modificada","color": "ROJO","precio": 11000,"stock": 1,"cat": "Otros"},{"nombre": "Remerón Lola","color": "BLANCO","precio": 11000,"stock": 1,"cat": "Otros"},{"nombre": "Remerón Hamptoms","color": "NEGRO","precio": 9500,"stock": 1,"cat": "Otros"},{"nombre": "Remerón Alo","color": "CHOCOLATE","precio": 8000,"stock": 1,"cat": "Otros"},{"nombre": "Crop Top BOSTON","color": "BLANCO","precio": 6500,"stock": 1,"cat": "Top/Musculosa"},{"nombre": "Crop Top SuperPoderosas","color": "NEGRO","precio": 7000,"stock": 2,"cat": "Top/Musculosa"},{"nombre": "Crop Top Alo","color": "CHOCOLATE","precio": 6000,"stock": 1,"cat": "Top/Musculosa"},{"nombre": "Top Liso","color": "LILA","precio": 4500,"stock": 1,"cat": "Top/Musculosa"},{"nombre": "Top Deportivo L","color": "NEGRO","precio": 9500,"stock": 1,"cat": "Top/Musculosa"},{"nombre": "Top Deportivo M","color": "AMARILLO","precio": 9500,"stock": 1,"cat": "Top/Musculosa"},{"nombre": "Musculosa Alo T/U","color": "NEGRO","precio": 5500,"stock": 2,"cat": "Top/Musculosa"},{"nombre": "Top Deportivo Follow me 3-4","color": "ROSA","precio": 5000,"stock": 1,"cat": "Top/Musculosa"},{"nombre": "Top Deportivo Follow me 3-4","color": "AZUL","precio": 5000,"stock": 1,"cat": "Top/Musculosa"},{"nombre": "Calza Larga Lycra 1","color": "ROSA","precio": 12000,"stock": 1,"cat": "Calza"},{"nombre": "Calza Larga Lycra 3","color": "NARANJA","precio": 12000,"stock": 1,"cat": "Calza"},{"nombre": "Short Pollera S","color": "NEGRO","precio": 10000,"stock": 1,"cat": "Short"},{"nombre": "Short Pollera XL","color": "NEGRO","precio": 10000,"stock": 1,"cat": "Short"},{"nombre": "Medias 3/4","color": "","precio": 2500,"stock": 39,"cat": "Otros"},{"nombre": "Set de Toallas 3 piezas","color": "AZUL","precio": 13000,"stock": 1,"cat": "Otros"}]; // fallback estático
+var indumCatActiva = 'all';
+var indumCargado = false;
 
-</body>
-</html>
+function colorDot(color) {
+  var mapa = {
+    'NEGRO':'#333','BLANCO':'#eee','ROJO':'#e53','ROSA':'#f4a','ROSADO':'#f4a',
+    'FUCSIA':'#f06','LILA':'#b8f','VIOLETA':'#96f','MORADO':'#73c',
+    'AZUL':'#38f','CELESTE':'#5cf','VERDE':'#4c8','VERDE LIMA':'#9f0',
+    'VERDE MANZANA':'#7d0','NARANJA':'#f80','AMARILLO':'#fe0',
+    'TURQUESA':'#0cd','MARRON':'#964','GRIS':'#888','BEIGE':'#d9c'
+  };
+  var cu = color.toUpperCase();
+  for (var k in mapa) { if (cu.indexOf(k) >= 0) return mapa[k]; }
+  return '#888';
+}
+
+function renderIndum() {
+  var grid = document.getElementById('indumGrid');
+  if (!grid) return;
+  var filtrados = indumCatActiva === 'all'
+    ? INDUM_PRODS
+    : INDUM_PRODS.filter(function(p) { return p.cat === indumCatActiva; });
+
+  if (filtrados.length === 0) {
+    grid.innerHTML = '<p style="color:#888;padding:20px">No hay prendas en esta categoría con stock.</p>';
+    return;
+  }
+
+  grid.innerHTML = filtrados.map(function(p) {
+    var dot = colorDot(p.color);
+    var stockLabel = p.stock === 1 ? '¡Última unidad!' : p.stock + ' disponibles';
+    var stockClass = p.stock === 1 ? 'last' : 'ok';
+    var imgHtml = p.img
+      ? '<div class="indum-img"><img src="' + p.img + '" alt="' + p.nombre + '" loading="lazy" onerror="this.parentElement.style.display='none'"></div>'
+      : '<div class="indum-img indum-no-img"><span>👕</span></div>';
+    return '<div class="indum-card">' +
+      imgHtml +
+      '<div class="indum-body">' +
+      '<div class="indum-cat">' + p.cat + '</div>' +
+      '<div class="indum-nombre">' + p.nombre + '</div>' +
+      '<div class="indum-color" style="--dot-color:' + dot + '">' + p.color + '</div>' +
+      '<div class="indum-precios">' +
+        '<div class="indum-precio">$' + p.precio.toLocaleString('es-AR') + '</div>' +
+        '<div class="indum-precio-tarjeta">Tarjeta $' + (p.precio_lista || Math.round(p.precio*1.06)).toLocaleString('es-AR') + '</div>' +
+      '</div>' +
+      '<div class="indum-stock ' + stockClass + '">' + stockLabel + '</div>' +
+      '<button class="indum-wa-btn" onclick="consultarIndum(this)" data-nombre="' + p.nombre.replace(/"/g,"'") + '" data-color="' + p.color + '" data-precio="' + p.precio + '">📲 CONSULTAR</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function filtrarIndum(cat) {
+  indumCatActiva = cat;
+  document.querySelectorAll('.indum-filtro').forEach(function(btn) {
+    btn.classList.toggle('activo', btn.textContent.trim() === (cat === 'all' ? 'Todos' : cat));
+  });
+  renderIndum();
+}
+
+function consultarIndum(btn) {
+  var nombre = btn.getAttribute('data-nombre');
+  var color  = btn.getAttribute('data-color');
+  var precio = btn.getAttribute('data-precio');
+  var msg = encodeURIComponent(
+    'Hola MAXUP! Me interesa:\n' +
+    '👕 ' + nombre + '\n' +
+    '🎨 Color: ' + color + '\n' +
+    '💰 Precio: $' + Number(precio).toLocaleString('es-AR') + '\n\n' +
+    '¿Está disponible?'
+  );
+  window.open('https://wa.me/5491168461457?text=' + msg, '_blank');
+}
+
+// Cargar desde Sheets en tiempo real
+async function cargarIndumentariaSheets() {
+  try {
+    var res = await fetch(API_URL + '?accion=indumentaria');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    if (data.ok && data.prendas && data.prendas.length > 0) {
+      INDUM_PRODS = data.prendas;
+      renderIndum();
+      console.log('✅ Indumentaria desde Sheets:', data.total, 'prendas');
+    }
+  } catch(err) {
+    console.warn('Indumentaria: usando datos locales.', err.message);
+  }
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+  renderIndum();
+  setTimeout(cargarIndumentariaSheets, 3000);
+});
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  renderIndum();
+  setTimeout(cargarIndumentariaSheets, 3000);
+}>
