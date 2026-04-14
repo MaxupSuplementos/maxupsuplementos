@@ -743,9 +743,8 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <li><a href="#recomendador">Recomendación</a></li>
     <li><a href="salud.html" style="color:var(--green)">🏥 Salud</a></li>
     <li><a href="mayorista.html" style="color:#FFB800">🏭 Mayoristas</a></li>
-    <li><a href="#nosotros">Nosotros</a></li>
+    <li><a href="#indumentaria">👕 Indumentaria</a></li>
     <li><a href="#liquidaciones" style="color:#FF0099" onclick="mostrarLiquidaciones()">🔥 Ofertas</a></li>
-    <li><a href="https://wa.me/5491168461457" target="_blank" class="nav-cta nav-wa">📲 WhatsApp</a></li>
   </ul>
 </nav>
 
@@ -4443,6 +4442,8 @@ var PRODUCTS_ESTATICO = PRODUCTS.slice(); // Copia estática para el comparador
 ════════════════════════════════════════════════════════ */
 let activeCat = 'all';
 let activeSearch = '';
+let paginaActual = 1;
+const ITEMS_POR_PAGINA = 30;
 
 function fmt(n){ return '$' + n.toLocaleString('es-AR'); }
 
@@ -4576,24 +4577,67 @@ function renderAll(){
 }
 
 function applyFilters(){
-  const cards = document.querySelectorAll('.prod-card');
-  let visible = 0;
-  cards.forEach(card=>{
+  const cards = Array.from(document.querySelectorAll('.prod-card'));
+  // Filtrar
+  const visibles = cards.filter(card => {
     const matchCat = activeCat==='all' || card.dataset.cat===activeCat;
     const matchSearch = !activeSearch || card.dataset.search.includes(activeSearch);
-    const show = matchCat && matchSearch;
-    card.style.display = show ? 'flex' : 'none';
-    if(show) visible++;
+    return matchCat && matchSearch;
   });
+  // Reset página si cambió el filtro
+  const totalPags = Math.ceil(visibles.length / ITEMS_POR_PAGINA);
+  if(paginaActual > totalPags) paginaActual = 1;
+  const inicio = (paginaActual - 1) * ITEMS_POR_PAGINA;
+  const fin = inicio + ITEMS_POR_PAGINA;
+  // Mostrar/ocultar
+  cards.forEach(card => card.style.display = 'none');
+  visibles.slice(inicio, fin).forEach(card => card.style.display = 'flex');
+  // Info búsqueda
   const info = document.getElementById('searchInfo');
   const noRes = document.getElementById('noResults');
   if(activeSearch){
-    info.textContent = visible>0 ? `${visible} resultado${visible!==1?'s':''} para "${activeSearch}"` : '';
-    noRes.style.display = visible===0 ? 'block' : 'none';
+    info.textContent = visibles.length>0 ? `${visibles.length} resultado${visibles.length!==1?'s':''} para "${activeSearch}"` : '';
+    noRes.style.display = visibles.length===0 ? 'block' : 'none';
   } else {
     info.textContent = '';
     noRes.style.display = 'none';
   }
+  // Renderizar paginación
+  renderPaginacion(visibles.length);
+}
+
+function irAPagina(n){
+  paginaActual = n;
+  applyFilters();
+  document.getElementById('catalogo').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderPaginacion(total){
+  let cont = document.getElementById('paginacion');
+  if(!cont){
+    cont = document.createElement('div');
+    cont.id = 'paginacion';
+    cont.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:32px 0 16px;align-items:center';
+    const grid = document.getElementById('productsGrid');
+    grid.parentNode.insertBefore(cont, grid.nextSibling);
+  }
+  const totalPags = Math.ceil(total / ITEMS_POR_PAGINA);
+  if(totalPags <= 1){ cont.innerHTML = ''; return; }
+  let html = '';
+  // Botón anterior
+  if(paginaActual > 1)
+    html += `<button onclick="irAPagina(${paginaActual-1})" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#aaa;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.85rem">← Anterior</button>`;
+  // Páginas
+  for(let i=1; i<=totalPags; i++){
+    const activo = i===paginaActual;
+    html += `<button onclick="irAPagina(${i})" style="background:${activo?'var(--cyan)':'rgba(255,255,255,.08)'};border:1px solid ${activo?'var(--cyan)':'rgba(255,255,255,.15)'};color:${activo?'#000':'#aaa'};width:38px;height:38px;border-radius:8px;cursor:pointer;font-weight:${activo?'700':'400'};font-size:.9rem">${i}</button>`;
+  }
+  // Botón siguiente
+  if(paginaActual < totalPags)
+    html += `<button onclick="irAPagina(${paginaActual+1})" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#aaa;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.85rem">Siguiente →</button>`;
+  // Info
+  html += `<span style="color:#666;font-size:.8rem;margin-left:8px">Página ${paginaActual} de ${totalPags} · ${total} productos</span>`;
+  cont.innerHTML = html;
 }
 
 function setCat(cat){
@@ -4758,9 +4802,9 @@ function cartCount(){ return cart.reduce((s,i)=>s+i.qty,0); }
 
 // ── DESCUENTO POR MONTO ──────────────────────────────────────
 const DESCUENTOS_MONTO = [
-  { minimo: 180000, pct: 0.15, label: '15% off por compra +$180.000' },
-  { minimo: 130000, pct: 0.10, label: '10% off por compra +$130.000' },
-  { minimo:  90000, pct: 0.05, label: '5% off por compra +$90.000'  },
+  { minimo: 270000, pct: 0.15, label: '15% off por compra +$270.000' },
+  { minimo: 220000, pct: 0.10, label: '10% off por compra +$220.000' },
+  { minimo: 100000, pct: 0.05, label: '5% off por compra +$100.000'  },
 ];
 function getDescuentoMonto(total){
   for(const d of DESCUENTOS_MONTO){ if(total >= d.minimo) return d; }
@@ -10885,6 +10929,8 @@ var PRODUCTS_ESTATICO = PRODUCTS.slice(); // Copia estática para el comparador
 ════════════════════════════════════════════════════════ */
 let activeCat = 'all';
 let activeSearch = '';
+let paginaActual = 1;
+const ITEMS_POR_PAGINA = 30;
 
 function fmt(n){ return '$' + n.toLocaleString('es-AR'); }
 
@@ -11018,24 +11064,67 @@ function renderAll(){
 }
 
 function applyFilters(){
-  const cards = document.querySelectorAll('.prod-card');
-  let visible = 0;
-  cards.forEach(card=>{
+  const cards = Array.from(document.querySelectorAll('.prod-card'));
+  // Filtrar
+  const visibles = cards.filter(card => {
     const matchCat = activeCat==='all' || card.dataset.cat===activeCat;
     const matchSearch = !activeSearch || card.dataset.search.includes(activeSearch);
-    const show = matchCat && matchSearch;
-    card.style.display = show ? 'flex' : 'none';
-    if(show) visible++;
+    return matchCat && matchSearch;
   });
+  // Reset página si cambió el filtro
+  const totalPags = Math.ceil(visibles.length / ITEMS_POR_PAGINA);
+  if(paginaActual > totalPags) paginaActual = 1;
+  const inicio = (paginaActual - 1) * ITEMS_POR_PAGINA;
+  const fin = inicio + ITEMS_POR_PAGINA;
+  // Mostrar/ocultar
+  cards.forEach(card => card.style.display = 'none');
+  visibles.slice(inicio, fin).forEach(card => card.style.display = 'flex');
+  // Info búsqueda
   const info = document.getElementById('searchInfo');
   const noRes = document.getElementById('noResults');
   if(activeSearch){
-    info.textContent = visible>0 ? `${visible} resultado${visible!==1?'s':''} para "${activeSearch}"` : '';
-    noRes.style.display = visible===0 ? 'block' : 'none';
+    info.textContent = visibles.length>0 ? `${visibles.length} resultado${visibles.length!==1?'s':''} para "${activeSearch}"` : '';
+    noRes.style.display = visibles.length===0 ? 'block' : 'none';
   } else {
     info.textContent = '';
     noRes.style.display = 'none';
   }
+  // Renderizar paginación
+  renderPaginacion(visibles.length);
+}
+
+function irAPagina(n){
+  paginaActual = n;
+  applyFilters();
+  document.getElementById('catalogo').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderPaginacion(total){
+  let cont = document.getElementById('paginacion');
+  if(!cont){
+    cont = document.createElement('div');
+    cont.id = 'paginacion';
+    cont.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:32px 0 16px;align-items:center';
+    const grid = document.getElementById('productsGrid');
+    grid.parentNode.insertBefore(cont, grid.nextSibling);
+  }
+  const totalPags = Math.ceil(total / ITEMS_POR_PAGINA);
+  if(totalPags <= 1){ cont.innerHTML = ''; return; }
+  let html = '';
+  // Botón anterior
+  if(paginaActual > 1)
+    html += `<button onclick="irAPagina(${paginaActual-1})" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#aaa;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.85rem">← Anterior</button>`;
+  // Páginas
+  for(let i=1; i<=totalPags; i++){
+    const activo = i===paginaActual;
+    html += `<button onclick="irAPagina(${i})" style="background:${activo?'var(--cyan)':'rgba(255,255,255,.08)'};border:1px solid ${activo?'var(--cyan)':'rgba(255,255,255,.15)'};color:${activo?'#000':'#aaa'};width:38px;height:38px;border-radius:8px;cursor:pointer;font-weight:${activo?'700':'400'};font-size:.9rem">${i}</button>`;
+  }
+  // Botón siguiente
+  if(paginaActual < totalPags)
+    html += `<button onclick="irAPagina(${paginaActual+1})" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#aaa;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.85rem">Siguiente →</button>`;
+  // Info
+  html += `<span style="color:#666;font-size:.8rem;margin-left:8px">Página ${paginaActual} de ${totalPags} · ${total} productos</span>`;
+  cont.innerHTML = html;
 }
 
 function setCat(cat){
@@ -11200,9 +11289,9 @@ function cartCount(){ return cart.reduce((s,i)=>s+i.qty,0); }
 
 // ── DESCUENTO POR MONTO ──────────────────────────────────────
 const DESCUENTOS_MONTO = [
-  { minimo: 180000, pct: 0.15, label: '15% off por compra +$180.000' },
-  { minimo: 130000, pct: 0.10, label: '10% off por compra +$130.000' },
-  { minimo:  90000, pct: 0.05, label: '5% off por compra +$90.000'  },
+  { minimo: 270000, pct: 0.15, label: '15% off por compra +$270.000' },
+  { minimo: 220000, pct: 0.10, label: '10% off por compra +$220.000' },
+  { minimo: 100000, pct: 0.05, label: '5% off por compra +$100.000'  },
 ];
 function getDescuentoMonto(total){
   for(const d of DESCUENTOS_MONTO){ if(total >= d.minimo) return d; }
@@ -13910,12 +13999,7 @@ function aplicarFiltroPrecio() {
 // ══════════════════════════════════════════════════════════
 //  INIT — llamar todo después de que carguen los productos
 // ══════════════════════════════════════════════════════════
-// Llamada inicial garantizada
-window.addEventListener('load', function() {
-  if (typeof PRODUCTS !== 'undefined' && PRODUCTS.length > 0) {
-    renderAll();
-  }
-});
+// Llamada inicial garantizada);
 
 
 // ── Mostrar/ocultar botón scroll top ──
