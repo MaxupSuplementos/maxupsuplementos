@@ -105,8 +105,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-html{overflow-x:hidden}
-body{background:var(--dark);color:var(--white);font-family:'Rajdhani',sans-serif;overflow-x:hidden;position:relative}
+body{background:var(--dark);color:var(--white);font-family:'Rajdhani',sans-serif;position:relative}
 body::before{content:'';position:fixed;inset:0;
   background-image:linear-gradient(rgba(0,200,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,.025) 1px,transparent 1px);
   background-size:60px 60px;pointer-events:none;z-index:0}
@@ -677,9 +676,10 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 /* Scroll top */
 .scroll-top-btn{width:44px;height:44px;border-radius:50%;background:rgba(0,200,255,.15);
   border:1px solid rgba(0,200,255,.4);color:var(--cyan);font-size:1.2rem;
-  cursor:pointer;display:none;align-items:center;justify-content:center;
-  transition:all .2s;font-weight:700}
-.scroll-top-btn.visible{display:flex}
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:opacity .3s,transform .3s;font-weight:700;
+  opacity:0;pointer-events:none;transform:scale(0.7)}
+.scroll-top-btn.visible{opacity:1;pointer-events:auto;transform:scale(1)}
 .scroll-top-btn.visible{display:flex}
 .scroll-top-btn:hover{background:rgba(0,200,255,.3);transform:translateY(-3px)}
 
@@ -957,21 +957,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 </section>
 
 <!-- ── CTA ── -->
-<section class="cta-section" id="contacto">
-  <div class="cta-inner">
-    <span class="section-label">Comenzá hoy</span>
-    <h2>¿LISTO PARA DAR EL SIGUIENTE NIVEL?</h2>
-    <p>Registrate y recibí un <strong style="color:var(--cyan)">5% de descuento</strong> en tu primera compra.</p>
-    <div class="cta-form">
-      <input type="email" class="cta-input" placeholder="Tu email...">
-      <button class="btn btn-primary" onclick="showToast('¡Registrado! 🎉 Pronto te enviamos tu descuento.')">Quiero el descuento</button>
-    </div>
-    <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <a href="https://wa.me/5491168461457" target="_blank" class="btn btn-wa" style="font-size:.9rem;padding:10px 24px">📲 WhatsApp 11-68461457</a>
-      <a href="https://wa.me/5493875104606" target="_blank" class="btn btn-wa" style="font-size:.9rem;padding:10px 24px">📲 WhatsApp 387-5104606</a>
-    </div>
-  </div>
-</section>
+
 <div class="grad-line"></div>
 
 <!-- ── LIQUIDACIONES ── -->
