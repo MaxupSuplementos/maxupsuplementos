@@ -680,6 +680,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   cursor:pointer;display:none;align-items:center;justify-content:center;
   transition:all .2s;font-weight:700}
 .scroll-top-btn.visible{display:flex}
+.scroll-top-btn.visible{display:flex}
 .scroll-top-btn:hover{background:rgba(0,200,255,.3);transform:translateY(-3px)}
 
 @media(max-width:600px){
@@ -895,42 +896,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 
 <!-- ── INDUMENTARIA ── -->
 <div class="grad-line"></div>
-<section class="indum-section" id="indumentaria">
-  <div class="indum-inner">
-    <div class="section-header">
-      <span class="section-label">Ropa deportiva</span>
-      <h2 class="section-title">INDUMENTARIA</h2>
-      <p class="section-desc">Prendas deportivas de alta calidad. Consultá talles y colores disponibles.</p>
-    </div>
-    <!-- Filtros categoría -->
-    <div class="indum-filtros" id="indumFiltros">
-      <button class="indum-filtro activo" data-cat="all" onclick="filtrarIndum('all')">Todos</button>
-      <button class="indum-filtro" data-cat="Calza Corta" onclick="filtrarIndum('Calza Corta')">Calza Corta</button>
-      <button class="indum-filtro" data-cat="Calza Larga" onclick="filtrarIndum('Calza Larga')">Calza Larga</button>
-      <button class="indum-filtro" data-cat="Catsuit" onclick="filtrarIndum('Catsuit')">Catsuit</button>
-      <button class="indum-filtro" data-cat="Remera" onclick="filtrarIndum('Remera')">Remera</button>
-      <button class="indum-filtro" data-cat="Top" onclick="filtrarIndum('Top')">Top / Musculosa</button>
-      <button class="indum-filtro" data-cat="Conjunto" onclick="filtrarIndum('Conjunto')">Conjunto</button>
-      <button class="indum-filtro" data-cat="Medias" onclick="filtrarIndum('Medias')">Medias</button>
-    </div>
-    <!-- Filtros marca (se llena dinámicamente) -->
-    <div class="indum-filtros indum-filtros-marca" id="indumFiltrosMarca" style="margin-top:-8px"></div>
-    <!-- Grilla -->
-    <div class="indum-grid" id="indumGrid"></div>
-    <!-- Paginación -->
-    <div id="indumPaginacion" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:28px 0 8px;align-items:center"></div>
-    <script>
-    (function iniciarIndum(){
-      if(typeof renderIndum==='function' && typeof INDUM_PRODS!=='undefined' && INDUM_PRODS.length>0){
-        if(typeof actualizarFiltrosMarca==='function') actualizarFiltrosMarca();
-        renderIndum();
-      } else {
-        setTimeout(iniciarIndum, 80);
-      }
-    })();
-    </script>
-  </div>
-</section>
+
 
 <!-- ── TESTIMONIOS ── -->
 <section class="testim-section" id="testimonios">
@@ -6708,6 +6674,143 @@ var DB_ANALISIS = {
   carbs: '~5g por porción',
   ideal: 'Fuente de proteína + grasas saludables + energía sostenida. Snack natural.',
   ventaja: '100% natural sin agregados. Excelente relación nutricional. Versátil en cocina.',
+},
+
+// ─── NUEVOS PRODUCTOS SIN INFO ───────────────────────────────
+'sn_wh3y': {
+  tipo:'Whey Protein Concentrada + Hidrolizada', proteina:'22g por porción', carbs:'5g', grasas:'2g', calorias:'126 kcal', lactosa:'Muy baja (hidrolizada)', aminoacidos:'BCAA 5.5g, EAA completo', filtrado:'Ultrafiltración + hidrólisis parcial', absorcion:'Rápida (~45 min)', pureza:'Alta', ideal:'Ganancia muscular, post-entreno rápido', ventaja:'Sabor chocolate premium, absorción mejorada'
+},
+'sn_justwhey': {
+  tipo:'Whey Protein Concentrada', proteina:'23g por porción', carbs:'5g', grasas:'2.5g', calorias:'133 kcal', lactosa:'Moderada', aminoacidos:'BCAA 5.5g, perfil completo', filtrado:'Ultrafiltración', absorcion:'Rápida (~45 min)', pureza:'Alta', ideal:'Ganancia muscular, recuperación', ventaja:'Excelente relación precio/calidad Star Nutrition'
+},
+'wo_creat': {
+  tipo:'Creatina Monohidrato pura', proteina:'0g', carbs:'0g', grasas:'0g', calorias:'0 kcal', pureza:'Monohidrato 99.9%', dosis:'3–5g diarios', mecanismo:'Recarga de ATP en músculo', efectos:'Fuerza, volumen muscular, recuperación', cuando:'Pre o post entreno con agua', ideal:'Fuerza y potencia muscular', ventaja:'Sin sabor, compatible con cualquier stack'
+},
+'wo_resv': {
+  tipo:'Antioxidante / Longevidad', composicion:'Trans-resveratrol 500mg', mecanismo:'Activa sirtuínas, antiinflamatorio potente', efectos:'Antioxidante, salud cardiovascular, anti-aging', cuando:'Con comida, preferentemente mañana', aditivos:'Mínimos', ideal:'Salud cardiovascular, recuperación celular', ventaja:'Fórmula by Pampita, alta concentración'
+},
+'ena_100whey': {
+  tipo:'Whey Protein Concentrada 80%', proteina:'22g por porción', carbs:'4g', grasas:'2g', calorias:'120 kcal', lactosa:'Moderada', aminoacidos:'BCAA 5g, perfil completo', filtrado:'Ultrafiltración', absorcion:'Rápida (~45 min)', pureza:'Alta - 80% proteína', ideal:'Ganancia muscular, post-entreno', ventaja:'Marca ENA argentina, amplia disponibilidad de sabores'
+},
+'ena_glut': {
+  tipo:'L-Glutamina pura en polvo', proteina:'5g por porción (glutamina)', carbs:'0g', grasas:'0g', calorias:'20 kcal', pureza:'100% L-Glutamina micronizada', dosis:'5g post-entreno o antes de dormir', mecanismo:'Reparación muscular, salud intestinal, sistema inmune', cuando:'Post-entreno y antes de dormir', ideal:'Recuperación muscular, permeabilidad intestinal', ventaja:'Pote ergonómico, pureza farmacéutica'
+},
+'ena_multi': {
+  tipo:'Multivitamínico con Cafeína', composicion:'Vitaminas A, C, D, E, complejo B + cafeína 100mg', minerales:'Zinc, magnesio, hierro, selenio', cafeina:'100mg por comprimido', cuando:'Con desayuno, no por la tarde', ideal:'Rendimiento deportivo, energía diaria', ventaja:'Fórmula especial con cafeína para deportistas'
+},
+'ena_cafeina': {
+  tipo:'Estimulante / Termogénico', composicion:'Cafeína anhidra 200mg por cápsulas', mecanismo:'Bloquea adenosina, aumenta adrenalina y dopamina', efectos:'Energía, concentración, termogénesis leve', dosis:'1 cápsula 30-45 min antes del entreno', cafeina:'200mg por unidad', evitar:'Hipertensión, embarazo, sensibles a estimulantes', ideal:'Pre-entreno, reducción de grasa, foco mental', ventaja:'Dosis exacta y segura, sin azúcar ni colorantes'
+},
+'ena_truecol': {
+  tipo:'Whey Protein + Colágeno Hidrolizado', proteina:'20g por porción', colageno:'10g de colágeno hidrolizado', carbs:'5g', grasas:'2g', calorias:'116 kcal', cuando:'Post-entreno o entre comidas', ideal:'Mujeres activas, salud articular + masa muscular', ventaja:'Fórmula 2 en 1: proteína muscular + colágeno'
+},
+'gen_creat': {
+  tipo:'Creatina Monohidrato pura', proteina:'0g', pureza:'Monohidrato micronizado 99.9%', dosis:'3–5g diarios con líquido', mecanismo:'Recarga de ATP en músculo', efectos:'Fuerza, potencia, volumen', cuando:'Pre o post entreno', ideal:'Deportistas de fuerza y resistencia', ventaja:'Gentech: marca argentina de alta calidad'
+},
+'xtr_advanced': {
+  tipo:'Whey Protein Concentrada', proteina:'22g por porción', carbs:'5g', grasas:'2.5g', calorias:'128 kcal', lactosa:'Moderada', aminoacidos:'BCAA 5g, perfil completo', filtrado:'Ultrafiltración', absorcion:'Rápida', ideal:'Ganancia muscular, post-entreno', ventaja:'Formato 1kg económico, Xtrenght Argentina'
+},
+'xtr_whey3kg': {
+  tipo:'Whey Protein Concentrada - Granel', proteina:'22g por porción', carbs:'5g', grasas:'2.5g', calorias:'128 kcal', lactosa:'Moderada', aminoacidos:'BCAA 5g', filtrado:'Ultrafiltración', absorcion:'Rápida', ideal:'Atletas con alto consumo proteico', ventaja:'Mayor volumen = mejor precio por kilo, Xtrenght'
+},
+'xtr_bcaapro': {
+  tipo:'BCAA en cápsulas 2:1:1', composicion:'Leucina 500mg, Isoleucina 250mg, Valina 250mg por cápsula', leucina:'500mg', total:'1000mg BCAAs por cápsulas', dosis:'4-6 cápsulas por día', cuando:'Peri-entreno o entre comidas', ideal:'Preservación muscular, recuperación', ventaja:'Práctico sin sabor, fácil dosificación'
+},
+'xtr_bcaahydro': {
+  tipo:'BCAA hidratación 2:1:1 + electrolitos', composicion:'BCAAs 7g + Na, K, Mg por porción', leucina:'3.5g', total:'7g BCAAs por porción', aminoacidos:'Leucina + Isoleucina + Valina', cuando:'Durante y post-entreno', ideal:'Deportes de resistencia, hidratación muscular', ventaja:'Combina BCAAs con electrolitos, sabor Blue Razz'
+},
+'xtr_no': {
+  tipo:'Óxido Nítrico / Booster de Bomba', composicion:'L-Arginina 3g, L-Citrulina 2g, extractos vasodilatadores', citrulina:'2g', dosis:'3-4 cápsulas 30-45 min antes del entreno', mecanismo:'Vasodilatación, mayor flujo sanguíneo al músculo', efectos:'Pump muscular, resistencia, recuperación', ideal:'Entrenamiento de fuerza, mayor congestión', ventaja:'Fórmula completa en cápsulas, 180 unidades'
+},
+'gn_bcaa': {
+  tipo:'BCAA en comprimidos 2:1:1', composicion:'Leucina 400mg, Isoleucina 200mg, Valina 200mg por 2 comprimidos', leucina:'400mg por 2 comp.', total:'800mg BCAAs por toma', dosis:'4-6 comprimidos/día', cuando:'Peri-entreno', ideal:'Mantenimiento muscular en déficit calórico', ventaja:'Gold Nutrition, comprimidos convenientes'
+},
+'gn_zma': {
+  tipo:'Recuperación hormonal / Sueño', composicion:'Zinc 30mg, Magnesio 450mg, Vitamina B6 10.5mg', zinc:'30mg', magnesio:'450mg', b6:'10.5mg', dosis:'3 cápsulas antes de dormir con el estómago vacío', mecanismo:'Optimiza testosterona, mejora sueño profundo', cuando:'30-60 min antes de dormir', ideal:'Recuperación nocturna, deportistas con déficit mineral', ventaja:'Gold Nutrition, dosis clínica de 60 servicios'
+},
+'gn_vitamin': {
+  tipo:'Multivitamínico deportivo', composicion:'Vitaminas A, B, C, D, E + minerales', minerales:'Zinc, magnesio, hierro, cobre, manganeso', dosis:'1 cápsula diaria con comida', cuando:'Con desayuno', ideal:'Cobertura nutricional deportiva diaria', ventaja:'Gold Nutrition, 30 servicios de alta biodisponibilidad'
+},
+'gn_lipo_hc': {
+  tipo:'Termogénico Hardcore', composicion:'Cafeína 200mg, Sinefrina 15mg, Extracto de té verde 300mg, L-Carnitina 200mg', cafeina:'200mg', dosis:'1-2 cápsulas en ayunas o pre-entreno', mecanismo:'Termogénesis, liberación de ácidos grasos, supresión apetito', efectos:'Quema de grasa intensa, energía, foco', evitar:'Hipertensión, cardiopatías, sensibles a estimulantes', ideal:'Definición muscular acelerada', ventaja:'Fórmula hardcore para usuarios avanzados'
+},
+'gn_omega3': {
+  tipo:'Ácidos grasos esenciales Omega-3', composicion:'Fish Oil 1000mg por cápsula, EPA+DHA', epa_dha:'300mg totales EPA+DHA por cápsula', dosis:'2-3 cápsulas con comidas', cuando:'Con comidas para evitar reflujo', ideal:'Salud cardiovascular, antiinflamatorio, articulaciones', ventaja:'Gold Nutrition, 30 servicios, purificado de mercurio'
+},
+'gn_hmb': {
+  tipo:'Anticatabólico / Recuperación', composicion:'HMB (Beta-Hidroxi Beta-Metilbutirato) 1000mg por cápsula', dosis:'2-3 cápsulas/día en fases de definición', mecanismo:'Reduce degradación proteica muscular', efectos:'Preserva músculo en déficit calórico, acelera recuperación', cuando:'Con comidas', ideal:'Deportistas en definición o con alta intensidad', ventaja:'Gold Nutrition, 60 cápsulas, compuesto de leucina'
+},
+'gn_no': {
+  tipo:'Óxido Nítrico en polvo', composicion:'L-Arginina 3g, L-Citrulina 2g, extractos termogénicos', citrulina:'2g', dosis:'1 porción en 150ml de agua pre-entreno', mecanismo:'Vasodilatación, mejor flujo sanguíneo', efectos:'Pump, resistencia, recuperación', ideal:'Entrenamiento de fuerza, mayor congestión muscular', ventaja:'Formato polvo para mayor biodisnibilidad, 195g'
+},
+'lap_omega3': {
+  tipo:'Omega 3-6-9 completo', composicion:'Omega 3 (EPA+DHA) + Omega 6 (GLA) + Omega 9 (ácido oleico)', epa_dha:'360mg EPA+DHA por cápsula', dosis:'2 cápsulas con comida', cuando:'Con comidas', ideal:'Salud cardiovascular completa, equilibrio inflamatorio', ventaja:'LAPPIEL: cobertura triple de ácidos grasos esenciales'
+},
+'mer_proper': {
+  tipo:'Whey Protein Performance 80%', proteina:'22g por porción', carbs:'4g', grasas:'2g', calorias:'120 kcal', lactosa:'Moderada', filtrado:'Ultrafiltración', absorcion:'Rápida', ideal:'Ganancia muscular, post-entreno', ventaja:'Mervick, marca argentina de calidad y precio competitivo'
+},
+'mer_gainer': {
+  tipo:'Mass Gainer hipercalórico', proteina:'30g por porción de 150g', carbs:'75g', grasas:'5g', calorias:'460 kcal', aminoacidos:'BCAA 6g incluidos', dosis:'1 porción en 400ml de leche post-entreno', cuando:'Post-entreno o entre comidas para ganar masa', ideal:'Personas con dificultad para subir de peso (hardgainers)', ventaja:'Mervick: fórmula argentina, sabor vainilla premium'
+},
+'mer_col': {
+  tipo:'Colágeno hidrolizado deportivo', colageno:'10g por porción', composicion:'Colágeno tipo I y II + Vitamina C', dosis:'1 porción en agua post-entreno', cuando:'Post-entreno o con desayuno', ideal:'Recuperación articular, tendones, piel', ventaja:'Mervick Sport, formato 330g con buena disolución'
+},
+'mer_creat': {
+  tipo:'Creatina Monohidrato pura', proteina:'0g', pureza:'Monohidrato 99.9%', dosis:'5g diarios', mecanismo:'Recarga ATP, hidratación muscular', efectos:'Fuerza, potencia, volumen', cuando:'Pre o post entreno', ideal:'Fuerza y masa muscular', ventaja:'Mervick, buena relación calidad-precio'
+},
+'idn_100whey': {
+  tipo:'Whey Protein Concentrada 80%', proteina:'24g por porción', carbs:'4g', grasas:'2g', calorias:'128 kcal', lactosa:'Moderada', filtrado:'Ultrafiltración', absorcion:'Rápida', ideal:'Ganancia muscular, recuperación', ventaja:'IDN: marca argentina con amplia distribución'
+},
+'idn_creat': {
+  tipo:'Creatina Monohidrato', proteina:'0g', pureza:'Monohidrato 99.9%', dosis:'5g diarios', mecanismo:'Recarga ATP, fuerza explosiva', efectos:'Fuerza, volumen, recuperación', ideal:'Deportes de fuerza e hipertrofia', ventaja:'IDN, formato 300g accesible'
+},
+'idn_massfusion': {
+  tipo:'Mass Gainer hipercalórico', proteina:'28g por porción', carbs:'65g', grasas:'4g', calorias:'408 kcal', aminoacidos:'BCAA incluidos', cuando:'Post-entreno o entre comidas', ideal:'Hardgainers, aumento de masa total', ventaja:'IDN Mass Fusion, 1.5kg de calidad nacional'
+},
+'idn_leucina': {
+  tipo:'L-Leucina pura', composicion:'L-Leucina 5g por porción', leucina:'5g por toma', mecanismo:'Activa directamente mTOR, síntesis proteica', efectos:'Estimulo anabólico directo, anti-catabólico', dosis:'5g pre/post entreno', ideal:'Maximizar síntesis proteica junto a proteína', ventaja:'IDN, aminoácido esencial más importante del músculo'
+},
+'idn_carnitina': {
+  tipo:'L-Carnitina líquida', composicion:'L-Carnitina base 1500mg por porción', dosis:'1 porción en 200ml de agua', cuando:'30-45 min antes del cardio o en ayunas', mecanismo:'Transporta ácidos grasos a la mitocondria para oxidación', efectos:'Oxidación de grasa, energía en cardio', ideal:'Cardio en ayunas, definición muscular', ventaja:'IDN: sabor naranja, fácil de tomar'
+},
+'idn_bcaa': {
+  tipo:'BCAA en polvo 2:1:1 Ultimate', composicion:'Leucina 3.5g, Isoleucina 1.75g, Valina 1.75g por 7g de porción', leucina:'3.5g', total:'7g BCAAs por porción', aminoacidos:'Leucina, Isoleucina, Valina + Glutamina', cuando:'Durante y post-entreno', ideal:'Preservación muscular, recuperación intensa', ventaja:'IDN: dosis generosa de 7g, 435g por pote'
+},
+'nmax_recov540': {
+  tipo:'Recuperador post-entreno', proteina:'10g por porción', carbs:'35g (dextrosa + maltodextrina)', calorias:'180 kcal', composicion:'Proteínas + carbohidratos + electrolitos', cuando:'Inmediatamente post-entreno', ideal:'Recuperación rápida de glucógeno muscular', ventaja:'Nutremax: fórmula completa para recuperación, sabor naranja'
+},
+'nmax_recov1500': {
+  tipo:'Recuperador post-entreno - Gran formato', proteina:'10g por porción', carbs:'35g', calorias:'180 kcal', cuando:'Inmediatamente post-entreno', ideal:'Atletas con alto volumen de entrenamiento', ventaja:'Nutremax: formato 1500g, mejor precio por porción'
+},
+'nmax_cafeina200': {
+  tipo:'Cafeína anhidra', composicion:'Cafeína 200mg por cápsula', cafeina:'200mg', dosis:'1 cápsula 30-45 min antes del entreno', mecanismo:'Bloquea adenosina, aumenta adrenalina', efectos:'Energía, foco, termogénesis leve', evitar:'Hipertensión, cardiopatías', ideal:'Pre-entreno, foco cognitivo', ventaja:'Nutremax: 60 servicios, sin excipientes innecesarios'
+},
+'nmax_glut': {
+  tipo:'L-Glutamina en polvo', proteina:'5g por porción', pureza:'100% L-Glutamina', dosis:'5g post-entreno o antes de dormir', mecanismo:'Repara tejido muscular, fortalece sistema inmune', cuando:'Post-entreno y antes de dormir', ideal:'Recuperación muscular intensa, salud intestinal', ventaja:'Nutremax: 200g con buena disolución'
+},
+'grg_citr': {
+  tipo:'Citrato de Magnesio', composicion:'Citrato de Magnesio 144g en polvo (~500mg por porción)', magnesio:'~100mg elemental por porción', dosis:'1 cucharada en agua antes de dormir', mecanismo:'Relajación muscular, función nerviosa, sueño', cuando:'Noche, antes de dormir', ideal:'Calambres, sueño, salud muscular y ósea', ventaja:'Granger: formato polvo con alta absorción'
+},
+'hs_zmab': {
+  tipo:'ZMA con Vitamina B complejo', composicion:'Zinc 30mg + Magnesio 450mg + Vitaminas B1,B2,B3,B6,B12', zinc:'30mg', magnesio:'450mg', b6:'B6 incluida en complejo B', dosis:'3-4 cápsulas antes de dormir', mecanismo:'Optimiza hormonas anabólicas, sueño profundo', cuando:'30-60 min antes de dormir', ideal:'Recuperación nocturna, testosterona natural', ventaja:'Hoch Sport: ZMA-B con complejo de vitaminas B'
+},
+'hs_citr400': {
+  tipo:'Citrato de Magnesio en cápsulas', composicion:'Citrato de Magnesio 400mg por cápsula', magnesio:'60mg elemental por cápsula', dosis:'2-3 cápsulas antes de dormir', mecanismo:'Relajación muscular y nerviosa, calidad de sueño', cuando:'Antes de dormir', ideal:'Calambres, ansiedad, sueño reparador', ventaja:'Hoch Sport: cápsulas convenientes de 400mg'
+},
+'hs_bioprot': {
+  tipo:'Whey Protein Concentrada Premium', proteina:'24g por porción', carbs:'3g', grasas:'2g', calorias:'124 kcal', lactosa:'Baja', filtrado:'Ultrafiltración avanzada', absorcion:'Rápida', pureza:'Alta', ideal:'Ganancia muscular de calidad', ventaja:'Hoch Sport Bio Prot Premium: calidad farmacéutica'
+},
+'hs_extreme': {
+  tipo:'Mass Gainer Extreme', proteina:'30g por porción de 150g', carbs:'80g', grasas:'4g', calorias:'468 kcal', cuando:'Post-entreno o entre comidas', ideal:'Aumento de masa muscular y peso total', ventaja:'Hoch Sport Extreme Mass: alto contenido calórico'
+},
+'nlab_bestwhey': {
+  tipo:'Whey Protein Concentrada', proteina:'22g por porción', carbs:'5g', grasas:'2g', calorias:'124 kcal', lactosa:'Moderada', filtrado:'Ultrafiltración', absorcion:'Rápida', ideal:'Ganancia muscular, post-entreno', ventaja:'Nutrilab Best Whey: marca nacional de calidad'
+},
+'pp_pea': {
+  tipo:'Proteína Vegetal Aislada de Arveja', proteina:'27g por porción', carbs:'2g', grasas:'1g', calorias:'124 kcal', lactosa:'0% - Sin lactosa', aminoacidos:'BCAA 5.5g, alto en lisina', filtrado:'Aislado por ultrafiltración', absorcion:'Media-rápida (~60 min)', ideal:'Veganos, intolerantes a lácteos, ganancia muscular', ventaja:'Protein Project: proteína vegetal de alta calidad'
+},
+'pp_creat': {
+  tipo:'Creatina Monohidrato pura', pureza:'Monohidrato 99.9%', dosis:'5g diarios', mecanismo:'Recarga ATP, fuerza y volumen', efectos:'Fuerza explosiva, recuperación', cuando:'Pre o post entreno', ideal:'Fuerza e hipertrofia muscular', ventaja:'Protein Project: formato 200g compacto y económico'
 },
 };
 
