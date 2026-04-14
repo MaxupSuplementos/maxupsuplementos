@@ -15,68 +15,78 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 .nav-links a{color:var(--gray);text-decoration:none;font-size:.84rem;font-weight:600;letter-spacing:.05em;transition:color .2s}
 .nav-links a:hover{color:var(--white)}
 .nav-links a.active{color:var(--cyan)}
-.hero{padding:48px 24px 28px;text-align:center;max-width:1400px;margin:0 auto}
-.hero-lbl{font-size:.7rem;font-weight:700;letter-spacing:.2em;color:var(--cyan);text-transform:uppercase;margin-bottom:10px}
-.hero-t{font-family:"Bebas Neue",sans-serif;font-size:clamp(2.5rem,8vw,4.5rem);letter-spacing:.06em;line-height:1;margin-bottom:10px}
-.hero-d{color:var(--gray);font-size:.9rem}
+.hero{padding:40px 24px 24px;text-align:center;max-width:1400px;margin:0 auto}
+.hero-lbl{font-size:.7rem;font-weight:700;letter-spacing:.2em;color:var(--cyan);text-transform:uppercase;margin-bottom:8px}
+.hero-t{font-family:"Bebas Neue",sans-serif;font-size:clamp(2.5rem,8vw,4.5rem);letter-spacing:.06em;line-height:1;margin-bottom:8px}
+.hero-d{color:var(--gray);font-size:.88rem}
 .wrap{max-width:1400px;margin:0 auto;padding:0 24px}
-.flbl{font-size:.68rem;font-weight:700;letter-spacing:.15em;color:var(--gray);text-transform:uppercase;margin:20px 0 8px}
-.frow{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:4px}
-.ftag{background:rgba(255,255,255,.05);border:1px solid var(--bdr);color:var(--gray);padding:6px 15px;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:"DM Sans",sans-serif}
+/* BUSQUEDA */
+.search-wrap{position:relative;margin:20px 0 0}
+.search-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--gray);fill:none;stroke-width:2;pointer-events:none}
+.search-input{width:100%;background:var(--s1);border:1px solid var(--bdr);border-radius:10px;padding:11px 14px 11px 40px;color:var(--white);font-size:.88rem;font-family:"DM Sans",sans-serif;outline:none;transition:border-color .2s}
+.search-input:focus{border-color:var(--cyan)}
+.search-input::placeholder{color:#444}
+/* FILTROS */
+.flbl{font-size:.67rem;font-weight:700;letter-spacing:.15em;color:var(--gray);text-transform:uppercase;margin:18px 0 7px}
+.frow{display:flex;flex-wrap:wrap;gap:7px}
+.ftag{background:rgba(255,255,255,.05);border:1px solid var(--bdr);color:var(--gray);padding:6px 14px;border-radius:20px;font-size:.77rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:"DM Sans",sans-serif}
 .ftag:hover{border-color:rgba(0,200,255,.4);color:var(--white)}
 .ftag.on{background:var(--cyan);border-color:var(--cyan);color:#000}
-.ftag.marca-on{background:rgba(255,184,0,.15);border-color:#FFB800;color:#FFB800}
-.info{color:var(--gray);font-size:.8rem;margin:14px 0 4px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-top:14px}
+.ftag.mon{background:rgba(255,184,0,.15);border-color:#FFB800;color:#FFB800}
+.info{color:var(--gray);font-size:.78rem;margin:14px 0 4px}
+/* GRID */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:13px;margin-top:12px}
 .card{background:var(--s1);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:border-color .2s,transform .2s}
 .card:hover{border-color:rgba(0,200,255,.4);transform:translateY(-2px)}
 .cimg{width:100%;aspect-ratio:1;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:2.5rem;overflow:hidden}
 .cimg img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
 .card:hover .cimg img{transform:scale(1.04)}
-.cbody{padding:12px;display:flex;flex-direction:column;gap:5px;flex:1}
-.cmarca{font-size:.64rem;font-weight:700;letter-spacing:.1em;color:#FFB800;text-transform:uppercase}
-.ccat{font-size:.64rem;font-weight:700;letter-spacing:.08em;color:var(--cyan);text-transform:uppercase}
-.cnombre{font-size:.85rem;font-weight:600;color:var(--white);line-height:1.3}
-.cprecio{font-size:1.05rem;font-weight:800;color:var(--cyan);margin-top:4px}
-.ctarjeta{font-size:.7rem;color:#555}
-.cvars{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.cpill{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#bbb;padding:2px 7px;border-radius:6px;font-size:.68rem;font-weight:600}
+.cbody{padding:11px;display:flex;flex-direction:column;gap:4px;flex:1}
+.cmarca{font-size:.63rem;font-weight:700;letter-spacing:.1em;color:#FFB800;text-transform:uppercase}
+.ccat{font-size:.63rem;font-weight:700;letter-spacing:.07em;color:var(--cyan);text-transform:uppercase}
+.cnombre{font-size:.83rem;font-weight:600;color:var(--white);line-height:1.3}
+.ccodigo{font-size:.67rem;color:#444}
+.cprecio{font-size:1rem;font-weight:800;color:var(--cyan);margin-top:3px}
+.ctarjeta{font-size:.68rem;color:#555}
+.cvars{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}
+.cpill{border:1px solid;padding:2px 6px;border-radius:5px;font-size:.66rem;font-weight:600}
 .cpill.ago{opacity:.3;text-decoration:line-through}
-.cstock{font-size:.7rem;padding:2px 8px;border-radius:10px;width:fit-content;margin-top:4px}
+.cstock{font-size:.68rem;padding:2px 7px;border-radius:10px;width:fit-content;margin-top:3px}
 .cstock.ok{background:rgba(0,255,136,.08);color:var(--green);border:1px solid rgba(0,255,136,.2)}
 .cstock.last{background:rgba(255,165,0,.1);color:#FFA500;border:1px solid rgba(255,165,0,.25)}
-.cbtn{margin-top:auto;padding:9px 10px;background:var(--grad);color:#000;border:none;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer;letter-spacing:.04em;width:100%;font-family:"DM Sans",sans-serif;transition:opacity .2s}
+.cbtn{margin-top:auto;padding:8px 10px;background:var(--grad);color:#000;border:none;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;width:100%;font-family:"DM Sans",sans-serif;transition:opacity .2s}
 .cbtn:hover{opacity:.85}
-.pagwrap{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;padding:32px 24px 20px}
-.pbtn{background:rgba(255,255,255,.07);border:1px solid var(--bdr);color:var(--gray);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.82rem;transition:all .2s;font-family:"DM Sans",sans-serif}
+/* PAG */
+.pagwrap{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;padding:28px 24px 16px}
+.pbtn{background:rgba(255,255,255,.07);border:1px solid var(--bdr);color:var(--gray);padding:7px 13px;border-radius:8px;cursor:pointer;font-size:.8rem;transition:all .2s;font-family:"DM Sans",sans-serif}
 .pbtn:hover{border-color:var(--cyan);color:var(--cyan)}
 .pbtn.on{background:var(--cyan);border-color:var(--cyan);color:#000;font-weight:700}
-.pinfo{color:#555;font-size:.78rem;margin-left:4px}
+.pinfo{color:#555;font-size:.76rem;margin-left:4px}
 .empty{text-align:center;padding:60px 24px;color:var(--gray)}
 /* MODAL */
 .mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:200;align-items:center;justify-content:center;padding:20px}
 .mbg.open{display:flex}
-.mbox{background:#141414;border:1px solid rgba(0,200,255,.2);border-radius:16px;max-width:500px;width:100%;padding:28px;position:relative;max-height:90vh;overflow-y:auto}
-.mclose{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--gray);font-size:1.3rem;cursor:pointer}
+.mbox{background:#141414;border:1px solid rgba(0,200,255,.2);border-radius:16px;max-width:500px;width:100%;padding:26px;position:relative;max-height:90vh;overflow-y:auto}
+.mclose{position:absolute;top:13px;right:15px;background:none;border:none;color:var(--gray);font-size:1.3rem;cursor:pointer;transition:color .2s}
 .mclose:hover{color:var(--white)}
-.mmarca{font-size:.68rem;font-weight:700;letter-spacing:.12em;color:#FFB800;text-transform:uppercase;margin-bottom:4px}
-.mnombre{font-family:"Bebas Neue",sans-serif;font-size:1.7rem;letter-spacing:.05em;line-height:1.1;margin-bottom:4px}
-.mcodigo{font-size:.7rem;color:#444;margin-bottom:12px}
-.mprecios{margin-bottom:18px}
-.mprecio{font-size:1.5rem;font-weight:800;color:var(--cyan)}
-.mtarjeta{font-size:.8rem;color:#555}
-.msect{font-size:.7rem;font-weight:700;letter-spacing:.13em;color:var(--gray);text-transform:uppercase;margin-bottom:8px}
-/* Selector de talle + color */
+.mmarca{font-size:.67rem;font-weight:700;letter-spacing:.12em;color:#FFB800;text-transform:uppercase;margin-bottom:3px}
+.mnombre{font-family:"Bebas Neue",sans-serif;font-size:1.65rem;letter-spacing:.05em;line-height:1.1;margin-bottom:3px}
+.mcodigo{font-size:.7rem;color:#555;margin-bottom:12px}
+.mprecios{margin-bottom:16px}
+.mprecio{font-size:1.4rem;font-weight:800;color:var(--cyan)}
+.mtarjeta{font-size:.78rem;color:#555}
+.msect{font-size:.68rem;font-weight:700;letter-spacing:.13em;color:var(--gray);text-transform:uppercase;margin-bottom:8px}
 .mtalles{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
-.mtalle{background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.12);color:var(--white);padding:8px 16px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:"DM Sans",sans-serif;display:flex;flex-direction:column;align-items:center;gap:2px}
+.mtalle{background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.1);color:var(--white);padding:10px 14px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:"DM Sans",sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:70px;text-align:center}
 .mtalle:hover{border-color:var(--cyan)}
 .mtalle.sel{background:rgba(0,200,255,.12);border-color:var(--cyan);color:var(--cyan)}
-.mtalle.ago{opacity:.3;text-decoration:line-through;cursor:not-allowed;pointer-events:none}
-.mtalle small{font-size:.65rem;color:#888;font-weight:400}
-.mwabtn{width:100%;background:var(--grad);color:#000;border:none;border-radius:10px;padding:14px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.06em;transition:opacity .2s;font-family:"DM Sans",sans-serif}
+.mtalle.ago{opacity:.28;text-decoration:line-through;cursor:not-allowed;pointer-events:none}
+.mtalle small{font-size:.62rem;color:#666;font-weight:400}
+.mtalle.sel small{color:rgba(0,200,255,.6)}
+.mwabtn{width:100%;background:var(--grad);color:#000;border:none;border-radius:10px;padding:13px;font-size:.95rem;font-weight:700;cursor:pointer;letter-spacing:.05em;transition:opacity .2s;font-family:"DM Sans",sans-serif}
 .mwabtn:hover{opacity:.88}
-.maviso{font-size:.74rem;color:#444;text-align:center;margin-top:8px}
-@media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr);gap:10px}.nav-links{display:none}}
+.maviso{font-size:.72rem;color:#444;text-align:center;margin-top:8px}
+@media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr);gap:9px}.nav-links{display:none}}
 </style>
 </head>
 <body>
@@ -89,12 +99,21 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
     <li><a href="salud.html">Salud</a></li>
   </ul>
 </nav>
+
 <div class="hero">
   <div class="hero-lbl">Ropa deportiva</div>
   <h1 class="hero-t">INDUMENTARIA</h1>
   <p class="hero-d">Elegí tu prenda, seleccioná el talle y consultá por WhatsApp.</p>
 </div>
+
 <div class="wrap">
+  <!-- BÚSQUEDA -->
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="search-input" id="searchInput" type="text" placeholder="Buscar por nombre, marca o código (#420)..." oninput="buscar(this.value)">
+  </div>
+
+  <!-- FILTROS CATEGORÍA -->
   <div class="flbl">Tipo de prenda</div>
   <div class="frow" id="fCat">
     <button class="ftag on" data-v="all" onclick="fil('cat','all')">Todos</button>
@@ -106,21 +125,27 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
     <button class="ftag" data-v="Conjunto" onclick="fil('cat','Conjunto')">Conjunto</button>
     <button class="ftag" data-v="Medias" onclick="fil('cat','Medias')">Medias</button>
   </div>
+
+  <!-- FILTROS MARCA -->
   <div class="flbl">Marca</div>
   <div class="frow" id="fMarca"></div>
+
   <div class="info" id="info"></div>
   <div class="grid" id="grid"></div>
 </div>
 <div class="pagwrap" id="pag"></div>
 
 <!-- MODAL -->
-<div class="mbg" id="mbg" onclick="cModal(event)">
+<div class="mbg" id="mbg" onclick="bgClick(event)">
   <div class="mbox">
-    <button class="mclose" onclick="cModalBtn()">&#10005;</button>
+    <button class="mclose" onclick="cModal()">&#10005;</button>
     <div class="mmarca" id="mMarca"></div>
     <div class="mnombre" id="mNombre"></div>
     <div class="mcodigo" id="mCodigo"></div>
-    <div class="mprecios"><div class="mprecio" id="mPrecio"></div><div class="mtarjeta" id="mTarjeta"></div></div>
+    <div class="mprecios">
+      <div class="mprecio" id="mPrecio"></div>
+      <div class="mtarjeta" id="mTarjeta"></div>
+    </div>
     <div class="msect">Elegí tu talle y color</div>
     <div class="mtalles" id="mTalles"></div>
     <button class="mwabtn" onclick="waConsultar()">&#128242; CONSULTAR POR WHATSAPP</button>
@@ -129,21 +154,25 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 </div>
 
 <script>
-var PRODS=[{"nombre":"Short Con Lineas Blancas Suplex","codigo":"420","precio":15000,"precio_lista":15900,"stock":1,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"Short Con Lineas Blancas Suplex","color":"AZUL MARINO","stock":1}],"img":""},{"nombre":"Catsuit Largo Liso Con Lineas Nue","codigo":"","precio":23000,"precio_lista":24380,"stock":1,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"M","color":"NEGRO","stock":1},{"talle":"L","color":"NEGRO","stock":0}],"img":""},{"nombre":"Calza con faja","codigo":"","precio":18000,"precio_lista":19080,"stock":1,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"L","color":"LILA","stock":1}],"img":""},{"nombre":"Calza rasgada","codigo":"77","precio":17000,"precio_lista":18020,"stock":1,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"VERDE PINO","stock":0},{"talle":"2XL-3XL","color":"ROSADO","stock":1}],"img":""},{"nombre":"Short Batik","codigo":"81","precio":9000,"precio_lista":9540,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"FUCSIA","stock":1},{"talle":"L-XL","color":"AZUL","stock":1},{"talle":"XXL-XXXL","color":"VERDE","stock":0}],"img":""},{"nombre":"Calza Prelavada Total Black con cierre","codigo":"117","precio":18000,"precio_lista":19080,"stock":4,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"NEGRO","stock":2},{"talle":"L-XL","color":"NEGRO","stock":2}],"img":""},{"nombre":"Short Liso","codigo":"121","precio":7000,"precio_lista":7420,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"M","color":"FUCSIA","stock":1},{"talle":"L","color":"NEGRO","stock":0},{"talle":"XL","color":"MORADO","stock":1}],"img":""},{"nombre":"Calza Larga Degrade con Red","codigo":"123","precio":17000,"precio_lista":18020,"stock":2,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S","color":"ROSADO - LILA","stock":1},{"talle":"M","color":"NARANJA - AMARILLO","stock":1}],"img":""},{"nombre":"Calza degrade","codigo":"126","precio":22000,"precio_lista":23320,"stock":1,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"MORADO/CELESTE","stock":1}],"img":""},{"nombre":"Calza Batik detalle en ambas piernas","codigo":"131","precio":17000,"precio_lista":18020,"stock":2,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"MARRON CLARO","stock":1},{"talle":"L-XL","color":"MORADO","stock":1}],"img":""},{"nombre":"Calza Batik detalle a una pierna","codigo":"132","precio":17000,"precio_lista":18020,"stock":2,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"VERDE MANZANA","stock":1},{"talle":"L-XL","color":"FUCSIA","stock":1}],"img":""},{"nombre":"Short ruche frontal","codigo":"147","precio":13000,"precio_lista":13780,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"CELESTE","stock":1},{"talle":"L-XL","color":"VERDE MANZANA","stock":1}],"img":""},{"nombre":"Calza Corta Prelavada","codigo":"148","precio":10000,"precio_lista":10600,"stock":2,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S/M","color":"ROSADO","stock":1},{"talle":"S/M","color":"NEGRO","stock":1}],"img":""},{"nombre":"Calza Prelavada Total Black","codigo":"152","precio":18000,"precio_lista":19080,"stock":3,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"NEGRO","stock":2},{"talle":"L-XL","color":"NEGRO","stock":1}],"img":""},{"nombre":"Calza Oxford","codigo":"157","precio":17000,"precio_lista":18020,"stock":1,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"LILA","stock":0},{"talle":"L-XL","color":"ROSA CHICLE","stock":1}],"img":""},{"nombre":"Short a Rayas","codigo":"173","precio":7500,"precio_lista":7950,"stock":1,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"L","color":"CHOCOLATE","stock":1}],"img":""},{"nombre":"Conjunto detalle lateral","codigo":"184","precio":20000,"precio_lista":21200,"stock":2,"cat":"Conjunto","marca":"DLIRIO","variantes":[{"talle":"S/M","color":"MARRON","stock":1},{"talle":"L-XL","color":"AZUL","stock":1}],"img":""},{"nombre":"Short Prelavado con red a los costados","codigo":"197","precio":9000,"precio_lista":9540,"stock":3,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"LILA","stock":1},{"talle":"L-XL","color":"CHOCOLATE","stock":2}],"img":""},{"nombre":"Catsuit","codigo":"212","precio":19000,"precio_lista":20140,"stock":4,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"AZUL DENIM","stock":1},{"talle":"L-XL","color":"AZUL DENIM","stock":1},{"talle":"S-M","color":"AZUL","stock":1},{"talle":"L-XL","color":"VERDE OLIVA","stock":1}],"img":""},{"nombre":"Conjunto","codigo":"220","precio":22000,"precio_lista":23320,"stock":4,"cat":"Conjunto","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"MANTECA","stock":1},{"talle":"L-XL","color":"LILA","stock":1},{"talle":"S-M","color":"FUCSIA","stock":1},{"talle":"L-XL","color":"ROJO","stock":1}],"img":""},{"nombre":"Catsuit Corto Taza Definida","codigo":"237","precio":19500,"precio_lista":20670,"stock":3,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"LILA","stock":1},{"talle":"L-XL","color":"NEGRO","stock":2}],"img":""},{"nombre":"Conjunto Corto","codigo":"247","precio":22000,"precio_lista":23320,"stock":2,"cat":"Conjunto","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"CHOCOLATE","stock":1},{"talle":"L-XL","color":"BEIGE","stock":1}],"img":""},{"nombre":"Catsuit Corto Relieve","codigo":"259","precio":19500,"precio_lista":20670,"stock":1,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"L-XL","color":"LILA","stock":1}],"img":""},{"nombre":"Catsuit Corto Cierre al Frente","codigo":"260","precio":20000,"precio_lista":21200,"stock":1,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"L-XL","color":"NEGRO","stock":1}],"img":""},{"nombre":"Top Morley","codigo":"263","precio":12000,"precio_lista":12720,"stock":3,"cat":"Top","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"VERDE OLIVA","stock":1},{"talle":"L-XL","color":"NEGRO","stock":2}],"img":""},{"nombre":"Short Nuevo","codigo":"296","precio":10000,"precio_lista":10600,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"CHOCOLATE","stock":1},{"talle":"L-XL","color":"FUCSIA","stock":1}],"img":""},{"nombre":"Short con relieve","codigo":"303-1","precio":9000,"precio_lista":9540,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"CELESTE","stock":1},{"talle":"L-XL","color":"AZUL CELESTE","stock":1}],"img":""},{"nombre":"Catsuit Corto Taza Blanca","codigo":"313","precio":19500,"precio_lista":20670,"stock":2,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"CELESTE","stock":1},{"talle":"L-XL","color":"CELESTE","stock":1}],"img":""},{"nombre":"Biker Batik","codigo":"1166","precio":7500,"precio_lista":7950,"stock":1,"cat":"Otros","marca":"DLIRIO","variantes":[{"talle":"M","color":"NARANJA","stock":1},{"talle":"L","color":"NARANJA","stock":0}],"img":""},{"nombre":"Short Batik Detalle","codigo":"1168","precio":9000,"precio_lista":9540,"stock":7,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"M","color":"NEGRO","stock":0},{"talle":"L","color":"LILA","stock":3},{"talle":"XL","color":"VERDE AGUA","stock":4}],"img":""},{"nombre":"Short Batik Tigre","codigo":"1174","precio":7000,"precio_lista":7420,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"M","color":"BLANCO","stock":1},{"talle":"L","color":"BLANCO","stock":1}],"img":""},{"nombre":"Short Corto Sin Frunce","codigo":"3380","precio":9000,"precio_lista":9540,"stock":4,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"M","color":"NEGRO","stock":1},{"talle":"L","color":"NEGRO","stock":2},{"talle":"XL","color":"VERDE AGUA","stock":1}],"img":""},{"nombre":"Catsuit Corto Prelavado","codigo":"79","precio":19000,"precio_lista":20140,"stock":3,"cat":"Catsuit","marca":"VICBLACK","variantes":[{"talle":"S","color":"CELESTE","stock":1},{"talle":"M","color":"NEGRO","stock":1},{"talle":"L","color":"BORDO","stock":1}],"img":""},{"nombre":"Short Linea Blanca","codigo":"305","precio":11000,"precio_lista":11660,"stock":1,"cat":"Calza Corta","marca":"VICBLACK","variantes":[{"talle":"S","color":"AZUL","stock":0},{"talle":"M","color":"VERDE","stock":1},{"talle":"L","color":"AZUL","stock":0}],"img":""},{"nombre":"Short c/Cordel BATIK","codigo":"392","precio":12000,"precio_lista":12720,"stock":1,"cat":"Calza Corta","marca":"VICBLACK","variantes":[{"talle":"S","color":"VERDE","stock":1}],"img":""},{"nombre":"Short c/Cordel DEGRADÉ","codigo":"491","precio":12000,"precio_lista":12720,"stock":1,"cat":"Calza Corta","marca":"VICBLACK","variantes":[{"talle":"S","color":"AZUL/NEGRO","stock":1},{"talle":"M","color":"ROSA/BLANCO","stock":0},{"talle":"L","color":"AZUL/NEGRO","stock":0}],"img":""},{"nombre":"Conjunto Corto Morly","codigo":"656","precio":20000,"precio_lista":21200,"stock":2,"cat":"Conjunto","marca":"VICBLACK","variantes":[{"talle":"S","color":"NEGRO","stock":1},{"talle":"L","color":"AZUL","stock":1}],"img":""},{"nombre":"Catsuit Largo Oxford","codigo":"666","precio":24000,"precio_lista":25440,"stock":2,"cat":"Catsuit","marca":"VICBLACK","variantes":[{"talle":"S","color":"NEGRO","stock":1},{"talle":"M","color":"CHOCOLATE","stock":1}],"img":""},{"nombre":"Short Prelavado","codigo":"818","precio":10000,"precio_lista":10600,"stock":1,"cat":"Calza Corta","marca":"VICBLACK","variantes":[{"talle":"S-M","color":"NEGRO","stock":1},{"talle":"L-XL","color":"CHOCOLATE","stock":0}],"img":""},{"nombre":"Short Morley Cruzado","codigo":"836","precio":9000,"precio_lista":9540,"stock":2,"cat":"Calza Corta","marca":"VICBLACK","variantes":[{"talle":"L-XL","color":"ROSADO","stock":2}],"img":""},{"nombre":"Catsuit Largo Linea Blanca","codigo":"856","precio":22000,"precio_lista":23320,"stock":5,"cat":"Catsuit","marca":"VICBLACK","variantes":[{"talle":"S","color":"NEGRO","stock":1},{"talle":"M","color":"NEGRO","stock":2},{"talle":"L","color":"NEGRO","stock":2}],"img":""},{"nombre":"Conjunto","codigo":"969","precio":26000,"precio_lista":27560,"stock":1,"cat":"Conjunto","marca":"VICBLACK","variantes":[{"talle":"S","color":"LILA","stock":1},{"talle":"M","color":"CHOCOLATE","stock":0},{"talle":"L","color":"NEGRO","stock":0}],"img":""},{"nombre":"Calza Larga Sin Frunce","codigo":"977","precio":18000,"precio_lista":19080,"stock":2,"cat":"Calza Larga","marca":"VICBLACK","variantes":[{"talle":"S","color":"NEGRO","stock":1},{"talle":"M","color":"NEGRO","stock":0},{"talle":"L","color":"NEGRO","stock":1}],"img":""},{"nombre":"Catsuit Corto Con Manga","codigo":"999","precio":19500,"precio_lista":20670,"stock":2,"cat":"Catsuit","marca":"VICBLACK","variantes":[{"talle":"S","color":"VERDE OLIVA","stock":1},{"talle":"L","color":"CHOCOLATE","stock":1}],"img":""},{"nombre":"Conjunto Largo Liso","codigo":"","precio":15000,"precio_lista":15900,"stock":4,"cat":"Conjunto","marca":"SHEIN","variantes":[{"talle":"S","color":"NARANJA","stock":1},{"talle":"M","color":"VERDE","stock":1},{"talle":"L","color":"NARANJA","stock":1},{"talle":"XL","color":"VERDE","stock":1}],"img":""},{"nombre":"Calza Larga Degrade","codigo":"92602","precio":17000,"precio_lista":18020,"stock":1,"cat":"Calza Larga","marca":"ZAMISINDY","variantes":[{"talle":"M","color":"NEGRO/CELESTE","stock":1}],"img":""},{"nombre":"Calza Oxford ZARA","codigo":"","precio":12000,"precio_lista":12720,"stock":1,"cat":"Calza Larga","marca":"VARIADAS SIN RUCHE","variantes":[{"talle":"M","color":"NEGRO","stock":1}],"img":""},{"nombre":"Top Deportivo NEON","codigo":"SWR-9","precio":9500,"precio_lista":10070,"stock":1,"cat":"Top","marca":"CARICIAS","variantes":[{"talle":"M","color":"VERDE NEON","stock":1}],"img":""},{"nombre":"Short Liso Frente V","codigo":"","precio":15000,"precio_lista":15900,"stock":3,"cat":"Calza Corta","marca":"CARICIAS","variantes":[{"talle":"M","color":"NEGRO","stock":1},{"talle":"L","color":"NEGRO","stock":1},{"talle":"XL","color":"NEGRO","stock":1}],"img":""},{"nombre":"Short Faja Condon","codigo":"","precio":13000,"precio_lista":13780,"stock":1,"cat":"Calza Corta","marca":"LINDA LUNA","variantes":[{"talle":"M-XL","color":"CORAL","stock":1}],"img":""},{"nombre":"Calza Prelavada","codigo":"","precio":15000,"precio_lista":15900,"stock":1,"cat":"Calza Larga","marca":"LEVICTORIAS","variantes":[{"talle":"S-M","color":"NEGRO","stock":1},{"talle":"L-XL","color":"ROSA","stock":0}],"img":""},{"nombre":"Calza Larga Sin Frunce Bolsillo Lateral","codigo":"","precio":13000,"precio_lista":13780,"stock":2,"cat":"Calza Larga","marca":"S.S.J.","variantes":[{"talle":"M-L","color":"NEGRO","stock":1},{"talle":"XL-XXL","color":"NEGRO","stock":1}],"img":""},{"nombre":"Conjunto Corto Short Pollera","codigo":"","precio":30000,"precio_lista":31800,"stock":2,"cat":"Calza Corta","marca":"","variantes":[{"talle":"S-M","color":"AZUL","stock":1},{"talle":"M-L","color":"GRIS","stock":1}],"img":""},{"nombre":"Remerón Superpoderosas","codigo":"","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Superpoderosas","color":"NEGRO","stock":1}],"img":""},{"nombre":"Remerón Bellota","codigo":"","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Bellota","color":"BORDÓ","stock":1}],"img":""},{"nombre":"Remerón Tinkerbell","codigo":"","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Tinkerbell","color":"CELESTE","stock":1}],"img":""},{"nombre":"Remerón Burbuja","codigo":"","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Burbuja","color":"CHOCOLATE","stock":1}],"img":""},{"nombre":"Remerón Poderosa Modificada","codigo":"","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Poderosa Modificada","color":"ROJO","stock":1}],"img":""},{"nombre":"Remerón Lola","codigo":"","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Lola","color":"BLANCO","stock":1}],"img":""},{"nombre":"Remerón Hamptoms","codigo":"","precio":9500,"precio_lista":10070,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Hamptoms","color":"NEGRO","stock":1}],"img":""},{"nombre":"Remerón Alo","codigo":"","precio":8000,"precio_lista":8480,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Alo","color":"CHOCOLATE","stock":1}],"img":""},{"nombre":"Crop Top BOSTON","codigo":"","precio":6500,"precio_lista":6890,"stock":1,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Crop Top BOSTON","color":"BLANCO","stock":1}],"img":""},{"nombre":"Crop Top SuperPoderosas","codigo":"","precio":7000,"precio_lista":7420,"stock":2,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Crop Top SuperPoderosas","color":"NEGRO","stock":2}],"img":""},{"nombre":"Crop Top Alo","codigo":"","precio":6000,"precio_lista":6360,"stock":1,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Crop Top Alo","color":"CHOCOLATE","stock":1}],"img":""},{"nombre":"Top Liso","codigo":"","precio":4500,"precio_lista":4770,"stock":1,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Top Liso","color":"LILA","stock":1}],"img":""},{"nombre":"Top Deportivo","codigo":"","precio":9500,"precio_lista":10070,"stock":2,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"L","color":"NEGRO","stock":1},{"talle":"M","color":"AMARILLO","stock":1}],"img":""},{"nombre":"Musculosa Alo T/U","codigo":"","precio":5500,"precio_lista":5830,"stock":2,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Musculosa Alo T/U","color":"NEGRO","stock":2}],"img":""},{"nombre":"Top Deportivo Follow me 3-4","codigo":"","precio":5000,"precio_lista":5300,"stock":2,"cat":"Top","marca":"FOLLOW ME","variantes":[{"talle":"Top Deportivo Follow me 3-4","color":"ROSA","stock":1},{"talle":"Top Deportivo Follow me 3-4","color":"AZUL","stock":1}],"img":""},{"nombre":"Calza Larga Lycra 1","codigo":"","precio":12000,"precio_lista":12720,"stock":1,"cat":"Calza Larga","marca":"FOLLOW ME","variantes":[{"talle":"Calza Larga Lycra 1","color":"ROSA","stock":1}],"img":""},{"nombre":"Calza Larga Lycra 3","codigo":"","precio":12000,"precio_lista":12720,"stock":1,"cat":"Calza Larga","marca":"FOLLOW ME","variantes":[{"talle":"Calza Larga Lycra 3","color":"NARANJA","stock":1}],"img":""},{"nombre":"Short Pollera","codigo":"","precio":10000,"precio_lista":10600,"stock":2,"cat":"Calza Corta","marca":"SIMBRA","variantes":[{"talle":"S","color":"NEGRO","stock":1},{"talle":"XL","color":"NEGRO","stock":1}],"img":""},{"nombre":"Medias 3/4","codigo":"","precio":2500,"precio_lista":2650,"stock":39,"cat":"Medias","marca":"MEDIAS","variantes":[{"talle":"Medias 3/4","color":"","stock":39}],"img":""},{"nombre":"Set de Toallas 3 piezas","codigo":"","precio":13000,"precio_lista":13780,"stock":1,"cat":"Otros","marca":"TOALLAS","variantes":[{"talle":"Set de Toallas 3 piezas","color":"AZUL","stock":1}],"img":""}];
-var catA='all',marcaA='all',pag=1,PPP=24;
-var mProd=null,mSel=null;
+var PRODS=[{"codigo":"420","nombre":"Short Con Lineas Blancas Suplex","precio":15000,"precio_lista":15900,"stock":1,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"Short Con Lineas Blancas Suplex","color":"AZUL MARINO","stock":1}],"img":""},{"codigo":"","nombre":"Catsuit Largo Liso Con Lineas Nue","precio":23000,"precio_lista":24380,"stock":1,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"M","color":"NEGRO","stock":1},{"talle":"L","color":"NEGRO","stock":0}],"img":""},{"codigo":"","nombre":"Calza con faja","precio":18000,"precio_lista":19080,"stock":1,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"L","color":"LILA","stock":1}],"img":""},{"codigo":"77","nombre":"Calza rasgada","precio":17000,"precio_lista":18020,"stock":1,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"VERDE PINO","stock":0},{"talle":"2XL-3XL","color":"ROSADO","stock":1}],"img":""},{"codigo":"81","nombre":"Short Batik","precio":9000,"precio_lista":9540,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"FUCSIA","stock":1},{"talle":"L-XL","color":"AZUL","stock":1},{"talle":"XXL-XXXL","color":"VERDE","stock":0}],"img":""},{"codigo":"117","nombre":"Calza Prelavada Total Black con cierre","precio":18000,"precio_lista":19080,"stock":4,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"NEGRO","stock":2},{"talle":"L-XL","color":"NEGRO","stock":2}],"img":""},{"codigo":"121","nombre":"Short Liso","precio":7000,"precio_lista":7420,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"M","color":"FUCSIA","stock":1},{"talle":"L","color":"NEGRO","stock":0},{"talle":"XL","color":"MORADO","stock":1}],"img":""},{"codigo":"123","nombre":"Calza Larga Degrade con Red","precio":17000,"precio_lista":18020,"stock":2,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S","color":"ROSADO - LILA","stock":1},{"talle":"M","color":"NARANJA - AMARILLO","stock":1}],"img":""},{"codigo":"126","nombre":"Calza degrade","precio":22000,"precio_lista":23320,"stock":1,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"MORADO/CELESTE","stock":1}],"img":""},{"codigo":"131","nombre":"Calza Batik detalle en ambas piernas","precio":17000,"precio_lista":18020,"stock":2,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"MARRON CLARO","stock":1},{"talle":"L-XL","color":"MORADO","stock":1}],"img":""},{"codigo":"132","nombre":"Calza Batik detalle a una pierna","precio":17000,"precio_lista":18020,"stock":2,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"VERDE MANZANA","stock":1},{"talle":"L-XL","color":"FUCSIA","stock":1}],"img":""},{"codigo":"147","nombre":"Short ruche frontal","precio":13000,"precio_lista":13780,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"CELESTE","stock":1},{"talle":"L-XL","color":"VERDE MANZANA","stock":1}],"img":""},{"codigo":"148","nombre":"Calza Corta Prelavada","precio":10000,"precio_lista":10600,"stock":2,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S/M","color":"ROSADO","stock":1},{"talle":"S/M","color":"NEGRO","stock":1}],"img":""},{"codigo":"152","nombre":"Calza Prelavada Total Black","precio":18000,"precio_lista":19080,"stock":3,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"NEGRO","stock":2},{"talle":"L-XL","color":"NEGRO","stock":1}],"img":""},{"codigo":"157","nombre":"Calza Oxford","precio":17000,"precio_lista":18020,"stock":1,"cat":"Calza Larga","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"LILA","stock":0},{"talle":"L-XL","color":"ROSA CHICLE","stock":1}],"img":""},{"codigo":"173","nombre":"Short a Rayas","precio":7500,"precio_lista":7950,"stock":1,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"L","color":"CHOCOLATE","stock":1}],"img":""},{"codigo":"184","nombre":"Conjunto detalle lateral","precio":20000,"precio_lista":21200,"stock":2,"cat":"Conjunto","marca":"DLIRIO","variantes":[{"talle":"S/M","color":"MARRON","stock":1},{"talle":"L-XL","color":"AZUL","stock":1}],"img":""},{"codigo":"197","nombre":"Short Prelavado con red a los costados","precio":9000,"precio_lista":9540,"stock":3,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"LILA","stock":1},{"talle":"L-XL","color":"CHOCOLATE","stock":2}],"img":""},{"codigo":"212","nombre":"Catsuit","precio":19000,"precio_lista":20140,"stock":2,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"AZUL DENIM","stock":1},{"talle":"L-XL","color":"AZUL DENIM","stock":1}],"img":""},{"codigo":"213","nombre":"Catsuit","precio":18000,"precio_lista":19080,"stock":2,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"AZUL","stock":1},{"talle":"L-XL","color":"VERDE OLIVA","stock":1}],"img":""},{"codigo":"220","nombre":"Conjunto","precio":22000,"precio_lista":23320,"stock":2,"cat":"Conjunto","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"MANTECA","stock":1},{"talle":"L-XL","color":"LILA","stock":1}],"img":""},{"codigo":"221","nombre":"Conjunto","precio":22500,"precio_lista":23850,"stock":2,"cat":"Conjunto","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"FUCSIA","stock":1},{"talle":"L-XL","color":"ROJO","stock":1}],"img":""},{"codigo":"237","nombre":"Catsuit Corto Taza Definida","precio":19500,"precio_lista":20670,"stock":3,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"LILA","stock":1},{"talle":"L-XL","color":"NEGRO","stock":2}],"img":""},{"codigo":"247","nombre":"Conjunto Corto","precio":22000,"precio_lista":23320,"stock":2,"cat":"Conjunto","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"CHOCOLATE","stock":1},{"talle":"L-XL","color":"BEIGE","stock":1}],"img":""},{"codigo":"259","nombre":"Catsuit Corto Relieve","precio":19500,"precio_lista":20670,"stock":1,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"L-XL","color":"LILA","stock":1}],"img":""},{"codigo":"260","nombre":"Catsuit Corto Cierre al Frente","precio":20000,"precio_lista":21200,"stock":1,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"L-XL","color":"NEGRO","stock":1}],"img":""},{"codigo":"263","nombre":"Top Morley","precio":12000,"precio_lista":12720,"stock":3,"cat":"Top","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"VERDE OLIVA","stock":1},{"talle":"L-XL","color":"NEGRO","stock":2}],"img":""},{"codigo":"296","nombre":"Short Nuevo","precio":10000,"precio_lista":10600,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"CHOCOLATE","stock":1},{"talle":"L-XL","color":"FUCSIA","stock":1}],"img":""},{"codigo":"303-1","nombre":"Short con relieve","precio":9000,"precio_lista":9540,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"CELESTE","stock":1},{"talle":"L-XL","color":"AZUL CELESTE","stock":1}],"img":""},{"codigo":"313","nombre":"Catsuit Corto Taza Blanca","precio":19500,"precio_lista":20670,"stock":2,"cat":"Catsuit","marca":"DLIRIO","variantes":[{"talle":"S-M","color":"CELESTE","stock":1},{"talle":"L-XL","color":"CELESTE","stock":1}],"img":""},{"codigo":"1166","nombre":"Biker Batik","precio":7500,"precio_lista":7950,"stock":1,"cat":"Otros","marca":"DLIRIO","variantes":[{"talle":"M","color":"NARANJA","stock":1},{"talle":"L","color":"NARANJA","stock":0}],"img":""},{"codigo":"1168","nombre":"Short Batik Detalle","precio":9000,"precio_lista":9540,"stock":7,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"M","color":"NEGRO","stock":0},{"talle":"L","color":"LILA","stock":3},{"talle":"XL","color":"VERDE AGUA","stock":4}],"img":""},{"codigo":"1174","nombre":"Short Batik Tigre","precio":7000,"precio_lista":7420,"stock":2,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"M","color":"BLANCO","stock":1},{"talle":"L","color":"BLANCO","stock":1}],"img":""},{"codigo":"3380","nombre":"Short Corto Sin Frunce","precio":9000,"precio_lista":9540,"stock":4,"cat":"Calza Corta","marca":"DLIRIO","variantes":[{"talle":"M","color":"NEGRO","stock":1},{"talle":"L","color":"NEGRO","stock":2},{"talle":"XL","color":"VERDE AGUA","stock":1}],"img":""},{"codigo":"79","nombre":"Catsuit Corto Prelavado","precio":19000,"precio_lista":20140,"stock":3,"cat":"Catsuit","marca":"VICBLACK","variantes":[{"talle":"S","color":"CELESTE","stock":1},{"talle":"M","color":"NEGRO","stock":1},{"talle":"L","color":"BORDO","stock":1}],"img":""},{"codigo":"305","nombre":"Short Linea Blanca","precio":11000,"precio_lista":11660,"stock":1,"cat":"Calza Corta","marca":"VICBLACK","variantes":[{"talle":"S","color":"AZUL","stock":0},{"talle":"M","color":"VERDE","stock":1},{"talle":"L","color":"AZUL","stock":0}],"img":""},{"codigo":"392","nombre":"Short c/Cordel BATIK","precio":12000,"precio_lista":12720,"stock":1,"cat":"Calza Corta","marca":"VICBLACK","variantes":[{"talle":"S","color":"VERDE","stock":1}],"img":""},{"codigo":"491","nombre":"Short c/Cordel DEGRADÉ","precio":12000,"precio_lista":12720,"stock":1,"cat":"Calza Corta","marca":"VICBLACK","variantes":[{"talle":"S","color":"AZUL/NEGRO","stock":1},{"talle":"M","color":"ROSA/BLANCO","stock":0},{"talle":"L","color":"AZUL/NEGRO","stock":0}],"img":""},{"codigo":"656","nombre":"Conjunto Corto Morly","precio":20000,"precio_lista":21200,"stock":2,"cat":"Conjunto","marca":"VICBLACK","variantes":[{"talle":"S","color":"NEGRO","stock":1},{"talle":"L","color":"AZUL","stock":1}],"img":""},{"codigo":"666","nombre":"Catsuit Largo Oxford","precio":24000,"precio_lista":25440,"stock":2,"cat":"Catsuit","marca":"VICBLACK","variantes":[{"talle":"S","color":"NEGRO","stock":1},{"talle":"M","color":"CHOCOLATE","stock":1}],"img":""},{"codigo":"818","nombre":"Short Prelavado","precio":10000,"precio_lista":10600,"stock":1,"cat":"Calza Corta","marca":"VICBLACK","variantes":[{"talle":"S-M","color":"NEGRO","stock":1},{"talle":"L-XL","color":"CHOCOLATE","stock":0}],"img":""},{"codigo":"836","nombre":"Short Morley Cruzado","precio":9000,"precio_lista":9540,"stock":2,"cat":"Calza Corta","marca":"VICBLACK","variantes":[{"talle":"L-XL","color":"ROSADO","stock":2}],"img":""},{"codigo":"856","nombre":"Catsuit Largo Linea Blanca","precio":22000,"precio_lista":23320,"stock":5,"cat":"Catsuit","marca":"VICBLACK","variantes":[{"talle":"S","color":"NEGRO","stock":1},{"talle":"M","color":"NEGRO","stock":2},{"talle":"L","color":"NEGRO","stock":2}],"img":""},{"codigo":"969","nombre":"Conjunto","precio":26000,"precio_lista":27560,"stock":1,"cat":"Conjunto","marca":"VICBLACK","variantes":[{"talle":"S","color":"LILA","stock":1},{"talle":"M","color":"CHOCOLATE","stock":0},{"talle":"L","color":"NEGRO","stock":0}],"img":""},{"codigo":"977","nombre":"Calza Larga Sin Frunce","precio":18000,"precio_lista":19080,"stock":2,"cat":"Calza Larga","marca":"VICBLACK","variantes":[{"talle":"S","color":"NEGRO","stock":1},{"talle":"M","color":"NEGRO","stock":0},{"talle":"L","color":"NEGRO","stock":1}],"img":""},{"codigo":"999","nombre":"Catsuit Corto Con Manga","precio":19500,"precio_lista":20670,"stock":2,"cat":"Catsuit","marca":"VICBLACK","variantes":[{"talle":"S","color":"VERDE OLIVA","stock":1},{"talle":"L","color":"CHOCOLATE","stock":1}],"img":""},{"codigo":"","nombre":"Conjunto Largo Liso","precio":15000,"precio_lista":15900,"stock":4,"cat":"Conjunto","marca":"SHEIN","variantes":[{"talle":"S","color":"NARANJA","stock":1},{"talle":"M","color":"VERDE","stock":1},{"talle":"L","color":"NARANJA","stock":1},{"talle":"XL","color":"VERDE","stock":1}],"img":""},{"codigo":"92602","nombre":"Calza Larga Degrade","precio":17000,"precio_lista":18020,"stock":1,"cat":"Calza Larga","marca":"ZAMISINDY","variantes":[{"talle":"M","color":"NEGRO/CELESTE","stock":1}],"img":""},{"codigo":"","nombre":"Calza Oxford ZARA","precio":12000,"precio_lista":12720,"stock":1,"cat":"Calza Larga","marca":"VARIADAS SIN RUCHE","variantes":[{"talle":"M","color":"NEGRO","stock":1}],"img":""},{"codigo":"SWR-9","nombre":"Top Deportivo NEON","precio":9500,"precio_lista":10070,"stock":1,"cat":"Top","marca":"CARICIAS","variantes":[{"talle":"M","color":"VERDE NEON","stock":1}],"img":""},{"codigo":"","nombre":"Short Liso Frente V","precio":15000,"precio_lista":15900,"stock":3,"cat":"Calza Corta","marca":"CARICIAS","variantes":[{"talle":"M","color":"NEGRO","stock":1},{"talle":"L","color":"NEGRO","stock":1},{"talle":"XL","color":"NEGRO","stock":1}],"img":""},{"codigo":"","nombre":"Short Faja Condon","precio":13000,"precio_lista":13780,"stock":1,"cat":"Calza Corta","marca":"LINDA LUNA","variantes":[{"talle":"M-XL","color":"CORAL","stock":1}],"img":""},{"codigo":"","nombre":"Calza Prelavada","precio":15000,"precio_lista":15900,"stock":1,"cat":"Calza Larga","marca":"LEVICTORIAS","variantes":[{"talle":"S-M","color":"NEGRO","stock":1},{"talle":"L-XL","color":"ROSA","stock":0}],"img":""},{"codigo":"","nombre":"Calza Larga Sin Frunce Bolsillo Lateral","precio":13000,"precio_lista":13780,"stock":2,"cat":"Calza Larga","marca":"S.S.J.","variantes":[{"talle":"M-L","color":"NEGRO","stock":1},{"talle":"XL-XXL","color":"NEGRO","stock":1}],"img":""},{"codigo":"","nombre":"Conjunto Corto Short Pollera","precio":30000,"precio_lista":31800,"stock":2,"cat":"Calza Corta","marca":"","variantes":[{"talle":"S-M","color":"AZUL","stock":1},{"talle":"M-L","color":"GRIS","stock":1}],"img":""},{"codigo":"","nombre":"Remerón Superpoderosas","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Superpoderosas","color":"NEGRO","stock":1}],"img":""},{"codigo":"","nombre":"Remerón Bellota","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Bellota","color":"BORDÓ","stock":1}],"img":""},{"codigo":"","nombre":"Remerón Tinkerbell","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Tinkerbell","color":"CELESTE","stock":1}],"img":""},{"codigo":"","nombre":"Remerón Burbuja","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Burbuja","color":"CHOCOLATE","stock":1}],"img":""},{"codigo":"","nombre":"Remerón Poderosa Modificada","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Poderosa Modificada","color":"ROJO","stock":1}],"img":""},{"codigo":"","nombre":"Remerón Lola","precio":11000,"precio_lista":11660,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Lola","color":"BLANCO","stock":1}],"img":""},{"codigo":"","nombre":"Remerón Hamptoms","precio":9500,"precio_lista":10070,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Hamptoms","color":"NEGRO","stock":1}],"img":""},{"codigo":"","nombre":"Remerón Alo","precio":8000,"precio_lista":8480,"stock":1,"cat":"Otros","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Remerón Alo","color":"CHOCOLATE","stock":1}],"img":""},{"codigo":"","nombre":"Crop Top BOSTON","precio":6500,"precio_lista":6890,"stock":1,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Crop Top BOSTON","color":"BLANCO","stock":1}],"img":""},{"codigo":"","nombre":"Crop Top SuperPoderosas","precio":7000,"precio_lista":7420,"stock":2,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Crop Top SuperPoderosas","color":"NEGRO","stock":2}],"img":""},{"codigo":"","nombre":"Crop Top Alo","precio":6000,"precio_lista":6360,"stock":1,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Crop Top Alo","color":"CHOCOLATE","stock":1}],"img":""},{"codigo":"","nombre":"Top Liso","precio":4500,"precio_lista":4770,"stock":1,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Top Liso","color":"LILA","stock":1}],"img":""},{"codigo":"","nombre":"Top Deportivo","precio":9500,"precio_lista":10070,"stock":2,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"L","color":"NEGRO","stock":1},{"talle":"M","color":"AMARILLO","stock":1}],"img":""},{"codigo":"","nombre":"Musculosa Alo T/U","precio":5500,"precio_lista":5830,"stock":2,"cat":"Top","marca":"REMERAS/ REMERONES","variantes":[{"talle":"Musculosa Alo T/U","color":"NEGRO","stock":2}],"img":""},{"codigo":"","nombre":"Top Deportivo Follow me 3-4","precio":5000,"precio_lista":5300,"stock":2,"cat":"Top","marca":"FOLLOW ME","variantes":[{"talle":"Top Deportivo Follow me 3-4","color":"ROSA","stock":1},{"talle":"Top Deportivo Follow me 3-4","color":"AZUL","stock":1}],"img":""},{"codigo":"","nombre":"Calza Larga Lycra 1","precio":12000,"precio_lista":12720,"stock":1,"cat":"Calza Larga","marca":"FOLLOW ME","variantes":[{"talle":"Calza Larga Lycra 1","color":"ROSA","stock":1}],"img":""},{"codigo":"","nombre":"Calza Larga Lycra 3","precio":12000,"precio_lista":12720,"stock":1,"cat":"Calza Larga","marca":"FOLLOW ME","variantes":[{"talle":"Calza Larga Lycra 3","color":"NARANJA","stock":1}],"img":""},{"codigo":"","nombre":"Short Pollera","precio":10000,"precio_lista":10600,"stock":2,"cat":"Calza Corta","marca":"SIMBRA","variantes":[{"talle":"S","color":"NEGRO","stock":1},{"talle":"XL","color":"NEGRO","stock":1}],"img":""},{"codigo":"","nombre":"Medias 3/4","precio":2500,"precio_lista":2650,"stock":39,"cat":"Medias","marca":"MEDIAS","variantes":[{"talle":"Medias 3/4","color":"","stock":39}],"img":""},{"codigo":"","nombre":"Set de Toallas 3 piezas","precio":13000,"precio_lista":13780,"stock":1,"cat":"Otros","marca":"TOALLAS","variantes":[{"talle":"Set de Toallas 3 piezas","color":"AZUL","stock":1}],"img":""}];
+var catA='all', marcaA='all', busqA='', pag=1, PPP=24;
+var mProd=null, mSel=null;
 var API='https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
 
 function cdot(c){
-  var m={'NEGRO':'#222','BLANCO':'#eee','ROJO':'#e53','ROSA':'#f4a','ROSADO':'#f7b','FUCSIA':'#f06','LILA':'#b8f','VIOLETA':'#96f','MORADO':'#73c','AZUL':'#38f','CELESTE':'#5cf','VERDE PINO':'#2a5','VERDE AGUA':'#0d9','VERDE LIMA':'#9f0','VERDE MANZANA':'#7d0','VERDE':'#4c8','NARANJA':'#f80','AMARILLO':'#fe0','TURQUESA':'#0cd','MARRON':'#964','CHOCOLATE':'#7B3F00','GRIS':'#888','BEIGE':'#d9c'};
+  var m={'NEGRO':'#333','BLANCO':'#ddd','ROJO':'#e53','ROSA':'#f4a','ROSADO':'#f7b','FUCSIA':'#f06','LILA':'#b8f','VIOLETA':'#96f','MORADO':'#73c','AZUL':'#38f','CELESTE':'#5cf','VERDE PINO':'#2a5','VERDE AGUA':'#0d9','VERDE LIMA':'#9f0','VERDE MANZANA':'#7d0','VERDE':'#4c8','NARANJA':'#f80','AMARILLO':'#fe0','TURQUESA':'#0cd','MARRON':'#964','CHOCOLATE':'#7B3F00','GRIS':'#888','BEIGE':'#d9c'};
   var cu=(c||'').toUpperCase();
   for(var k in m){if(cu.indexOf(k)>=0)return m[k];}
-  return '#888';
+  return '#666';
 }
 
 function getFil(){
+  var q=busqA.toLowerCase().replace('#','');
   return PRODS.filter(function(p){
-    return(catA==='all'||p.cat===catA)&&(marcaA==='all'||p.marca===marcaA);
+    var matchCat=catA==='all'||p.cat===catA;
+    var matchMarca=marcaA==='all'||p.marca===marcaA;
+    var matchQ=!q||(p.nombre.toLowerCase().indexOf(q)>=0)||(p.marca.toLowerCase().indexOf(q)>=0)||((p.codigo||'').toLowerCase().replace('#','').indexOf(q)>=0);
+    return matchCat&&matchMarca&&matchQ;
   });
 }
 
@@ -156,17 +185,16 @@ function render(){
   var sl=lista.slice((pag-1)*PPP,pag*PPP);
   document.getElementById('info').textContent=lista.length+' prenda'+(lista.length!==1?'s':'')+' disponibles';
   if(!lista.length){
-    grid.innerHTML='<div class="empty"><p style="font-size:2.5rem">&#128085;</p><p style="margin-top:12px">No hay prendas en esta categoría.</p></div>';
-    document.getElementById('pag').innerHTML='';return;
+    grid.innerHTML='<div class="empty"><p style="font-size:2.5rem">&#128085;</p><p style="margin-top:12px">No se encontraron prendas.</p></div>';
+    document.getElementById('pag').innerHTML='';
+    return;
   }
   grid.innerHTML=sl.map(function(p){
     var idx=PRODS.indexOf(p);
     var img=p.img?'<img src="'+p.img+'" alt="'+p.nombre+'" loading="lazy">':'&#128085;';
-    // Mostrar variantes (talle + color) disponibles como pills
     var pills=(p.variantes||[]).map(function(v){
       var dot=cdot(v.color);
-      var lbl=v.talle+(v.color&&v.color!==p.variantes[0].color?'/'+v.color:'');
-      return'<span class="cpill'+(v.stock===0?' ago':'')+'" style="border-color:'+dot+'20;background:'+dot+'15;color:'+dot+'">'+lbl+'</span>';
+      return'<span class="cpill'+(v.stock===0?' ago':'')+'" style="color:'+dot+';border-color:'+dot+'40;background:'+dot+'18">'+v.talle+'</span>';
     }).join('');
     var last=p.stock===1;
     return'<div class="card" onclick="aModal('+idx+')">'
@@ -175,10 +203,11 @@ function render(){
       +(p.marca?'<div class="cmarca">'+p.marca+'</div>':'')
       +'<div class="ccat">'+p.cat+'</div>'
       +'<div class="cnombre">'+p.nombre+'</div>'
+      +(p.codigo?'<div class="ccodigo">#'+p.codigo+'</div>':'')
       +'<div class="cprecio">$'+p.precio.toLocaleString('es-AR')+'</div>'
       +'<div class="ctarjeta">Tarjeta $'+(p.precio_lista||Math.round(p.precio*1.06)).toLocaleString('es-AR')+'</div>'
       +'<div class="cvars">'+pills+'</div>'
-      +'<div class="cstock '+(last?'last':'ok')+'">'+(last?'¡Última unidad!':p.stock+' disp.')+'</div>'
+      +'<div class="cstock '+(last?'last':'ok')+'">'+(last?'&#161;&#218;ltima!':p.stock+' disp.')+'</div>'
       +'<button class="cbtn">Ver talles</button>'
       +'</div></div>';
   }).join('');
@@ -193,17 +222,24 @@ function renderPag(total){
   if(pag>1)h+='<button class="pbtn" onclick="irP('+(pag-1)+')">&#8592;</button>';
   for(var i=1;i<=tot;i++)h+='<button class="pbtn'+(i===pag?' on':'')+'" onclick="irP('+i+')">'+i+'</button>';
   if(pag<tot)h+='<button class="pbtn" onclick="irP('+(pag+1)+')">&#8594;</button>';
-  h+='<span class="pinfo">Pág. '+pag+'/'+tot+' · '+total+' prendas</span>';
+  h+='<span class="pinfo">P&aacute;g. '+pag+'/'+tot+' &middot; '+total+' prendas</span>';
   cont.innerHTML=h;
 }
 
 function irP(n){pag=n;render();window.scrollTo({top:0,behavior:'smooth'});}
 
+function buscar(q){busqA=q;pag=1;render();}
+
 function fil(tipo,val){
-  if(tipo==='cat'){catA=val;pag=1;
+  if(tipo==='cat'){
+    catA=val;pag=1;
     document.querySelectorAll('#fCat .ftag').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-v')===val);});
-  }else{marcaA=val;pag=1;
-    document.querySelectorAll('#fMarca .ftag').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-v')===val);b.classList.toggle('marca-on',b.getAttribute('data-v')===val&&val!=='all');});
+  }else{
+    marcaA=val;pag=1;
+    document.querySelectorAll('#fMarca .ftag').forEach(function(b){
+      b.classList.toggle('on',b.getAttribute('data-v')===val);
+      b.classList.toggle('mon',b.getAttribute('data-v')===val&&val!=='all');
+    });
   }
   render();
 }
@@ -214,9 +250,9 @@ function buildMarcas(){
   marcas.sort();
   var cont=document.getElementById('fMarca');
   cont.innerHTML='';
-  function mk(v,lbl,on,esMarca){
+  function mk(v,lbl,isOn,esMarca){
     var b=document.createElement('button');
-    b.className='ftag'+(on?' on':'')+(esMarca&&on?' marca-on':'');
+    b.className='ftag'+(isOn?' on':'')+(isOn&&esMarca?' mon':'');
     b.setAttribute('data-v',v);
     b.textContent=lbl;
     b.onclick=function(){fil('marca',v);};
@@ -226,7 +262,6 @@ function buildMarcas(){
   marcas.forEach(function(m){mk(m,m,false,true);});
 }
 
-// MODAL
 function aModal(idx){
   var p=PRODS[idx];
   if(!p)return;
@@ -243,32 +278,30 @@ function aModal(idx){
     var b=document.createElement('button');
     b.className='mtalle'+(v.stock===0?' ago':'');
     var dot=cdot(v.color);
-    b.innerHTML='<span style="color:'+dot+'">&#11044;</span> '+v.talle
-      +(v.color?'<small>'+v.color+'</small>':'')
+    b.innerHTML='<span style="color:'+dot+';font-size:1rem">&#9679;</span>'
+      +'<strong>'+v.talle+'</strong>'
+      +(v.color&&v.color!==v.talle?'<small>'+v.color+'</small>':'')
       +'<small>'+v.stock+' ud.</small>';
-    b.setAttribute('data-talle',v.talle);
-    b.setAttribute('data-color',v.color);
     if(v.stock>0){
-      b.onclick=function(){
-        mSel={talle:v.talle,color:v.color};
+      b.onclick=(function(tv){return function(){
+        mSel=tv;
         cont.querySelectorAll('.mtalle').forEach(function(x){x.classList.remove('sel');});
         b.classList.add('sel');
-      };
+      };})(v);
     }
     cont.appendChild(b);
   });
-  // Preseleccionar si solo hay 1 disponible
   if(disp.length===1){
-    mSel={talle:disp[0].talle,color:disp[0].color};
-    var btn=cont.querySelector('[data-talle="'+disp[0].talle+'"]');
+    mSel=disp[0];
+    var btn=cont.querySelector('.mtalle:not(.ago)');
     if(btn)btn.classList.add('sel');
   }
   document.getElementById('mbg').classList.add('open');
   document.body.style.overflow='hidden';
 }
 
-function cModal(e){if(e&&e.target!==document.getElementById('mbg'))return;cModalBtn();}
-function cModalBtn(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
+function bgClick(e){if(e.target===document.getElementById('mbg'))cModal();}
+function cModal(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
 
 function waConsultar(){
   if(!mProd)return;
@@ -278,25 +311,23 @@ function waConsultar(){
   var msg='Hola MAXUP! Me interesa esta prenda:'
     +(mProd.codigo?'\nCódigo: #'+mProd.codigo:'')
     +'\n👗 '+mProd.nombre
+    +(mProd.marca?'\n🏷️ Marca: '+mProd.marca:'')
     +'\n📏 Talle: '+sel.talle
-    +(sel.color?'\n🎨 Color: '+sel.color:'')
+    +(sel.color&&sel.color!==sel.talle?'\n🎨 Color: '+sel.color:'')
     +'\n💰 Precio: $'+mProd.precio.toLocaleString('es-AR')
     +'\n\n¿Está disponible?';
   window.open('https://wa.me/5491168461457?text='+encodeURIComponent(msg),'_blank');
 }
 
+// Cargar desde Sheets (solo si estructura compatible)
 async function cargarSheets(){
-  // Solo actualizar si la API devuelve datos con estructura de variantes
-  // (cuando se agreguen imágenes en el Sheets, columna J)
   try{
     var r=await fetch(API+'?accion=indumentaria');
     if(!r.ok)return;
     var d=await r.json();
     if(!d.ok||!d.prendas||d.prendas.length===0)return;
-    // Verificar que los datos tienen la estructura correcta con variantes
-    var primero=d.prendas[0];
-    if(!primero.variantes&&!primero.talles)return; // estructura incompatible, ignorar
-    // Actualizar solo si la estructura es compatible
+    var p0=d.prendas[0];
+    if(!p0.variantes&&!p0.talles)return;
     PRODS=d.prendas;
     buildMarcas();
     render();
