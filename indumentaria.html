@@ -149,6 +149,7 @@ function getFil(){
 
 function render(){
   var grid=document.getElementById('grid');
+  if(!grid)return;
   var lista=getFil();
   var tot=Math.ceil(lista.length/PPP)||1;
   if(pag>tot)pag=1;
@@ -162,7 +163,7 @@ function render(){
     var idx=PRODS.indexOf(p);
     var img=p.img?'<img src="'+p.img+'" alt="'+p.nombre+'" loading="lazy">':'&#128085;';
     // Mostrar variantes (talle + color) disponibles como pills
-    var pills=p.variantes.map(function(v){
+    var pills=(p.variantes||[]).map(function(v){
       var dot=cdot(v.color);
       var lbl=v.talle+(v.color&&v.color!==p.variantes[0].color?'/'+v.color:'');
       return'<span class="cpill'+(v.stock===0?' ago':'')+'" style="border-color:'+dot+'20;background:'+dot+'15;color:'+dot+'">'+lbl+'</span>';
@@ -237,8 +238,8 @@ function aModal(idx){
   document.getElementById('mTarjeta').textContent='Tarjeta: $'+(p.precio_lista||Math.round(p.precio*1.06)).toLocaleString('es-AR');
   var cont=document.getElementById('mTalles');
   cont.innerHTML='';
-  var disp=p.variantes.filter(function(v){return v.stock>0;});
-  p.variantes.forEach(function(v){
+  var disp=(p.variantes||[]).filter(function(v){return v.stock>0;});
+  (p.variantes||[]).forEach(function(v){
     var b=document.createElement('button');
     b.className='mtalle'+(v.stock===0?' ago':'');
     var dot=cdot(v.color);
@@ -271,7 +272,7 @@ function cModalBtn(){document.getElementById('mbg').classList.remove('open');doc
 
 function waConsultar(){
   if(!mProd)return;
-  var disp=mProd.variantes.filter(function(v){return v.stock>0;});
+  var disp=(mProd.variantes||[]).filter(function(v){return v.stock>0;});
   if(!mSel&&disp.length>1){alert('Por favor elegí un talle antes de consultar.');return;}
   var sel=mSel||disp[0];
   var msg='Hola MAXUP! Me interesa esta prenda:'
@@ -285,11 +286,20 @@ function waConsultar(){
 }
 
 async function cargarSheets(){
+  // Solo actualizar si la API devuelve datos con estructura de variantes
+  // (cuando se agreguen imágenes en el Sheets, columna J)
   try{
     var r=await fetch(API+'?accion=indumentaria');
     if(!r.ok)return;
     var d=await r.json();
-    if(d.ok&&d.prendas&&d.prendas.length>0){PRODS=d.prendas;buildMarcas();render();}
+    if(!d.ok||!d.prendas||d.prendas.length===0)return;
+    // Verificar que los datos tienen la estructura correcta con variantes
+    var primero=d.prendas[0];
+    if(!primero.variantes&&!primero.talles)return; // estructura incompatible, ignorar
+    // Actualizar solo si la estructura es compatible
+    PRODS=d.prendas;
+    buildMarcas();
+    render();
   }catch(e){}
 }
 
