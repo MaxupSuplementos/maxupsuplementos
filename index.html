@@ -4592,10 +4592,11 @@ function buildCard(p){
 function renderAll(){
   const grid = document.getElementById('productsGrid');
   grid.innerHTML = PRODUCTS.map(p => buildCard(p)).join('');
-  initScrollReveal();
   poblarMarcas();
   poblarComparador();
   setTimeout(makeCardsClickable, 100);
+  // Aplicar paginación inmediatamente (sin scroll reveal para que funcione bien)
+  applyFilters();
 }
 
 function applyFilters(){
@@ -4613,7 +4614,11 @@ function applyFilters(){
   const fin = inicio + ITEMS_POR_PAGINA;
   // Mostrar/ocultar
   cards.forEach(card => card.style.display = 'none');
-  visibles.slice(inicio, fin).forEach(card => card.style.display = 'flex');
+  visibles.slice(inicio, fin).forEach(card => {
+    card.style.display = 'flex';
+    card.style.opacity = '1';
+    card.style.transform = 'translateY(0)';
+  });
   // Info búsqueda
   const info = document.getElementById('searchInfo');
   const noRes = document.getElementById('noResults');
