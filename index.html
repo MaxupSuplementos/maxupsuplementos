@@ -2,6 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+  <link rel="preload" as="image" href="https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/whey-protein-star-bolsa-frente-1024x1024.jpg&w=400&output=webp&q=82">
+  <link rel="preload" as="image" href="https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-2Lb-Chocolate.png?v=1718218508&width=1100&w=400&output=webp&q=82">
+  <link rel="preload" as="image" href="https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-3Kg-Chocolate.png?v=1718218522&width=1100&w=400&output=webp&q=82">
+  <link rel="preload" as="image" href="https://images.weserv.nl/?url=i.ibb.co/4w4mQvbs/IMG-20260323-230735755-HDR-AE.jpg&w=400&output=webp&q=82">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -210,6 +214,8 @@ nav{position:fixed;top:0;width:100%;z-index:200;background:rgba(0,0,0,.92);
   box-shadow:0 14px 44px rgba(0,200,255,.08)}
 .prod-img-wrap{height:200px;display:flex;align-items:center;justify-content:center;
   position:relative;overflow:hidden;background:var(--dark3);cursor:pointer}
+.gallery-slide img{background:#141420;transition:opacity .2s}
+.prod-img-wrap img{background:#141420}
 .prod-img-wrap img{width:100%;height:100%;object-fit:contain;padding:14px;transition:transform .4s}
 .prod-card:hover .prod-img-wrap img{transform:scale(1.06)}
 .prod-emoji{font-size:4.5rem;line-height:1;user-select:none}
@@ -1231,7 +1237,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/whey-protein-star-bolsa-frente-1024x1024.jpg",
+    "img": "https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/whey-protein-star-bolsa-frente-1024x1024.jpg&w=400&output=webp&q=82",
     "desc": "Proteína del suero de leche de alta absorción. 24g de proteína por porción. Ideal post-entrenamiento para recuperación y construcción muscular. Bajo en grasas y carbohidratos.",
     "price": 49000,
     "badge": "hot",
@@ -1261,7 +1267,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-2Lb-Chocolate.png?v=1718218508&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-2Lb-Chocolate.png?v=1718218508&width=1100&w=400&output=webp&q=82",
     "desc": "Fórmula premium con concentrado y aislado de proteína de suero. Mayor perfil de aminoácidos, mejor digestibilidad. Pote resistente y hermético.",
     "price": 53000,
     "badge": "new",
@@ -1287,7 +1293,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "proteina",
     "emoji": "🏆",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-3Kg-Chocolate.png?v=1718218522&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-3Kg-Chocolate.png?v=1718218522&width=1100&w=400&output=webp&q=82",
     "desc": "La opción premium de alto volumen. 3 kg de proteína del suero con tecnología de aislado microfiltrado. Para atletas serios que entrenan al máximo.",
     "price": 142000,
     "badge": "sale",
@@ -1313,7 +1319,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://i.ibb.co/4w4mQvbs/IMG-20260323-230735755-HDR-AE.jpg",
+    "img": "https://images.weserv.nl/?url=i.ibb.co/4w4mQvbs/IMG-20260323-230735755-HDR-AE.jpg&w=400&output=webp&q=82",
     "desc": "Triple acción proteica: concentrado, aislado e hidrolizado de suero. La proteína más completa de Star Nutrition para máxima recuperación.",
     "price": 51000,
     "flavors": [
@@ -1329,7 +1335,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/products/just_4.png?v=1755712483&width=1500",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/products/just_4.png?v=1755712483&width=1500&w=400&output=webp&q=82",
     "desc": "Proteína de suero concentrada sin aditivos innecesarios. Máxima pureza proteica a precio accesible. La opción directa al resultado.",
     "price": 48000,
     "flavors": [
@@ -1345,7 +1351,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "gainer",
     "emoji": "💪",
-    "img": "https://i.ibb.co/RktxYHBx/Gemini-Generated-Image-6eld1a6eld1a6eld.png",
+    "img": "https://images.weserv.nl/?url=i.ibb.co/RktxYHBx/Gemini-Generated-Image-6eld1a6eld1a6eld.png&w=400&output=webp&q=82",
     "desc": "Gainer de alta densidad calórica. Ideal para ganar masa muscular rápidamente. Con proteínas, carbohidratos complejos y grasas saludables en proporciones óptimas.",
     "price": 37500,
     "flavors": [
@@ -1365,7 +1371,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "hidratacion",
     "emoji": "⚗️",
-    "img": "https://images.weserv.nl/?url=encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSg_2RrSzuVdHnxIupXDcad7N3-XfeVgrRj3A&s",
+    "img": "https://images.weserv.nl/?url=encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSg_2RrSzuVdHnxIupXDcad7N3-XfeVgrRj3A&s&w=400&output=webp&q=82",
     "desc": "Carbohidratos de rápida absorción para recuperación energética post-entrenamiento. Ideal para mezclar con proteína y optimizar la ventana anabólica.",
     "price": 20000,
     "flavors": [
@@ -1381,7 +1387,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/003/703/137/products/creatina-hd-a839e43636a193460417291787850812-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/003/703/137/products/creatina-hd-a839e43636a193460417291787850812-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato ultramicronizada de máxima pureza. Aumenta fuerza, potencia y resistencia muscular. Envase pote hermético. 60 servicios.",
     "price": 34500,
     "badge": "hot",
@@ -1399,7 +1405,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=suplementsport.com.ar/wp-content/uploads/2024/07/Creatina-doy-pack-300-gr.jpg",
+    "img": "https://images.weserv.nl/?url=suplementsport.com.ar/wp-content/uploads/2024/07/Creatina-doy-pack-300-gr.jpg&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato ultramicronizada en práctico doypack. Disolución instantánea. Sin azúcar ni calorías vacías. El estándar de fuerza y potencia.",
     "price": 32000,
     "flavors": [
@@ -1419,7 +1425,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/005/314/904/products/creatina-500-grs-star-informacion-nutricional-b60391aaf994f3b46517510401406773-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/005/314/904/products/creatina-500-grs-star-informacion-nutricional-b60391aaf994f3b46517510401406773-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato en formato 500g pote. Mayor rendimiento por precio. Ideal para usuarios avanzados que no quieren quedarse sin stock.",
     "price": 48000,
     "flavors": [
@@ -1435,7 +1441,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_889534-MLA92512456390_092025-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_889534-MLA92512456390_092025-F.webp&w=400&output=webp&q=82",
     "desc": "El mejor precio por kg del mercado. 200 servicios de creatina pura. Para atletas de alto rendimiento que entrenan duro sin interrupciones.",
     "price": 90000,
     "badge": "sale",
@@ -1453,7 +1459,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/MtorBCAA-270g-_2.png?v=1718218499&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/MtorBCAA-270g-_2.png?v=1718218499&width=1100&w=400&output=webp&q=82",
     "desc": "BCAAs en proporción 2:1:1 (Leucina, Isoleucina, Valina). Máxima síntesis proteica y reducción del catabolismo muscular. Ideal intra o post-entrenamiento.",
     "price": 30000,
     "badge": "hot",
@@ -1483,7 +1489,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/EEAS-Aminos.png?v=1718218508&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/EEAS-Aminos.png?v=1718218508&width=1100&w=400&output=webp&q=82",
     "desc": "Los 9 aminoácidos esenciales en un solo producto. Fórmula completa para recuperación total, síntesis proteica y reducción de fatiga muscular.",
     "price": 37900,
     "flavors": [
@@ -1499,7 +1505,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/L-glutamine-300g.png?v=1718218487&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/L-glutamine-300g.png?v=1718218487&width=1100&w=400&output=webp&q=82",
     "desc": "Glutamina pura de alta pureza. El aminoácido más abundante en el músculo. Reduce el dolor muscular y mejora la inmunidad post-entrenamiento.",
     "price": 32000,
     "flavors": [
@@ -1515,7 +1521,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/L-ArginineGH.png?v=1718218459&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/L-ArginineGH.png?v=1718218459&width=1100&w=400&output=webp&q=82",
     "desc": "Precursor del óxido nítrico para máxima vasodilatación y bomba muscular. Mejora el flujo sanguíneo y la entrega de nutrientes al músculo.",
     "price": 20000,
     "flavors": [
@@ -1531,7 +1537,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "aminoacido",
     "emoji": "🔥",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/L-Carnitine1000.png?v=1718218457&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/L-Carnitine1000.png?v=1718218457&width=1100&w=400&output=webp&q=82",
     "desc": "L-Carnitina en cápsulas para el transporte de ácidos grasos a la mitocondria. Potencia la quema de grasa como fuente de energía durante el ejercicio.",
     "price": 19000,
     "flavors": [
@@ -1547,7 +1553,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/STANUT0040BEAPO.png?v=1719513607&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/STANUT0040BEAPO.png?v=1719513607&width=1100&w=400&output=webp&q=82",
     "desc": "Beta-alanina pura para aumentar los niveles de carnosina muscular. Retrasa la fatiga, aumenta la resistencia y el rendimiento en entrenamientos de alta intensidad.",
     "price": 28800,
     "flavors": [
@@ -1563,7 +1569,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/VitaminaC_sf_2.png?v=1726507301&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/VitaminaC_sf_2.png?v=1726507301&width=1100&w=400&output=webp&q=82",
     "desc": "Vitamina C pura de alta potencia. Potente antioxidante que refuerza el sistema inmune, mejora la síntesis de colágeno y protege el músculo del daño oxidativo.",
     "price": 12000,
     "flavors": [
@@ -1579,7 +1585,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/STANUT004030.png?v=1719499932&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/STANUT004030.png?v=1719499932&width=1100&w=400&output=webp&q=82",
     "desc": "Complejo vitamínico y mineral completo para atletas. Más de 20 micronutrientes esenciales. Refuerza el sistema inmune, energía y metabolismo. Un cap al día.",
     "price": 23000,
     "flavors": [
@@ -1595,7 +1601,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "vitamin",
     "emoji": "🐟",
-    "img": "https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/fish-oil-omega-3-star-nutrition-x60-1.jpg",
+    "img": "https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/fish-oil-omega-3-star-nutrition-x60-1.jpg&w=400&output=webp&q=82",
     "desc": "EPA y DHA de pescado de agua profunda. Reduce triglicéridos, protege el corazón, mejora la función cerebral y reduce la inflamación muscular. Imprescindible.",
     "price": 34000,
     "badge": "hot",
@@ -1613,7 +1619,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/products/zma-lanzamiento1.jpg?v=1718296879",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/products/zma-lanzamiento1.jpg?v=1718296879&w=400&output=webp&q=82",
     "desc": "Zinc, Magnesio y Vitamina B6. Potencia los niveles de testosterona naturales, mejora la calidad del sueño y la recuperación nocturna. Tomar antes de dormir.",
     "price": 22000,
     "flavors": [
@@ -1629,7 +1635,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/CLA1000.png?v=1718218464",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/CLA1000.png?v=1718218464&w=400&output=webp&q=82",
     "desc": "Ácido Linoleico Conjugado para reducción de grasa corporal y mantenimiento de masa magra. Efecto continuo 24hs. Sin estimulantes, compatible con cualquier ciclo.",
     "price": 27000,
     "flavors": [
@@ -1645,7 +1651,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "vitamin",
     "emoji": "🍇",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/Resceratrol500.png?v=1718218466&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/Resceratrol500.png?v=1718218466&width=1100&w=400&output=webp&q=82",
     "desc": "Resveratrol de alto potencia. Poderoso antioxidante natural presente en la uva. Protege contra el envejecimiento celular, inflamación y enfermedades cardiovasculares.",
     "price": 24500,
     "badge": "new",
@@ -1663,7 +1669,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/CitratoMagnesio_36ac50e8-5662-4aa0-8b90-10edd71b1236.png?v=1720020323&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/CitratoMagnesio_36ac50e8-5662-4aa0-8b90-10edd71b1236.png?v=1720020323&width=1100&w=400&output=webp&q=82",
     "desc": "Magnesio en la forma más biodisponible en cápsulas. Esencial para contracción muscular, transmisión nerviosa, síntesis proteica y regulación de glucosa.",
     "price": 19000,
     "flavors": [
@@ -1679,7 +1685,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/WhatsAppImage2025-01-21at16.41.23.jpg?v=1737657815",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/WhatsAppImage2025-01-21at16.41.23.jpg?v=1737657815&w=400&output=webp&q=82",
     "desc": "Magnesio en polvo para máxima absorción. 500g de pura relajación muscular y recuperación. Ideal para calambres nocturnos y sueño profundo.",
     "price": 32000,
     "flavors": [
@@ -1699,7 +1705,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "vitamin",
     "emoji": "☕",
-    "img": "https://images.weserv.nl/?url=encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRuBBnyF8GwvV_Jtg1atRIjKpsGcGyDM3Wu1w&s",
+    "img": "https://images.weserv.nl/?url=encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRuBBnyF8GwvV_Jtg1atRIjKpsGcGyDM3Wu1w&s&w=400&output=webp&q=82",
     "desc": "Cafeína anhidra de alta pureza para máxima alerta mental y rendimiento físico. Sin azúcar, sin calorías. El estimulante más estudiado del mundo.",
     "price": 11000,
     "flavors": [
@@ -1715,7 +1721,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "quemador",
     "emoji": "🌡️",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/ThermoFuelMax.png?v=1718218471&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/ThermoFuelMax.png?v=1718218471&width=1100&w=400&output=webp&q=82",
     "desc": "El termogénico más potente de Star Nutrition. Cafeína anhidra, yerba mate, CLA y L-Tirosina. Máxima termogénesis y oxidación de grasa en cada toma.",
     "price": 24000,
     "badge": "hot",
@@ -1733,7 +1739,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "preworkout",
     "emoji": "🔥",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/TNTDynamite-blueraz.png?v=1718218517",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/TNTDynamite-blueraz.png?v=1718218517&w=400&output=webp&q=82",
     "desc": "Pre-entreno explosivo con cafeína, beta-alanina, citrulina y arginina. Energía máxima, bomba muscular y enfoque mental desde el primer servicio.",
     "price": 26000,
     "badge": "hot",
@@ -1763,7 +1769,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "preworkout",
     "emoji": "🔥",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PumpV8-WMEL_256a8bca-27cd-4ba8-8dc8-edffe507986d.png?v=1719843200&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PumpV8-WMEL_256a8bca-27cd-4ba8-8dc8-edffe507986d.png?v=1719843200&width=1100&w=400&output=webp&q=82",
     "desc": "Pre-entreno vasodilatador premium. 8 ingredientes activos: citrulina malato, agmatina y glicerol para la mayor bomba muscular. Sin estimulantes, apto nocturno.",
     "price": 34000,
     "flavors": [
@@ -1783,7 +1789,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "hidratacion",
     "emoji": "💧",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/HydroplusEndurance-Limon.png?v=1718218522",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/HydroplusEndurance-Limon.png?v=1718218522&w=400&output=webp&q=82",
     "desc": "Bebida isotónica de alto rendimiento con electrolitos, vitaminas y carbohidratos de rápida absorción. Para entrenamientos largos de resistencia.",
     "price": 20000,
     "flavors": [
@@ -1803,7 +1809,7 @@ const PRODUCTS = [
     "brand": "Woman",
     "cat": "quemador",
     "emoji": "🌡️",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/mercado-libre-31-06c8d2b9fc2d0ae3ee17120844289331-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/mercado-libre-31-06c8d2b9fc2d0ae3ee17120844289331-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Termogénico femenino con extracto de té verde, CLA, L-Carnitina y cafeína natural. Acelera el metabolismo y controla el apetito. Diseñado para el cuerpo femenino.",
     "price": 23000,
     "badge": "new",
@@ -1821,7 +1827,7 @@ const PRODUCTS = [
     "brand": "Woman",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/diseno-sin-titulo-a9c08fc92439e10e4317701539357351-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/diseno-sin-titulo-a9c08fc92439e10e4317701539357351-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato pura formulada para la mujer activa. Aumenta la fuerza y el tono muscular sin volumen excesivo. Alta pureza y rápida absorción.",
     "price": 32000,
     "flavors": [
@@ -1837,7 +1843,7 @@ const PRODUCTS = [
     "brand": "Woman",
     "cat": "preworkout",
     "emoji": "🔥",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/mercado-libre-19-8b254affdefda681b617120844691254-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/mercado-libre-19-8b254affdefda681b617120844691254-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Pre-entreno y quemador en uno, formulado para la mujer. Energía, enfoque y termogénesis en un solo producto. La fórmula total para el entrenamiento femenino.",
     "price": 35000,
     "flavors": [
@@ -1853,7 +1859,7 @@ const PRODUCTS = [
     "brand": "Woman",
     "cat": "colageno",
     "emoji": "🦴",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/mercado-libre-25-25-8bc6cecba0522bc4d917120845307555-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/mercado-libre-25-25-8bc6cecba0522bc4d917120845307555-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Colágeno hidrolizado con ácido hialurónico y Vitamina C. El dúo perfecto para piel radiante, articulaciones fuertes y cabello brillante. Antiaging completo.",
     "price": 36000,
     "badge": "new",
@@ -1871,7 +1877,7 @@ const PRODUCTS = [
     "brand": "Woman",
     "cat": "vitamin",
     "emoji": "🍇",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/ml-productos-13-26145b9991b6bc458b17120845591197-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/ml-productos-13-26145b9991b6bc458b17120845591197-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Resveratrol premium avalado por Pampita. Antioxidante natural para la piel, el corazón y el bienestar general. Formulación exclusiva con alta concentración activa.",
     "price": 22000,
     "flavors": [
@@ -1887,7 +1893,7 @@ const PRODUCTS = [
     "brand": "Woman",
     "cat": "proteina",
     "emoji": "💪",
-    "img": "https://images.weserv.nl/?url=www.farmacialeloir.com.ar/img/articulos/2024/08/imagen1_woman_by_pampita_whey_protein_imagen1.webp",
+    "img": "https://images.weserv.nl/?url=www.farmacialeloir.com.ar/img/articulos/2024/08/imagen1_woman_by_pampita_whey_protein_imagen1.webp&w=400&output=webp&q=82",
     "desc": "Proteína del suero de leche pensada para la mujer que quiere resultados. Con colágeno hidrolizado y extracto de té verde. Tono muscular y bienestar en un scoop.",
     "price": 37000,
     "badge": "new",
@@ -1905,7 +1911,7 @@ const PRODUCTS = [
     "brand": "Woman",
     "cat": "proteina",
     "emoji": "💪",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/plantillaimagenes_mesa-de-trabajo-1-copia-5-8b28f220dbd369cc1c17452661791318-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/plantillaimagenes_mesa-de-trabajo-1-copia-5-8b28f220dbd369cc1c17452661791318-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Fórmula para la mujer activa: proteína de suero + colágeno hidrolizado + té verde. Tono muscular, articulaciones fuertes y piel radiante en un solo producto.",
     "price": 44900,
     "badge": "hot",
@@ -1923,7 +1929,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/TMWP2lb-Va_2.png?v=1769005779&width=800",
+    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/TMWP2lb-Va_2.png?v=1769005779&width=800&w=400&output=webp&q=82",
     "desc": "Proteína de suero con colágeno hidrolizado y té verde. Fórmula integral para desarrollo muscular, articulaciones y bienestar general. La elección de los pros.",
     "price": 51000,
     "badge": "new",
@@ -1949,7 +1955,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "gainer",
     "emoji": "💪",
-    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/Umass1lb-Va.png?v=1764942067&width=800",
+    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/Umass1lb-Va.png?v=1764942067&width=800&w=400&output=webp&q=82",
     "desc": "Gainer de alto impacto para ganar masa muscular rápidamente. Alto contenido en proteínas y carbohidratos de calidad para un aumento de peso limpio y efectivo.",
     "price": 43000,
     "flavors": [
@@ -1973,7 +1979,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/100_W-FR.png?v=1769688238&width=800",
+    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/100_W-FR.png?v=1769688238&width=800&w=400&output=webp&q=82",
     "desc": "Proteína de suero concentrada al 100%, sin agregados. Alta pureza y excelente relación precio-calidad. Ideal para ganar masa muscular y acelerar la recuperación.",
     "price": 44000,
     "flavors": [
@@ -1993,7 +1999,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/CreaN300Mono.png?v=1765981838&width=800",
+    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/CreaN300Mono.png?v=1765981838&width=800&w=400&output=webp&q=82",
     "desc": "Creatina micronizada de partícula ultrafina para máxima absorción. Disolución instantánea sin residuo. Se mezcla con cualquier bebida.",
     "price": 31000,
     "badge": "sale",
@@ -2011,7 +2017,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/products/BCAA_211.jpg?v=1683514389&width=800",
+    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/products/BCAA_211.jpg?v=1683514389&width=800&w=400&output=webp&q=82",
     "desc": "Aminoácidos ramificados en cápsulas. Ratio 2:1:1 ideal. Sin sabor, sin preparación. Para quienes prefieren suplementar sin mezclas ni sabores.",
     "price": 15800,
     "flavors": [
@@ -2027,7 +2033,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "aminoacido",
     "emoji": "🔥",
-    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/Carnitina_4.png?v=1739377333&width=800",
+    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/Carnitina_4.png?v=1739377333&width=800&w=400&output=webp&q=82",
     "desc": "L-Carnitina 1500mg por porción. Potencia la oxidación de ácidos grasos para usarlos como energía. Ideal para definición y pérdida de grasa.",
     "price": 19000,
     "flavors": [
@@ -2043,7 +2049,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/products/Glutamine_Micronized.jpg?v=1738842769&width=800",
+    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/products/Glutamine_Micronized.jpg?v=1738842769&width=800&w=400&output=webp&q=82",
     "desc": "Glutamina farmacéutica en pote hermético. Recuperación muscular óptima, reducción del daño oxidativo y refuerzo del sistema inmune post-entrenamiento.",
     "price": 30000,
     "flavors": [
@@ -2059,7 +2065,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/products/MultiVitamin.jpg?v=1738842964&width=800",
+    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/products/MultiVitamin.jpg?v=1738842964&width=800&w=400&output=webp&q=82",
     "desc": "Complejo multivitamínico con cafeína añadida. Energía + micronutrientes en un solo comprimido. Ideal para tomar antes del entrenamiento para máximo rendimiento.",
     "price": 19500,
     "flavors": [
@@ -2075,7 +2081,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "vitamin",
     "emoji": "☕",
-    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/products/Cafeina.jpg?v=1683513707&width=800",
+    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/products/Cafeina.jpg?v=1683513707&width=800&w=400&output=webp&q=82",
     "desc": "Cafeína anhidra pura 200mg. Máxima concentración y alerta mental. Potencia el rendimiento físico, aumenta la fuerza y reduce la percepción de fatiga.",
     "price": 12500,
     "flavors": [
@@ -2091,7 +2097,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=static.wixstatic.com/media/2df297_795469866b47421db862b096b4a450b6~mv2.png/v1/fill/w_555,h_396,al_c,lg_1,q_85,enc_avif,quality_auto/2df297_795469866b47421db862b096b4a450b6~mv2.png",
+    "img": "https://images.weserv.nl/?url=static.wixstatic.com/media/2df297_795469866b47421db862b096b4a450b6~mv2.png/v1/fill/w_555,h_396,al_c,lg_1,q_85,enc_avif,quality_auto/2df297_795469866b47421db862b096b4a450b6~mv2.png&w=400&output=webp&q=82",
     "desc": "Multivitamínico completo de ENA Profesionales. Vitaminas A, B, C, D, E + minerales esenciales. Soporte inmunológico y metabólico de alta calidad.",
     "price": 16000,
     "flavors": [
@@ -2107,7 +2113,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "hidratacion",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/EnargyGel6c.jpg?v=1731094910&width=800",
+    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/EnargyGel6c.jpg?v=1731094910&width=800&w=400&output=webp&q=82",
     "desc": "Gel energético de carbohidratos de rápida absorción para consumo durante el entrenamiento. Textura suave, sin necesidad de agua. Boost de energía instantáneo.",
     "price": 2500,
     "flavors": [
@@ -2127,7 +2133,7 @@ const PRODUCTS = [
     "brand": "ENA",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/TMWC_Ch.png?v=1737985937&width=800",
+    "img": "https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/TMWC_Ch.png?v=1737985937&width=800&w=400&output=webp&q=82",
     "desc": "Proteína del suero combinada con colágeno hidrolizado. La fórmula completa de ENA para atletas que buscan fuerza muscular y salud articular al mismo tiempo.",
     "price": 35000,
     "flavors": [
@@ -2143,7 +2149,7 @@ const PRODUCTS = [
     "brand": "Gentech",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlWNUkFYisqcuP1NWgOeYhxnJSMwZg-XRbig&s",
+    "img": "https://images.weserv.nl/?url=encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlWNUkFYisqcuP1NWgOeYhxnJSMwZg-XRbig&s&w=400&output=webp&q=82",
     "desc": "Proteína de suero Gentech con 30g de proteína por porción. Fórmula enriquecida con vitaminas y minerales para máximo rendimiento y recuperación muscular.",
     "price": 49000,
     "flavors": [
@@ -2163,7 +2169,7 @@ const PRODUCTS = [
     "brand": "Gentech",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/4040/image_1024/%5BGTWPCHM00%5D%20WHEY%20PROTEIN%207900%20%28Chocolate%2C%201%20kg.%29?unique=37bde56",
+    "img": "https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/4040/image_1024/%5BGTWPCHM00%5D%20WHEY%20PROTEIN%207900%20%28Chocolate%2C%201%20kg.%29?unique=37bde56&w=400&output=webp&q=82",
     "desc": "Misma fórmula premium en práctico doypack. 30g de proteína por porción en presentación económica y resistente al viaje.",
     "price": 49000,
     "flavors": [
@@ -2179,7 +2185,7 @@ const PRODUCTS = [
     "brand": "Gentech",
     "cat": "quemador",
     "emoji": "🌡️",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_618088-MLA73504786491_122023-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_618088-MLA73504786491_122023-F.webp&w=400&output=webp&q=82",
     "desc": "Termogénico de alta potencia con 3 fuentes de cafeína y extractos termogénicos. Black formula para máxima quema de grasa y energía sostenida.",
     "price": 22000,
     "badge": "hot",
@@ -2197,7 +2203,7 @@ const PRODUCTS = [
     "brand": "Gentech",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/835/image_1024/%5BGTCPSN250%5D%20CREATINA%20MONOHIDRATO%20x%20250%20g?unique=f28600d",
+    "img": "https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/835/image_1024/%5BGTCPSN250%5D%20CREATINA%20MONOHIDRATO%20x%20250%20g?unique=f28600d&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato pura de Gentech. Alta calidad y precio accesible. Para ganar fuerza, potencia y resistencia muscular de forma segura y efectiva.",
     "price": 30000,
     "badge": "sale",
@@ -2215,7 +2221,7 @@ const PRODUCTS = [
     "brand": "Gentech",
     "cat": "aminoacido",
     "emoji": "🔥",
-    "img": "https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/878/image_1024/%5BGTCLFB500%5D%20L-CARNITINA%20x%20500%20ML?unique=37bde56",
+    "img": "https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/878/image_1024/%5BGTCLFB500%5D%20L-CARNITINA%20x%20500%20ML?unique=37bde56&w=400&output=webp&q=82",
     "desc": "L-Carnitina en forma líquida para absorción inmediata. 1500mg por porción. Potencia la movilización de grasas como combustible durante el ejercicio aeróbico.",
     "price": 15000,
     "flavors": [
@@ -2231,7 +2237,7 @@ const PRODUCTS = [
     "brand": "Gentech",
     "cat": "barra",
     "emoji": "🍫",
-    "img": "https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/10932/image_1024/%5BGTBBCH010%5D%20BEAUTY%20BAR%20GENTECH?unique=37bde56",
+    "img": "https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/10932/image_1024/%5BGTBBCH010%5D%20BEAUTY%20BAR%20GENTECH?unique=37bde56&w=400&output=webp&q=82",
     "desc": "Barra proteica premium formulada para la mujer. Alta proteína, sin azúcar refinada, con colágeno hidrolizado. Snack nutritivo y delicioso para cualquier momento.",
     "price": 1800,
     "badge": "new",
@@ -2249,7 +2255,7 @@ const PRODUCTS = [
     "brand": "Gentech",
     "cat": "barra",
     "emoji": "🍫",
-    "img": "https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/4012/image_1024/%5BGTIBFR020%5D%20IRON%20BAR%20AFA%20BARRA%20PROTEICA%20%28Frutilla%2C%2020%20unidades%29?unique=37bde56",
+    "img": "https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/4012/image_1024/%5BGTIBFR020%5D%20IRON%20BAR%20AFA%20BARRA%20PROTEICA%20%28Frutilla%2C%2020%20unidades%29?unique=37bde56&w=400&output=webp&q=82",
     "desc": "Barra proteica clásica de Gentech. Alta proteína y carbohidratos para recuperación energética. El snack gym de toda la vida, con el sabor y calidad Gentech.",
     "price": 0,
     "flavors": [
@@ -2265,7 +2271,7 @@ const PRODUCTS = [
     "brand": "Gentech",
     "cat": "quemador",
     "emoji": "🌡️",
-    "img": "https://images.weserv.nl/?url=entresano.com/wp-content/uploads/2023/05/Diseno-sin-titulo-2023-05-17T121510.469.jpg",
+    "img": "https://images.weserv.nl/?url=entresano.com/wp-content/uploads/2023/05/Diseno-sin-titulo-2023-05-17T121510.469.jpg&w=400&output=webp&q=82",
     "desc": "CLA 1000mg para reducción de grasa corporal y preservación de masa muscular. Efecto lipolítico natural sin estimulantes. Compatible con cualquier suplemento.",
     "price": 15500,
     "flavors": [
@@ -2281,7 +2287,7 @@ const PRODUCTS = [
     "brand": "Xtrenght",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/fotos_productos/117/BEST-WHEY-Protein-Banana-nuevo-(1).png",
+    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/fotos_productos/117/BEST-WHEY-Protein-Banana-nuevo-(1).png&w=400&output=webp&q=82",
     "desc": "Proteína de suero de alta calidad. 22g de proteína por porción, enriquecida con vitaminas del complejo B. Excelente relación precio-rendimiento en 3 sabores únicos.",
     "price": 41900,
     "badge": "hot",
@@ -2307,7 +2313,7 @@ const PRODUCTS = [
     "brand": "Xtrenght",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/fotos_productos/123/Advanced-Banana.png",
+    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/fotos_productos/123/Advanced-Banana.png&w=400&output=webp&q=82",
     "desc": "Proteína concentrada de suero en formato de 1 kg. Ideal para quien busca mayor cantidad por compra. Alta pureza proteica con sabores premium tropicales.",
     "price": 46500,
     "flavors": [
@@ -2331,7 +2337,7 @@ const PRODUCTS = [
     "brand": "Xtrenght",
     "cat": "proteina",
     "emoji": "🏆",
-    "img": "https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/best-whest-03-kg-ALEATORIO-xtrenght-01.jpg",
+    "img": "https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/best-whest-03-kg-ALEATORIO-xtrenght-01.jpg&w=400&output=webp&q=82",
     "desc": "El pote más grande de Xtrenght. 3 kg de proteína de suero concentrada para atletas que entrenan serio todos los días. El mejor precio por kilo de la marca.",
     "price": 125000,
     "badge": "sale",
@@ -2349,7 +2355,7 @@ const PRODUCTS = [
     "brand": "Xtrenght",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/user_ObjDVbDGZY/97/Creatine-250-500.png",
+    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/user_ObjDVbDGZY/97/Creatine-250-500.png&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato de alta pureza de Xtrenght. Sin saborizantes artificiales ni aditivos. Solo creatina pura para máxima fuerza y potencia.",
     "price": 30000,
     "flavors": [
@@ -2365,7 +2371,7 @@ const PRODUCTS = [
     "brand": "Xtrenght",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/user_ObjDVbDGZY/127/Creatine-500.500.png",
+    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/user_ObjDVbDGZY/127/Creatine-500.500.png&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato en formato 500g. El doble de rendimiento por una diferencia mínima de precio. Para el atleta que no quiere cortar su ciclo a mitad.",
     "price": 54500,
     "badge": "sale",
@@ -2383,7 +2389,7 @@ const PRODUCTS = [
     "brand": "Xtrenght",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/fotos_productos/101/Pro-bcaa.500.png",
+    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/fotos_productos/101/Pro-bcaa.500.png&w=400&output=webp&q=82",
     "desc": "BCAAs en cápsulas de alta concentración. Ratio 2:1:1 con L-Glutamina añadida. Recuperación más rápida, menos dolor muscular y mayor síntesis proteica.",
     "price": 16500,
     "flavors": [
@@ -2399,7 +2405,7 @@ const PRODUCTS = [
     "brand": "Xtrenght",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/user_ObjDVbDGZY/103/HYDRO-BCAA-PRO--punch.500.png",
+    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/user_ObjDVbDGZY/103/HYDRO-BCAA-PRO--punch.500.png&w=400&output=webp&q=82",
     "desc": "BCAAs hidrolizados con electrolitos para hidratación y recuperación simultáneas. El intra-entreno definitivo para sesiones largas e intensas.",
     "price": 30000,
     "flavors": [
@@ -2415,7 +2421,7 @@ const PRODUCTS = [
     "brand": "Xtrenght",
     "cat": "aminoacido",
     "emoji": "🔴",
-    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/fotos_productos/100/Nitrox.500.png",
+    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/fotos_productos/100/Nitrox.500.png&w=400&output=webp&q=82",
     "desc": "Precursor de óxido nítrico con Arginina AKG y Citrulina Malato. Máxima vasodilatación, bomba muscular explosiva y mejor entrega de nutrientes al músculo.",
     "price": 18000,
     "flavors": [
@@ -2431,7 +2437,7 @@ const PRODUCTS = [
     "brand": "Xtrenght",
     "cat": "gainer",
     "emoji": "💪",
-    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/media/fotos_productos/47/xtrenght-nitrogain-prod-img-1-375x700.png",
+    "img": "https://images.weserv.nl/?url=xtrenght-nutrition.com/media/fotos_productos/47/xtrenght-nitrogain-prod-img-1-375x700.png&w=400&output=webp&q=82",
     "desc": "Gainer de alto valor calórico con proteínas y carbohidratos de calidad. Ideal para hardgainers que necesitan un superávit calórico para crecer. Sabor cookies premium.",
     "price": 34000,
     "flavors": [
@@ -2447,7 +2453,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "preworkout",
     "emoji": "🔥",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2021/03/19/pre-work_gold_nutrition.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2021/03/19/pre-work_gold_nutrition.png&w=400&output=webp&q=82",
     "desc": "Pre-entreno Gold Nutrition con cafeína, beta-alanina y citrulina. Energía potente, enfoque mental y bomba muscular de alta calidad desde la primera toma.",
     "price": 22000,
     "flavors": [
@@ -2463,7 +2469,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2022/12/07/whey_ripped_protein_gold_nutrition_proetina_quemadora_suplemento_deportivo_cafeina_carnitina_taurina.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2022/12/07/whey_ripped_protein_gold_nutrition_proetina_quemadora_suplemento_deportivo_cafeina_carnitina_taurina.png&w=400&output=webp&q=82",
     "desc": "Proteína con quemadores integrados. La fórmula 2 en 1 de Gold Nutrition: proteína de suero + termogénicos para ganar músculo y perder grasa al mismo tiempo.",
     "price": 50000,
     "badge": "new",
@@ -2485,7 +2491,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/09/01/100_whey_protein_gold_nutrition_doypack_2lb-blend-2025.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/09/01/100_whey_protein_gold_nutrition_doypack_2lb-blend-2025.png&w=400&output=webp&q=82",
     "desc": "Proteína 100% concentrada de suero Gold. Excelente perfil de aminoácidos esenciales. Ideal para ganar masa muscular y acelerar la recuperación post-entrenamiento.",
     "price": 47000,
     "flavors": [
@@ -2509,7 +2515,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2020/12/14/iso_gold_protein_gold_nutrition_isolate_isolatada_hidrolizada_chocolate_vainilla.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2020/12/14/iso_gold_protein_gold_nutrition_isolate_isolatada_hidrolizada_chocolate_vainilla.png&w=400&output=webp&q=82",
     "desc": "Aislado de proteína de suero de máxima pureza. Sin lactosa, sin grasa, sin carbohidratos innecesarios. Para los que buscan solo proteína pura de élite.",
     "price": 72000,
     "badge": "new",
@@ -2527,7 +2533,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "gainer",
     "emoji": "💪",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2021/11/23/gainer-gold-nutrition-ganador-masa-muscular-mejor-doypack-5lb-home.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2021/11/23/gainer-gold-nutrition-ganador-masa-muscular-mejor-doypack-5lb-home.png&w=400&output=webp&q=82",
     "desc": "Gainer de 5 libras para un mes de crecimiento masivo. Proteínas, carbohidratos complejos y grasas saludables en la proporción perfecta para máxima masa muscular.",
     "price": 51500,
     "badge": "sale",
@@ -2545,7 +2551,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2021/05/31/new-aminoacidos_bcaa_2000_gold_nutrition.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2021/05/31/new-aminoacidos_bcaa_2000_gold_nutrition.png&w=400&output=webp&q=82",
     "desc": "BCAAs 2000mg en cápsulas de rápida absorción. Ratio 2:1:1 para síntesis proteica máxima. Para recuperación acelerada y reducción del dolor muscular post-entrenamiento.",
     "price": 17500,
     "flavors": [
@@ -2561,7 +2567,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2023/11/27/zma_gold_nutrition-zinc-magnesio-vitamina-b6.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2023/11/27/zma_gold_nutrition-zinc-magnesio-vitamina-b6.png&w=400&output=webp&q=82",
     "desc": "Zinc, Magnesio y B6 en cápsulas Gold Nutrition. Potencia la recuperación nocturna, los niveles hormonales naturales y la calidad del sueño profundo.",
     "price": 17300,
     "flavors": [
@@ -2577,7 +2583,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/07/04/vitamin-gold-vitaminas-multivitaminico-multimineral-salud-gold-nutrition-gold-prime.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/07/04/vitamin-gold-vitaminas-multivitaminico-multimineral-salud-gold-nutrition-gold-prime.png&w=400&output=webp&q=82",
     "desc": "Complejo multivitamínico Gold de alta absorción. Vitaminas A, B-complex, C, D y E + minerales. Un mes de soporte inmunológico y metabólico completo.",
     "price": 17500,
     "flavors": [
@@ -2593,7 +2599,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "quemador",
     "emoji": "🌡️",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2024/04/08/lipo_gold_elite_ultra_concentrate_gold_nutrition_gold_prime.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2024/04/08/lipo_gold_elite_ultra_concentrate_gold_nutrition_gold_prime.png&w=400&output=webp&q=82",
     "desc": "Termogénico de élite con 7 ingredientes activos. Cafeína, té verde, naranja amarga, pimienta negra y más. Alta potencia para acelerar la pérdida de grasa corporal.",
     "price": 20000,
     "badge": "hot",
@@ -2611,7 +2617,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "quemador",
     "emoji": "🌡️",
-    "img": "https://images.weserv.nl/?url=www.instagram.com/p/C2S26jQxcFU/?img_index=2",
+    "img": "https://images.weserv.nl/?url=www.instagram.com/p/C2S26jQxcFU/?img_index=2&w=400&output=webp&q=82",
     "desc": "El termogénico más hardcore de Gold Nutrition. 120 cápsulas de máxima potencia quema-grasa. Para cuando necesitás resultados serios en el menor tiempo posible.",
     "price": 21000,
     "badge": "hot",
@@ -2629,7 +2635,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "vitamin",
     "emoji": "🐟",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2024/07/08/omega-3-fish-oil-capsulas-blandas-softgel-aceite-pescado-gold-nutrition-gold-prime.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2024/07/08/omega-3-fish-oil-capsulas-blandas-softgel-aceite-pescado-gold-nutrition-gold-prime.png&w=400&output=webp&q=82",
     "desc": "Aceite de pescado omega-3 de alta pureza. EPA y DHA en cápsulas blandas de fácil digestión. Para la salud cardiovascular, cerebral y reducción de inflamación.",
     "price": 32000,
     "flavors": [
@@ -2645,7 +2651,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "vitamin",
     "emoji": "💪",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/05/19/testo_gold_nutrition-testosterona-natural-booster.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/05/19/testo_gold_nutrition-testosterona-natural-booster.png&w=400&output=webp&q=82",
     "desc": "Estimulador de testosterona natural con Tribulus Terrestris, Zinc y Magnesio. Para hombres que buscan potenciar sus niveles hormonales naturalmente.",
     "price": 29800,
     "badge": "new",
@@ -2663,7 +2669,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/11/03/creatina_monohidrato_gold_nutrition_doypack.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/11/03/creatina_monohidrato_gold_nutrition_doypack.png&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato Gold Nutrition. Alta calidad y precio accesible. Para ganar fuerza, potencia y resistencia muscular de forma segura.",
     "price": 29000,
     "flavors": [
@@ -2679,7 +2685,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "colageno",
     "emoji": "🦴",
-    "img": "https://images.weserv.nl/?url=maesport.com.ar/wp-content/uploads/2024/05/540-grs-9.png",
+    "img": "https://images.weserv.nl/?url=maesport.com.ar/wp-content/uploads/2024/05/540-grs-9.png&w=400&output=webp&q=82",
     "desc": "Colágeno hidrolizado de Gold Nutrition en pote. Péptidos de colágeno tipo I y III para regeneración de tejidos, articulaciones, piel y uñas.",
     "price": 25000,
     "flavors": [
@@ -2695,7 +2701,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "colageno",
     "emoji": "🦴",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/011/728/products/hydrolyzed-collagen-frutilla-200g-19c840121dd6f2c20f17496820151286-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/011/728/products/hydrolyzed-collagen-frutilla-200g-19c840121dd6f2c20f17496820151286-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Colágeno hidrolizado en doypack práctico. Alta concentración de péptidos de colágeno para salud articular, piel y cabello.",
     "price": 23500,
     "flavors": [
@@ -2711,7 +2717,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "proteina",
     "emoji": "🌱",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/09/12/vegetal_protein_isolate_gold_nutrition_doypack_2lb.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/09/12/vegetal_protein_isolate_gold_nutrition_doypack_2lb.png&w=400&output=webp&q=82",
     "desc": "Proteína vegetal aislada 100% de origen vegetal. Sin lactosa, sin gluten, apta para veganos. Alta pureza proteica con excelente perfil de aminoácidos.",
     "price": 39500,
     "badge": "new",
@@ -2737,7 +2743,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2020/08/31/hmb_gold_nutrition_suplemento.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2020/08/31/hmb_gold_nutrition_suplemento.png&w=400&output=webp&q=82",
     "desc": "Beta-Hidroxi-Beta-Metilbutirato para preservar masa muscular durante corte o déficit calórico. Anti-catabólico natural de alta eficacia.",
     "price": 14000,
     "flavors": [
@@ -2753,7 +2759,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "aminoacido",
     "emoji": "🔴",
-    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2020/02/11/n.o_gold_nutrition_oxido_nitrico.png",
+    "img": "https://images.weserv.nl/?url=goldnutrition.com.ar/images/2020/02/11/n.o_gold_nutrition_oxido_nitrico.png&w=400&output=webp&q=82",
     "desc": "Fórmula de óxido nítrico en polvo para máxima bomba muscular. Citrulina + Arginina para vasodilatación potente y entrega de nutrientes al músculo.",
     "price": 25000,
     "flavors": [
@@ -2769,7 +2775,7 @@ const PRODUCTS = [
     "brand": "ON (Optimum Nutrition)",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=www.optimumnutrition.com/cdn/shop/files/on-1160419_Image_01.png?v=1766415834&width=800",
+    "img": "https://images.weserv.nl/?url=www.optimumnutrition.com/cdn/shop/files/on-1160419_Image_01.png?v=1766415834&width=800&w=400&output=webp&q=82",
     "desc": "La creatina más reconocida del mundo. Patentada bajo sello Creapure® — el estándar de oro en pureza. Fabricada en Alemania. Aval de miles de atletas de élite global.",
     "price": 45000,
     "badge": "new",
@@ -2787,7 +2793,7 @@ const PRODUCTS = [
     "brand": "Resveratrol NAD+",
     "cat": "vitamin",
     "emoji": "🍇",
-    "img": "https://images.weserv.nl/?url=m.media-amazon.com/images/I/51WKLQqEUKL._AC_SX679_.jpg",
+    "img": "https://images.weserv.nl/?url=m.media-amazon.com/images/I/51WKLQqEUKL._AC_SX679_.jpg&w=400&output=webp&q=82",
     "desc": "Combinación única de Resveratrol y NAD+ para máxima protección celular y longevidad. Anti-aging de última generación para optimizar la energía mitocondrial.",
     "price": 35000,
     "badge": "new",
@@ -2805,7 +2811,7 @@ const PRODUCTS = [
     "brand": "Nutrex",
     "cat": "aminoacido",
     "emoji": "🔥",
-    "img": "https://images.weserv.nl/?url=nutrex.com/cdn/shop/files/L-Carnitine-120-FR.png?v=1740145582&width=750",
+    "img": "https://images.weserv.nl/?url=nutrex.com/cdn/shop/files/L-Carnitine-120-FR.png?v=1740145582&width=750&w=400&output=webp&q=82",
     "desc": "L-Carnitina 1000mg de Nutrex, marca importada de USA. Transporta ácidos grasos a la mitocondria para producir energía. Máxima eficacia en forma de comprimidos.",
     "price": 35000,
     "badge": "new",
@@ -2823,7 +2829,7 @@ const PRODUCTS = [
     "brand": "LAPPIEL",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=mayorista.lappiel.com/wp-content/uploads/2025/09/placa-0-37821fa7dd6fbd916117513075432136-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=mayorista.lappiel.com/wp-content/uploads/2025/09/placa-0-37821fa7dd6fbd916117513075432136-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "NAD+ 500mg con Resveratrol. La combinación más estudiada para activar las sirtuinas y potenciar la longevidad celular. Energía mitocondrial y protección antioxidante.",
     "price": 32000,
     "flavors": [
@@ -2839,7 +2845,7 @@ const PRODUCTS = [
     "brand": "LAPPIEL",
     "cat": "vitamin",
     "emoji": "🐟",
-    "img": "https://images.weserv.nl/?url=mayorista.lappiel.com/wp-content/uploads/2025/09/WhatsApp-Image-2025-09-22-at-1.57.52-PM.jpeg",
+    "img": "https://images.weserv.nl/?url=mayorista.lappiel.com/wp-content/uploads/2025/09/WhatsApp-Image-2025-09-22-at-1.57.52-PM.jpeg&w=400&output=webp&q=82",
     "desc": "La triple fórmula de ácidos grasos: Omega 3, 6 y 9 en proporciones óptimas. Soporte cardiovascular, cerebral y antiinflamatorio completo en una sola cápsula.",
     "price": 49500,
     "badge": "new",
@@ -2857,7 +2863,7 @@ const PRODUCTS = [
     "brand": "LAPPIEL",
     "cat": "vitamin",
     "emoji": "🌿",
-    "img": "https://images.weserv.nl/?url=mayorista.lappiel.com/wp-content/uploads/2025/12/PLACA-0.jpg",
+    "img": "https://images.weserv.nl/?url=mayorista.lappiel.com/wp-content/uploads/2025/12/PLACA-0.jpg&w=400&output=webp&q=82",
     "desc": "Ashwagandha KSM-66® con Vitamina C. El adaptógeno más estudiado para reducir el cortisol, mejorar el sueño y aumentar la energía y vitalidad natural.",
     "price": 28000,
     "badge": "new",
@@ -2875,7 +2881,7 @@ const PRODUCTS = [
     "brand": "LAPPIEL",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=mayorista.lappiel.com/wp-content/uploads/2025/09/placa-0-bed5b7aaaaff42b56517512973517226-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=mayorista.lappiel.com/wp-content/uploads/2025/09/placa-0-bed5b7aaaaff42b56517512973517226-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "La forma quelada de magnesio de mayor absorción. Sin efecto laxante. Relajación muscular, reducción de calambres, mejor sueño profundo y concentración.",
     "price": 16000,
     "badge": "hot",
@@ -2893,7 +2899,7 @@ const PRODUCTS = [
     "brand": "Mervick",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_661811-MLA96870760129_102025-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_661811-MLA96870760129_102025-F.webp&w=400&output=webp&q=82",
     "desc": "Blend de proteínas de suero de alta calidad Mervick. Combinación de concentrado e hidrolizado para absorción escalonada y recuperación continua.",
     "price": 43000,
     "flavors": [
@@ -2917,7 +2923,7 @@ const PRODUCTS = [
     "brand": "Mervick",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_725012-MLA99452402346_112025-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_725012-MLA99452402346_112025-F.webp&w=400&output=webp&q=82",
     "desc": "Proteína de suero de rendimiento profesional Mervick. Formulada para atletas que buscan alto rendimiento con ingredientes de primera calidad.",
     "price": 39000,
     "flavors": [
@@ -2941,7 +2947,7 @@ const PRODUCTS = [
     "brand": "Mervick",
     "cat": "gainer",
     "emoji": "💪",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-gainer-complex-vainilla-3-3lbs-1-b4967435a0d090767e17637296721389-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-gainer-complex-vainilla-3-3lbs-1-b4967435a0d090767e17637296721389-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Gainer complejo de Mervick con proteínas, carbohidratos y grasas en la proporción ideal. Para ganar masa muscular de calidad sin exceso de grasa corporal.",
     "price": 31000,
     "flavors": [
@@ -2957,7 +2963,7 @@ const PRODUCTS = [
     "brand": "Mervick",
     "cat": "colageno",
     "emoji": "🦴",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-colageno-sport-hidrolizado-naranja-suplemento-330g-1-a189dbe32888cf205a17545051619293-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-colageno-sport-hidrolizado-naranja-suplemento-330g-1-a189dbe32888cf205a17545051619293-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Colágeno hidrolizado deportivo Mervick con Magnesio y Vitamina C. Protege articulaciones, cartílagos y tendones bajo el estrés del entrenamiento intenso.",
     "price": 25000,
     "flavors": [
@@ -2977,7 +2983,7 @@ const PRODUCTS = [
     "brand": "Mervick",
     "cat": "barra",
     "emoji": "🍫",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-whey-low-carb-protein-barra-sabor-frutos-rojos-12u-1-fa260f7421e9cc44b017544956585720-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-whey-low-carb-protein-barra-sabor-frutos-rojos-12u-1-fa260f7421e9cc44b017544956585720-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "15g de proteína por barra. Sin azúcar agregada, cobertura de chocolate, textura suave y cremosa. El snack ideal para entre comidas sin culpa ni calorías vacías.",
     "price": 2000,
     "badge": "sale",
@@ -2995,7 +3001,7 @@ const PRODUCTS = [
     "brand": "Mervick",
     "cat": "barra",
     "emoji": "🍫",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-whey-protein-barra-proteina-frambuesa-chocolate-12u-1-a074f1cb81f58b182d17545084229856-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-whey-protein-barra-proteina-frambuesa-chocolate-12u-1-a074f1cb81f58b182d17545084229856-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Barra de proteína whey de mayor tamaño. 20g de proteína con cobertura de chocolate premium. Textura esponjosa y sabor a tarta. Más proteína, más satisfacción.",
     "price": 2000,
     "badge": "sale",
@@ -3013,7 +3019,7 @@ const PRODUCTS = [
     "brand": "Mervick",
     "cat": "barra",
     "emoji": "🍫",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/barritas-586fcb4b2f270f6af217558917015683-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/barritas-586fcb4b2f270f6af217558917015683-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Barra proteica clásica de Mervick en formato compacto. Sabor frutos rojos con cobertura de chocolate negro. Alto contenido proteico en tamaño pocket.",
     "price": 2000,
     "flavors": [
@@ -3029,7 +3035,7 @@ const PRODUCTS = [
     "brand": "Mervick",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-creatine-suplemento-creatina-micronizada-x-300grs-1-0af7e886f411d9107617544966078692-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-creatine-suplemento-creatina-micronizada-x-300grs-1-0af7e886f411d9107617544966078692-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato Mervick de alta pureza. Sin agregados artificiales. Para ganar fuerza, potencia y resistencia muscular de forma efectiva.",
     "price": 30000,
     "flavors": [
@@ -3045,7 +3051,7 @@ const PRODUCTS = [
     "brand": "Mervick",
     "cat": "hidratacion",
     "emoji": "💧",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-sport-drink-maxima-hidratacion-naranja-mandarina-1kg-1-25af661ca83968044f17544992172155-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-sport-drink-maxima-hidratacion-naranja-mandarina-1kg-1-25af661ca83968044f17544992172155-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Bebida deportiva isotónica en polvo. Carbohidratos de rápida absorción + electrolitos para reposición energética durante entrenamientos de resistencia.",
     "price": 18000,
     "flavors": [
@@ -3065,7 +3071,7 @@ const PRODUCTS = [
     "brand": "IDN",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2022/09/idn-cookies.jpg",
+    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2022/09/idn-cookies.jpg&w=400&output=webp&q=82",
     "desc": "Proteína de suero IDN en formato 1 kg. Alta concentración proteica por porción con el respaldo de una marca establecida en el mercado argentino.",
     "price": 36000,
     "flavors": [
@@ -3081,7 +3087,7 @@ const PRODUCTS = [
     "brand": "IDN",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2021/05/CREATINA-300-IDN.png",
+    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2021/05/CREATINA-300-IDN.png&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato IDN. Calidad garantizada, precio accesible. Ideal para iniciantes o para completar un ciclo sin gastar de más.",
     "price": 28000,
     "flavors": [
@@ -3097,7 +3103,7 @@ const PRODUCTS = [
     "brand": "IDN",
     "cat": "gainer",
     "emoji": "💪",
-    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2018/11/mass-fusion.jpg",
+    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2018/11/mass-fusion.jpg&w=400&output=webp&q=82",
     "desc": "Gainer de calidad IDN con proteínas y carbohidratos balanceados. Para un aumento de masa muscular consistente y progresivo sin exceso de calorías vacías.",
     "price": 29000,
     "flavors": [
@@ -3121,7 +3127,7 @@ const PRODUCTS = [
     "brand": "IDN",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2018/11/LEUCINE.png",
+    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2018/11/LEUCINE.png&w=400&output=webp&q=82",
     "desc": "L-Leucina pura, el aminoácido más anabólico de los BCAAs. Estimula directamente la síntesis proteica muscular (mTOR). Ideal para potenciar cualquier proteína.",
     "price": 33500,
     "flavors": [
@@ -3137,7 +3143,7 @@ const PRODUCTS = [
     "brand": "IDN",
     "cat": "aminoacido",
     "emoji": "🔥",
-    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2018/11/l-carnitine-768x768.png",
+    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2018/11/l-carnitine-768x768.png&w=400&output=webp&q=82",
     "desc": "L-Carnitina en polvo sabor naranja de IDN. Transporta ácidos grasos a la mitocondria para producir energía. Sabor refrescante en polvo para tomar antes del cardio.",
     "price": 18000,
     "flavors": [
@@ -3153,7 +3159,7 @@ const PRODUCTS = [
     "brand": "IDN",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2020/12/bcaa-ultimate-2.png",
+    "img": "https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2020/12/bcaa-ultimate-2.png&w=400&output=webp&q=82",
     "desc": "BCAAs en formato 435g con alta concentración por porción. Ratio optimizado para máxima síntesis proteica y recuperación muscular post-entrenamiento.",
     "price": 33000,
     "flavors": [
@@ -3169,7 +3175,7 @@ const PRODUCTS = [
     "brand": "Nutremax",
     "cat": "hidratacion",
     "emoji": "💧",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_775962-MLA93508034495_092025-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_775962-MLA93508034495_092025-F.webp&w=400&output=webp&q=82",
     "desc": "Bebida de recuperación post-entreno con proteínas, carbohidratos y electrolitos. Recupera los depósitos de glucógeno, repara músculo y rehidrata en una sola toma.",
     "price": 21000,
     "flavors": [
@@ -3185,7 +3191,7 @@ const PRODUCTS = [
     "brand": "Nutremax",
     "cat": "hidratacion",
     "emoji": "💧",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/003/189/220/products/20-off-en-2024-04-24t231528-412-5af016cb9cea23842a17157364979766-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/003/189/220/products/20-off-en-2024-04-24t231528-412-5af016cb9cea23842a17157364979766-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Bebida de recuperación en formato grande. Un mes de recuperación post-entreno completa. Proteínas + carbohidratos + electrolitos para máxima regeneración muscular.",
     "price": 38000,
     "badge": "sale",
@@ -3203,7 +3209,7 @@ const PRODUCTS = [
     "brand": "Nutremax",
     "cat": "hidratacion",
     "emoji": "💧",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/003/189/220/products/20-off-en-2024-04-24t225618-358-630a850d3b2029fdd917157366932195-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/003/189/220/products/20-off-en-2024-04-24t225618-358-630a850d3b2029fdd917157366932195-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Bebida isotónica Nutremax para reposición de electrolitos. Sin azúcar, con carbohidratos de rápida absorción. Para entrenamientos de 1+ hora de duración.",
     "price": 15500,
     "flavors": [
@@ -3223,7 +3229,7 @@ const PRODUCTS = [
     "brand": "Nutremax",
     "cat": "hidratacion",
     "emoji": "💧",
-    "img": "https://images.weserv.nl/?url=www.nutremax.com.ar/images/products/1767634277612348118.png",
+    "img": "https://images.weserv.nl/?url=www.nutremax.com.ar/images/products/1767634277612348118.png&w=400&output=webp&q=82",
     "desc": "El mayor formato de Hydromax. Para atletas de alta exigencia que entrenan todos los días. Hidratación de élite sin interrupciones por falta de stock.",
     "price": 21000,
     "badge": "sale",
@@ -3241,7 +3247,7 @@ const PRODUCTS = [
     "brand": "Nutremax",
     "cat": "vitamin",
     "emoji": "☕",
-    "img": "https://images.weserv.nl/?url=www.nutremax.com.ar/images/products/1669909137397658513.png",
+    "img": "https://images.weserv.nl/?url=www.nutremax.com.ar/images/products/1669909137397658513.png&w=400&output=webp&q=82",
     "desc": "Cafeína en formato dosis precisa para 30 tomas. Energía inmediata sin calorías extras. Para los días que necesitás ese extra de concentración y rendimiento.",
     "price": 16000,
     "flavors": [
@@ -3257,7 +3263,7 @@ const PRODUCTS = [
     "brand": "Nutremax",
     "cat": "vitamin",
     "emoji": "☕",
-    "img": "https://images.weserv.nl/?url=www.nutremax.com.ar/images/products/1724711172524698018.png",
+    "img": "https://images.weserv.nl/?url=www.nutremax.com.ar/images/products/1724711172524698018.png&w=400&output=webp&q=82",
     "desc": "Cafeína anhidra 200mg en 60 servicios. El paquete más económico para mantener energía y foco durante entrenamientos y el día a día.",
     "price": 13500,
     "badge": "sale",
@@ -3275,7 +3281,7 @@ const PRODUCTS = [
     "brand": "Nutremax",
     "cat": "preworkout",
     "emoji": "🔥",
-    "img": "https://images.weserv.nl/?url=www.nutremax.com.ar//images/products/162610047160061173.png",
+    "img": "https://images.weserv.nl/?url=www.nutremax.com.ar//images/products/162610047160061173.png&w=400&output=webp&q=82",
     "desc": "Pre-entreno integral con cafeína, beta-alanina y citrulina. Energía sostenida sin crashes, enfoque mental agudo y resistencia extendida. Sabor limonada refrescante.",
     "price": 28000,
     "badge": "hot",
@@ -3293,7 +3299,7 @@ const PRODUCTS = [
     "brand": "Nutremax",
     "cat": "aminoacido",
     "emoji": "🧬",
-    "img": "https://images.weserv.nl/?url=www.nutremax.com.ar/images/products/1674561592349880733.png",
+    "img": "https://images.weserv.nl/?url=www.nutremax.com.ar/images/products/1674561592349880733.png&w=400&output=webp&q=82",
     "desc": "Glutamina pura Nutremax de alta pureza. Para recuperación muscular óptima, salud intestinal y refuerzo del sistema inmune después del entrenamiento intenso.",
     "price": 21000,
     "flavors": [
@@ -3309,7 +3315,7 @@ const PRODUCTS = [
     "brand": "Granger",
     "cat": "barra",
     "emoji": "🥞",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/123/325/products/vainilla-11-6236aeed6b13bd6c3a16585849970594-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/123/325/products/vainilla-11-6236aeed6b13bd6c3a16585849970594-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Mix para pancakes con proteína del suero de leche. Solo agregar agua o leche. Alto contenido proteico, bajo en grasas. El desayuno ideal para atletas.",
     "price": 15000,
     "flavors": [
@@ -3329,7 +3335,7 @@ const PRODUCTS = [
     "brand": "Granger",
     "cat": "barra",
     "emoji": "🧁",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/123/325/products/cupclae1-827a5a7c746379e14d17277176524280-1024-1024.gif",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/123/325/products/cupclae1-827a5a7c746379e14d17277176524280-1024-1024.gif&w=400&output=webp&q=82",
     "desc": "Mix para cupcakes con proteína. Preparación fácil y rápida. El snack proteico más delicioso del mercado para saciar el dulce sin salirse de la dieta.",
     "price": 15000,
     "flavors": [
@@ -3345,7 +3351,7 @@ const PRODUCTS = [
     "brand": "Granger",
     "cat": "barra",
     "emoji": "🍳",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/123/325/products/este1-7ac9fd227ceaa051f116428055775019-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/123/325/products/este1-7ac9fd227ceaa051f116428055775019-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Mix para omelettes proteicos de alto valor nutricional. La forma más sabrosa y original de aumentar el consumo de proteína en el desayuno.",
     "price": 16500,
     "flavors": [
@@ -3361,7 +3367,7 @@ const PRODUCTS = [
     "brand": "Granger",
     "cat": "colageno",
     "emoji": "🦴",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/123/325/products/gelatina-96ba3eb5176a70070117682475303477-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/123/325/products/gelatina-96ba3eb5176a70070117682475303477-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Gelatina con colágeno hidrolizado. La forma más fácil y rica de consumir colágeno diariamente. Ideal para articulaciones, piel y cabello.",
     "price": 12000,
     "flavors": [
@@ -3377,7 +3383,7 @@ const PRODUCTS = [
     "brand": "Granger",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/123/325/products/01-2025-03-15t120118-025-1c5a75441bbda97b8117420509143883-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/123/325/products/01-2025-03-15t120118-025-1c5a75441bbda97b8117420509143883-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Citrato de magnesio en polvo Granger. Máxima biodisponibilidad para relajación muscular, reducción de calambres y mejor descanso nocturno.",
     "price": 14000,
     "flavors": [
@@ -3393,7 +3399,7 @@ const PRODUCTS = [
     "brand": "Hoch Sport",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=hochsport.com/wp-content/uploads/ZMAB_CARRUSEL_06.jpg",
+    "img": "https://images.weserv.nl/?url=hochsport.com/wp-content/uploads/ZMAB_CARRUSEL_06.jpg&w=400&output=webp&q=82",
     "desc": "ZMA con el doble de cápsulas que la versión estándar. 4 meses de recuperación nocturna, soporte hormonal natural y calidad de sueño mejorada.",
     "price": 23000,
     "badge": "sale",
@@ -3411,7 +3417,7 @@ const PRODUCTS = [
     "brand": "Hoch Sport",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=hochsport.com/wp-content/uploads/ESCALA-WEB_Magnesium-Citrate-400_Frente_800x800.png",
+    "img": "https://images.weserv.nl/?url=hochsport.com/wp-content/uploads/ESCALA-WEB_Magnesium-Citrate-400_Frente_800x800.png&w=400&output=webp&q=82",
     "desc": "Citrato de magnesio en cápsulas de 400mg de alta biodisponibilidad. Relajación muscular, calambres, sueño profundo y función nerviosa óptima.",
     "price": 16000,
     "flavors": [
@@ -3427,7 +3433,7 @@ const PRODUCTS = [
     "brand": "Hoch Sport",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=hochsport.com/wp-content/uploads/Bio-Prot-Chocolate_Frente_800x800.png",
+    "img": "https://images.weserv.nl/?url=hochsport.com/wp-content/uploads/Bio-Prot-Chocolate_Frente_800x800.png&w=400&output=webp&q=82",
     "desc": "Proteína premium de Hoch Sport con fórmula avanzada de concentrado e hidrolizado. Para atletas de alto rendimiento que exigen lo mejor en cada porción.",
     "price": 68000,
     "badge": "new",
@@ -3449,7 +3455,7 @@ const PRODUCTS = [
     "brand": "Hoch Sport",
     "cat": "gainer",
     "emoji": "💪",
-    "img": "https://images.weserv.nl/?url=hochsport.com/wp-content/uploads/Extreme-Mass-1-5Chocolate_Frente_800x800.png",
+    "img": "https://images.weserv.nl/?url=hochsport.com/wp-content/uploads/Extreme-Mass-1-5Chocolate_Frente_800x800.png&w=400&output=webp&q=82",
     "desc": "Gainer de alta densidad calórica para hardgainers extremos. El gainer más potente de Hoch Sport para subir de peso de manera rápida y efectiva.",
     "price": 20000,
     "flavors": [
@@ -3465,7 +3471,7 @@ const PRODUCTS = [
     "brand": "Nutrilab",
     "cat": "proteina",
     "emoji": "🥛",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/242/511/products/mesa-de-trabajo-1-2b5c7c8ee0e4e8828f17183133452909-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/242/511/products/mesa-de-trabajo-1-2b5c7c8ee0e4e8828f17183133452909-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Proteína de suero Nutrilab de alta calidad. Fórmula balanceada para recuperación muscular y construcción de masa. Precio accesible sin comprometer la calidad.",
     "price": 38000,
     "flavors": [
@@ -3481,7 +3487,7 @@ const PRODUCTS = [
     "brand": "Nutrilab",
     "cat": "colageno",
     "emoji": "🦴",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/242/511/products/pic-collagen-flex-1-fe2c4f313f411b652e17520003028904-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/242/511/products/pic-collagen-flex-1-fe2c4f313f411b652e17520003028904-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Colágeno con glucosamina y condroitina en polvo. Fórmula completa para la salud articular y movilidad. Sabor uva refrescante para tomar todos los días.",
     "price": 26500,
     "flavors": [
@@ -3497,7 +3503,7 @@ const PRODUCTS = [
     "brand": "Nutrilab",
     "cat": "quemador",
     "emoji": "🌡️",
-    "img": "https://images.weserv.nl/?url=scontent.ftuc1-2.fna.fbcdn.net/v/t1.6435-9/101029076_1399525610231947_5715364206862139392_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=7b2446&_nc_ohc=tspyWH25CSwQ7kNvwHiBSNB&_nc_oc=Adqq6Y19-xQdacEuZJiokLLJOphc9Bnnzr0QIr86bRgZeIDu0rwUbhH5znWNR_dLGhs&_nc_zt=23&_nc_ht=scontent.ftuc1-2.fna&_nc_gid=OQOywNu0RfJmSdqJwZ08gw&_nc_ss=7a30f&oh=00_AfzVXvMXC4zI0g83jKbg5Ctfa8sKV4DxVOg81ER8bn-FJA&oe=69EA18ED",
+    "img": "https://images.weserv.nl/?url=scontent.ftuc1-2.fna.fbcdn.net/v/t1.6435-9/101029076_1399525610231947_5715364206862139392_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=7b2446&_nc_ohc=tspyWH25CSwQ7kNvwHiBSNB&_nc_oc=Adqq6Y19-xQdacEuZJiokLLJOphc9Bnnzr0QIr86bRgZeIDu0rwUbhH5znWNR_dLGhs&_nc_zt=23&_nc_ht=scontent.ftuc1-2.fna&_nc_gid=OQOywNu0RfJmSdqJwZ08gw&_nc_ss=7a30f&oh=00_AfzVXvMXC4zI0g83jKbg5Ctfa8sKV4DxVOg81ER8bn-FJA&oe=69EA18ED&w=400&output=webp&q=82",
     "desc": "Termogénico de 120 cápsulas para 2 meses de quema de grasa continua. Cafeína + extractos termogénicos naturales para acelerar el metabolismo.",
     "price": 16000,
     "flavors": [
@@ -3513,7 +3519,7 @@ const PRODUCTS = [
     "brand": "Nutrilab",
     "cat": "quemador",
     "emoji": "🌡️",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/242/511/products/pic-termo-genic-1-fb60a3eca2acd3a99617521652427526-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/242/511/products/pic-termo-genic-1-fb60a3eca2acd3a99617521652427526-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "El termogénico de mayor duración del mercado. 240 comprimidos para más de 2 meses de tratamiento continuo. Termogénesis sostenida todo el día.",
     "price": 28000,
     "flavors": [
@@ -3529,7 +3535,7 @@ const PRODUCTS = [
     "brand": "Nutrilab",
     "cat": "vitamin",
     "emoji": "💊",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/242/511/products/pic-live-fem-1-adfaad01e528a62f2717521670876308-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/242/511/products/pic-live-fem-1-adfaad01e528a62f2717521670876308-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Multivitamínico completo formulado para la mujer activa. Vitaminas, minerales y antioxidantes en las dosis específicas para las necesidades femeninas.",
     "price": 14000,
     "badge": "new",
@@ -3547,7 +3553,7 @@ const PRODUCTS = [
     "brand": "Nucleo Fit",
     "cat": "proteina",
     "emoji": "🌱",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/001/066/362/products/vegetal-protein_chocolate_sin-fondo-030877304ddb78207317594224312004-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/001/066/362/products/vegetal-protein_chocolate_sin-fondo-030877304ddb78207317594224312004-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Proteína vegetal aislada de Nucleo Fit. 100% origen vegetal, sin lactosa, sin gluten. Apta para veganos con alto perfil de aminoácidos. La proteína verde más completa.",
     "price": 37000,
     "badge": "new",
@@ -3565,7 +3571,7 @@ const PRODUCTS = [
     "brand": "EI45",
     "cat": "hidratacion",
     "emoji": "💧",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_993230-MLA99006997397_112025-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_993230-MLA99006997397_112025-F.webp&w=400&output=webp&q=82",
     "desc": "Bebida isotónica de alta gama en formato grande. Carbohidratos + electrolitos para mantener el rendimiento en entrenamientos prolongados de resistencia.",
     "price": 26500,
     "badge": "new",
@@ -3583,7 +3589,7 @@ const PRODUCTS = [
     "brand": "EI45",
     "cat": "hidratacion",
     "emoji": "⚗️",
-    "img": "https://images.weserv.nl/?url=encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJdmI3NxIuJHozzDRFnZ3wUmZQZhhTDgBVVg&s",
+    "img": "https://images.weserv.nl/?url=encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJdmI3NxIuJHozzDRFnZ3wUmZQZhhTDgBVVg&s&w=400&output=webp&q=82",
     "desc": "Carbohidratos de rápida absorción para energía inmediata. Ideal pre y post-entrenamiento para maximizar el rendimiento y acelerar la recuperación de glucógeno.",
     "price": 2000,
     "flavors": [
@@ -3599,7 +3605,7 @@ const PRODUCTS = [
     "brand": "Quelopaleo",
     "cat": "barra",
     "emoji": "🍫",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/002/590/783/products/file_000000000ae071f58f84e7bd426c2f00-1-5abfbab95a30166bdf17626388277213-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/002/590/783/products/file_000000000ae071f58f84e7bd426c2f00-1-5abfbab95a30166bdf17626388277213-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Chocolate artesanal sin TACC, sin azúcar refinada, endulzado naturalmente. Sin conservantes. El snack ideal para el día sin salirse de la dieta. Quedan geniales frías.",
     "price": 1800,
     "flavors": [
@@ -3619,7 +3625,7 @@ const PRODUCTS = [
     "brand": "Brava",
     "cat": "barra",
     "emoji": "🍫",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/002/590/783/products/diseno-sin-titulo-2025-10-24t165016-399-0e11628a24b3f3303e17613354219949-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/002/590/783/products/diseno-sin-titulo-2025-10-24t165016-399-0e11628a24b3f3303e17613354219949-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Barra proteica Brava de formato estándar. Alta proteína por barra con cobertura de chocolate y textura suave. El snack proteico para llevar a todas partes.",
     "price": 2000,
     "flavors": [
@@ -3635,7 +3641,7 @@ const PRODUCTS = [
     "brand": "Bro's",
     "cat": "barra",
     "emoji": "🍫",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/2287/image_1024/%5B11927%5D%20Barra%20proteica%20bros%20unidad%2050gs%20chocolate%20%28Chocolate%20blanco%29?unique=534892d",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/2287/image_1024/%5B11927%5D%20Barra%20proteica%20bros%20unidad%2050gs%20chocolate%20%28Chocolate%20blanco%29?unique=534892d&w=400&output=webp&q=82",
     "desc": "Barra proteica Bro's. Textura crujiente con cobertura de chocolate. Alta proteína, sin azúcar añadida. En dos versiones de chocolate para todos los gustos.",
     "price": 1800,
     "flavors": [
@@ -3655,7 +3661,7 @@ const PRODUCTS = [
     "brand": "Molé",
     "cat": "barra",
     "emoji": "🌾",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/001/499/676/products/recorte-79-f0e6e32fe77aa22e7017563184765122-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/001/499/676/products/recorte-79-f0e6e32fe77aa22e7017563184765122-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Granola artesanal con proteína agregada. Alta en fibra, baja en azúcar. Con avena, frutos secos y proteína del suero. Para desayunos y meriendas nutritivas.",
     "price": 15000,
     "flavors": [
@@ -3675,7 +3681,7 @@ const PRODUCTS = [
     "brand": "Molé",
     "cat": "barra",
     "emoji": "🥞",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/001/499/676/products/recorte-78-489e9407c9cfc69f2117563178267914-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/001/499/676/products/recorte-78-489e9407c9cfc69f2117563178267914-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Mix para pancakes Molé con proteína de suero. Sabor vainilla artesanal. Preparación en minutos, nutrición completa. La merienda proteica más rica del mercado.",
     "price": 15000,
     "flavors": [
@@ -3691,7 +3697,7 @@ const PRODUCTS = [
     "brand": "Molé",
     "cat": "barra",
     "emoji": "🍫",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/001/499/676/products/fuerza-e4aab5fc8bd11670da17577051435537-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/001/499/676/products/fuerza-e4aab5fc8bd11670da17577051435537-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Barras de cereal artesanales Molé. Naturales, sin conservantes, con cereales y frutas seleccionadas. El snack de energía para llevar a todas partes.",
     "price": 1600,
     "flavors": [
@@ -3707,7 +3713,7 @@ const PRODUCTS = [
     "brand": "Vitalgy",
     "cat": "barra",
     "emoji": "🌾",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/002/268/228/products/barras-de-cereal-vitalgy-arandanos-y-almendras-caja-10-x-40g-1-69adeec6defc602b6617528531796997-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/002/268/228/products/barras-de-cereal-vitalgy-arandanos-y-almendras-caja-10-x-40g-1-69adeec6defc602b6617528531796997-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Barritas de cereal Vitalgy. Naturales, sin azúcar refinada, con cereales de alta calidad. Para un snack de energía saludable en cualquier momento del día.",
     "price": 1000,
     "badge": "sale",
@@ -3741,7 +3747,7 @@ const PRODUCTS = [
     "brand": "Pasta de Maní",
     "cat": "barra",
     "emoji": "🥜",
-    "img": "https://images.weserv.nl/?url=jumboargentina.vtexassets.com/arquivos/ids/866739-1200-auto?v=638824017897070000&width=1200&height=auto&aspect=true",
+    "img": "https://images.weserv.nl/?url=jumboargentina.vtexassets.com/arquivos/ids/866739-1200-auto?v=638824017897070000&width=1200&height=auto&aspect=true&w=400&output=webp&q=82",
     "desc": "Pasta de maní natural 100% sin azúcar, sin sal. Solo maní. Rica en proteínas y grasas saludables. El complemento perfecto para tostadas, pancakes o smoothies.",
     "price": 3300,
     "badge": "new",
@@ -3759,7 +3765,7 @@ const PRODUCTS = [
     "brand": "Grows",
     "cat": "barra",
     "emoji": "🍫",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/005/510/154/products/chocolate-1-b71020166ef398093817327183795204-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/005/510/154/products/chocolate-1-b71020166ef398093817327183795204-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Barra proteica Grows con textura suave y cobertura de chocolate. Alta proteína, bajo en azúcar. En varios sabores únicos para no aburrirse nunca del snack fitness.",
     "price": 1800,
     "flavors": [
@@ -3787,7 +3793,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "colageno",
     "emoji": "🦴",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/STANUT2030BCL.png?v=1719509920&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/STANUT2030BCL.png?v=1719509920&width=1100&w=400&output=webp&q=82",
     "desc": "Colágeno hidrolizado tipo I y III en polvo. De rápida absorción para regenerar cartílagos, tendones y piel. Mezcla con agua o jugo.",
     "price": 23000,
     "flavors": [
@@ -3807,7 +3813,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "colageno",
     "emoji": "🦴",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/collagensport.png?v=1738085374&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/collagensport.png?v=1738085374&width=1100&w=400&output=webp&q=82",
     "desc": "Colágeno deportivo con Magnesio, Fósforo y Vitamina C. Para atletas de alta exigencia. Protege articulaciones y cartílagos del desgaste por entrenamiento intenso.",
     "price": 25000,
     "flavors": [
@@ -3823,7 +3829,7 @@ const PRODUCTS = [
     "brand": "Star Nutrition",
     "cat": "colageno",
     "emoji": "🦴",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/collagenplus.png?v=1738086248&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/collagenplus.png?v=1738086248&width=1100&w=400&output=webp&q=82",
     "desc": "Colágeno + Vitamina C + Ácido Hialurónico. La fórmula antiaging más completa del mercado. Para piel, articulaciones, cabello y uñas en una sola toma diaria.",
     "price": 25000,
     "badge": "hot",
@@ -3841,7 +3847,7 @@ const PRODUCTS = [
     "brand": "Max Force",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/005/542/784/products/creatinamonohidrato-tuttifrutti-1-0da0580cbca6627e9517597534068631-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/005/542/784/products/creatinamonohidrato-tuttifrutti-1-0da0580cbca6627e9517597534068631-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato de Max Force. Calidad garantizada a precio accesible. Para quienes buscan los beneficios de la creatina sin gastar de más.",
     "price": 15000,
     "flavors": [
@@ -3857,7 +3863,7 @@ const PRODUCTS = [
     "brand": "Protein Project",
     "cat": "proteina",
     "emoji": "🌱",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/001/725/864/products/protein_project_pea_protein_isolate_2lbs_unflavored_adn_palermo_web1-51c1e530574c18c5be16239512778522-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/001/725/864/products/protein_project_pea_protein_isolate_2lbs_unflavored_adn_palermo_web1-51c1e530574c18c5be16239512778522-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Aislado de proteína de arveja. 100% vegetal, sin lactosa, sin gluten, apta veganos. Completa en aminoácidos esenciales para una nutrición plant-based de élite.",
     "price": 30000,
     "badge": "new",
@@ -3875,7 +3881,7 @@ const PRODUCTS = [
     "brand": "Protein Project",
     "cat": "creatina",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_922449-MLA99999907837_112025-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_922449-MLA99999907837_112025-F.webp&w=400&output=webp&q=82",
     "desc": "Creatina monohidrato de origen vegetal. Apta veganos. Para aumentar fuerza y potencia sin compromiso ético. La creatina para la comunidad plant-based.",
     "price": 13000,
     "badge": "new",
@@ -3893,7 +3899,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🥤",
-    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/Shaker-1_4f513345-ed58-4d2c-8f51-da1ebdb0588d.png?v=1756412538&width=1100",
+    "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/Shaker-1_4f513345-ed58-4d2c-8f51-da1ebdb0588d.png?v=1756412538&width=1100&w=400&output=webp&q=82",
     "desc": "Vasos mezcladores deportivos con bola agitadora. Capacidad 500-700ml. Libre de BPA, fácil de limpiar. Para llevar tu proteína al gym sin complicaciones.",
     "price": 11000,
     "flavors": [
@@ -3941,7 +3947,7 @@ const PRODUCTS = [
     "brand": "Everlast",
     "cat": "accesorio",
     "emoji": "🥤",
-    "img": "https://images.weserv.nl/?url=m.media-amazon.com/images/I/41ljj4tKP5L._SY300_SX300_QL70_FMwebp_.jpg",
+    "img": "https://images.weserv.nl/?url=m.media-amazon.com/images/I/41ljj4tKP5L._SY300_SX300_QL70_FMwebp_.jpg&w=400&output=webp&q=82",
     "desc": "Shaker premium Everlast con compartimento extra para suplementos en polvo. Sistema de cierre hermético anti-derrame. El shaker más completo del mercado.",
     "price": 15000,
     "flavors": [
@@ -3957,7 +3963,7 @@ const PRODUCTS = [
     "brand": "Gold Nutrition",
     "cat": "accesorio",
     "emoji": "🥤",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_893667-MLA99594894568_122025-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_893667-MLA99594894568_122025-F.webp&w=400&output=webp&q=82",
     "desc": "Shaker doble Gold Nutrition con dos compartimentos separados. Para llevar diferentes suplementos en un solo vaso. El compañero de gym más práctico.",
     "price": 11000,
     "flavors": [
@@ -3973,7 +3979,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_783264-MLA82479583759_022025-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_783264-MLA82479583759_022025-F.webp&w=400&output=webp&q=82",
     "desc": "Mini licuadora USB portátil recargable. Para preparar tus proteínas y batidos en cualquier lugar. Batería de larga duración y cuchillas de acero inoxidable.",
     "price": 16000,
     "badge": "new",
@@ -3991,7 +3997,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🥊",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/6561/image_1024/%5B11569%5D%20Guante%20fitness%20drb%20full%20gym%20celeste%20%28xs%29?unique=e09afc4",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/6561/image_1024/%5B11569%5D%20Guante%20fitness%20drb%20full%20gym%20celeste%20%28xs%29?unique=e09afc4&w=400&output=webp&q=82",
     "desc": "Guantes de entrenamiento con refuerzo en palma. Protegen las manos, mejoran el agarre y reducen el dolor en ejercicios de halón y empuje. Talle ajustable.",
     "price": 15000,
     "badge": "hot",
@@ -4009,7 +4015,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🏋️",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.image/99/image_1024/cinturon%20lum%20ne.webp?unique=cca5d6a",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.image/99/image_1024/cinturon%20lum%20ne.webp?unique=cca5d6a&w=400&output=webp&q=82",
     "desc": "Cinturón lumbar de apoyo para ejercicios de fuerza. Protege la zona lumbar durante sentadillas, peso muerto y press. Material de alta resistencia y ajuste velcro.",
     "price": 25500,
     "flavors": [
@@ -4025,7 +4031,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🏋️",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/4043/image_1024/%5B10844%5D%20Mancuerna%20recubierta%203kg?unique=edd1e91",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/4043/image_1024/%5B10844%5D%20Mancuerna%20recubierta%203kg?unique=edd1e91&w=400&output=webp&q=82",
     "desc": "Mancuernas recubiertas en goma para ejercicios en casa o gym. Agarre cómodo y antideslizante. Protegen el piso y reducen el ruido. Disponibles en 3 pesos.",
     "price": 11000,
     "flavors": [
@@ -4049,7 +4055,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🏋️",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.image/49/image_1024/D_NQ_NP_690793-MLA43173008342_082020-V.webp?unique=7fcf988",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.image/49/image_1024/D_NQ_NP_690793-MLA43173008342_082020-V.webp?unique=7fcf988&w=400&output=webp&q=82",
     "desc": "Correas de tela para levantamiento de pesas. Mejoran el agarre en jalones, remo y peso muerto. Evitan que el agarre limite el rendimiento en músculos grandes.",
     "price": 15000,
     "flavors": [
@@ -4065,7 +4071,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🥊",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/3696/image_1024/%5B11637%5D%20Callera%20ags%20full%20de%20cuero%20c-mu%C3%B1equera%20-%20talle%20unico?unique=324d3c0",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/3696/image_1024/%5B11637%5D%20Callera%20ags%20full%20de%20cuero%20c-mu%C3%B1equera%20-%20talle%20unico?unique=324d3c0&w=400&output=webp&q=82",
     "desc": "Calleras de cuero genuino para halterofilia y crossfit. Protegen las palmas y optimizan el agarre en ejercicios de barra. Duración máxima con uso intensivo.",
     "price": 26000,
     "flavors": [
@@ -4081,7 +4087,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🏃",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/7611/image_1024/%5B30349%5D%20Tobilleras%20con%20peso%20vinilicas%20pro%20ags%201kg%20%28par%29%20%20%28naranja%29?unique=263f72c",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/7611/image_1024/%5B30349%5D%20Tobilleras%20con%20peso%20vinilicas%20pro%20ags%201kg%20%28par%29%20%20%28naranja%29?unique=263f72c&w=400&output=webp&q=82",
     "desc": "Tobilleras de peso de 1 kg el par. Para aumentar la resistencia en ejercicios de piernas y glúteos. Cierre ajustable y peso distribuido uniformemente.",
     "price": 20000,
     "flavors": [
@@ -4097,7 +4103,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🏋️",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/7355/image_1024/%5B30328%5D%20Rueda%20abdominal%20doble%20estandar%20tsp?unique=f77be10",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/7355/image_1024/%5B30328%5D%20Rueda%20abdominal%20doble%20estandar%20tsp?unique=f77be10&w=400&output=webp&q=82",
     "desc": "Rueda abdominal con rodamiento silencioso. Para trabajar el core completo desde casa o el gym. Con alfombrilla de rodillas incluida.",
     "price": 13500,
     "flavors": [
@@ -4113,7 +4119,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🍶",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_946566-MLA99615928592_122025-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_946566-MLA99615928592_122025-F.webp&w=400&output=webp&q=82",
     "desc": "Botella deportiva 3 en 1 con compartimentos para suplementos. Sistema triple que te permite llevar agua, proteína y cápsulas en una sola botella.",
     "price": 16000,
     "flavors": [
@@ -4133,7 +4139,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🍶",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_608099-MLA75199272882_032024-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_608099-MLA75199272882_032024-F.webp&w=400&output=webp&q=82",
     "desc": "Botella deportiva clásica. Libre de BPA, tapa de seguridad anti-derrame y boquilla ergonómica. Para hidratarte durante el entrenamiento sin interrupciones.",
     "price": 14000,
     "flavors": [
@@ -4149,7 +4155,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "✊",
-    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/898/402/products/8-e189e50369e1736f9d17555459513676-1024-1024.webp",
+    "img": "https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/898/402/products/8-e189e50369e1736f9d17555459513676-1024-1024.webp&w=400&output=webp&q=82",
     "desc": "Ejercitador de agarre regulable de 5 a 60 kg. Para fortalecer la muñeca, el antebrazo y los dedos. Ideal para escaladores, tenistas y atletas de fuerza.",
     "price": 10000,
     "flavors": [
@@ -4165,7 +4171,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🔄",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/8328/image_1024/Banda%20circular%20de%20latex%20krv%20tension%20baja%2050mm%20?unique=1803f15",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/8328/image_1024/Banda%20circular%20de%20latex%20krv%20tension%20baja%2050mm%20?unique=1803f15&w=400&output=webp&q=82",
     "desc": "Banda elástica circular para ejercicios de glúteos, piernas y rehabilitación. Tensión progresiva para diferentes niveles. 100% látex natural.",
     "price": 4000,
     "flavors": [
@@ -4181,7 +4187,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🔄",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/3733/image_1024/%5B10055%5D%20Banda%20elastica%20circular%20c-tobilleras%20ags%20t.media?unique=324d3c0",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/3733/image_1024/%5B10055%5D%20Banda%20elastica%20circular%20c-tobilleras%20ags%20t.media?unique=324d3c0&w=400&output=webp&q=82",
     "desc": "Banda elástica circular con tobilleras integradas para mayor comodidad. Ideal para ejercicios de glúteos, abductores y piernas con resistencia media.",
     "price": 13000,
     "flavors": [
@@ -4197,7 +4203,7 @@ const PRODUCTS = [
     "brand": "Dribbling",
     "cat": "accesorio",
     "emoji": "🎒",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/7394/image_1024/%5B30052%5D%20Bolso%20deportivo%20drb%2035l%20?unique=bef0044",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/7394/image_1024/%5B30052%5D%20Bolso%20deportivo%20drb%2035l%20?unique=bef0044&w=400&output=webp&q=82",
     "desc": "Bolso deportivo de 35 litros. Compartimentos múltiples para ropa, zapatillas y suplementos. Material resistente al agua, asas y correa regulable.",
     "price": 19000,
     "flavors": [
@@ -4213,7 +4219,7 @@ const PRODUCTS = [
     "brand": "Dribbling",
     "cat": "accesorio",
     "emoji": "🎒",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/7393/image_1024/%5B30051%5D%20Bolso%20deportivo%20drb%2020l%20?unique=bef0044",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/7393/image_1024/%5B30051%5D%20Bolso%20deportivo%20drb%2020l%20?unique=bef0044&w=400&output=webp&q=82",
     "desc": "Bolso deportivo compacto de 20 litros. Perfecto para llevar lo esencial al gym. Resistente al agua y con compartimento interior para tablet o ropa interior.",
     "price": 16000,
     "flavors": [
@@ -4229,7 +4235,7 @@ const PRODUCTS = [
     "brand": "DRB",
     "cat": "accesorio",
     "emoji": "🦵",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/6990/image_1024/%5B10024%5D%20Rodillera%20drb%20voley%20clasic%20%28Kids%29?unique=11bbd7e",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/6990/image_1024/%5B10024%5D%20Rodillera%20drb%20voley%20clasic%20%28Kids%29?unique=11bbd7e&w=400&output=webp&q=82",
     "desc": "Rodillera clásica DRB para voley y entrenamiento funcional. Protege la rótula y amortigua los impactos. Talle adulto con material elástico transpirable.",
     "price": 16000,
     "flavors": [
@@ -4245,7 +4251,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "💪",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/3703/image_1024/%5B11684%5D%20Mu%C3%B1equera%20ags%20elastico%20%28por%20par%29?unique=324d3c0",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/3703/image_1024/%5B11684%5D%20Mu%C3%B1equera%20ags%20elastico%20%28por%20par%29?unique=324d3c0&w=400&output=webp&q=82",
     "desc": "Muñequeras elásticas para soporte durante el entrenamiento. Reducen el riesgo de lesión en press y curl. Ajuste preciso con velcro.",
     "price": 14500,
     "flavors": [
@@ -4261,7 +4267,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🏋️",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/3871/image_1024/%5B10160%5D%20Tope%20collar%20seguro%20para%20barra%20olimpica%20diametro%2050mm%20%28par%29?unique=3ff8cad",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/3871/image_1024/%5B10160%5D%20Tope%20collar%20seguro%20para%20barra%20olimpica%20diametro%2050mm%20%28par%29?unique=3ff8cad&w=400&output=webp&q=82",
     "desc": "Tope para barra olímpica. Asegura los discos durante el entrenamiento. Compatible con barras estándar de 50mm. Material de alta resistencia.",
     "price": 17000,
     "flavors": [
@@ -4277,7 +4283,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "⚡",
-    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_675164-MLA87363005217_072025-F.webp",
+    "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_675164-MLA87363005217_072025-F.webp&w=400&output=webp&q=82",
     "desc": "Mini batidora de mano a pilas para mezclar proteínas al instante. Compacta, silenciosa y fácil de limpiar. Para usar en casa, trabajo o hotel.",
     "price": 6000,
     "flavors": [
@@ -4293,7 +4299,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "✊",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/8558/image_1024/Ejercitador%20de%20dedos-mano%20-%20fortalecedor%20en%203%20intensidades%20.5%20%2C%207%20y%209kg%20-?unique=3ff8cad",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/8558/image_1024/Ejercitador%20de%20dedos-mano%20-%20fortalecedor%20en%203%20intensidades%20.5%20%2C%207%20y%209kg%20-?unique=3ff8cad&w=400&output=webp&q=82",
     "desc": "Ejercitador de dedos y muñeca con soporte integrado. Para rehabilitación, escalada, guitarristas y atletas. Resistencia ajustable para cada dedo.",
     "price": 14000,
     "flavors": [
@@ -4309,7 +4315,7 @@ const PRODUCTS = [
     "brand": "Varios",
     "cat": "accesorio",
     "emoji": "🥊",
-    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/8324/image_1024/Vincha%20con%20pelota%20para%20reflejos%20boxeo?unique=36cb9f5",
+    "img": "https://images.weserv.nl/?url=www.agsuplementos.com/web/image/product.product/8324/image_1024/Vincha%20con%20pelota%20para%20reflejos%20boxeo?unique=36cb9f5&w=400&output=webp&q=82",
     "desc": "Vincha para entrenamiento de reflejos de boxeo. Mejora la velocidad de reacción, coordinación ojo-mano y concentración. Para boxeo, MMA y entrenamiento funcional.",
     "price": 10000,
     "flavors": [
@@ -4325,7 +4331,7 @@ const PRODUCTS = [
     "brand": "MAXUP",
     "cat": "accesorio",
     "emoji": "🥤",
-    "img": "https://i.ibb.co/VWNn63tk/IMG-20260324-182147752-MP-AE.jpg",
+    "img": "https://images.weserv.nl/?url=i.ibb.co/VWNn63tk/IMG-20260324-182147752-MP-AE.jpg&w=400&output=webp&q=82",
     "desc": "El shaker oficial de MAXUP. Volumen 600ml con bola agitadora de acero. Logo MAXUP. Libre de BPA, fácil de limpiar. El shaker para el equipo MAXUP.",
     "price": 8000,
     "flavors": [
@@ -4345,7 +4351,7 @@ const PRODUCTS = [
     "brand": "MAXUP",
     "cat": "accesorio",
     "emoji": "🥄",
-    "img": "https://i.ibb.co/PZMhvwMF/IMG-20260324-182652585-MP-AE.jpg",
+    "img": "https://images.weserv.nl/?url=i.ibb.co/PZMhvwMF/IMG-20260324-182652585-MP-AE.jpg&w=400&output=webp&q=82",
     "desc": "Scoop medidor oficial MAXUP de 5 gramos. Para dosificar creatina, glutamina o cualquier suplemento en polvo con precisión. Con logo MAXUP.",
     "price": 1500,
     "flavors": [
@@ -4377,7 +4383,7 @@ const PRODUCTS = [
     "brand": "MAXUP",
     "cat": "accesorio",
     "emoji": "🔑",
-    "img": "https://i.ibb.co/mVVypHc0/IMG-20260324-182904529-HDR-AE.jpg",
+    "img": "https://images.weserv.nl/?url=i.ibb.co/mVVypHc0/IMG-20260324-182904529-HDR-AE.jpg&w=400&output=webp&q=82",
     "desc": "Llavero oficial MAXUP. El detalle para el equipo. Con logo y colores de la marca. El regalo ideal para los clientes fieles de MAXUP.",
     "price": 2500,
     "badge": "new",
@@ -4395,7 +4401,7 @@ const PRODUCTS = [
     "brand": "Good Energy",
     "cat": "vitamin",
     "emoji": "🐟",
-    "img": "https://images.weserv.nl/?url=scontent.ftuc1-2.fna.fbcdn.net/v/t1.6435-9/65161617_2391541677631485_995261020471558144_n.jpg?stp=dst-jpg_s640x640_tt6&_nc_cat=102&ccb=1-7&_nc_sid=7b2446&_nc_ohc=z2IMDEbawbUQ7kNvwGCMzSS&_nc_oc=AdraSLI5uPgl2FDNYo7DvYl9cRkAYngz76G7KoJ7gj7RBctMzPtvYdBRtIOuSBpfGrU&_nc_zt=23&_nc_ht=scontent.ftuc1-2.fna&_nc_gid=LvxinaFUKOZz2bYPvdJm3w&_nc_ss=7a30f&oh=00_AfzGWlcg3g04oAKV0vrjZCw1gbvneLoDoHWcDczl_CdYUw&oe=69EA3A2D",
+    "img": "https://images.weserv.nl/?url=scontent.ftuc1-2.fna.fbcdn.net/v/t1.6435-9/65161617_2391541677631485_995261020471558144_n.jpg?stp=dst-jpg_s640x640_tt6&_nc_cat=102&ccb=1-7&_nc_sid=7b2446&_nc_ohc=z2IMDEbawbUQ7kNvwGCMzSS&_nc_oc=AdraSLI5uPgl2FDNYo7DvYl9cRkAYngz76G7KoJ7gj7RBctMzPtvYdBRtIOuSBpfGrU&_nc_zt=23&_nc_ht=scontent.ftuc1-2.fna&_nc_gid=LvxinaFUKOZz2bYPvdJm3w&_nc_ss=7a30f&oh=00_AfzGWlcg3g04oAKV0vrjZCw1gbvneLoDoHWcDczl_CdYUw&oe=69EA3A2D&w=400&output=webp&q=82",
     "desc": "Omega 3 de alta concentración en el formato más conveniente. 200 cápsulas de 1000mg. Para 6 meses de protección cardiovascular, cerebral y antiinflamatoria.",
     "price": 75000,
     "badge": "sale",
@@ -4460,7 +4466,7 @@ function buildCard(p){
   const slidesHtml = imgList.length
     ? imgList.map((src,i) => `
       <div class="gallery-slide">
-        <img src="${src}" alt="${p.name}" loading="lazy" loading="lazy" onerror="this.onerror=null;this.src=getFallbackImg('${p.cat}')">
+        <img src="${src}" alt="${p.name}" loading="${i===0?'eager':'lazy'}" decoding="async" onerror="this.onerror=null;this.src=getFallbackImg('${p.cat}')" style="background:#1a1a2e">
       </div>`).join('')
     : `<div class="gallery-slide"><span class="prod-emoji">${p.emoji}</span></div>`;
 
