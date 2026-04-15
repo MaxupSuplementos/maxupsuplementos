@@ -7094,6 +7094,8 @@ function generarComparacionPrecio(prods) {
 
 // ═══════════════════════════════════════════════════════
 //  BASE DE CONOCIMIENTO: COMPARACIONES PREDEFINIDAS
+var COMPARACIONES = {};
+
 // ═══════════════════════════════════════════════════════
 
 
@@ -7650,9 +7652,7 @@ function updateScrollBtn() {
   }
 }
 window.addEventListener('scroll', updateScrollBtn, {passive:true});
-document.addEventListener('scroll', updateScrollBtn, {passive:true});
-document.documentElement.addEventListener('scroll', updateScrollBtn, {passive:true});
-setInterval(updateScrollBtn, 1000);
+setInterval(updateScrollBtn, 800);
 
 
 // ══════════════════════════════════════════════════════════
