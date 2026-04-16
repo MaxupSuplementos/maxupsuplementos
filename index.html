@@ -5453,29 +5453,39 @@ function _extraerSabor(nombre) {
 
 function _inferirCategoria(nombre) {
   const n = nombre.toLowerCase();
-  if (/whey|proteina|protein|caseina|isolate|gainer|mass/.test(n)) return 'proteina';
   if (/creatin/.test(n)) return 'creatina';
-  if (/bcaa|glutamin|aminoacid|taurina|arginina/.test(n)) return 'aminoacido';
-  if (/pre.?work|pump|tnt|dynamite|energy|beta.?alan/.test(n)) return 'preworkout';
+  if (/gainer|mass|ultra.?mass|mutant/.test(n)) return 'gainer';
+  if (/whey|proteina|protein|caseina|isolate|pea.?prot/.test(n)) return 'proteina';
+  if (/bcaa|glutamin|aminoacid|taurina|arginina|leucina|eaa/.test(n)) return 'aminoacido';
+  if (/pre.?work|pump|tnt|dynamite|beta.?alan/.test(n)) return 'preworkout';
   if (/colag|collagen/.test(n)) return 'colageno';
-  if (/carnitin|thermo|fat.?burn|cla|quemad/.test(n)) return 'quemador';
-  if (/omega|vitam|magnesio|zinc|calcio|resveratrol|ashwagandha|zma|cafeina/.test(n)) return 'vitaminas';
-  if (/hidrat|iso.?sport|electro/.test(n)) return 'hidratacion';
-  if (/barra|bar |snack|cereal|granola|pancake|chocolate/.test(n)) return 'barra';
-  if (/shaker|guante|cinturon|accesorio|licuadora/.test(n)) return 'accesorio';
+  if (/carnitin|thermo|fat.?burn|cla|quemad|lipo/.test(n)) return 'quemador';
+  if (/omega|vitam|magnesio|zinc|calcio|resveratrol|ashwagandha|zma|cafeina|nad |multivit/.test(n)) return 'vitamin';
+  if (/hidrat|iso.?sport|electro|recovery|sport.?drink|just.?carb|hydromax|hydroplus/.test(n)) return 'hidratacion';
+  if (/barra|bar |snack|cereal|granola|pancake|chocolate|quelopaleo|bros|brava/.test(n)) return 'barra';
+  if (/shaker|guante|cinturon|accesorio|licuadora|mancuerna|rueda|botella|bolso|rodillera|banda|straps|callera|tobillera|munequera|vincha|scoop|bidon|llavero|dedos/.test(n)) return 'accesorio';
   if (/short|remera|camiseta|calza|top |buzo|campera|catsuit/.test(n)) return 'indumentaria';
   return 'otros';
 }
 
 function _mapCategoria(cat) {
   const m = {
-    'proteina':'proteina','creatina':'creatina','aminoacido':'aminoacido',
-    'vitaminas':'vitamin','preworkout':'preworkout','quemador':'quemador',
-    'colageno':'colageno','hidratacion':'hidratacion','barra':'barra',
-    'accesorio':'accesorio','indumentaria':'indumentaria','gainer':'gainer',
-    'otros':'otros'
+    'proteina':'proteina','protein':'proteina','whey':'proteina',
+    'creatina':'creatina','creatine':'creatina',
+    'aminoacido':'aminoacido','aminoacidos':'aminoacido','bcaa':'aminoacido','aminoácido':'aminoacido',
+    'vitaminas':'vitamin','vitamin':'vitamin','vitamina':'vitamin','vitamins':'vitamin',
+    'preworkout':'preworkout','pre-entreno':'preworkout','pre entreno':'preworkout',
+    'quemador':'quemador','quemadores':'quemador','termogenico':'quemador','termogénico':'quemador',
+    'colageno':'colageno','colágeno':'colageno','collagen':'colageno',
+    'hidratacion':'hidratacion','hidratación':'hidratacion','hidratante':'hidratacion','isotonica':'hidratacion',
+    'barra':'barra','barras':'barra','snack':'barra','snacks':'barra',
+    'accesorio':'accesorio','accesorios':'accesorio','accesories':'accesorio',
+    'indumentaria':'indumentaria','ropa':'indumentaria',
+    'gainer':'gainer','gainers':'gainer','hipercalorico':'gainer','hipercalórico':'gainer',
+    'otros':'otros','other':'otros'
   };
-  return m[cat.toLowerCase()] || cat.toLowerCase();
+  const key = (cat||'').toLowerCase().trim();
+  return m[key] || key;
 }
 
 function _catEmoji(cat) {
