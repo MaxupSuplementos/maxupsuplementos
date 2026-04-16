@@ -5452,19 +5452,52 @@ function _extraerSabor(nombre) {
 }
 
 function _inferirCategoria(nombre) {
-  const n = nombre.toLowerCase();
+  const n = nombre.toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e')
+    .replace(/[íìï]/g,'i').replace(/[óòö]/g,'o')
+    .replace(/[úùü]/g,'u').replace(/ñ/g,'n');
+
+  // EXCEPCIONES PRIMERO (productos que contienen palabras ambiguas)
+  if (/whey.{0,5}bar|low.{0,5}carb.{0,10}bar|protein.{0,5}bar/.test(n)) return 'barra';
+  if (/gelatina.{0,15}colag|colag.{0,15}gelatina/.test(n)) return 'barra';
+
+  // ACCESORIOS — antes de barras para evitar "tope barra olimpica"
+  if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|munequera|hand.{0,8}grip|ejercitador.{0,10}dedo|mini.{0,8}batidora|batidora.{0,8}pila|bolso|scoop|bidon|llavero|vincha|tope.{0,8}barra|latex|banda.{0,30}elastic|tobillera/.test(n)) return 'accesorio';
+  if (/botella|shaker/.test(n)) return 'accesorio';
+
+  // CREATINA
   if (/creatin/.test(n)) return 'creatina';
-  if (/gainer|mass|ultra.?mass|mutant/.test(n)) return 'gainer';
-  if (/whey|proteina|protein|caseina|isolate|pea.?prot/.test(n)) return 'proteina';
-  if (/bcaa|glutamin|aminoacid|taurina|arginina|leucina|eaa/.test(n)) return 'aminoacido';
-  if (/pre.?work|pump|tnt|dynamite|beta.?alan/.test(n)) return 'preworkout';
-  if (/colag|collagen/.test(n)) return 'colageno';
-  if (/carnitin|thermo|fat.?burn|cla|quemad|lipo/.test(n)) return 'quemador';
-  if (/omega|vitam|magnesio|zinc|calcio|resveratrol|ashwagandha|zma|cafeina|nad |multivit/.test(n)) return 'vitamin';
-  if (/hidrat|iso.?sport|electro|recovery|sport.?drink|just.?carb|hydromax|hydroplus/.test(n)) return 'hidratacion';
-  if (/barra|bar |snack|cereal|granola|pancake|chocolate|quelopaleo|bros|brava/.test(n)) return 'barra';
-  if (/shaker|guante|cinturon|accesorio|licuadora|mancuerna|rueda|botella|bolso|rodillera|banda|straps|callera|tobillera|munequera|vincha|scoop|bidon|llavero|dedos/.test(n)) return 'accesorio';
+
+  // GAINER
+  if (/gainer|ultra.{0,5}mass|mutant.{0,5}mass|nitro.{0,5}gain|mass.{0,5}fusion|extreme.{0,5}mass/.test(n)) return 'gainer';
+
+  // PROTEÍNA
+  if (/whey|proteina|protein|caseina|isolate|pea.{0,5}prot|bio.{0,5}prot/.test(n)) return 'proteina';
+
+  // AMINOÁCIDOS
+  if (/bcaa|glutamin|aminoacid|taurina|arginina|leucina|eaa|hmb|carnitin/.test(n)) return 'aminoacido';
+
+  // PRE-ENTRENO
+  if (/pre.{0,5}work|pre.{0,5}entreno|pump|tnt|dynamite|beta.{0,5}alan/.test(n)) return 'preworkout';
+
+  // COLÁGENO (sin gelatina, que va en barras)
+  if (/colag|collagen/.test(n) && !/gelatina/.test(n)) return 'colageno';
+
+  // QUEMADORES
+  if (/thermo|fat.{0,5}burn|cla |quemad|lipo|termogen/.test(n)) return 'quemador';
+
+  // VITAMINAS
+  if (/omega|vitam|magnesio|zinc|calcio|resveratrol|ashwagandha|zma|cafeina|nad |multivit|citrato|coenzima|bisglicinato/.test(n)) return 'vitamin';
+
+  // HIDRATACIÓN
+  if (/hidrat|iso.{0,5}sport|electro|recovery.{0,5}drink|sport.{0,5}drink|just.{0,5}carb|hydromax|hydroplus|energy.{0,5}gel|maltodextri|isotonic/.test(n)) return 'hidratacion';
+
+  // BARRAS & SNACKS
+  if (/beauty.{0,5}bar|iron.{0,5}bar|barra.{0,10}proteic|barra.{0,10}cereal|barra.{0,10}chocol|cereal.{0,5}bar|grows.{0,5}bar|brava.{0,5}bar|snack|granola|pancake|cupcake|omelette.{0,10}proteic|quelopaleo|bros.{0,5}bar|gelatina|mani.{0,5}king|vitalgy/.test(n)) return 'barra';
+
+  // INDUMENTARIA
   if (/short|remera|camiseta|calza|top |buzo|campera|catsuit/.test(n)) return 'indumentaria';
+
   return 'otros';
 }
 
