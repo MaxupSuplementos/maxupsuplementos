@@ -5382,7 +5382,8 @@ async function cargarDesdeSheets() {
         const precio_efectivo = Number(p.precio_venta || p['Precio unitario'] || 0);
         const precio_tarjeta  = Number(p.precio_lista  || p['Precio De Lista'] || precio_efectivo * 1.08 || 0);
         const stock    = Number(p.stock || p['Cantidad en stock'] || 0);
-        const cat      = p.categoria || _inferirCategoria(nombre);
+        // Inferir categoría con la función mejorada
+        const cat = p.categoria || p.cat || _inferirCategoria(nombre);
         const img      = p.imagen_url || p['imagen_url'] || '';
         const desc     = p.descripcion || p['descripcion'] || '';
         return {
