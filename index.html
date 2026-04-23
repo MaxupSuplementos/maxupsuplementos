@@ -261,6 +261,9 @@ nav{position:fixed;top:0;width:100%;z-index:200;background:rgba(0,0,0,.92);
 .badge-hot{background:rgba(255,0,153,.2);color:var(--pink);border:1px solid rgba(255,0,153,.3)}
 .badge-new{background:rgba(0,200,255,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.3)}
 .badge-sale{background:rgba(255,165,0,.15);color:#FFA500;border:1px solid rgba(255,165,0,.3)}
+.badge-oferta{background:rgba(0,230,118,.15);color:#00E676;border:1px solid rgba(0,230,118,.3)}
+.price-anterior{text-decoration:line-through;color:#888;font-size:.85em;margin-right:6px}
+.price-oferta{color:#00E676;font-weight:700}
 
 /* Qty + Add to cart */
 .prod-actions{display:flex;gap:10px;align-items:center}
@@ -1219,16 +1222,109 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 const LOGO_B64 = 'logo.png';
 document.querySelectorAll('#navLogo,#heroLogo,#footerLogo').forEach(i => i.src = LOGO_B64);
 
-// ── CONFIG ───────────────────────────────────────────────
-const STORE_NAME = 'MAXUP SUPLEMENTOS';
-const WA_DEFAULT = '5491168461457';
+// Mostrar banner si está activado en CONFIG
+(function() {
+  var banner = document.getElementById('storeBanner');
+  if (banner && typeof BANNER_ACTIVO !== 'undefined' && BANNER_ACTIVO) {
+    banner.textContent = BANNER_TEXTO || '';
+    banner.style.display = 'block';
+    banner.style.backgroundColor = BANNER_COLOR || '#FF0099';
+    banner.style.color = '#fff';
+  }
+})();
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║           PANEL DE CONTROL — MAXUP SUPLEMENTOS           ║
+// ║   Editá solo esta sección para personalizar la tienda    ║
+// ╚══════════════════════════════════════════════════════════╝
+
+// ── DATOS DE LA TIENDA ────────────────────────────────────
+const STORE_NAME = 'MAXUP SUPLEMENTOS';   // Nombre de la tienda
+const WA_DEFAULT = '5491168461457';        // Número de WhatsApp (sin + ni espacios)
 const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
+
+// ── DESCUENTOS POR MONTO ──────────────────────────────────
+// Formato: { desde: MONTO_MINIMO, porcentaje: DESCUENTO }
+// Podés agregar o quitar filas, o cambiar los montos y porcentajes
+const DESCUENTOS_CONFIG = [
+  { desde: 100000,  porcentaje: 5  },   // 5% desde $100.000
+  { desde: 220000,  porcentaje: 10 },   // 10% desde $220.000
+  { desde: 270000,  porcentaje: 15 },   // 15% desde $270.000
+];
+
+// ── BANNERS Y CARTELES ────────────────────────────────────
+// Activar/desactivar el banner de anuncio superior
+const BANNER_ACTIVO = false;            // true = mostrar, false = ocultar
+const BANNER_TEXTO = '🔥 ENVÍOS GRATIS a partir de $150.000 — Solo esta semana';
+const BANNER_COLOR = '#FF0099';         // Color del banner (código hex)
+
+// ── TIPOS DE CARTEL DISPONIBLES PARA PRODUCTOS ───────────
+// Usá estos valores en el campo "badge" de cada producto:
+//   "hot"   → 🔥 Rosado  — para los más vendidos
+//   "new"   → ✨ Celeste  — para productos nuevos
+//   "sale"  → 💸 Naranja  — para ofertas/descuentos
+//   "oferta"→ ⚡ Verde    — para precio rebajado (mostrar precio anterior tachado)
+//   null    → sin cartel
+//
+// Para agregar cartel de OFERTA a un producto:
+//   "badge": "oferta",
+//   "badgeText": "OFERTA",
+//   "priceAnterior": 85000,   ← precio original tachado
+//
+// Ejemplo completo de producto en oferta:
+// { "id": "sn_whey_dp", "badge": "oferta", "badgeText": "OFERTA", "priceAnterior": 85000, ... }
 
 
 /* ════════════════════════════════════════════════════════
-   PRODUCTS DATA
-   Para editar un producto: buscá su id en el array PRODUCTS
-   y cambiá el valor que necesitás (precio, stock, img, desc)
+   CATÁLOGO DE PRODUCTOS
+   ─────────────────────────────────────────────────────
+   Cada producto tiene estos campos:
+
+   "id"           → identificador único (no cambiar)
+   "name"         → nombre del producto
+   "brand"        → marca
+   "cat"          → categoría del filtro:
+                    "proteina" | "gainer" | "creatina" | "aminoacido"
+                    "preworkout" | "colageno" | "quemador" | "vitamin"
+                    "hidratacion" | "barra" | "accesorio"
+   "img"          → URL de la imagen (podés usar cualquier URL de internet)
+   "desc"         → descripción del producto
+   "price"        → precio de venta (efectivo/transferencia)
+   "badge"        → cartel sobre la imagen: "hot" | "new" | "sale" | "oferta" | null
+   "badgeText"    → texto del cartel: "Top Ventas" | "Nuevo" | "Oferta" | etc.
+   "priceAnterior"→ (OPCIONAL) precio original tachado para mostrar descuento
+                    Solo funciona con badge "oferta"
+
+   EJEMPLO — Producto en oferta:
+   {
+     "id": "sn_creat_pote",
+     "name": "Creatina X 300 Grs Pote",
+     "brand": "Star Nutrition",
+     "cat": "creatina",
+     "badge": "oferta",
+     "badgeText": "OFERTA",
+     "priceAnterior": 40000,
+     "price": 32500,
+     ...
+   }
+
+   EJEMPLO — Agregar producto nuevo (copiar este bloque):
+   {
+     "id": "nuevo_producto_01",
+     "name": "Nombre del producto",
+     "brand": "Marca",
+     "cat": "proteina",
+     "emoji": "🥛",
+     "img": "https://URL-de-la-imagen.jpg",
+     "desc": "Descripción del producto.",
+     "price": 50000,
+     "badge": "new",
+     "badgeText": "Nuevo",
+     "flavors": [
+       { "name": "Chocolate", "stock": 5 },
+       { "name": "Vainilla", "stock": 3 }
+     ]
+   },
 ════════════════════════════════════════════════════════ */
 const PRODUCTS = [
   {
@@ -4523,10 +4619,11 @@ function buildCard(p){
     ${flavorSel}
     <div class="prod-footer">
       <div>
+        ${p.priceAnterior ? `<div style="font-size:.7rem;color:#888;text-decoration:line-through;margin-bottom:2px">Antes: ${fmt(p.priceAnterior)}</div>` : ''}
         <div class="prod-price-label" style="text-decoration:line-through;color:rgba(255,255,255,.35);font-size:.7rem">
           Tarjeta/QR/Débito: ${fmt(p.price_tarjeta || Math.round(p.price*1.08))}
         </div>
-        <div class="prod-price-val" id="price-${p.id}">${fmt(p.price)}</div>
+        <div class="prod-price-val${p.priceAnterior ? ' price-oferta' : ''}" id="price-${p.id}">${fmt(p.price)}</div>
         <div style="font-size:.65rem;color:#00C8FF;font-weight:700;letter-spacing:.06em;margin-top:1px">💵 EFECTIVO / TRANSF.</div>
       </div>
       <div class="prod-stock-info">
