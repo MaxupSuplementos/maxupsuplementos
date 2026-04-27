@@ -516,11 +516,13 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 .prod-card:hover .gallery-slide img{transform:scale(1.05)}
 .gallery-slide .prod-emoji{font-size:4.5rem;line-height:1;user-select:none}
 .gal-btn{position:absolute;top:50%;transform:translateY(-50%);
-  width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;
-  background:rgba(0,0,0,.55);color:#fff;font-size:.9rem;z-index:10;
+  width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(0,0,0,.6);color:#fff;font-size:1.1rem;z-index:10;
   display:flex;align-items:center;justify-content:center;
-  transition:background .2s,opacity .2s;opacity:0}
+  transition:background .2s,opacity .2s;opacity:0;
+  -webkit-tap-highlight-color:transparent}
 .prod-card:hover .gal-btn{opacity:1}
+@media(max-width:768px){.gal-btn{opacity:.85!important}}
 .gal-btn:hover{background:rgba(0,200,255,.7)}
 .gal-btn.gal-prev{left:6px}
 .gal-btn.gal-next{right:6px}
