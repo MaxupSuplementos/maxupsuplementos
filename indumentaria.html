@@ -38,7 +38,7 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:13px;margin-top:12px}
 .card{background:var(--s1);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:border-color .2s,transform .2s}
 .card:hover{border-color:rgba(0,200,255,.4);transform:translateY(-2px)}
-.cimg{width:100%;aspect-ratio:1;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:2.5rem;overflow:hidden}
+.cimg{width:100%;aspect-ratio:1;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:2.5rem;overflow:hidden;position:relative}
 .cimg img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
 .card:hover .cimg img{transform:scale(1.04)}
 .cbody{padding:11px;display:flex;flex-direction:column;gap:4px;flex:1}
@@ -87,6 +87,30 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 .mwabtn:hover{opacity:.88}
 .maviso{font-size:.72rem;color:#444;text-align:center;margin-top:8px}
 @media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr);gap:9px}.nav-links{display:none}}
+
+/* ── GALERÍA DE FOTOS ─────────────────────────── */
+.card-img-wrap{position:relative;overflow:hidden;background:#1a1a2e;
+  height:220px;display:flex;align-items:center;justify-content:center}
+.card-img-wrap img{width:100%;height:100%;object-fit:contain;padding:10px;transition:opacity .3s}
+.gal-slide{display:none;width:100%;height:100%;position:absolute;top:0;left:0;
+  align-items:center;justify-content:center}
+.gal-slide.active{display:flex}
+.gal-slide img{width:100%;height:100%;object-fit:contain;padding:10px}
+.gal-btn-i{position:absolute;top:50%;transform:translateY(-50%);
+  width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(0,0,0,.6);color:#fff;font-size:1rem;z-index:10;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s,opacity .2s;opacity:0}
+.card-img-wrap:hover .gal-btn-i{opacity:1}
+.gal-btn-i.prev-i{left:6px}
+.gal-btn-i.next-i{right:6px}
+.gal-dots-i{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  display:flex;gap:4px;z-index:10}
+.gal-dot-i{width:6px;height:6px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(255,255,255,.4);padding:0;transition:background .2s}
+.gal-dot-i.active{background:#fff}
+.gal-counter-i{position:absolute;top:6px;right:8px;font-size:.65rem;
+  color:#fff;background:rgba(0,0,0,.5);padding:2px 6px;border-radius:10px;z-index:10}
 </style>
 </head>
 <body>
@@ -139,6 +163,7 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 <div class="mbg" id="mbg" onclick="bgClick(event)">
   <div class="mbox">
     <button class="mclose" onclick="cModal()">&#10005;</button>
+    <div class="mimg-wrap" id="mImgWrap" style="width:100%;max-height:280px;overflow:hidden;border-radius:10px;margin-bottom:12px;background:#1a1a2e;display:flex;align-items:center;justify-content:center;position:relative"></div>
     <div class="mmarca" id="mMarca"></div>
     <div class="mnombre" id="mNombre"></div>
     <div class="mcodigo" id="mCodigo"></div>
@@ -159,6 +184,36 @@ var catA='all', marcaA='all', busqA='', pag=1, PPP=24;
 var mProd=null, mSel=null;
 var API='https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
 
+function galMoveI(id, dir, e) {
+  e && e.stopPropagation();
+  var wrap = document.getElementById(id);
+  if (!wrap) return;
+  var slides = wrap.querySelectorAll('.gal-slide');
+  var dots = wrap.querySelectorAll('.gal-dot-i');
+  var counter = wrap.querySelector('.gal-counter-i');
+  var cur = 0;
+  slides.forEach(function(s,i){ if(s.classList.contains('active')) cur=i; });
+  slides[cur].classList.remove('active');
+  if(dots[cur]) dots[cur].classList.remove('active');
+  cur = (cur + dir + slides.length) % slides.length;
+  slides[cur].classList.add('active');
+  if(dots[cur]) dots[cur].classList.add('active');
+  if(counter) counter.textContent = (cur+1) + ' / ' + slides.length;
+}
+function galGoI(id, idx, e) {
+  e && e.stopPropagation();
+  var wrap = document.getElementById(id);
+  if (!wrap) return;
+  var slides = wrap.querySelectorAll('.gal-slide');
+  var dots = wrap.querySelectorAll('.gal-dot-i');
+  var counter = wrap.querySelector('.gal-counter-i');
+  slides.forEach(function(s){ s.classList.remove('active'); });
+  dots.forEach(function(d){ d.classList.remove('active'); });
+  if(slides[idx]) slides[idx].classList.add('active');
+  if(dots[idx]) dots[idx].classList.add('active');
+  if(counter) counter.textContent = (idx+1) + ' / ' + slides.length;
+}
+
 function cdot(c){
   var m={'NEGRO':'#333','BLANCO':'#ddd','ROJO':'#e53','ROSA':'#f4a','ROSADO':'#f7b','FUCSIA':'#f06','LILA':'#b8f','VIOLETA':'#96f','MORADO':'#73c','AZUL':'#38f','CELESTE':'#5cf','VERDE PINO':'#2a5','VERDE AGUA':'#0d9','VERDE LIMA':'#9f0','VERDE MANZANA':'#7d0','VERDE':'#4c8','NARANJA':'#f80','AMARILLO':'#fe0','TURQUESA':'#0cd','MARRON':'#964','CHOCOLATE':'#7B3F00','GRIS':'#888','BEIGE':'#d9c'};
   var cu=(c||'').toUpperCase();
@@ -176,6 +231,12 @@ function getFil(){
   });
 }
 
+function proxyImg(url){
+  if(!url) return '';
+  if(url.indexOf('weserv.nl')!==-1) return url;
+  var clean=url.replace('https://','').replace('http://','');
+  return 'https://images.weserv.nl/?url='+clean+'&w=400&output=webp&q=82';
+}
 function render(){
   var grid=document.getElementById('grid');
   if(!grid)return;
@@ -191,14 +252,35 @@ function render(){
   }
   grid.innerHTML=sl.map(function(p){
     var idx=PRODS.indexOf(p);
-    var img=p.img?'<img src="'+p.img+'" alt="'+p.nombre+'" loading="lazy">':'&#128085;';
+    var galId='gi-'+idx;
+    var imgs=p.imgs&&p.imgs.length?p.imgs.map(proxyImg):(p.img?[proxyImg(p.img)]:[]);
+    var hasMulti=imgs.length>1;
+    var img='';
+    if(imgs.length===0){
+      img='<span style="font-size:3rem">&#128085;</span>';
+    } else if(!hasMulti){
+      img='<img src="'+imgs[0]+'" alt="'+p.nombre+'" loading="lazy">';
+    } else {
+      var slides=imgs.map(function(u,si){
+        return '<div class="gal-slide'+(si===0?' active':'')+'"><img src="'+u+'" alt="'+p.nombre+'" loading="'+(si===0?'eager':'lazy')+'"></div>';
+      }).join('');
+      var dots=imgs.map(function(_,si){
+        return '<button class="gal-dot-i'+(si===0?' active':'')+'" onclick="galGoI(''+galId+'','+si+',event)"></button>';
+      }).join('');
+      img='<div id="'+galId+'" style="position:relative;width:100%;height:100%">'+slides+
+          '<button class="gal-btn-i prev-i" onclick="galMoveI(''+galId+'',-1,event)">&#8249;</button>'+
+          '<button class="gal-btn-i next-i" onclick="galMoveI(''+galId+'',1,event)">&#8250;</button>'+
+          '<div class="gal-dots-i">'+dots+'</div>'+
+          '<div class="gal-counter-i">1 / '+imgs.length+'</div>'+
+          '</div>';
+    }
     var pills=(p.variantes||[]).map(function(v){
       var dot=cdot(v.color);
       return'<span class="cpill'+(v.stock===0?' ago':'')+'" style="color:'+dot+';border-color:'+dot+'40;background:'+dot+'18">'+v.talle+'</span>';
     }).join('');
     var last=p.stock===1;
     return'<div class="card" onclick="aModal('+idx+')">'
-      +'<div class="cimg">'+img+'</div>'
+      +'<div class="cimg card-img-wrap">'+img+'</div>'
       +'<div class="cbody">'
       +(p.marca?'<div class="cmarca">'+p.marca+'</div>':'')
       +'<div class="ccat">'+p.cat+'</div>'
@@ -266,6 +348,26 @@ function aModal(idx){
   var p=PRODS[idx];
   if(!p)return;
   mProd=p;mSel=null;
+  // Imagen / galería en el modal
+  var imgWrap=document.getElementById('mImgWrap');
+  if(imgWrap){
+    var imgs=p.imgs&&p.imgs.length?p.imgs.map(proxyImg):(p.img?[proxyImg(p.img)]:[]);
+    if(imgs.length===0){
+      imgWrap.innerHTML='<span style="font-size:4rem">&#128085;</span>';
+    } else if(imgs.length===1){
+      imgWrap.innerHTML='<img src="'+imgs[0]+'" alt="'+p.nombre+'" style="width:100%;max-height:280px;object-fit:contain;padding:10px">';
+    } else {
+      var slides=imgs.map(function(u,si){
+        return '<div class="gal-slide'+(si===0?' active':'')+'" style="position:absolute;top:0;left:0;width:100%;height:100%;display:'+(si===0?'flex':'none')+';align-items:center;justify-content:center"><img src="'+u+'" alt="'+p.nombre+'" style="max-width:100%;max-height:280px;object-fit:contain;padding:10px"></div>';
+      }).join('');
+      imgWrap.style.height='280px';
+      imgWrap.innerHTML='<div id="mGal" style="position:relative;width:100%;height:100%">'+slides+
+        '<button class="gal-btn-i prev-i" onclick="galMoveI('mGal',-1,event)" style="opacity:1">&#8249;</button>'+
+        '<button class="gal-btn-i next-i" onclick="galMoveI('mGal',1,event)" style="opacity:1">&#8250;</button>'+
+        '<div class="gal-counter-i" style="opacity:1">1 / '+imgs.length+'</div>'+
+        '</div>';
+    }
+  }
   document.getElementById('mMarca').textContent=p.marca||'';
   document.getElementById('mNombre').textContent=p.nombre;
   document.getElementById('mCodigo').textContent=p.codigo?'Código: #'+p.codigo:'';
