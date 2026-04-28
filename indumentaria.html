@@ -265,11 +265,11 @@ function render(){
         return '<div class="gal-slide'+(si===0?' active':'')+'"><img src="'+u+'" alt="'+p.nombre+'" loading="'+(si===0?'eager':'lazy')+'"></div>';
       }).join('');
       var dots=imgs.map(function(_,si){
-        return '<button class="gal-dot-i'+(si===0?' active':'')+'" onclick="galGoI(''+galId+'','+si+',event)"></button>';
+        return '<button class="gal-dot-i'+(si===0?' active':'')+'" onclick="galGoI(\''+galId+'\','+si+',event)"></button>';
       }).join('');
       img='<div id="'+galId+'" style="position:relative;width:100%;height:100%">'+slides+
-          '<button class="gal-btn-i prev-i" onclick="galMoveI(''+galId+'',-1,event)">&#8249;</button>'+
-          '<button class="gal-btn-i next-i" onclick="galMoveI(''+galId+'',1,event)">&#8250;</button>'+
+          '<button class="gal-btn-i prev-i" onclick="galMoveI(\''+galId+'\',-1,event)">&#8249;</button>'+
+          '<button class="gal-btn-i next-i" onclick="galMoveI(\''+galId+'\',1,event)">&#8250;</button>'+
           '<div class="gal-dots-i">'+dots+'</div>'+
           '<div class="gal-counter-i">1 / '+imgs.length+'</div>'+
           '</div>';
