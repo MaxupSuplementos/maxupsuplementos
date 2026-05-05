@@ -480,12 +480,12 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   .footer-inner{grid-template-columns:1fr}
   .hero{padding:100px 16px 48px}
   .form-row{grid-template-columns:1fr}
-  #productsGrid{grid-template-columns:repeat(3,1fr)!important;gap:6px}
-  .prod-name{font-size:.72rem!important}
-  .prod-price-val{font-size:1.1rem!important}
-  .prod-img-wrap{height:100px!important}
-  .prod-card{border-radius:8px}
-  .prod-body{padding:6px 8px!important}
+  #productsGrid{grid-template-columns:repeat(2,1fr)!important;gap:10px}
+  .prod-name{font-size:.85rem!important}
+  .prod-price-val{font-size:1.2rem!important}
+  .prod-img-wrap{height:180px!important}
+  .prod-card{border-radius:10px}
+  .prod-body{padding:10px!important}
   /* Comparador mobile */
   .comp-selector{flex-direction:column;align-items:stretch}
   .comp-select{max-width:none}
@@ -4740,6 +4740,9 @@ document.getElementById('catTabs').addEventListener('click',e=>{
   applyFilters();
 });
 
+document.getElementById('searchInput').addEventListener('focus',()=>{
+  document.getElementById('catalogo').scrollIntoView({behavior:'smooth', block:'start'});
+});
 document.getElementById('searchInput').addEventListener('input',e=>{
   activeSearch = e.target.value.toLowerCase().trim();
   activeCat = 'all';
