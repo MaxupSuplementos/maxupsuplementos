@@ -4564,7 +4564,7 @@ function buildCard(p){
   const slidesHtml = imgList.length
     ? imgList.map((src,i) => `
       <div class="gallery-slide">
-      <img src="${src.replace('&w=400&output=webp&q=82','&w=200&output=webp&q=60')}" alt="${p.name}" loading="${i===0?'eager':'lazy'}"
+     <img src="${src}" alt="${p.name}"
       </div>`).join('')
     : `<div class="gallery-slide"><span class="prod-emoji">${p.emoji}</span></div>`;
 
