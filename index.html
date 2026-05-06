@@ -4564,7 +4564,7 @@ function buildCard(p){
   const slidesHtml = imgList.length
     ? imgList.map((src,i) => `
       <div class="gallery-slide">
-     <img src="${src}" alt="${p.name}"
+        <img src="${src}" alt="${p.name}" loading="${i===0?'eager':'lazy'}" decoding="async" onerror="this.onerror=null;this.src=getFallbackImg('${p.cat}')" style="background:#1a1a2e">
       </div>`).join('')
     : `<div class="gallery-slide"><span class="prod-emoji">${p.emoji}</span></div>`;
 
@@ -5720,7 +5720,7 @@ function openProdModal(pid) {
   if (!p) return;
   modalPid = pid;
 
-  document.getElementById('modalImg').src = (p.img||'').replace('&w=400&output=webp&q=82','&w=800&output=webp&q=85') || getFallbackImg(p.cat);
+  document.getElementById('modalImg').src = p.img || getFallbackImg(p.cat);
   document.getElementById('modalMarca').textContent = p.brand || '';
   document.getElementById('modalNombre').textContent = p.name || '';
   document.getElementById('modalDesc').textContent = p.desc || 'Suplemento de alta calidad para deportistas y personas activas.';
