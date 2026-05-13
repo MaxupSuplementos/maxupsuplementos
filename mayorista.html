@@ -611,7 +611,8 @@ function entrarZonaMayorista(productos) {
 
   productosmayo = productos;
   productosayo = productosmayo;
-  renderProductos('todas');
+  readURLMayo();
+  renderProductos(catActual);
 }
 
 function logoutMayorista() {
@@ -624,11 +625,27 @@ function logoutMayorista() {
 // ══════════════════════════════════════
 // RENDER PRODUCTOS
 // ══════════════════════════════════════
+function syncURLMayo(){
+  var p=new URLSearchParams();
+  if(catActual!=='todas')p.set('cat',catActual);
+  var qs=p.toString();
+  history.replaceState(null,'',location.pathname+(qs?'?'+qs:''));
+}
+
+function readURLMayo(){
+  var p=new URLSearchParams(location.search);
+  if(p.get('cat')){
+    catActual=p.get('cat');
+    document.querySelectorAll('.fil-btn').forEach(function(b){b.classList.toggle('activo',b.textContent.toLowerCase().indexOf(catActual)>=0||(catActual==='todas'&&b.textContent.toLowerCase().indexOf('todas')>=0));});
+  }
+}
+
 function filtrarCat(cat, btn) {
   catActual = cat;
   document.querySelectorAll('.fil-btn').forEach(function(b){ b.classList.remove('activo'); });
   if (btn) btn.classList.add('activo');
   renderProductos(cat);
+  syncURLMayo();
 }
 
 function renderProductos(cat) {
