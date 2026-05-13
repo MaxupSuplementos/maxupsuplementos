@@ -207,12 +207,33 @@ function proxyImg(url){
   return 'https://images.weserv.nl/?url='+clean+'&w=400&output=webp&q=82';
 }
 
+function syncURL(){
+  var p=new URLSearchParams();
+  if(generoA!=='M')p.set('genero',generoA);
+  if(catA!=='all')p.set('cat',catA);
+  if(marcaA!=='all')p.set('marca',marcaA);
+  if(busqA)p.set('buscar',busqA);
+  if(pag>1)p.set('pag',pag);
+  var qs=p.toString();
+  history.replaceState(null,'',location.pathname+(qs?'?'+qs:''));
+}
+
+function readURL(){
+  var p=new URLSearchParams(location.search);
+  if(p.get('genero'))generoA=p.get('genero');
+  if(p.get('cat'))catA=p.get('cat');
+  if(p.get('marca'))marcaA=p.get('marca');
+  if(p.get('buscar')){busqA=p.get('buscar');document.getElementById('searchInput').value=busqA;}
+  if(p.get('pag'))pag=parseInt(p.get('pag'))||1;
+  document.querySelectorAll('.gtab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-g')===generoA);});
+}
+
 function setGenero(g){
   generoA=g;catA='all';marcaA='all';busqA='';pag=1;
   document.getElementById('searchInput').value='';
   document.querySelectorAll('.gtab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-g')===g);});
   buildFiltros();
-  render();
+  render();syncURL();
 }
 
 function getFil(){
@@ -328,11 +349,11 @@ function renderPag(total){
   cont.innerHTML=h;
 }
 
-function irP(n){pag=n;render();window.scrollTo({top:0,behavior:'smooth'});}
-function buscar(q){busqA=q;pag=1;render();}
+function irP(n){pag=n;render();syncURL();window.scrollTo({top:0,behavior:'smooth'});}
+function buscar(q){busqA=q;pag=1;render();syncURL();}
 function fil(tipo,val){
   if(tipo==='cat'){catA=val;}else{marcaA=val;}
-  pag=1;buildFiltros();render();
+  pag=1;buildFiltros();render();syncURL();
 }
 
 function galMoveI(id,dir,e){
@@ -511,8 +532,9 @@ async function cargarSheets(){
     if(!d.ok||!d.prendas||!d.prendas.length){mostrarError();return;}
     PRODS_ALL=d.prendas;
     PRODS=PRODS_ALL.slice();
+    readURL();
     buildFiltros();render();
-    window.scrollTo(0,0);
+    if(!location.search)window.scrollTo(0,0);
   }catch(e){mostrarError();}
 }
 
