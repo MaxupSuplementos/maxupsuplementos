@@ -202,6 +202,29 @@ GUIAS.sii = '<h3>Sindrome del Intestino Irritable (SII)</h3><p>El SII es un tras
 </script>
 <script>
 var catActual = 'todas';
+
+function syncURLSalud(){
+  var p=new URLSearchParams();
+  if(catActual!=='todas')p.set('cat',catActual);
+  var q=document.getElementById('searchCond');
+  if(q&&q.value.trim())p.set('buscar',q.value.trim());
+  var qs=p.toString();
+  history.replaceState(null,'',location.pathname+(qs?'?'+qs:'')+(location.hash||''));
+}
+
+function readURLSalud(){
+  var p=new URLSearchParams(location.search);
+  if(p.get('cat')){
+    catActual=p.get('cat');
+    document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.toggle('activo',b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'"+catActual+"'")>=0);});
+  }
+  if(p.get('buscar')){var si=document.getElementById('searchCond');if(si)si.value=p.get('buscar');}
+  if(location.hash){
+    var id=location.hash.replace('#','');
+    setTimeout(function(){seleccionarCondicion(id);},300);
+  }
+}
+
 function renderCondiciones(lista) {
   var grid = document.getElementById('condsGrid');
   grid.innerHTML = '';
@@ -264,6 +287,7 @@ function filtrarCondiciones() {
     return (catActual==='todas'||c.cat===catActual) && (!q||c.nombre.toLowerCase().indexOf(q)>=0||c.tag.toLowerCase().indexOf(q)>=0);
   });
   renderCondiciones(f);
+  syncURLSalud();
 }
 function setCat(cat, btn) {
   catActual = cat;
@@ -282,14 +306,18 @@ function seleccionarCondicion(id) {
   document.getElementById('analisisContent').innerHTML = GUIAS[id] || '<p style="color:var(--gray)">Guia en construccion. Consultanos por WhatsApp.</p>';
   var sec = document.getElementById('analisisSection');
   sec.style.display = 'block';
+  history.replaceState(null,'',location.pathname+location.search+'#'+id);
   setTimeout(function(){ sec.scrollIntoView({behavior:'smooth',block:'start'}); }, 100);
 }
 function volverALista() {
   document.getElementById('analisisSection').style.display = 'none';
   document.querySelectorAll('.cond-card').forEach(function(c){ c.classList.remove('activo'); });
+  history.replaceState(null,'',location.pathname+location.search);
   window.scrollTo({top:0,behavior:'smooth'});
 }
 renderCondiciones(CONDICIONES);
+readURLSalud();
+filtrarCondiciones();
 </script>
 </body>
 </html>
