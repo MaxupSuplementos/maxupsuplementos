@@ -4523,6 +4523,25 @@ let activeSearch = '';
 let paginaActual = 1;
 const ITEMS_POR_PAGINA = 30;
 
+function syncURLIndex(){
+  var p=new URLSearchParams();
+  if(activeCat!=='all')p.set('cat',activeCat);
+  if(activeSearch)p.set('buscar',activeSearch);
+  if(paginaActual>1)p.set('pag',paginaActual);
+  if(typeof precioMax!=='undefined'&&precioMax<200000)p.set('precio',precioMax);
+  var qs=p.toString();
+  history.replaceState(null,'',location.pathname+(qs?'?'+qs:'')+(location.hash||''));
+}
+
+function readURLIndex(){
+  var p=new URLSearchParams(location.search);
+  if(p.get('cat')){activeCat=p.get('cat');document.querySelectorAll('.cat-tab').forEach(function(t){t.classList.toggle('active',t.dataset.cat===activeCat);});}
+  if(p.get('buscar')){activeSearch=p.get('buscar').toLowerCase().trim();var si=document.getElementById('searchInput');if(si)si.value=p.get('buscar');}
+  if(p.get('pag'))paginaActual=parseInt(p.get('pag'))||1;
+  if(p.get('precio')&&typeof precioMax!=='undefined'){precioMax=parseInt(p.get('precio'));var r=document.getElementById('precioRange');if(r)r.value=precioMax;var l=document.getElementById('precioVal');if(l)l.textContent=precioMax>=200000?'Sin límite':'$'+precioMax.toLocaleString('es-AR');}
+  if(location.hash){var sec=document.querySelector(location.hash);if(sec)setTimeout(function(){sec.scrollIntoView({behavior:'smooth',block:'start'});},500);}
+}
+
 function fmt(n){ return '$' + n.toLocaleString('es-AR'); }
 
 
@@ -4691,7 +4710,7 @@ function applyFilters(){
 }
 
 function irAPagina(n){
-  paginaActual = n;
+  paginaActual = n;syncURLIndex();
   applyFilters();
   document.getElementById('catalogo').scrollIntoView({behavior:'smooth', block:'start'});
 }
@@ -4726,18 +4745,20 @@ function renderPaginacion(total){
 
 function setCat(cat){
   activeCat = cat;
+  paginaActual = 1;
   document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll(`.cat-tab[data-cat="${cat}"]`).forEach(t=>t.classList.add('active'));
-  applyFilters();
+  applyFilters();syncURLIndex();
 }
 
 document.getElementById('catTabs').addEventListener('click',e=>{
   const tab = e.target.closest('.cat-tab');
   if(!tab) return;
   activeCat = tab.dataset.cat;
+  paginaActual = 1;
   document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
   tab.classList.add('active');
-  applyFilters();
+  applyFilters();syncURLIndex();
 });
 
 document.getElementById('searchInput').addEventListener('focus',()=>{
@@ -4746,9 +4767,10 @@ document.getElementById('searchInput').addEventListener('focus',()=>{
 document.getElementById('searchInput').addEventListener('input',e=>{
   activeSearch = e.target.value.toLowerCase().trim();
   activeCat = 'all';
+  paginaActual = 1;
   document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
   document.querySelector('.cat-tab[data-cat="all"]').classList.add('active');
-  applyFilters();
+  applyFilters();syncURLIndex();
 });
 
 /* ── FLAVOR ── */
@@ -7738,6 +7760,7 @@ function filtrarPrecio(val) {
   if (label) label.textContent = precioMax >= 200000 ? 'Sin límite' : `$${precioMax.toLocaleString('es-AR')}`;
   applyFilters();
   setTimeout(aplicarFiltroPrecio, 50);
+  syncURLIndex();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -7786,6 +7809,9 @@ function aplicarFiltroPrecio() {
 window.addEventListener('load', function() {
   if (typeof PRODUCTS !== 'undefined' && PRODUCTS.length > 0) {
     renderAll();
+    readURLIndex();
+    applyFilters();
+    if(typeof precioMax!=='undefined'&&precioMax<200000)setTimeout(aplicarFiltroPrecio,50);
   }
 });
 
@@ -8009,7 +8035,7 @@ function renderIndumPaginacion(total) {
 
 function irIndumPagina(n) {
   indumPagina = n;
-  renderIndum();
+  renderIndum();syncURLIndex();
   document.getElementById('indumentaria').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -8018,6 +8044,7 @@ function filtrarIndum(cat) {
   indumPagina = 1;
   document.querySelectorAll('.indum-filtro').forEach(function(b){ b.classList.toggle('activo', b.getAttribute('data-cat')===cat); });
   renderIndum();
+  syncURLIndex();
 }
 
 function filtrarIndumMarca(marca) {
@@ -8025,6 +8052,7 @@ function filtrarIndumMarca(marca) {
   indumPagina = 1;
   document.querySelectorAll('.indum-filtro-marca').forEach(function(b){ b.classList.toggle('activo', b.getAttribute('data-marca')===marca); });
   renderIndum();
+  syncURLIndex();
 }
 
 function consultarIndum(btn) {
