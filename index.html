@@ -1018,10 +1018,14 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
       <ul>
         <li><a href="https://wa.me/5491168461457" target="_blank">📲 11-68461457</a></li>
         <li><a href="https://wa.me/5493875104606" target="_blank">📲 387-5104606</a></li>
-        <li><a href="#">Instagram</a></li>
+        <li><a href="https://www.instagram.com/maxupsuplementos" target="_blank">Instagram</a></li>
         <li><a href="#">Facebook</a></li>
-        <li><a href="/cdn-cgi/l/email-protection#afccc0c1dbceccdbc0efc2ced7dadfdcdadfc3cac2cac1dbc0dc81ccc0c2">Email</a></li>
+        <li><a href="estado.html">📋 Mi Pedido</a></li>
       </ul>
+      <div style="margin-top:12px;padding:10px;background:rgba(0,200,255,.06);border:1px solid rgba(0,200,255,.15);border-radius:8px">
+        <p style="font-size:.82rem;color:var(--gray);margin-bottom:6px">📍 Calixto Gauna 1045, Gral. Güemes, Salta</p>
+        <a href="https://www.google.com/maps/search/?api=1&query=Calixto+Gauna+1045+General+Guemes+Salta+Argentina" target="_blank" style="display:inline-block;padding:6px 14px;background:linear-gradient(135deg,#00C8FF,#FF0099);color:#fff;border-radius:6px;font-size:.8rem;font-weight:700;text-decoration:none;letter-spacing:.05em">🗺️ CÓMO LLEGAR</a>
+      </div>
     </div>
   </div>
   <div class="footer-bottom">
@@ -1208,6 +1212,11 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
         <p style="color:#999;font-size:.8rem;margin-bottom:4px">Tu código de pedido</p>
         <p id="codigoPedidoTexto" style="font-family:Bebas Neue,sans-serif;font-size:2rem;color:var(--cyan);letter-spacing:.1em">MXP-0000</p>
         <a id="linkEstadoPedido" href="#" target="_blank" style="color:var(--pink);font-size:.85rem;font-weight:600">📋 Ver estado de mi pedido →</a>
+      </div>
+      <div id="retiroInfoBox" style="display:none;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:10px;padding:14px;margin:10px 0;text-align:center">
+        <p style="color:#00E676;font-size:.85rem;font-weight:600;margin-bottom:4px">📍 Dirección de retiro</p>
+        <p style="color:var(--gray);font-size:.88rem;margin-bottom:8px">Calixto Gauna 1045, General Güemes, Salta</p>
+        <a href="https://www.google.com/maps/search/?api=1&query=Calixto+Gauna+1045+General+Guemes+Salta+Argentina" target="_blank" style="display:inline-block;padding:7px 16px;background:linear-gradient(135deg,#00C8FF,#FF0099);color:#fff;border-radius:6px;font-size:.82rem;font-weight:700;text-decoration:none">🗺️ CÓMO LLEGAR</a>
       </div>
       <button class="wa-btn" id="waRepeatBtn">📲 Abrir WhatsApp nuevamente</button>
       <button class="clear-cart-btn" style="margin-top:10px" onclick="resetAfterOrder()">Seguir comprando</button>
@@ -5133,6 +5142,8 @@ function finalizarPedido(){
             'https://maxupsuplementos.github.io/maxupsuplementos/estado.html?pedido=' + parsed.codigo;
         }
       } catch(e) {}
+      var retiroBox = document.getElementById('retiroInfoBox');
+      if (retiroBox) retiroBox.style.display = (payload.entrega === 'retiro') ? 'block' : 'none';
     }
     setTimeout(function(){ cargarDesdeSheets(); }, 5000);
   }).catch(function(){});
