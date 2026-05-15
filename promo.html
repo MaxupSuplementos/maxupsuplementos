@@ -36,7 +36,10 @@ canvas{display:block;max-width:100%;height:auto;border-radius:10px;box-shadow:0 
 <div class="st" id="st"></div>
 
 <script>
-const P=[
+const API_URL='https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
+let P=[];
+// Ejemplo de fallback mínimo por si la API falla
+const P_FALLBACK=[
 {id:"sn_whey_dp",n:"Whey Protein Doypack 2 Lb",b:"Star Nutrition",p:49000,img:"https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/whey-protein-star-bolsa-frente-1024x1024.jpg&w=400&output=webp&q=82",cat:"proteina"},
 {id:"sn_plat_2lb",n:"Platinum Whey Protein 2 Lb Pote",b:"Star Nutrition",p:53000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-2Lb-Chocolate.png?v=1718218508&width=1100&w=400&output=webp&q=82",cat:"proteina"},
 {id:"sn_plat_3kg",n:"Whey Protein Platinum 3 Kg",b:"Star Nutrition",p:142000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-3Kg-Chocolate.png?v=1718218522&width=1100&w=400&output=webp&q=82",cat:"proteina"},
@@ -219,16 +222,57 @@ async function genPost(p,disc,W,H){
   solidText(ctx,'@maxupsuplementos',W-30,H-25,'#555',"500 20px 'Rajdhani',sans-serif",'right');
 }
 
-const product=findProduct(query);
+let product=null;
 
-if(product){
-  document.getElementById('info').textContent='Producto encontrado — Descuento: '+descPct+'%';
-  document.getElementById('found').textContent=product.n+' — '+product.b+' — '+fmt(product.p)+' → '+fmt(Math.round(product.p*(1-descPct/100)));
-  setTimeout(()=>genPost(product,descPct,1080,1350),600);
-} else {
-  document.getElementById('info').innerHTML='No se encontró el producto "'+query+'".<br>Usá ?q=nombre+producto&desc=15 en la URL';
-  document.getElementById('found').textContent='';
+async function init(){
+  document.getElementById('info').textContent='Cargando catálogo...';
+  // Intentar cargar desde API
+  try{
+    const resp=await fetch(API_URL+'?accion=catalogo');
+    const data=await resp.json();
+    if(data.productos && data.productos.length>0){
+      P=data.productos.map(function(pr){
+        var imgUrl=String(pr.imagen_url||'').trim();
+        // Si la imagen no pasa por weserv, proxyarla para evitar CORS
+        if(imgUrl && imgUrl.indexOf('weserv.nl')<0 && imgUrl.indexOf('data:')<0){
+          imgUrl='https://images.weserv.nl/?url='+encodeURIComponent(imgUrl.replace(/^https?:\/\//,''))+'&w=500&output=webp&q=82';
+        }
+        return {
+          id:pr.id||pr.nombre,
+          n:pr.nombre||'',
+          b:pr.marca||'',
+          p:Number(pr.precio_venta)||0,
+          img:imgUrl,
+          cat:pr.categoria||'otros'
+        };
+      });
+      document.getElementById('st').textContent='Catálogo cargado desde API: '+P.length+' productos';
+    } else {
+      throw new Error('Sin productos');
+    }
+  }catch(err){
+    // Fallback al catálogo local
+    P=P_FALLBACK;
+    document.getElementById('st').textContent='Usando catálogo local ('+P.length+' productos)';
+  }
+
+  if(!query){
+    document.getElementById('info').innerHTML='Usá <b>?q=nombre+producto&desc=15</b> en la URL para generar una promo.';
+    return;
+  }
+
+  product=findProduct(query);
+  if(product){
+    document.getElementById('info').textContent='Producto encontrado — Descuento: '+descPct+'%';
+    document.getElementById('found').textContent=product.n+' — '+product.b+' — '+fmt(product.p)+' → '+fmt(Math.round(product.p*(1-descPct/100)));
+    setTimeout(()=>genPost(product,descPct,1080,1350),600);
+  } else {
+    document.getElementById('info').innerHTML='No se encontró "<b>'+query+'</b>" en el catálogo.<br>Verificá el nombre del producto.';
+    document.getElementById('found').textContent='';
+  }
 }
+
+init();
 
 function genStory(){
   if(!product)return;
