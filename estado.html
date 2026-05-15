@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Estado de Pedido — MAXUP Suplementos</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--cyan:#00C8FF;--pink:#FF0099;--dark:#0a0a0a;--dark2:#111;--dark3:#1a1a1a;--white:#fff;--gray:#999;--grad:linear-gradient(135deg,var(--cyan),var(--pink))}
@@ -118,7 +120,7 @@ const ESTADO_ICONS = { 'Recibido':'📥', 'En preparación':'🔧', 'Listo para 
 const ESTADO_DESC = {
   'Recibido': 'Tu pedido fue recibido y está pendiente de confirmación.',
   'En preparación': 'Estamos preparando tu pedido.',
-  'Listo para retirar': 'Tu pedido está listo. Podés pasar a retirarlo.',
+  'Listo para retirar': 'Tu pedido está listo. Podés pasar a retirarlo por Calixto Gauna 1045, General Güemes, Salta.',
   'Enviado': 'Tu pedido está en camino.',
   'Entregado': '¡Tu pedido fue entregado! Gracias por tu compra.',
   'Retirado': '¡Retiraste tu pedido! Gracias por tu compra.',
@@ -200,7 +202,10 @@ function mostrarResultado(data) {
     + '<div class="detalle-row"><span class="detalle-label">Estado</span><span class="detalle-val"><span class="badge-estado badge-' + estadoActual + '">' + estadoActual + '</span></span></div>'
     + '<div class="detalle-row"><span class="detalle-label">Productos</span><span class="detalle-val" style="font-size:.82rem">' + productos + '</span></div>'
     + '<div class="detalle-row"><span class="detalle-label">Total</span><span class="detalle-val" style="color:var(--cyan)">' + data.total + '</span></div>'
-    + '<div class="detalle-row"><span class="detalle-label">Entrega</span><span class="detalle-val">' + data.entrega + (data.direccion && data.direccion !== '-' ? '<br><span style="color:var(--gray);font-size:.8rem">' + data.direccion + '</span>' : '') + '</span></div>'
+    + '<div class="detalle-row"><span class="detalle-label">Entrega</span><span class="detalle-val">' + data.entrega
+    + (esEnvio && data.direccion && data.direccion !== '-' ? '<br><span style="color:var(--gray);font-size:.8rem">' + data.direccion + '</span>' : '')
+    + (!esEnvio ? '<br><span style="color:var(--gray);font-size:.8rem">Calixto Gauna 1045, Gral. Güemes, Salta</span><br><a href="https://www.google.com/maps/search/?api=1&query=Calixto+Gauna+1045+General+Guemes+Salta+Argentina" target="_blank" style="color:var(--cyan);font-size:.78rem;text-decoration:none">📍 Cómo llegar</a>' : '')
+    + '</span></div>'
     + '<div class="detalle-row"><span class="detalle-label">Pago</span><span class="detalle-val">' + data.pago + '</span></div>'
     + '</div>'
     + '<a href="https://wa.me/5491168461457?text=' + encodeURIComponent('Hola! Consulto por mi pedido ' + data.codigo) + '" target="_blank" class="wa-btn">📲 Consultar por WhatsApp</a>';
