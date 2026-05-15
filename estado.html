@@ -64,6 +64,8 @@ nav{width:100%;max-width:600px;display:flex;align-items:center;gap:12px;padding:
 .badge-En\ preparación{background:rgba(255,165,0,.15);color:#FFA500;border:1px solid rgba(255,165,0,.3)}
 .badge-Listo\ para\ retirar{background:rgba(0,230,118,.15);color:#00E676;border:1px solid rgba(0,230,118,.3)}
 .badge-Enviado{background:rgba(0,230,118,.15);color:#00E676;border:1px solid rgba(0,230,118,.3)}
+.badge-Entregado{background:rgba(0,230,118,.15);color:#00E676;border:1px solid rgba(0,230,118,.3)}
+.badge-Retirado{background:rgba(0,230,118,.15);color:#00E676;border:1px solid rgba(0,230,118,.3)}
 .badge-Cancelado{background:rgba(255,61,61,.15);color:#FF3D3D;border:1px solid rgba(255,61,61,.3)}
 
 /* ERROR */
@@ -110,13 +112,16 @@ nav{width:100%;max-width:600px;display:flex;align-items:center;gap:12px;padding:
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
 
-const ESTADOS = ['Recibido','En preparación','Listo para retirar','Enviado'];
-const ESTADO_ICONS = { 'Recibido':'📥', 'En preparación':'🔧', 'Listo para retirar':'✅', 'Enviado':'🚚', 'Cancelado':'❌' };
+const ESTADOS_RETIRO = ['Recibido','En preparación','Listo para retirar','Retirado'];
+const ESTADOS_ENVIO  = ['Recibido','En preparación','Enviado','Entregado'];
+const ESTADO_ICONS = { 'Recibido':'📥', 'En preparación':'🔧', 'Listo para retirar':'✅', 'Enviado':'🚚', 'Entregado':'📦', 'Retirado':'🤝', 'Cancelado':'❌' };
 const ESTADO_DESC = {
   'Recibido': 'Tu pedido fue recibido y está pendiente de confirmación.',
   'En preparación': 'Estamos preparando tu pedido.',
   'Listo para retirar': 'Tu pedido está listo. Podés pasar a retirarlo.',
   'Enviado': 'Tu pedido está en camino.',
+  'Entregado': '¡Tu pedido fue entregado! Gracias por tu compra.',
+  'Retirado': '¡Retiraste tu pedido! Gracias por tu compra.',
   'Cancelado': 'Este pedido fue cancelado.'
 };
 
@@ -161,19 +166,26 @@ function mostrarResultado(data) {
   }
 
   const estadoActual = data.estado || 'Recibido';
+  const esEnvio = (data.entrega || '').toLowerCase().indexOf('env') >= 0;
+  const ESTADOS = esEnvio ? ESTADOS_ENVIO : ESTADOS_RETIRO;
   const idxActual = ESTADOS.indexOf(estadoActual);
+  const cancelado = estadoActual === 'Cancelado';
 
   // Timeline
   var timelineHTML = '<div class="timeline">';
-  ESTADOS.forEach(function(e, i) {
-    var clase = i < idxActual ? 'completado' : (i === idxActual ? 'activo' : '');
-    timelineHTML += '<div class="step ' + clase + '">'
-      + '<div class="step-icon">' + (ESTADO_ICONS[e] || '⭕') + '</div>'
-      + '<div class="step-info">'
-      + '<div class="step-titulo">' + e + '</div>'
-      + (i === idxActual ? '<div class="step-desc">' + (ESTADO_DESC[e] || '') + '</div>' : '')
-      + '</div></div>';
-  });
+  if (cancelado) {
+    timelineHTML += '<div class="step activo"><div class="step-icon">❌</div><div class="step-info"><div class="step-titulo">Cancelado</div><div class="step-desc">' + ESTADO_DESC['Cancelado'] + '</div></div></div>';
+  } else {
+    ESTADOS.forEach(function(e, i) {
+      var clase = i < idxActual ? 'completado' : (i === idxActual ? 'activo' : '');
+      timelineHTML += '<div class="step ' + clase + '">'
+        + '<div class="step-icon">' + (ESTADO_ICONS[e] || '⭕') + '</div>'
+        + '<div class="step-info">'
+        + '<div class="step-titulo">' + e + '</div>'
+        + (i === idxActual ? '<div class="step-desc">' + (ESTADO_DESC[e] || '') + '</div>' : '')
+        + '</div></div>';
+    });
+  }
   timelineHTML += '</div>';
 
   // Detalle
