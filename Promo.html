@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAXUP — Promo Express</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Bebas+Neue&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#fff;font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+h1{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;background:linear-gradient(90deg,#00C8FF,#FF0099,#9933FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px}
+.info{color:#888;font-size:.85rem;margin-bottom:16px;text-align:center}
+.found{color:#00C8FF;font-size:.9rem;margin-bottom:8px;font-weight:600}
+.btns{display:flex;gap:10px;margin:14px 0;flex-wrap:wrap;justify-content:center}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;text-transform:uppercase;letter-spacing:1px}
+.bd{background:linear-gradient(135deg,#9933FF,#FF0099);color:#fff}
+.bg{background:linear-gradient(135deg,#00C8FF,#FF0099);color:#fff}
+.bs{background:linear-gradient(135deg,#00C8FF,#9933FF);color:#fff}
+.br{background:#222;color:#00C8FF;border:1px solid #333}
+.btn:hover{transform:translateY(-1px)}
+canvas{display:block;max-width:100%;height:auto;border-radius:10px;box-shadow:0 6px 30px rgba(0,0,0,.5)}
+.st{color:#555;font-size:.75rem;padding:6px;text-align:center}
+</style>
+</head>
+<body>
+<h1>PROMO EXPRESS</h1>
+<div class="info" id="info">Buscando producto...</div>
+<div class="found" id="found"></div>
+<div class="btns">
+  <button class="btn bd" onclick="dl()">Descargar Post (1080x1350)</button>
+  <button class="btn bs" onclick="genStory()">Generar Story (1080x1920)</button>
+  <button class="btn br" onclick="dl()">Descargar</button>
+</div>
+<canvas id="cv" width="1080" height="1350"></canvas>
+<div class="st" id="st"></div>
+
+<script>
+const P=[
+{id:"sn_whey_dp",n:"Whey Protein Doypack 2 Lb",b:"Star Nutrition",p:49000,img:"https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/whey-protein-star-bolsa-frente-1024x1024.jpg&w=400&output=webp&q=82",cat:"proteina"},
+{id:"sn_plat_2lb",n:"Platinum Whey Protein 2 Lb Pote",b:"Star Nutrition",p:53000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-2Lb-Chocolate.png?v=1718218508&width=1100&w=400&output=webp&q=82",cat:"proteina"},
+{id:"sn_plat_3kg",n:"Whey Protein Platinum 3 Kg",b:"Star Nutrition",p:142000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-3Kg-Chocolate.png?v=1718218522&width=1100&w=400&output=webp&q=82",cat:"proteina"},
+{id:"sn_creat_pote",n:"Creatina 300g Pote",b:"Star Nutrition",p:34500,img:"https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/003/703/137/products/creatina-hd-a839e43636a193460417291787850812-1024-1024.webp&w=400&output=webp&q=82",cat:"creatina"},
+{id:"sn_creat_doy",n:"Creatina 300g Doypack",b:"Star Nutrition",p:32000,img:"https://images.weserv.nl/?url=suplementsport.com.ar/wp-content/uploads/2024/07/Creatina-doy-pack-300-gr.jpg&w=400&output=webp&q=82",cat:"creatina"},
+{id:"sn_creat_500",n:"Creatina 500g Pote",b:"Star Nutrition",p:48000,img:"https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/005/314/904/products/creatina-500-grs-star-informacion-nutricional-b60391aaf994f3b46517510401406773-1024-1024.webp&w=400&output=webp&q=82",cat:"creatina"},
+{id:"sn_creat_1kg",n:"Creatina 1 Kg Pote",b:"Star Nutrition",p:90000,img:"https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_889534-MLA92512456390_092025-F.webp&w=400&output=webp&q=82",cat:"creatina"},
+{id:"sn_mtor",n:"MTOR BCAA 270g",b:"Star Nutrition",p:30000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/MtorBCAA-270g-_2.png?v=1718218499&width=1100&w=400&output=webp&q=82",cat:"aminoacido"},
+{id:"sn_thermo",n:"Thermo Fuel Max",b:"Star Nutrition",p:24000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/ThermoFuelMax.png?v=1718218471&width=1100&w=400&output=webp&q=82",cat:"quemador"},
+{id:"sn_tnt",n:"TNT Dynamite 240g",b:"Star Nutrition",p:26000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/TNTDynamite-blueraz.png?v=1718218517&w=400&output=webp&q=82",cat:"preworkout"},
+{id:"sn_pumpv8",n:"Pump V8 X285g",b:"Star Nutrition",p:34000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PumpV8-WMEL_256a8bca-27cd-4ba8-8dc8-edffe507986d.png?v=1719843200&width=1100&w=400&output=webp&q=82",cat:"preworkout"},
+{id:"sn_omega3",n:"Omega 3 Fish Oil 60 Caps",b:"Star Nutrition",p:34000,img:"https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/fish-oil-omega-3-star-nutrition-x60-1.jpg&w=400&output=webp&q=82",cat:"vitamin"},
+{id:"wo_fatburner",n:"Fat Burner 60 Caps",b:"Woman",p:23000,img:"https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/mercado-libre-31-06c8d2b9fc2d0ae3ee17120844289331-1024-1024.webp&w=400&output=webp&q=82",cat:"quemador"},
+{id:"wo_colageno",n:"Colageno + Hialuronico 454g",b:"Woman",p:36000,img:"https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/mercado-libre-25-25-8bc6cecba0522bc4d917120845307555-1024-1024.webp&w=400&output=webp&q=82",cat:"colageno"},
+{id:"wo_prot",n:"Proteina By Pampita 454g",b:"Woman",p:37000,img:"https://images.weserv.nl/?url=www.farmacialeloir.com.ar/img/articulos/2024/08/imagen1_woman_by_pampita_whey_protein_imagen1.webp&w=400&output=webp&q=82",cat:"proteina"},
+{id:"wo_protfit",n:"Proteina Fit + Colageno",b:"Woman",p:44900,img:"https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/512/322/products/plantillaimagenes_mesa-de-trabajo-1-copia-5-8b28f220dbd369cc1c17452661791318-1024-1024.webp&w=400&output=webp&q=82",cat:"proteina"},
+{id:"ena_truemade",n:"Whey Protein TrueMade 2,05 Lb",b:"ENA",p:51000,img:"https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/TMWP2lb-Va_2.png?v=1769005779&width=800&w=400&output=webp&q=82",cat:"proteina"},
+{id:"ena_100whey",n:"100% Whey X 2 Libras",b:"ENA",p:44000,img:"https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/100_W-FR.png?v=1769688238&width=800&w=400&output=webp&q=82",cat:"proteina"},
+{id:"ena_creat",n:"Creatina Micronizada 300g",b:"ENA",p:31000,img:"https://images.weserv.nl/?url=www.enasport.com/cdn/shop/files/CreaN300Mono.png?v=1765981838&width=800&w=400&output=webp&q=82",cat:"creatina"},
+{id:"gen_7900",n:"Proteina 7900 Pote",b:"Gentech",p:49000,img:"https://images.weserv.nl/?url=encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlWNUkFYisqcuP1NWgOeYhxnJSMwZg-XRbig&s&w=400&output=webp&q=82",cat:"proteina"},
+{id:"gen_tx3",n:"TX3 Black Cuts 60 Caps",b:"Gentech",p:22000,img:"https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_618088-MLA73504786491_122023-F.webp&w=400&output=webp&q=82",cat:"quemador"},
+{id:"gen_creat",n:"Creatina 250g",b:"Gentech",p:30000,img:"https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/835/image_1024/%5BGTCPSN250%5D%20CREATINA%20MONOHIDRATO%20x%20250%20g?unique=f28600d&w=400&output=webp&q=82",cat:"creatina"},
+{id:"xtr_bestwhey",n:"Best Whey X 2 Lb",b:"Xtrenght",p:41900,img:"https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/fotos_productos/117/BEST-WHEY-Protein-Banana-nuevo-(1).png&w=400&output=webp&q=82",cat:"proteina"},
+{id:"xtr_creat250",n:"Creatina 250g",b:"Xtrenght",p:30000,img:"https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/user_ObjDVbDGZY/97/Creatine-250-500.png&w=400&output=webp&q=82",cat:"creatina"},
+{id:"xtr_creat500",n:"Creatina 500g",b:"Xtrenght",p:54500,img:"https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/user_ObjDVbDGZY/127/Creatine-500.500.png&w=400&output=webp&q=82",cat:"creatina"},
+{id:"gn_ripped",n:"Whey Ripped X 2 Libras",b:"Gold Nutrition",p:50000,img:"https://images.weserv.nl/?url=goldnutrition.com.ar/images/2022/12/07/whey_ripped_protein_gold_nutrition_proetina_quemadora_suplemento_deportivo_cafeina_carnitina_taurina.png&w=400&output=webp&q=82",cat:"proteina"},
+{id:"gn_100whey",n:"Whey 100% Protein 2 Lb",b:"Gold Nutrition",p:47000,img:"https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/09/01/100_whey_protein_gold_nutrition_doypack_2lb-blend-2025.png&w=400&output=webp&q=82",cat:"proteina"},
+{id:"gn_creat",n:"Creatina X300g",b:"Gold Nutrition",p:29000,img:"https://images.weserv.nl/?url=goldnutrition.com.ar/images/2025/11/03/creatina_monohidrato_gold_nutrition_doypack.png&w=400&output=webp&q=82",cat:"creatina"},
+{id:"gn_lipo",n:"Lipo Gold Elite 60 Caps",b:"Gold Nutrition",p:20000,img:"https://images.weserv.nl/?url=goldnutrition.com.ar/images/2024/04/08/lipo_gold_elite_ultra_concentrate_gold_nutrition_gold_prime.png&w=400&output=webp&q=82",cat:"quemador"},
+{id:"idn_100whey",n:"100% Whey Protein 1 Kg",b:"IDN",p:36000,img:"https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2022/09/idn-cookies.jpg&w=400&output=webp&q=82",cat:"proteina"},
+{id:"idn_creat",n:"Creatina 300g",b:"IDN",p:28000,img:"https://images.weserv.nl/?url=idnnutrition.com/wp-content/uploads/2021/05/CREATINA-300-IDN.png&w=400&output=webp&q=82",cat:"creatina"},
+{id:"mer_blend",n:"Whey Protein Blend 2,05 Lb",b:"Mervick",p:43000,img:"https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_661811-MLA96870760129_102025-F.webp&w=400&output=webp&q=82",cat:"proteina"},
+{id:"mer_creat",n:"Creatina 300g",b:"Mervick",p:30000,img:"https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-creatine-suplemento-creatina-micronizada-x-300grs-1-0af7e886f411d9107617544966078692-1024-1024.webp&w=400&output=webp&q=82",cat:"creatina"},
+{id:"nmax_prework",n:"Pre Work 240g",b:"Nutremax",p:28000,img:"https://images.weserv.nl/?url=www.nutremax.com.ar//images/products/162610047160061173.png&w=400&output=webp&q=82",cat:"preworkout"},
+{id:"hs_bioprot",n:"Bio Prot Premium",b:"Hoch Sport",p:68000,img:"https://images.weserv.nl/?url=hochsport.com/wp-content/uploads/Bio-Prot-Chocolate_Frente_800x800.png&w=400&output=webp&q=82",cat:"proteina"},
+{id:"hs_extreme",n:"Extreme Mass 1,5 Kg",b:"Hoch Sport",p:20000,img:"https://images.weserv.nl/?url=hochsport.com/wp-content/uploads/Extreme-Mass-1-5Chocolate_Frente_800x800.png&w=400&output=webp&q=82",cat:"gainer"},
+{id:"nlab_bestwhey",n:"Best Whey 2 Libras",b:"Nutrilab",p:38000,img:"https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/004/242/511/products/mesa-de-trabajo-1-2b5c7c8ee0e4e8828f17183133452909-1024-1024.webp&w=400&output=webp&q=82",cat:"proteina"},
+{id:"mxf_creat",n:"Creatina Monohidrato 300g",b:"Max Force",p:15000,img:"https://images.weserv.nl/?url=dcdn-us.mitiendanube.com/stores/005/542/784/products/creatinamonohidrato-tuttifrutti-1-0da0580cbca6627e9517597534068631-1024-1024.webp&w=400&output=webp&q=82",cat:"creatina"},
+{id:"sn_col_sport",n:"Collagen Sport Naranja 360g",b:"Star Nutrition",p:25000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/collagensport.png?v=1738085374&width=1100&w=400&output=webp&q=82",cat:"colageno"},
+{id:"lap_ashwa",n:"Ashwagandha con Vit C 60 Caps",b:"LAPPIEL",p:28000,img:"https://images.weserv.nl/?url=mayorista.lappiel.com/wp-content/uploads/2025/12/PLACA-0.jpg&w=400&output=webp&q=82",cat:"vitamin"},
+{id:"sn_glut",n:"L-Glutamina 300g",b:"Star Nutrition",p:32000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/L-glutamine-300g.png?v=1718218487&width=1100&w=400&output=webp&q=82",cat:"aminoacido"},
+{id:"sn_hydroplus",n:"Hydroplus Endurance X700g",b:"Star Nutrition",p:20000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/HydroplusEndurance-Limon.png?v=1718218522&w=400&output=webp&q=82",cat:"hidratacion"},
+{id:"sn_vitc",n:"Vitamina C",b:"Star Nutrition",p:12000,img:"https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/VitaminaC_sf_2.png?v=1726507301&width=1100&w=400&output=webp&q=82",cat:"vitamin"},
+{id:"sn_cafeina30",n:"Cafeina 200mg 30 Caps",b:"Star Nutrition",p:11000,img:"https://images.weserv.nl/?url=encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRuBBnyF8GwvV_Jtg1atRIjKpsGcGyDM3Wu1w&s&w=400&output=webp&q=82",cat:"vitamin"},
+{id:"xtr_no",n:"Oxido Nitrico 180 Caps",b:"Xtrenght",p:18000,img:"https://images.weserv.nl/?url=xtrenght-nutrition.com/imgc/500x500/media/fotos_productos/100/Nitrox.500.png&w=400&output=webp&q=82",cat:"aminoacido"},
+{id:"gen_carnit",n:"Carnitina Liquida 500ml",b:"Gentech",p:15000,img:"https://images.weserv.nl/?url=www.gentech.com.ar/web/image/product.product/878/image_1024/%5BGTCLFB500%5D%20L-CARNITINA%20x%20500%20ML?unique=37bde56&w=400&output=webp&q=82",cat:"aminoacido"},
+];
+
+// URL params
+const params=new URLSearchParams(window.location.search);
+const query=(params.get('q')||'').toLowerCase().trim();
+const descPct=parseInt(params.get('desc'))||15;
+let logoImg=null,currentMode='post';
+const ic={};
+const _l=new Image();_l.crossOrigin='anonymous';_l.onload=()=>{logoImg=_l};_l.src='https://maxupsuplementos.github.io/maxupsuplementos/logo.png';
+
+// Fuzzy match
+function findProduct(q){
+  if(!q)return null;
+  const words=q.replace(/\[.*?\]/g,'').toLowerCase().split(/\s+/).filter(w=>w.length>2);
+  let best=null,bestScore=0;
+  P.forEach(p=>{
+    const name=(p.n+' '+p.b).toLowerCase();
+    let hits=0;
+    words.forEach(w=>{if(name.indexOf(w)>=0)hits++});
+    const score=words.length>0?hits/words.length:0;
+    if(score>bestScore){bestScore=score;best=p}
+  });
+  return bestScore>=0.4?best:null;
+}
+
+const fmt=n=>'$'+n.toLocaleString('es-AR');
+function li(url){
+  if(ic[url])return Promise.resolve(ic[url]);
+  return new Promise(r=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>{ic[url]=i;r(i)};i.onerror=()=>r(null);i.src=url});
+}
+
+// Drawing helpers
+function solidText(ctx,t,x,y,color,font,align){
+  ctx.save();ctx.font=font;ctx.textAlign=align||'center';
+  ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillText(t,x+2,y+2);
+  ctx.fillStyle=color;ctx.fillText(t,x,y);ctx.restore();
+}
+function wrapSolid(ctx,t,x,y,mw,lh,color,font){
+  ctx.save();ctx.font=font;ctx.textAlign='center';
+  const w=t.split(' ');let l='',lines=[];
+  for(const s of w){const test=l+s+' ';if(ctx.measureText(test).width>mw&&l!==''){lines.push(l.trim());l=s+' '}else l=test}
+  lines.push(l.trim());
+  lines.forEach((ln,i)=>{
+    ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillText(ln,x+2,y+i*lh+2);
+    ctx.fillStyle=color;ctx.fillText(ln,x,y+i*lh);
+  });
+  ctx.restore();return y+(lines.length-1)*lh;
+}
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath()}
+function smokeGlow(ctx,cx,cy,radius){
+  ctx.save();
+  [['rgba(0,200,255,.12)','rgba(0,200,255,0)',-.3,-.2],
+   ['rgba(255,0,153,.1)','rgba(255,0,153,0)',.25,.15],
+   ['rgba(153,51,255,.08)','rgba(153,51,255,0)',0,.3]].forEach(([c1,c2,ox,oy])=>{
+    const g=ctx.createRadialGradient(cx+radius*ox,cy+radius*oy,0,cx,cy,radius);
+    g.addColorStop(0,c1);g.addColorStop(.5,c1.replace(/\.\d+\)/,'.03)'));g.addColorStop(1,c2);
+    ctx.fillStyle=g;ctx.fillRect(cx-radius,cy-radius,radius*2,radius*2);
+  });ctx.restore();
+}
+
+async function genPost(p,disc,W,H){
+  const cv=document.getElementById('cv');cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d');
+  const isStory=H>1400;
+  const price=p.p;
+  const np=Math.round(price*(1-disc/100));
+
+  // Background
+  ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.globalAlpha=.025;ctx.strokeStyle='#fff';ctx.lineWidth=1;
+  for(let i=-H;i<W+H;i+=50){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+H,H);ctx.stroke()}
+  ctx.restore();
+
+  // Top bar gradient
+  let g=ctx.createLinearGradient(0,0,W,0);
+  g.addColorStop(0,'#00C8FF');g.addColorStop(.5,'#FF0099');g.addColorStop(1,'#9933FF');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,5);
+  // Bottom bar
+  g=ctx.createLinearGradient(0,0,W,0);
+  g.addColorStop(0,'#9933FF');g.addColorStop(.5,'#FF0099');g.addColorStop(1,'#00C8FF');
+  ctx.fillStyle=g;ctx.fillRect(0,H-5,W,5);
+
+  // Title bar
+  const titleY=isStory?40:30;
+  rr(ctx,50,titleY,W-100,80,10);
+  g=ctx.createLinearGradient(50,titleY,W-50,titleY);g.addColorStop(0,'#FF0099');g.addColorStop(1,'#9933FF');
+  ctx.fillStyle=g;ctx.fill();
+  solidText(ctx,'OFERTA ESPECIAL',W/2,titleY+55,'#fff',"bold 48px 'Bebas Neue',sans-serif");
+
+  // Separator
+  const sepY=titleY+100;
+  ctx.strokeStyle='#00C8FF';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(W/2-160,sepY);ctx.lineTo(W/2+160,sepY);ctx.stroke();
+
+  // Product image with smoke glow
+  const imgY=isStory?580:460;
+  smokeGlow(ctx,W/2,imgY,350);
+  const img=await li(p.img);
+  if(img){
+    const a=img.width/img.height;let dw,dh;
+    const mW=isStory?560:500,mH=isStory?560:480;
+    if(a>mW/mH){dw=mW;dh=mW/a}else{dh=mH;dw=mH*a}
+    ctx.drawImage(img,W/2-dw/2,imgY-dh/2,dw,dh);
+  }
+
+  // Product name
+  const nameY=isStory?960:790;
+  wrapSolid(ctx,p.n.toUpperCase(),W/2,nameY,W-100,52,'#fff',"bold 46px 'Rajdhani',sans-serif");
+  solidText(ctx,p.b,W/2,nameY+60,'#00C8FF',"500 28px 'Rajdhani',sans-serif");
+
+  // Prices
+  const priceY=isStory?1100:920;
+  solidText(ctx,fmt(price),W/2,priceY,'#666',"500 32px 'Rajdhani',sans-serif");
+  ctx.save();ctx.font="500 32px 'Rajdhani',sans-serif";const m=ctx.measureText(fmt(price)).width;
+  ctx.strokeStyle='#FF0099';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(W/2-m/2,priceY-5);ctx.lineTo(W/2+m/2,priceY-5);ctx.stroke();ctx.restore();
+
+  solidText(ctx,fmt(np),W/2,priceY+80,'#FF0099',"bold 82px 'Bebas Neue',sans-serif");
+
+  // Discount badge
+  rr(ctx,W/2-70,priceY+95,140,40,20);ctx.fillStyle='#9933FF';ctx.fill();
+  solidText(ctx,'-'+disc+'% OFF',W/2,priceY+123,'#fff',"bold 24px 'Rajdhani',sans-serif");
+
+  // CTA
+  const ctaY=isStory?1320:1170;
+  rr(ctx,W/2-160,ctaY,320,60,30);
+  g=ctx.createLinearGradient(W/2-160,0,W/2+160,0);g.addColorStop(0,'#00C8FF');g.addColorStop(1,'#9933FF');
+  ctx.fillStyle=g;ctx.fill();
+  solidText(ctx,'APROVECHA AHORA',W/2,ctaY+40,'#fff',"bold 26px 'Rajdhani',sans-serif");
+
+  // "SOLO POR TIEMPO LIMITADO"
+  solidText(ctx,'SOLO POR TIEMPO LIMITADO',W/2,ctaY+85,'#888',"600 20px 'Rajdhani',sans-serif");
+
+  // Logo
+  if(logoImg){const la=logoImg.width/logoImg.height;ctx.drawImage(logoImg,24,H-68,38*la,38)}
+  solidText(ctx,'@maxupsuplementos',W-30,H-25,'#555',"500 20px 'Rajdhani',sans-serif",'right');
+}
+
+const product=findProduct(query);
+
+if(product){
+  document.getElementById('info').textContent='Producto encontrado — Descuento: '+descPct+'%';
+  document.getElementById('found').textContent=product.n+' — '+product.b+' — '+fmt(product.p)+' → '+fmt(Math.round(product.p*(1-descPct/100)));
+  setTimeout(()=>genPost(product,descPct,1080,1350),600);
+} else {
+  document.getElementById('info').innerHTML='No se encontró el producto "'+query+'".<br>Usá ?q=nombre+producto&desc=15 en la URL';
+  document.getElementById('found').textContent='';
+}
+
+function genStory(){
+  if(!product)return;
+  currentMode='story';
+  genPost(product,descPct,1080,1920);
+  document.getElementById('st').textContent='Story 1080x1920 generada';
+}
+
+function dl(){
+  const cv=document.getElementById('cv');const a=document.createElement('a');
+  const d=new Date().toISOString().slice(0,10);
+  a.download='MAXUP_promo_'+(product?product.id:'post')+'_'+descPct+'off_'+d+'.png';
+  a.href=cv.toDataURL('image/png');a.click();
+}
+</script>
+</body>
+</html>
