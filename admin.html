@@ -199,6 +199,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <span class="header-logo">MAXUP</span>
     <span class="header-badge">ADMIN</span>
     <button class="header-refresh" onclick="recargarTab()">⟳ Actualizar</button>
+    <span id="autoRefreshStatus" style="font-size:.7rem;color:var(--green);letter-spacing:.04em" title="Se actualiza cada 30s">● LIVE</span>
     <button class="header-logout" onclick="logout()">Salir</button>
   </header>
 
@@ -226,6 +227,9 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJ
 let clave = '';
 let tabActual = 'resumen';
 let filtroEstado = 'todos';
+let busquedaPedido = '';
+let _lastPedidoCount = -1;
+let _autoRefreshTimer = null;
 
 // ── LOGIN (valida contra la API, no hardcodeada) ─────────────
 function login() {
@@ -243,6 +247,7 @@ function login() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         cargarResumen();
+        iniciarAutoRefresh();
       } else {
         document.getElementById('loginError').style.display = 'block';
         setTimeout(function(){ document.getElementById('loginError').style.display='none'; }, 2500);
@@ -260,9 +265,69 @@ function login() {
 }
 function logout() {
   clave = '';
+  detenerAutoRefresh();
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
   document.getElementById('claveInput').value = '';
+}
+
+// ── AUTO-REFRESH (cada 30s, con sonido si hay pedido nuevo) ──
+function _beep() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Doble beep para que se escuche bien
+    [0, 0.2].forEach(function(delay) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.value = 0.3;
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.15);
+    });
+  } catch(e){}
+}
+
+function iniciarAutoRefresh() {
+  detenerAutoRefresh();
+  _autoRefreshTimer = setInterval(function() {
+    // Chequear pedidos nuevos silenciosamente
+    fetch(API_URL + '?accion=admin_pedidos&clave=' + encodeURIComponent(clave))
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        if (!data.ok) return;
+        var pedidos = data.pedidos || [];
+        var pendientes = pedidos.filter(function(p){ return p.estado==='Recibido'||p.estado==='En preparación'; }).length;
+
+        // Actualizar badge
+        var badge = document.getElementById('badgePedidos');
+        if (pendientes > 0) { badge.textContent = pendientes; badge.style.display = 'inline'; }
+        else badge.style.display = 'none';
+
+        // Si hay más pedidos que antes → pedido nuevo!
+        if (_lastPedidoCount >= 0 && pedidos.length > _lastPedidoCount) {
+          _beep();
+          showToast('🔔 ¡Nuevo pedido recibido!');
+          // Si estás en la pestaña de pedidos, actualizar la lista
+          if (tabActual === 'pedidos') {
+            window._pedidosCache = pedidos;
+            renderPedidos(pedidos);
+          }
+          // Si estás en resumen, recargar
+          if (tabActual === 'resumen') cargarResumen();
+        }
+        _lastPedidoCount = pedidos.length;
+
+        // Parpadeo del indicador LIVE
+        var live = document.getElementById('autoRefreshStatus');
+        if (live) { live.style.opacity = '0.3'; setTimeout(function(){ live.style.opacity = '1'; }, 500); }
+      }).catch(function(){});
+  }, 30000);
+}
+
+function detenerAutoRefresh() {
+  if (_autoRefreshTimer) { clearInterval(_autoRefreshTimer); _autoRefreshTimer = null; }
 }
 
 // ── TABS ─────────────────────────────────────────────────────
@@ -357,6 +422,9 @@ function cargarPedidos() {
     else badge.style.display = 'none';
 
     var html = '<div class="filtro-row">'
+      + '<input class="filtro-input" id="buscadorPedido" type="text" placeholder="🔍 Buscar código o cliente..." value="' + busquedaPedido + '" oninput="buscarPedido(this.value)" style="flex:1;min-width:180px">'
+      + '</div>'
+      + '<div class="filtro-row" style="margin-top:-6px">'
       + '<button class="filtro-btn ' + (filtroEstado==='todos'?'activo':'') + '" onclick="setFiltro(\'todos\',this)">Todos</button>'
       + '<button class="filtro-btn ' + (filtroEstado==='pendientes'?'activo':'') + '" onclick="setFiltro(\'pendientes\',this)">🔴 Pendientes</button>'
       + '<button class="filtro-btn ' + (filtroEstado==='Recibido'?'activo':'') + '" onclick="setFiltro(\'Recibido\',this)">Recibidos</button>'
@@ -370,7 +438,13 @@ function cargarPedidos() {
     el.innerHTML = html;
     renderPedidos(pedidos);
     window._pedidosCache = pedidos;
+    if (_lastPedidoCount < 0) _lastPedidoCount = pedidos.length;
   }).catch(function(){ el.innerHTML = '<div class="empty-txt">⚠️ No se pudo conectar.</div>'; });
+}
+
+function buscarPedido(val) {
+  busquedaPedido = val;
+  renderPedidos(window._pedidosCache || []);
 }
 
 function setFiltro(estado, btn) {
@@ -383,10 +457,23 @@ function setFiltro(estado, btn) {
 function renderPedidos(pedidos) {
   var lista = document.getElementById('listaPedidos');
   if (!lista) return;
+
+  // Filtro por estado
   var filtrados;
   if (filtroEstado === 'todos') filtrados = pedidos;
   else if (filtroEstado === 'pendientes') filtrados = pedidos.filter(function(p){ return p.estado==='Recibido'||p.estado==='En preparación'||p.estado==='Listo para retirar'||p.estado==='Enviado'; });
   else filtrados = pedidos.filter(function(p){ return p.estado === filtroEstado; });
+
+  // Filtro por búsqueda (código, cliente, teléfono, productos)
+  if (busquedaPedido.trim()) {
+    var q = busquedaPedido.toLowerCase().trim();
+    filtrados = filtrados.filter(function(p) {
+      return (p.codigo||'').toLowerCase().indexOf(q) >= 0
+        || (p.cliente||'').toLowerCase().indexOf(q) >= 0
+        || (p.telefono||'').replace(/\D/g,'').indexOf(q.replace(/\D/g,'')) >= 0
+        || (p.productos||'').toLowerCase().indexOf(q) >= 0;
+    });
+  }
 
   if (filtrados.length === 0) { lista.innerHTML = '<div class="empty-txt">No hay pedidos con este estado.</div>'; return; }
 
