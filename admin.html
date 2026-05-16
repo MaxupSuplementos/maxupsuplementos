@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — MAXUP</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--cyan:#00C8FF;--pink:#FF0099;--green:#00E676;--orange:#FFA500;--red:#FF3D3D;
@@ -103,6 +105,10 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
 .btn-listo:hover{background:rgba(0,230,118,.3)}
 .btn-enviado{background:rgba(0,200,255,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.3)}
 .btn-enviado:hover{background:rgba(0,200,255,.3)}
+.btn-entregado{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3)}
+.btn-entregado:hover{background:rgba(0,230,118,.3)}
+.btn-retirado{background:rgba(0,230,118,.15);color:#4FC3F7;border:1px solid rgba(79,195,247,.3)}
+.btn-retirado:hover{background:rgba(79,195,247,.3)}
 .btn-cancelar{background:rgba(255,61,61,.1);color:var(--red);border:1px solid rgba(255,61,61,.2)}
 .btn-cancelar:hover{background:rgba(255,61,61,.25)}
 
@@ -112,6 +118,8 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
 .badge-preparacion{background:rgba(255,165,0,.15);color:var(--orange);border:1px solid rgba(255,165,0,.3)}
 .badge-listo{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3)}
 .badge-Enviado{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3)}
+.badge-Entregado{background:rgba(0,230,118,.2);color:var(--green);border:1px solid rgba(0,230,118,.4)}
+.badge-Retirado{background:rgba(0,230,118,.2);color:var(--green);border:1px solid rgba(0,230,118,.4)}
 .badge-Cancelado{background:rgba(255,61,61,.15);color:var(--red);border:1px solid rgba(255,61,61,.3)}
 
 /* STOCK */
@@ -215,23 +223,40 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
-const CLAVE_CORRECTA = 'maxupdario2024';
 let clave = '';
 let tabActual = 'resumen';
 let filtroEstado = 'todos';
 
-// ── LOGIN ────────────────────────────────────────────────────
+// ── LOGIN (valida contra la API, no hardcodeada) ─────────────
 function login() {
-  const input = document.getElementById('claveInput').value;
-  if (input === CLAVE_CORRECTA) {
-    clave = input;
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    cargarResumen();
-  } else {
-    document.getElementById('loginError').style.display = 'block';
-    setTimeout(function(){ document.getElementById('loginError').style.display='none'; }, 2000);
-  }
+  const input = document.getElementById('claveInput').value.trim();
+  if (!input) return;
+  var btn = document.querySelector('.login-btn');
+  btn.textContent = 'VERIFICANDO...'; btn.disabled = true;
+  // Intentar una consulta real a la API con la clave ingresada
+  fetch(API_URL + '?accion=admin_resumen&clave=' + encodeURIComponent(input))
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      btn.textContent = 'INGRESAR'; btn.disabled = false;
+      if (data.ok) {
+        clave = input;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        cargarResumen();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+        setTimeout(function(){ document.getElementById('loginError').style.display='none'; }, 2500);
+      }
+    })
+    .catch(function(){
+      btn.textContent = 'INGRESAR'; btn.disabled = false;
+      document.getElementById('loginError').textContent = 'Error de conexión';
+      document.getElementById('loginError').style.display = 'block';
+      setTimeout(function(){
+        document.getElementById('loginError').textContent = 'Clave incorrecta';
+        document.getElementById('loginError').style.display='none';
+      }, 2500);
+    });
 }
 function logout() {
   clave = '';
@@ -276,7 +301,8 @@ function showToast(msg) {
 }
 function getBadgeClass(estado) {
   var map = {'Recibido':'badge-Recibido','En preparación':'badge-preparacion',
-    'Listo para retirar':'badge-listo','Enviado':'badge-Enviado','Cancelado':'badge-Cancelado'};
+    'Listo para retirar':'badge-listo','Enviado':'badge-Enviado',
+    'Entregado':'badge-Entregado','Retirado':'badge-Retirado','Cancelado':'badge-Cancelado'};
   return map[estado] || 'badge-Recibido';
 }
 
@@ -332,10 +358,13 @@ function cargarPedidos() {
 
     var html = '<div class="filtro-row">'
       + '<button class="filtro-btn ' + (filtroEstado==='todos'?'activo':'') + '" onclick="setFiltro(\'todos\',this)">Todos</button>'
+      + '<button class="filtro-btn ' + (filtroEstado==='pendientes'?'activo':'') + '" onclick="setFiltro(\'pendientes\',this)">🔴 Pendientes</button>'
       + '<button class="filtro-btn ' + (filtroEstado==='Recibido'?'activo':'') + '" onclick="setFiltro(\'Recibido\',this)">Recibidos</button>'
       + '<button class="filtro-btn ' + (filtroEstado==='En preparación'?'activo':'') + '" onclick="setFiltro(\'En preparación\',this)">En prep.</button>'
       + '<button class="filtro-btn ' + (filtroEstado==='Listo para retirar'?'activo':'') + '" onclick="setFiltro(\'Listo para retirar\',this)">Listos</button>'
       + '<button class="filtro-btn ' + (filtroEstado==='Enviado'?'activo':'') + '" onclick="setFiltro(\'Enviado\',this)">Enviados</button>'
+      + '<button class="filtro-btn ' + (filtroEstado==='Entregado'?'activo':'') + '" onclick="setFiltro(\'Entregado\',this)">Entregados</button>'
+      + '<button class="filtro-btn ' + (filtroEstado==='Retirado'?'activo':'') + '" onclick="setFiltro(\'Retirado\',this)">Retirados</button>'
       + '</div><div id="listaPedidos"></div>';
 
     el.innerHTML = html;
@@ -354,13 +383,20 @@ function setFiltro(estado, btn) {
 function renderPedidos(pedidos) {
   var lista = document.getElementById('listaPedidos');
   if (!lista) return;
-  var filtrados = filtroEstado === 'todos' ? pedidos : pedidos.filter(function(p){ return p.estado === filtroEstado; });
+  var filtrados;
+  if (filtroEstado === 'todos') filtrados = pedidos;
+  else if (filtroEstado === 'pendientes') filtrados = pedidos.filter(function(p){ return p.estado==='Recibido'||p.estado==='En preparación'||p.estado==='Listo para retirar'||p.estado==='Enviado'; });
+  else filtrados = pedidos.filter(function(p){ return p.estado === filtroEstado; });
+
   if (filtrados.length === 0) { lista.innerHTML = '<div class="empty-txt">No hay pedidos con este estado.</div>'; return; }
 
+  var FINALES = ['Entregado','Retirado','Cancelado'];
   var html = '';
   filtrados.forEach(function(p) {
+    var esFinal = FINALES.indexOf(p.estado) >= 0;
+    var esEnvio = (p.entrega||'').toLowerCase().indexOf('env') >= 0;
     var prods = (p.productos || '').split(' | ').map(function(pr){ return '• ' + pr; }).join('<br>');
-    html += '<div class="pedido-card" id="pc-' + p.codigo + '">'
+    html += '<div class="pedido-card" id="pc-' + p.codigo + '"' + (esFinal?' style="opacity:.6"':'') + '>'
       + '<div class="pedido-top">'
       + '<span class="pedido-codigo">' + p.codigo + '</span>'
       + '<span class="pedido-cliente">' + p.cliente + '</span>'
@@ -373,15 +409,27 @@ function renderPedidos(pedidos) {
       + '<span>🚚 <strong>' + p.entrega + '</strong></span>'
       + '<span>💳 <strong>' + p.pago + '</strong></span>'
       + '</div>'
-      + '<div class="pedido-productos">' + prods + '</div>'
-      + '<div class="pedido-actions">'
-      + (p.estado !== 'En preparación' ? '<button class="btn-estado btn-prep" onclick="cambiarEstado(\'' + p.codigo + '\',\'En preparación\')">🔧 En prep.</button>' : '')
-      + (p.estado !== 'Listo para retirar' ? '<button class="btn-estado btn-listo" onclick="cambiarEstado(\'' + p.codigo + '\',\'Listo para retirar\')">✅ Listo</button>' : '')
-      + (p.estado !== 'Enviado' ? '<button class="btn-estado btn-enviado" onclick="cambiarEstado(\'' + p.codigo + '\',\'Enviado\')">🚚 Enviado</button>' : '')
-      + (p.estado !== 'Cancelado' ? '<button class="btn-estado btn-cancelar" onclick="cambiarEstado(\'' + p.codigo + '\',\'Cancelado\')">❌ Cancelar</button>' : '')
-      + '<a href="https://wa.me/54' + p.telefono.replace(/\D/g,'') + '?text=' + encodeURIComponent('Hola ' + p.cliente + '! Te escribimos de MAXUP sobre tu pedido ' + p.codigo + '.') + '" target="_blank" class="btn-estado btn-enviado">📲 WA</a>'
-      + '</div>'
-      + '</div>';
+      + '<div class="pedido-productos">' + prods + '</div>';
+
+    // Botones de acción solo si no está finalizado
+    if (!esFinal) {
+      html += '<div class="pedido-actions">';
+      if (p.estado === 'Recibido')
+        html += '<button class="btn-estado btn-prep" onclick="cambiarEstado(\'' + p.codigo + '\',\'En preparación\')">🔧 En preparación</button>';
+      if (p.estado === 'En preparación' && !esEnvio)
+        html += '<button class="btn-estado btn-listo" onclick="cambiarEstado(\'' + p.codigo + '\',\'Listo para retirar\')">✅ Listo para retirar</button>';
+      if (p.estado === 'En preparación' && esEnvio)
+        html += '<button class="btn-estado btn-enviado" onclick="cambiarEstado(\'' + p.codigo + '\',\'Enviado\')">🚚 Enviado</button>';
+      if (p.estado === 'Listo para retirar')
+        html += '<button class="btn-estado btn-retirado" onclick="confirmarFinal(\'' + p.codigo + '\',\'Retirado\')">🤝 Retirado</button>';
+      if (p.estado === 'Enviado')
+        html += '<button class="btn-estado btn-entregado" onclick="confirmarFinal(\'' + p.codigo + '\',\'Entregado\')">📦 Entregado</button>';
+      html += '<button class="btn-estado btn-cancelar" onclick="confirmarFinal(\'' + p.codigo + '\',\'Cancelado\')">❌ Cancelar</button>';
+      html += '<a href="https://wa.me/54' + p.telefono.replace(/\D/g,'') + '?text=' + encodeURIComponent('Hola ' + p.cliente + '! Te escribimos de MAXUP sobre tu pedido ' + p.codigo + '.') + '" target="_blank" class="btn-estado btn-enviado">📲 WA</a>';
+      html += '</div>';
+    }
+
+    html += '</div>';
   });
   lista.innerHTML = html;
 }
@@ -392,7 +440,6 @@ function cambiarEstado(codigo, nuevoEstado) {
     .then(function(data) {
       if (data.ok) {
         showToast('✅ ' + codigo + ' → ' + nuevoEstado);
-        // Actualizar en cache local
         if (window._pedidosCache) {
           window._pedidosCache.forEach(function(p){ if(p.codigo===codigo) p.estado=nuevoEstado; });
           renderPedidos(window._pedidosCache);
@@ -401,6 +448,18 @@ function cambiarEstado(codigo, nuevoEstado) {
         showToast('❌ Error: ' + (data.error || 'No se pudo actualizar'));
       }
     }).catch(function(){ showToast('⚠️ Error de conexión'); });
+}
+
+// Confirmación antes de estados finales (descuentan stock o cancelan)
+function confirmarFinal(codigo, nuevoEstado) {
+  var msgs = {
+    'Entregado': '📦 ¿Marcar ' + codigo + ' como ENTREGADO?\nEsto descontará el stock automáticamente.',
+    'Retirado':  '🤝 ¿Marcar ' + codigo + ' como RETIRADO?\nEsto descontará el stock automáticamente.',
+    'Cancelado': '❌ ¿Cancelar el pedido ' + codigo + '?\nEsta acción no se puede deshacer.'
+  };
+  if (confirm(msgs[nuevoEstado] || '¿Cambiar estado a ' + nuevoEstado + '?')) {
+    cambiarEstado(codigo, nuevoEstado);
+  }
 }
 
 // ── STOCK ────────────────────────────────────────────────────
@@ -455,29 +514,42 @@ function cargarDescuentos() {
 function cargarVencer() {
   var el = document.getElementById('tabVencer');
   el.innerHTML = '<div class="loading-txt">Verificando vencimientos...</div>';
-  api('accion=admin_vencer&dias=50').then(function(data) {
+  api('accion=admin_vencer&dias=70').then(function(data) {
     if (!data.ok) { el.innerHTML = '<div class="empty-txt">Error: ' + (data.error||'') + '</div>'; return; }
     var prods = data.productos || [];
-    var criticos = prods.filter(function(p){ return p.diasRestantes <= 7; }).length;
+    var criticos = prods.filter(function(p){ return p.diasRestantes <= 40; }).length;
     var badge = document.getElementById('badgeVencer');
     if (criticos > 0) { badge.textContent = criticos; badge.style.display='inline'; }
     else badge.style.display = 'none';
 
     if (prods.length === 0) {
-      el.innerHTML = '<div class="empty-txt">✅ Todo bien — ningún producto vence en los próximos 50 días.</div>';
+      el.innerHTML = '<div class="empty-txt">✅ Todo bien — ningún producto vence en los próximos 70 días.</div>';
       return;
     }
 
-    var html = '<div class="section-title">Productos por vencer <span>(' + prods.length + ')</span></div>';
+    // Separar por urgencia
+    var vencidos = prods.filter(function(p){ return p.diasRestantes < 0; });
+    var criticosArr = prods.filter(function(p){ return p.diasRestantes >= 0 && p.diasRestantes <= 40; });
+    var advertencia = prods.filter(function(p){ return p.diasRestantes > 40 && p.diasRestantes <= 50; });
+    var atencion = prods.filter(function(p){ return p.diasRestantes > 50; });
+
+    var html = '<div class="section-title">Productos por vencer <span>(' + prods.length + ')</span></div>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;font-size:.78rem">'
+      + (vencidos.length ? '<span style="color:#FF3D3D;font-weight:700">💀 '+vencidos.length+' vencidos</span>' : '')
+      + (criticosArr.length ? '<span style="color:#FF3D3D;font-weight:700">🚨 '+criticosArr.length+' críticos (≤40d)</span>' : '')
+      + (advertencia.length ? '<span style="color:#FFA500;font-weight:700">⚠️ '+advertencia.length+' advertencia (≤50d)</span>' : '')
+      + (atencion.length ? '<span style="color:#00C8FF;font-weight:700">🔵 '+atencion.length+' atención (≤70d)</span>' : '')
+      + '</div>';
+
     prods.forEach(function(p) {
-      var color = p.urgencia==='vencido' ? '#FF3D3D' : p.urgencia==='critico' ? '#FF3D3D' : p.urgencia==='urgente' ? '#FFA500' : p.urgencia==='pronto' ? '#FFD700' : '#00C8FF';
-      var icon  = p.urgencia==='vencido' ? '💀' : p.urgencia==='critico' ? '🚨' : p.urgencia==='urgente' ? '⚠️' : p.urgencia==='pronto' ? '🟡' : '🔵';
+      var color = p.diasRestantes < 0 ? '#FF3D3D' : p.diasRestantes <= 40 ? '#FF3D3D' : p.diasRestantes <= 50 ? '#FFA500' : '#00C8FF';
+      var icon  = p.diasRestantes < 0 ? '💀' : p.diasRestantes <= 40 ? '🚨' : p.diasRestantes <= 50 ? '⚠️' : '🔵';
       var diasTxt = p.diasRestantes < 0 ? 'VENCIDO hace ' + Math.abs(p.diasRestantes) + ' días' : 'Vence en ' + p.diasRestantes + ' días (' + p.fechaVence + ')';
       html += '<div class="stock-item" style="border-left:3px solid ' + color + '">'
         + '<div style="font-size:1.3rem;width:28px">' + icon + '</div>'
         + '<div style="flex:1">'
         + '<div class="stock-nombre">' + p.nombre + '</div>'
-        + '<div class="stock-marca">' + p.marca + ' · Stock: ' + p.stock + ' · $' + Number(p.precio).toLocaleString('es-AR') + '</div>'
+        + '<div class="stock-marca">' + (p.marca||'') + ' · Stock: ' + p.stock + ' · $' + Number(p.precio).toLocaleString('es-AR') + '</div>'
         + '<div style="font-size:.78rem;color:' + color + ';font-weight:700;margin-top:2px">' + diasTxt + '</div>'
         + '</div>'
         + '</div>';
