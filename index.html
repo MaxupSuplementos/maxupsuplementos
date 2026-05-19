@@ -744,11 +744,11 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 @media(max-width:600px){.indum-grid{grid-template-columns:repeat(2,1fr);gap:10px}}
 </style>
 </head>
-<body>
+<body style="overflow:hidden">
 
-<!-- ── PANTALLA MANTENIMIENTO (oculta todo) ── -->
+<!-- ── PANTALLA MANTENIMIENTO (oculta todo — arranca visible, se oculta si no hay mantenimiento) ── -->
 <style>
-#mantScreen{display:none;position:fixed;inset:0;z-index:99999;background:#0a0a0a;overflow-y:auto}
+#mantScreen{position:fixed;inset:0;z-index:99999;background:#0a0a0a;overflow-y:auto}
 .mant-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
 .mant-img{width:100%;max-width:520px;border-radius:12px;display:block;
   box-shadow:0 8px 40px rgba(0,0,0,.5)}
@@ -799,6 +799,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   </div>
 </div>
 
+<div id="appContent" style="display:none">
 <!-- ── NAV ── -->
 <nav>
   <a href="#" class="nav-logo" id="navLogoLink">
@@ -1310,18 +1311,27 @@ const WA_DEFAULT = '5491168461457';        // Número de WhatsApp (sin + ni espa
 const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
 
 // ── CHEQUEO DE MANTENIMIENTO ──────────────────────────────
+// Arranca con mantScreen visible y appContent oculto.
+// Si NO hay mantenimiento → oculta mantScreen, muestra appContent.
+// Si hay mantenimiento → se queda como está (solo se ve la pantalla de mantenimiento).
 (function(){
   fetch(API_URL + '?accion=mantenimiento')
     .then(function(r){ return r.json(); })
     .then(function(data){
       if (data.ok && data.activo) {
-        var screen = document.getElementById('mantScreen');
-        if (screen) {
-          screen.style.display = 'block';
-          document.body.style.overflow = 'hidden';
-        }
+        // Mantenimiento activo: ya está todo correcto, no hacer nada
+      } else {
+        // Sin mantenimiento: mostrar la página normal
+        document.getElementById('mantScreen').style.display = 'none';
+        document.getElementById('appContent').style.display = 'block';
+        document.body.style.overflow = '';
       }
-    }).catch(function(){});
+    }).catch(function(){
+      // Si falla la API, mostrar la página normal para no bloquear al usuario
+      document.getElementById('mantScreen').style.display = 'none';
+      document.getElementById('appContent').style.display = 'block';
+      document.body.style.overflow = '';
+    });
 })();
 
 // ── DESCUENTOS POR MONTO ──────────────────────────────────
@@ -8187,5 +8197,6 @@ window.addEventListener('load', function() {
 });
 
 </script>
+</div><!-- /appContent -->
 </body>
 </html>
