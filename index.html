@@ -746,6 +746,109 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 </head>
 <body>
 
+<!-- ── BANNER MANTENIMIENTO ── -->
+<style>
+#bannerMant{display:none;width:100%;background:linear-gradient(135deg,#080810,#0d0d2a,#120818);border-bottom:2px solid;border-image:linear-gradient(90deg,#00C8FF,#FF0099,#9933FF) 1;padding:18px 20px 14px;text-align:center;position:relative;z-index:10000;overflow:hidden}
+#bannerMant::before{content:'';position:absolute;inset:0;background:
+  radial-gradient(ellipse 300px 100px at 30% 80%,rgba(0,200,255,.06),transparent),
+  radial-gradient(ellipse 200px 80px at 70% 20%,rgba(255,0,153,.05),transparent);pointer-events:none}
+
+/* Escena animada */
+.mant-scene{display:flex;align-items:center;justify-content:center;gap:0;position:relative;height:60px;margin-bottom:8px}
+
+/* Logo 3D con brillo */
+.mant-logo{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:.15em;
+  background:linear-gradient(135deg,#00C8FF 0%,#FF0099 50%,#9933FF 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 8px rgba(0,200,255,.4)) drop-shadow(0 0 20px rgba(255,0,153,.2));
+  position:relative;z-index:2;
+  animation:mant-logo-pulse 3s ease-in-out infinite}
+@keyframes mant-logo-pulse{0%,100%{filter:drop-shadow(0 0 8px rgba(0,200,255,.4)) drop-shadow(0 0 20px rgba(255,0,153,.2))}50%{filter:drop-shadow(0 0 14px rgba(0,200,255,.6)) drop-shadow(0 0 30px rgba(255,0,153,.4))}}
+
+/* Trabajador (SVG animado) */
+.mant-worker{position:relative;width:50px;height:60px;margin-left:-8px;z-index:3}
+.worker-body{position:absolute;bottom:0;left:50%;transform:translateX(-50%)}
+.worker-head{width:16px;height:16px;background:#FDB813;border-radius:50% 50% 45% 45%;position:absolute;top:2px;left:50%;transform:translateX(-50%);border:2px solid #E8A000}
+.worker-helmet{width:20px;height:10px;background:linear-gradient(135deg,#FFD700,#FFA000);border-radius:10px 10px 2px 2px;position:absolute;top:-2px;left:50%;transform:translateX(-50%)}
+.worker-torso{width:18px;height:16px;background:linear-gradient(180deg,#2196F3,#1565C0);border-radius:3px;position:absolute;top:18px;left:50%;transform:translateX(-50%)}
+.worker-legs{position:absolute;top:34px;left:50%;transform:translateX(-50%);display:flex;gap:2px}
+.worker-leg{width:7px;height:14px;background:#333;border-radius:0 0 3px 3px}
+
+/* Brazo con herramienta */
+.worker-arm{position:absolute;top:20px;left:2px;width:26px;height:4px;background:#2196F3;border-radius:2px;
+  transform-origin:right center;animation:mant-arm-move 1.5s ease-in-out infinite}
+@keyframes mant-arm-move{0%,100%{transform:rotate(-15deg)}50%{transform:rotate(-35deg)}}
+.worker-tool{position:absolute;left:-6px;top:-4px;font-size:14px;animation:mant-tool-spin 1.5s ease-in-out infinite}
+@keyframes mant-tool-spin{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-25deg)}}
+
+/* Chispas de soldadura */
+.mant-sparks{position:absolute;left:6px;top:18px;z-index:4}
+.spark{position:absolute;width:3px;height:3px;border-radius:50%;animation:mant-spark 0.8s ease-out infinite}
+.spark:nth-child(1){background:#FFD700;animation-delay:0s;--sx:-12px;--sy:-18px}
+.spark:nth-child(2){background:#FF6B00;animation-delay:.15s;--sx:-8px;--sy:-22px}
+.spark:nth-child(3){background:#00C8FF;animation-delay:.3s;--sx:-15px;--sy:-12px}
+.spark:nth-child(4){background:#FFD700;animation-delay:.45s;--sx:-5px;--sy:-20px}
+.spark:nth-child(5){background:#FF0099;animation-delay:.6s;--sx:-18px;--sy:-15px}
+.spark:nth-child(6){background:#fff;animation-delay:.1s;--sx:-10px;--sy:-25px}
+.spark:nth-child(7){background:#FFA500;animation-delay:.5s;--sx:-20px;--sy:-10px}
+.spark:nth-child(8){background:#00C8FF;animation-delay:.25s;--sx:-3px;--sy:-16px}
+@keyframes mant-spark{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(0)}}
+
+/* Punto de soldadura brillante */
+.weld-point{position:absolute;left:4px;top:16px;width:6px;height:6px;border-radius:50%;
+  background:#fff;z-index:5;
+  animation:mant-weld 0.4s ease-in-out infinite alternate;
+  box-shadow:0 0 6px #FFD700,0 0 12px #FF6B00,0 0 20px rgba(0,200,255,.5)}
+@keyframes mant-weld{0%{opacity:.6;transform:scale(.7)}100%{opacity:1;transform:scale(1.2)}}
+
+/* Engranajes decorativos */
+.mant-gear{position:absolute;font-size:1.1rem;opacity:.25;animation:mant-gear-spin 6s linear infinite}
+.mant-gear.g1{left:8%;top:8px;animation-duration:8s}
+.mant-gear.g2{right:8%;bottom:8px;animation-duration:5s;animation-direction:reverse;font-size:.9rem}
+.mant-gear.g3{right:18%;top:5px;font-size:.7rem;animation-duration:4s}
+@keyframes mant-gear-spin{to{transform:rotate(360deg)}}
+
+.mant-text{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.95rem;color:#fff;letter-spacing:.03em;position:relative;z-index:2}
+.mant-sub{font-family:'Rajdhani',sans-serif;font-size:.78rem;color:#00C8FF;letter-spacing:.02em;position:relative;z-index:2}
+
+@media(max-width:480px){
+  .mant-logo{font-size:1.6rem}
+  .mant-scene{height:50px;gap:0}
+  .mant-worker{transform:scale(.85)}
+  .mant-gear{display:none}
+}
+</style>
+<div id="bannerMant">
+  <!-- Engranajes decorativos -->
+  <span class="mant-gear g1">⚙️</span>
+  <span class="mant-gear g2">⚙️</span>
+  <span class="mant-gear g3">🔩</span>
+
+  <!-- Escena: Trabajador soldando el logo -->
+  <div class="mant-scene">
+    <div class="mant-logo">MAXUP</div>
+    <div class="mant-worker">
+      <div class="worker-body">
+        <div class="worker-helmet"></div>
+        <div class="worker-head"></div>
+        <div class="worker-torso"></div>
+        <div class="worker-arm"><span class="worker-tool">🔧</span></div>
+        <div class="worker-legs"><div class="worker-leg"></div><div class="worker-leg"></div></div>
+      </div>
+      <!-- Chispas -->
+      <div class="mant-sparks">
+        <div class="spark"></div><div class="spark"></div><div class="spark"></div>
+        <div class="spark"></div><div class="spark"></div><div class="spark"></div>
+        <div class="spark"></div><div class="spark"></div>
+      </div>
+      <div class="weld-point"></div>
+    </div>
+  </div>
+
+  <div class="mant-text" id="bannerMantTexto"></div>
+  <div class="mant-sub">Volvemos en un momento — MAXUP Suplementos</div>
+</div>
+
 <!-- ── NAV ── -->
 <nav>
   <a href="#" class="nav-logo" id="navLogoLink">
@@ -1255,6 +1358,22 @@ document.querySelectorAll('#navLogo,#heroLogo,#footerLogo').forEach(i => i.src =
 const STORE_NAME = 'MAXUP SUPLEMENTOS';   // Nombre de la tienda
 const WA_DEFAULT = '5491168461457';        // Número de WhatsApp (sin + ni espacios)
 const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
+
+// ── CHEQUEO DE MANTENIMIENTO ──────────────────────────────
+(function(){
+  fetch(API_URL + '?accion=mantenimiento')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.ok && data.activo) {
+        var banner = document.getElementById('bannerMant');
+        var texto = document.getElementById('bannerMantTexto');
+        if (banner && texto) {
+          texto.textContent = data.mensaje || 'Estamos actualizando el catálogo. Volvemos en minutos.';
+          banner.style.display = 'block';
+        }
+      }
+    }).catch(function(){});
+})();
 
 // ── DESCUENTOS POR MONTO ──────────────────────────────────
 // Formato: { desde: MONTO_MINIMO, porcentaje: DESCUENTO }
