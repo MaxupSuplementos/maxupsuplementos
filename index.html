@@ -8,6 +8,8 @@
   <link rel="preload" as="image" href="https://images.weserv.nl/?url=i.ibb.co/4w4mQvbs/IMG-20260323-230735755-HDR-AE.jpg&w=400&output=webp&q=82">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00C8FF">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- ── SEO BÁSICO ── -->
@@ -115,7 +117,7 @@ body::before{content:'';position:fixed;inset:0;
   background-size:60px 60px;pointer-events:none;z-index:0}
 
 /* ── NAV ── */
-nav{position:fixed;top:0;width:100%;z-index:200;background:rgba(0,0,0,.92);
+nav{position:fixed;top:28px;width:100%;z-index:200;background:rgba(0,0,0,.92);
   backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,200,255,.12);
   padding:10px 32px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
@@ -154,7 +156,7 @@ nav{position:fixed;top:0;width:100%;z-index:200;background:rgba(0,0,0,.92);
 
 /* ── HERO ── */
 .hero{position:relative;min-height:86vh;display:flex;align-items:center;
-  justify-content:center;text-align:center;padding:110px 40px 60px;z-index:1;overflow:hidden}
+  justify-content:center;text-align:center;padding:138px 40px 60px;z-index:1;overflow:hidden}
 .hero-glow{position:absolute;width:700px;height:700px;border-radius:50%;
   background:radial-gradient(circle,rgba(0,200,255,.12) 0%,transparent 70%);
   top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
@@ -196,6 +198,36 @@ nav{position:fixed;top:0;width:100%;z-index:200;background:rgba(0,0,0,.92);
 .section-desc{font-size:.97rem;color:var(--gray);max-width:520px;margin:0 auto}
 .search-info{text-align:center;margin-bottom:20px;font-size:.88rem;color:var(--cyan);
   font-weight:600;letter-spacing:.05em;min-height:20px}
+/* ── MODO CLARO ── */
+body.light{background:#f5f5f5;color:#111}
+body.light::before{background-image:linear-gradient(rgba(0,0,0,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.03) 1px,transparent 1px)}
+body.light nav{background:rgba(255,255,255,.95);border-bottom-color:rgba(0,0,0,.08)}
+body.light .nav-search input{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.12);color:#111}
+body.light .nav-search input::placeholder{color:rgba(0,0,0,.4)}
+body.light .nav-links a{color:#666}
+body.light .hero{color:#111}
+body.light .hero p{color:#666}
+body.light .stats{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06)}
+body.light .prod-card{background:#fff;border-color:rgba(0,0,0,.08)}
+body.light .prod-card:hover{border-color:rgba(0,200,255,.4);box-shadow:0 14px 44px rgba(0,0,0,.08)}
+body.light .prod-body{color:#111}
+body.light .prod-brand{color:#888}
+body.light .prod-desc{color:#666}
+body.light .cat-tab{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.1);color:#666}
+body.light .cat-tab:hover,body.light .cat-tab.active{background:rgba(0,200,255,.08);color:var(--cyan)}
+body.light .cart-modal,body.light .checkout-modal{background:#fff;color:#111}
+body.light .cart-header{border-color:rgba(0,0,0,.08)}
+body.light .flavor-select{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.1);color:#111}
+body.light .section-desc{color:#666}
+body.light .footer{background:rgba(0,0,0,.03)}
+
+/* ── FAVORITOS ── */
+.fav-btn{position:absolute;top:8px;right:8px;z-index:10;background:rgba(0,0,0,.5);border:none;
+  width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;
+  justify-content:center;transition:transform .2s;backdrop-filter:blur(4px)}
+.fav-btn:hover{transform:scale(1.2)}
+.fav-btn.active{background:rgba(255,0,153,.2)}
+
 .cat-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:44px}
 .cat-tab{padding:7px 18px;border-radius:100px;border:1px solid rgba(255,255,255,.1);
   background:transparent;color:var(--gray);font-family:'Rajdhani',sans-serif;font-size:.84rem;
@@ -742,6 +774,51 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 .pag-activo{background:var(--cyan)!important;border-color:var(--cyan)!important;color:#000!important;font-weight:700}
 .pag-info{color:#555;font-size:.78rem;margin-left:4px}
 @media(max-width:600px){.indum-grid{grid-template-columns:repeat(2,1fr);gap:10px}}
+
+/* ── FAQ ACCORDION ── */
+.faq-open > div:last-child{max-height:200px!important;padding:0 20px!important}
+
+/* ── CARRUSEL NUEVOS INGRESOS ── */
+.nuevos-section{padding:20px 32px 0;max-width:1440px;margin:0 auto;position:relative;z-index:1}
+.nuevos-track{display:flex;gap:14px;overflow-x:auto;scroll-behavior:smooth;padding:16px 0 12px;scrollbar-width:none}
+.nuevos-track::-webkit-scrollbar{display:none}
+.nuevos-card{min-width:180px;max-width:180px;background:var(--dark2);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .2s;flex-shrink:0}
+.nuevos-card:hover{border-color:rgba(0,200,255,.4);transform:translateY(-3px)}
+.nuevos-card img{width:100%;aspect-ratio:1;object-fit:cover;background:#111}
+.nuevos-card-body{padding:10px}
+.nuevos-card-brand{font-size:.65rem;color:var(--cyan);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.nuevos-card-name{font-size:.8rem;font-weight:600;line-height:1.3;margin:3px 0}
+.nuevos-card-price{font-size:.95rem;font-weight:800;color:var(--cyan);font-family:Bebas Neue,sans-serif}
+.nuevos-nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:rgba(0,200,255,.15);border:1px solid rgba(0,200,255,.3);color:var(--cyan);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;transition:background .2s}
+.nuevos-nav:hover{background:rgba(0,200,255,.3)}
+.nuevos-nav.prev{left:8px}
+.nuevos-nav.next{right:8px}
+@media(max-width:600px){.nuevos-card{min-width:150px;max-width:150px}}
+
+/* ── AVISAR STOCK ── */
+.avisar-stock-btn{width:100%;padding:8px;border:1px solid rgba(255,165,0,.3);background:rgba(255,165,0,.08);color:#FFA500;border-radius:8px;font-family:Rajdhani,sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.04em}
+.avisar-stock-btn:hover{background:rgba(255,165,0,.15);border-color:#FFA500}
+
+/* ── DESCUENTO POR CANTIDAD BADGE ── */
+.qty-discount-badge{font-size:.65rem;color:#00E676;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);padding:2px 6px;border-radius:4px;display:inline-block;margin-top:3px}
+
+/* ── FILTRO PRECIO VISUAL ── */
+.precio-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.precio-badge{padding:5px 12px;border-radius:16px;font-size:.78rem;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#aaa;transition:all .2s}
+.precio-badge:hover,.precio-badge.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,200,255,.08)}
+
+/* ── HISTORIAL PEDIDOS ── */
+.historial-modal{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:20px}
+.historial-modal.open{display:flex}
+.historial-inner{background:var(--dark2);border:1px solid rgba(0,200,255,.2);border-radius:16px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;padding:24px}
+
+/* ── CALCULADORA PROTEÍNA ── */
+.calc-prot-result{background:var(--dark2);border:1px solid rgba(0,200,255,.15);border-radius:12px;padding:16px;margin-top:16px}
+.calc-prot-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.calc-prot-row:last-child{border:none}
+
+/* ── PUNTOS ── */
+.puntos-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:700;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.25);color:#FFD700}
 </style>
 </head>
 <body style="overflow:hidden">
@@ -819,8 +896,18 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <li><a href="indumentaria.html">👕 Indumentaria</a></li>
     <li><a href="#liquidaciones" style="color:#FF0099" onclick="mostrarLiquidaciones()">🔥 Ofertas</a></li>
     <li><a href="estado.html" style="color:#00C8FF">📋 Mi Pedido</a></li>
+    <li><a href="#" onclick="document.getElementById('historialModal').classList.add('open');return false" style="color:#FFD700">🏆 Puntos</a></li>
+    <li><a href="#" onclick="solicitarPush();return false" style="color:#FF6B00">🔔</a></li>
+    <li><button onclick="toggleTheme()" id="themeToggle" style="background:none;border:1px solid rgba(255,255,255,.15);color:#999;padding:5px 10px;border-radius:20px;cursor:pointer;font-size:.75rem;font-family:Rajdhani,sans-serif;font-weight:600" title="Cambiar tema">🌙</button></li>
   </ul>
 </nav>
+
+<!-- ── BANNER ROTATIVO PROMOS ── -->
+<div id="promoBannerTop" style="position:fixed;top:0;left:0;right:0;z-index:201;background:linear-gradient(90deg,#9933FF,#FF0099,#00C8FF);
+  padding:6px 0;text-align:center;font-size:.75rem;font-weight:700;letter-spacing:.06em;color:#fff;overflow:hidden;cursor:pointer"
+  onclick="document.getElementById('catalogo').scrollIntoView({behavior:'smooth'})">
+  <div id="promoBannerText" style="transition:opacity .4s">ENVÍO A TODO EL PAÍS 📦 STOCK REAL ACTUALIZADO</div>
+</div>
 
 <!-- ── BARRA MOBILE ── -->
 <div class="nav-mobile-bar">
@@ -863,6 +950,17 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   </div>
 </div>
 
+<!-- ── CARRUSEL NUEVOS INGRESOS ── -->
+<div class="nuevos-section" id="nuevosSection" style="display:none">
+  <div style="text-align:center;margin-bottom:4px">
+    <span style="font-size:.7rem;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan)">Recién llegados</span>
+    <h2 style="font-family:Bebas Neue,sans-serif;font-size:clamp(1.3rem,3vw,1.8rem);letter-spacing:.05em;margin-top:4px">✨ NUEVOS INGRESOS</h2>
+  </div>
+  <button class="nuevos-nav prev" onclick="document.getElementById('nuevosTrack').scrollBy({left:-200,behavior:'smooth'})">‹</button>
+  <button class="nuevos-nav next" onclick="document.getElementById('nuevosTrack').scrollBy({left:200,behavior:'smooth'})">›</button>
+  <div class="nuevos-track" id="nuevosTrack"></div>
+</div>
+
 <!-- ── CATALOG ── -->
 
 <section class="catalog-section" id="catalogo">
@@ -882,19 +980,39 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <input type="range" class="precio-range" id="precioRange" min="0" max="200000" value="200000" step="1000" oninput="filtrarPrecio(this.value)">
     <span class="precio-val" id="precioVal">Sin límite</span>
   </div>
+  <!-- Filtro precio visual badges -->
+  <div class="precio-badges" id="precioBadges">
+    <button class="precio-badge active" data-max="999999" onclick="filtroPrecioBadge(999999,this)">Todos</button>
+    <button class="precio-badge" data-max="25000" onclick="filtroPrecioBadge(25000,this)">💲 Hasta $25.000</button>
+    <button class="precio-badge" data-max="50000" onclick="filtroPrecioBadge(50000,this)">💲💲 Hasta $50.000</button>
+    <button class="precio-badge" data-max="100000" onclick="filtroPrecioBadge(100000,this)">💲💲💲 Hasta $100.000</button>
+    <button class="precio-badge" data-max="100001" onclick="filtroPrecioBadge(-100001,this)">🔥 Más de $100.000</button>
+  </div>
   <div class="cat-tabs" id="catTabs">
     <button class="cat-tab active" data-cat="all">Todos</button>
+    <button class="cat-tab" data-cat="favoritos" style="border-color:rgba(255,0,153,.3);color:#FF0099">❤️ Favoritos</button>
     <button class="cat-tab" data-cat="proteina">🥛 Proteínas</button>
     <button class="cat-tab" data-cat="gainer">💪 Gainers</button>
     <button class="cat-tab" data-cat="creatina">⚡ Creatinas</button>
     <button class="cat-tab" data-cat="aminoacido">🧬 Aminoácidos</button>
     <button class="cat-tab" data-cat="vitamin">💊 Vitaminas</button>
+    <button class="cat-tab" data-cat="magnesio">🧲 Magnesio / Omega 3</button>
     <button class="cat-tab" data-cat="preworkout">🔥 Pre-Entreno</button>
     <button class="cat-tab" data-cat="quemador">🌡️ Quemadores</button>
     <button class="cat-tab" data-cat="colageno">🦴 Colágeno</button>
     <button class="cat-tab" data-cat="hidratacion">💧 Hidratación</button>
     <button class="cat-tab" data-cat="barra">🍫 Barras & Snacks</button>
     <button class="cat-tab" data-cat="accesorio">🏋️ Accesorios</button>
+    <button class="cat-tab" data-cat="combo" style="border-color:rgba(153,51,255,.3);color:#9933FF" onclick="mostrarCombos()">🎁 Combos</button>
+  </div>
+
+  <!-- COMBOS -->
+  <div id="combosSection" style="display:none;margin-bottom:30px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-family:Bebas Neue,sans-serif;font-size:1.6rem;letter-spacing:.08em;background:linear-gradient(90deg,#9933FF,#FF0099);-webkit-background-clip:text;-webkit-text-fill-color:transparent">COMBOS ESPECIALES</div>
+      <p style="color:#999;font-size:.88rem">Ahorrá comprando en combo. Precios exclusivos web.</p>
+    </div>
+    <div id="combosGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px"></div>
   </div>
   <div id="productsGrid"></div>
   <div class="no-results" id="noResults" style="display:none">
@@ -1036,6 +1154,62 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   <div id="liquidacionesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px"></div>
 </section>
 
+<!-- ── FAQ ── -->
+<section id="faq" style="position:relative;z-index:1;padding:60px 32px;max-width:800px;margin:0 auto">
+  <div style="text-align:center;margin-bottom:36px">
+    <span style="font-size:.7rem;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan)">Preguntas frecuentes</span>
+    <h2 style="font-family:Bebas Neue,sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);letter-spacing:.05em;margin-top:8px">¿TENÉS DUDAS?</h2>
+  </div>
+  <div id="faqList"></div>
+</section>
+<!-- ── CALCULADORA DE PROTEÍNA / CREATINA ── -->
+<section id="calcProteina" style="position:relative;z-index:1;padding:40px 32px;max-width:800px;margin:0 auto">
+  <div style="text-align:center;margin-bottom:24px">
+    <span style="font-size:.7rem;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan)">Herramienta</span>
+    <h2 style="font-family:Bebas Neue,sans-serif;font-size:clamp(1.4rem,3vw,2rem);letter-spacing:.05em;margin-top:6px">🧮 CALCULADORA DE SUPLEMENTOS</h2>
+    <p style="color:#999;font-size:.85rem">Calculá cuánta proteína o creatina necesitás según tu peso y objetivo.</p>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div>
+      <label style="font-size:.78rem;color:#aaa;font-weight:600">Peso (kg)</label>
+      <input type="number" id="calcProtPeso" placeholder="75" min="30" max="200" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;font-family:Rajdhani,sans-serif;font-size:.95rem;padding:10px;border-radius:8px;outline:none;margin-top:4px">
+    </div>
+    <div>
+      <label style="font-size:.78rem;color:#aaa;font-weight:600">Suplemento</label>
+      <select id="calcProtTipo" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;font-family:Rajdhani,sans-serif;font-size:.95rem;padding:10px;border-radius:8px;outline:none;margin-top:4px">
+        <option value="proteina">Proteína Whey</option>
+        <option value="creatina">Creatina</option>
+      </select>
+    </div>
+  </div>
+  <select id="calcProtObj" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;font-family:Rajdhani,sans-serif;font-size:.95rem;padding:10px;border-radius:8px;outline:none;margin-bottom:12px">
+    <option value="mantener">Mantener masa muscular</option>
+    <option value="ganar">Ganar masa muscular</option>
+    <option value="definir">Definir / Cutting</option>
+  </select>
+  <button onclick="calcularSuplemento()" style="width:100%;padding:12px;background:var(--grad);color:#000;border:none;border-radius:10px;font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:.08em;cursor:pointer">🧮 CALCULAR</button>
+  <div id="calcProtResultado"></div>
+</section>
+
+<div class="grad-line"></div>
+
+<!-- ── HISTORIAL DE PEDIDOS MODAL ── -->
+<div class="historial-modal" id="historialModal">
+  <div class="historial-inner">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;letter-spacing:.08em">📋 Mis Pedidos</h3>
+      <button onclick="document.getElementById('historialModal').classList.remove('open')" style="background:none;border:none;color:#aaa;font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:16px">
+      <input type="tel" id="historialPhone" placeholder="Tu WhatsApp..." style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;font-family:Rajdhani,sans-serif;font-size:.9rem;padding:10px;border-radius:8px;outline:none">
+      <button onclick="buscarHistorial()" style="padding:10px 16px;background:var(--grad);color:#000;border:none;border-radius:8px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:.85rem;cursor:pointer">Buscar</button>
+    </div>
+    <div id="historialList" style="font-size:.88rem;color:#aaa"></div>
+  </div>
+</div>
+
+<div class="grad-line"></div>
+
 <!-- ── FOOTER ── -->
 <footer>
   <div class="footer-inner">
@@ -1115,6 +1289,12 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
         <button class="prod-modal-wa" onclick="consultarWA()">📲 CONSULTAR POR WHATSAPP</button>
       </div>
     </div>
+    <!-- ── RESEÑA ── -->
+    <div id="modalReviewSection" style="padding:0 24px 16px;border-top:1px solid rgba(255,255,255,.06);margin-top:8px">
+      <div style="font-family:Bebas Neue,sans-serif;font-size:.95rem;letter-spacing:.1em;color:var(--gray);margin:16px 0 12px">⭐ Valorar este producto</div>
+      <div id="modalReviewForm"></div>
+      <div id="modalReviewList" style="margin-top:8px"></div>
+    </div>
     <!-- ── PRODUCTOS RELACIONADOS ── -->
     <div class="modal-relacionados" id="modalRelacionados" style="padding:0 24px 24px;border-top:1px solid rgba(255,255,255,.06);margin-top:8px;display:none">
       <div style="font-family:Bebas Neue,sans-serif;font-size:.95rem;letter-spacing:.1em;color:var(--gray);margin:16px 0 12px">También te puede interesar</div>
@@ -1150,6 +1330,12 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <div class="cart-summary" id="cartSummary" style="display:none">
       <div id="promoBar" style="font-size:.82rem;text-align:center;padding:6px 10px;
         background:rgba(0,200,255,.06);border-radius:8px;margin-bottom:10px;min-height:28px"></div>
+      <!-- CUPÓN DE DESCUENTO -->
+      <div id="cuponBox" style="display:flex;gap:6px;margin-bottom:10px">
+        <input type="text" id="cuponInput" placeholder="Código de cupón" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;font-family:'Rajdhani',sans-serif;font-size:.88rem;padding:8px 12px;border-radius:8px;outline:none;text-transform:uppercase;letter-spacing:.06em">
+        <button onclick="aplicarCupon()" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));color:#000;border:none;border-radius:8px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap">Aplicar</button>
+      </div>
+      <div id="cuponMsg" style="display:none;font-size:.82rem;text-align:center;padding:6px 10px;border-radius:8px;margin-bottom:10px"></div>
       <div class="cart-total-row">
         <span class="cart-total-label">Total</span>
         <span class="cart-total-val" id="cartTotal">$0</span>
@@ -4636,7 +4822,7 @@ function fmt(n){ return '$' + n.toLocaleString('es-AR'); }
 
 const SVG_PLACEHOLDERS = {
   "proteina":"", "creatina":"", "preworkout":"", "colageno":"",
-  "vitamin":"", "aminoacido":"", "quemador":"", "gainer":"",
+  "vitamin":"", "magnesio":"", "aminoacido":"", "quemador":"", "gainer":"",
   "barra":"", "hidratacion":"", "accesorio":"", "indumentaria":"", "otros":""
 };
 
@@ -4651,6 +4837,7 @@ function getFallbackImg(cat){
     quemador:   'https://images.weserv.nl/?url=goldnutrition.com.ar/images/2024/04/08/lipo_gold_elite_ultra_concentrate_gold_nutrition_gold_prime.png',
     gainer:     'https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/MutantMass-1.5.png?v=1718218508&width=400',
     barra:      'https://images.weserv.nl/?url=acdn-us.mitiendanube.com/stores/006/077/318/products/mervick-whey-protein-barra-proteina-frambuesa-chocolate-12u-1-a074f1cb81f58b182d17545084229856-1024-1024.webp',
+    magnesio:   'https://images.weserv.nl/?url=goldnutrition.com.ar/images/2024/04/08/magnesio_citrato_gold_nutrition_gold_prime.png',
     accesorio:  'https://images.weserv.nl/?url=m.media-amazon.com/images/I/51WKLQqEUKL._AC_SX679_.jpg',
   };
   return SVG_PLACEHOLDERS[cat] || SVG_PLACEHOLDERS['proteina'];
@@ -4707,10 +4894,12 @@ function buildCard(p){
   const addDisabled = initStock===0 ? 'disabled' : '';
   const addText = initStock===0 ? '❌ Agotado' : '🛒 Agregar';
 
+  const isFav = _favoritos.indexOf(p.id) >= 0;
   return `
 <div class="prod-card" data-id="${p.id}" data-cat="${p.cat}"
      data-search="${(p.name+' '+p.brand+' '+p.cat+' '+p.flavors.map(f=>f.name).join(' ')).toLowerCase()}">
   ${badgeHtml}
+  <button class="fav-btn${isFav?' active':''}" onclick="toggleFav('${p.id}',event)" title="Favorito">${isFav?'❤️':'🤍'}</button>
   <div class="prod-img-wrap">
     <div class="gallery-slides" id="${galleryId}" data-index="0" data-total="${imgList.length}"
          onclick="imgList_${p.id.replace(/-/g,'_')}&&imgList_${p.id.replace(/-/g,'_')}.length>0?openImgModal(imgList_${p.id.replace(/-/g,'_')}[document.getElementById('${galleryId}').dataset.index||0],'${p.name}'):null"
@@ -4724,6 +4913,7 @@ function buildCard(p){
   <div class="prod-body">
     <div class="prod-brand">${p.brand}</div>
     <div class="prod-name">${p.name}</div>
+    <div id="reviews-${p.id}" style="min-height:20px">${renderReviews(p.id)}</div>
     <div class="prod-desc" id="desc-${p.id}">${p.desc}</div>
     <span class="read-more" onclick="toggleDesc('${p.id}',this)">Ver más ▾</span>
     ${flavorSel}
@@ -4768,7 +4958,9 @@ function applyFilters(){
   const cards = Array.from(document.querySelectorAll('.prod-card'));
   // Filtrar
   const visibles = cards.filter(card => {
-    const matchCat = activeCat==='all' || card.dataset.cat===activeCat;
+    let matchCat;
+    if(activeCat==='favoritos') matchCat = _favoritos.indexOf(card.dataset.id)>=0;
+    else matchCat = activeCat==='all' || card.dataset.cat===activeCat;
     const matchSearch = !activeSearch || card.dataset.search.includes(activeSearch);
     return matchCat && matchSearch;
   });
@@ -4954,6 +5146,33 @@ function openImgModal(src, name){
 /* ════════════════════════════════════════════════════════
    CART
 ════════════════════════════════════════════════════════ */
+// ── FAVORITOS ────────────────────────────────────────────────
+let _favoritos = [];
+function loadFavoritos(){
+  try{ const s=localStorage.getItem('maxup_favs'); if(s) _favoritos=JSON.parse(s); }catch(e){_favoritos=[];}
+}
+function saveFavoritos(){ try{localStorage.setItem('maxup_favs',JSON.stringify(_favoritos));}catch(e){} }
+function toggleFav(pid, e){
+  if(e){e.stopPropagation();e.preventDefault();}
+  const idx = _favoritos.indexOf(pid);
+  if(idx>=0) _favoritos.splice(idx,1);
+  else _favoritos.push(pid);
+  saveFavoritos();
+  // Actualizar botón
+  const card = document.querySelector(`.prod-card[data-id="${pid}"]`);
+  if(card){
+    const btn = card.querySelector('.fav-btn');
+    if(btn){
+      const isFav = _favoritos.indexOf(pid)>=0;
+      btn.classList.toggle('active',isFav);
+      btn.textContent = isFav?'❤️':'🤍';
+    }
+  }
+  // Si estamos en tab favoritos, re-filtrar
+  if(activeCat==='favoritos') applyFilters();
+}
+loadFavoritos();
+
 let cart = [];
 
 function loadCart(){
@@ -5014,6 +5233,50 @@ function cartTotalConDescuento(){
   return desc ? Math.round(base * (1 - desc.pct)) : base;
 }
 
+// ── CUPÓN DE DESCUENTO ──────────────────────────────────────
+const CUPONES = {
+  'MAXUP5':    { pct: 0.05, label: '5% off con cupón MAXUP5' },
+  'MAXUP10':   { pct: 0.10, label: '10% off con cupón MAXUP10' },
+  'PRIMERA15': { pct: 0.15, label: '15% off primera compra' },
+};
+let _cuponActivo = null;
+
+function aplicarCupon(){
+  const input = document.getElementById('cuponInput');
+  const msg = document.getElementById('cuponMsg');
+  const code = (input.value||'').trim().toUpperCase();
+  if(!code){ msg.style.display='none'; return; }
+  const cupon = CUPONES[code];
+  if(cupon){
+    _cuponActivo = { code, ...cupon };
+    msg.style.display='block';
+    msg.style.background='rgba(0,230,118,.08)';
+    msg.style.border='1px solid rgba(0,230,118,.25)';
+    msg.style.color='#00E676';
+    msg.innerHTML='🎉 <strong>'+cupon.label+'</strong> aplicado!';
+    input.disabled=true;
+    input.style.opacity='.5';
+  } else {
+    _cuponActivo = null;
+    msg.style.display='block';
+    msg.style.background='rgba(255,61,61,.08)';
+    msg.style.border='1px solid rgba(255,61,61,.25)';
+    msg.style.color='#FF3D3D';
+    msg.textContent='❌ Cupón inválido';
+    setTimeout(()=>{ msg.style.display='none'; },2500);
+  }
+  renderCart(); updateBadge();
+}
+
+function quitarCupon(){
+  _cuponActivo = null;
+  const input = document.getElementById('cuponInput');
+  const msg = document.getElementById('cuponMsg');
+  if(input){ input.disabled=false; input.style.opacity='1'; input.value=''; }
+  if(msg) msg.style.display='none';
+  renderCart(); updateBadge();
+}
+
 function renderCart(){
   const container = document.getElementById('cartItemsContainer');
   const empty = document.getElementById('cartEmpty');
@@ -5023,10 +5286,15 @@ function renderCart(){
   empty.style.display='none'; summary.style.display='block';
   const base = cartTotal();
   const desc = getDescuentoMonto(base);
-  const totalFinal = desc ? Math.round(base*(1-desc.pct)) : base;
+  let totalTrasMonto = desc ? Math.round(base*(1-desc.pct)) : base;
+  // Aplicar cupón sobre el total (después del descuento por monto)
+  let totalFinal = totalTrasMonto;
+  if(_cuponActivo){
+    totalFinal = Math.round(totalTrasMonto * (1 - _cuponActivo.pct));
+  }
   // Mostrar descuento aplicado
   let totalHTML = '';
-  if(desc){
+  if(desc || _cuponActivo){
     totalHTML = `<span style="text-decoration:line-through;font-size:1.2rem;color:#888">${fmt(base)}</span> <span style="color:var(--cyan)">${fmt(totalFinal)}</span>`;
     document.getElementById('cartTotal').innerHTML = totalHTML;
   } else {
@@ -5130,12 +5398,17 @@ function buildMiniList(){
   const base = cartTotal();
   const desc = getDescuentoMonto(base);
   const totalConMonto = desc ? Math.round(base*(1-desc.pct)) : base;
-  const totalFinal = (_esClienteNuevo && !desc) ? Math.round(base*(1-DESCUENTO_BIENVENIDA)) : totalConMonto;
+  let totalConCupon = totalConMonto;
+  if(_cuponActivo) totalConCupon = Math.round(totalConMonto * (1 - _cuponActivo.pct));
+  const totalFinal = (_esClienteNuevo && !desc && !_cuponActivo) ? Math.round(base*(1-DESCUENTO_BIENVENIDA)) : totalConCupon;
   let totalRow = '<div class="omi" style="margin-top:6px"><span><strong>Subtotal</strong></span><span>' + fmt(base) + '</span></div>';
   if(desc){
     totalRow += '<div class="omi" style="color:var(--cyan)"><span>🎉 ' + desc.label + '</span><span>-' + fmt(base-totalConMonto) + '</span></div>';
   }
-  if(_esClienteNuevo && !desc){
+  if(_cuponActivo){
+    totalRow += '<div class="omi" style="color:#00E676"><span>🏷️ ' + _cuponActivo.label + '</span><span>-' + fmt(totalConMonto-totalConCupon) + '</span></div>';
+  }
+  if(_esClienteNuevo && !desc && !_cuponActivo){
     totalRow += '<div class="omi" style="color:#00E676"><span>🎉 5% descuento bienvenida</span><span>-' + fmt(base-totalFinal) + '</span></div>';
   }
   totalRow += '<div class="omi" style="border-top:1px solid rgba(0,200,255,.2);margin-top:4px;padding-top:6px"><span><strong>TOTAL</strong></span><span style="color:var(--cyan);font-size:1.1em">' + fmt(totalFinal) + '</span></div>';
@@ -5172,11 +5445,20 @@ function finalizarPedido(){
   msg+=`\n📦 *Detalle:*\n`;
   cart.forEach(i=>{ msg+=`  • ${i.emoji} ${i.name} — ${i.flavor} × ${i.qty}  →  ${fmt(i.price*i.qty)}\n`; });
   const _baseTotal = cartTotal();
-  const _desc = getDescuentoMonto(_baseTotal);
-  const _totalConMonto = _desc ? Math.round(_baseTotal*(1-_desc.pct)) : _baseTotal;
-  const _totalFinal = (_esClienteNuevo && !_desc) ? Math.round(_baseTotal*(1-DESCUENTO_BIENVENIDA)) : _totalConMonto;
-  if(_desc) msg+='\n🎉 *Descuento: '+_desc.label+'* (-'+fmt(_baseTotal-_totalConMonto)+')\n';
-  if(_esClienteNuevo && !_desc) msg+='\n🎉 *Descuento bienvenida: 5%* (-'+fmt(_baseTotal-_totalFinal)+')\n';
+  const _descQty = getDescuentoCantidad();
+  const _baseTrasQty = _baseTotal - _descQty;
+  const _desc = getDescuentoMonto(_baseTrasQty);
+  const _totalConMonto = _desc ? Math.round(_baseTrasQty*(1-_desc.pct)) : _baseTrasQty;
+  let _totalConCupon = _totalConMonto;
+  if(_cuponActivo) _totalConCupon = Math.round(_totalConMonto * (1 - _cuponActivo.pct));
+  const _totalFinal = (_esClienteNuevo && !_desc && !_cuponActivo) ? Math.round(_baseTrasQty*(1-DESCUENTO_BIENVENIDA)) : _totalConCupon;
+  if(_descQty > 0) msg+='\n🏷️ *5% off por cantidad (2+ iguales):* -'+fmt(_descQty)+'\n';
+  if(_desc) msg+='\n🎉 *Descuento: '+_desc.label+'* (-'+fmt(_baseTrasQty-_totalConMonto)+')\n';
+  if(_cuponActivo) msg+='\n🏷️ *Cupón: '+_cuponActivo.code+' ('+_cuponActivo.label+')* (-'+fmt(_totalConMonto-_totalConCupon)+')\n';
+  if(_esClienteNuevo && !_desc && !_cuponActivo) msg+='\n🎉 *Descuento bienvenida: 5%* (-'+fmt(_baseTrasQty-_totalFinal)+')\n';
+  // Puntos que gana con esta compra
+  var _puntosGanados = Math.floor(_totalFinal / 1000);
+  if(_puntosGanados > 0) msg+='\n⭐ *Puntos ganados: +'+_puntosGanados+'*\n';
   msg+='\n💰 *TOTAL: '+fmt(_totalFinal)+'*\n';
   msg+='\n🚚 *Entrega:* ' + (delivery==='envio' ? 'Envío a domicilio 📦' : 'Retiro en local 🏪') + '\n';
   if(delivery==='envio'&&address) {
@@ -5198,6 +5480,7 @@ function finalizarPedido(){
     pago:     pay,
     total:    _totalFinal,
     descuento: _desc ? _desc.label : '',
+    cupon: _cuponActivo ? _cuponActivo.code : '',
     items: cart.map(i=>({
       nombre:   i.name,
       marca:    i.brand||'',
@@ -5355,6 +5638,23 @@ function initScrollReveal(){
 
 /* ── INIT ── */
 loadCart();
+// Precarga instantánea desde cache (muestra productos de inmediato mientras la API responde)
+(function(){
+  try{
+    const cached = localStorage.getItem('maxup_cache_prods');
+    const ts = parseInt(localStorage.getItem('maxup_cache_ts')||'0');
+    // Usar cache si tiene menos de 2 horas
+    if(cached && (Date.now()-ts) < 7200000){
+      const parsed = JSON.parse(cached);
+      if(parsed.length > 0){
+        PRODUCTS.length = 0;
+        parsed.forEach(p => PRODUCTS.push(p));
+        renderAll();
+        console.log('⚡ Cache cargado:', PRODUCTS.length, 'productos (se actualizará con la API)');
+      }
+    }
+  }catch(e){}
+})();
 cargarDesdeSheets();
 cargarLiquidaciones();
 
@@ -5643,14 +5943,32 @@ async function cargarDesdeSheets() {
     // Reemplazar PRODUCTS con datos agrupados
     PRODUCTS.length = 0;
     Object.values(grouped).forEach(p => PRODUCTS.push(p));
-    
+
+    // Cache en localStorage para carga instantánea la próxima vez
+    try{
+      localStorage.setItem('maxup_cache_prods', JSON.stringify(PRODUCTS));
+      localStorage.setItem('maxup_cache_ts', Date.now().toString());
+    }catch(e){}
+
     renderAll();
     window.scrollTo(0, 0);
     console.log('✅ Catálogo cargado desde Sheets:', PRODUCTS.length, 'productos agrupados');
-    
+
   } catch(err) {
     console.warn('⚠️ Sheets no disponible, usando catálogo local:', err.message);
-    renderAll(); window.scrollTo(0, 0); // usa PRODUCTS estático como fallback
+    // Intentar cargar desde cache
+    try{
+      const cached = localStorage.getItem('maxup_cache_prods');
+      if(cached){
+        const parsed = JSON.parse(cached);
+        if(parsed.length > 0){
+          PRODUCTS.length = 0;
+          parsed.forEach(p => PRODUCTS.push(p));
+          console.log('📦 Catálogo cargado desde cache:', PRODUCTS.length, 'productos');
+        }
+      }
+    }catch(e2){}
+    renderAll(); window.scrollTo(0, 0);
   }
 }
 
@@ -5702,8 +6020,11 @@ function _inferirCategoria(nombre) {
   // QUEMADORES
   if (/thermo|fat.{0,5}burn|cla |quemad|lipo|termogen/.test(n)) return 'quemador';
 
+  // MAGNESIO / OMEGA 3
+  if (/magnesio|bisglicinato|citrato.{0,8}mag|omega.{0,3}3|fish.{0,5}oil|aceite.{0,8}pescado/.test(n)) return 'magnesio';
+
   // VITAMINAS
-  if (/omega|vitam|magnesio|zinc|calcio|resveratrol|ashwagandha|zma|cafeina|nad |multivit|citrato|coenzima|bisglicinato/.test(n)) return 'vitamin';
+  if (/vitam|zinc|calcio|resveratrol|ashwagandha|zma|cafeina|nad |multivit|citrato|coenzima/.test(n)) return 'vitamin';
 
   // HIDRATACIÓN
   if (/hidrat|iso.{0,5}sport|electro|recovery.{0,5}drink|sport.{0,5}drink|just.{0,5}carb|hydromax|hydroplus|energy.{0,5}gel|maltodextri|isotonic/.test(n)) return 'hidratacion';
@@ -5723,6 +6044,7 @@ function _mapCategoria(cat) {
     'creatina':'creatina','creatine':'creatina',
     'aminoacido':'aminoacido','aminoacidos':'aminoacido','bcaa':'aminoacido','aminoácido':'aminoacido',
     'vitaminas':'vitamin','vitamin':'vitamin','vitamina':'vitamin','vitamins':'vitamin',
+    'magnesio':'magnesio','omega3':'magnesio','omega 3':'magnesio',
     'preworkout':'preworkout','pre-entreno':'preworkout','pre entreno':'preworkout',
     'quemador':'quemador','quemadores':'quemador','termogenico':'quemador','termogénico':'quemador',
     'colageno':'colageno','colágeno':'colageno','collagen':'colageno',
@@ -5739,7 +6061,7 @@ function _mapCategoria(cat) {
 
 function _catEmoji(cat) {
   const m = {
-    'proteina':'🥛','creatina':'⚡','aminoacido':'🧬','vitaminas':'💊',
+    'proteina':'🥛','creatina':'⚡','aminoacido':'🧬','vitaminas':'💊','magnesio':'🧲',
     'preworkout':'🔥','quemador':'🌡️','colageno':'🦴','hidratacion':'💧',
     'barra':'🍫','accesorio':'🏋️','indumentaria':'👕','gainer':'💪','otros':'📦'
   };
@@ -5856,6 +6178,33 @@ function openProdModal(pid) {
     document.getElementById('modalStock').textContent = stock > 0 ? `✓ ${stock} unidades en stock` : '❌ Sin stock';
   }
 
+  // Reseñas
+  var revForm = document.getElementById('modalReviewForm');
+  var revList = document.getElementById('modalReviewList');
+  if(revForm){
+    revForm.innerHTML = '<div style="display:flex;gap:4px;margin-bottom:8px">'
+      + [1,2,3,4,5].map(function(n){ return '<label style="cursor:pointer;font-size:1.3rem"><input type="radio" name="rev-stars-'+pid+'" value="'+n+'" style="display:none">' + (n<=3?'☆':'☆') + '</label>'; }).join('')
+      + '</div>'
+      + '<div style="display:flex;gap:6px"><input id="rev-comment-'+pid+'" type="text" placeholder="Comentario corto (opcional)" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;padding:8px 12px;border-radius:6px;font-family:Rajdhani,sans-serif;font-size:.88rem;outline:none">'
+      + '<button onclick="submitReview(\''+pid+'\')" style="padding:8px 14px;background:linear-gradient(135deg,#FFD700,#FFA500);color:#000;border:none;border-radius:6px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:.82rem;cursor:pointer">Enviar</button></div>';
+    // Star click handlers
+    revForm.querySelectorAll('label').forEach(function(lbl,i){
+      lbl.onclick = function(){
+        revForm.querySelectorAll('label').forEach(function(l,j){ l.textContent = j<=i ? '★' : '☆'; });
+      };
+    });
+  }
+  if(revList){
+    var revs = _reviews[pid] || [];
+    if(revs.length > 0){
+      var avg = revs.reduce(function(s,r){return s+r.rating;},0) / revs.length;
+      revList.innerHTML = '<div style="font-size:.85rem;color:#FFD700">' + '★'.repeat(Math.round(avg)) + '☆'.repeat(5-Math.round(avg)) + ' <span style="color:#999">' + avg.toFixed(1) + ' (' + revs.length + ' valoraciones)</span></div>';
+      revs.slice(-3).forEach(function(r){
+        if(r.text) revList.innerHTML += '<div style="font-size:.78rem;color:#999;margin-top:4px;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:6px">' + '★'.repeat(r.rating) + ' — "' + r.text.substring(0,100) + '" <span style="color:#555">' + r.fecha + '</span></div>';
+      });
+    }
+  }
+
   document.getElementById('prodModal').classList.add('open');
   document.body.style.overflow = 'hidden';
   mostrarRelacionados(p);
@@ -5925,6 +6274,7 @@ function closeProdModalBtn() {
   document.getElementById('prodModal').classList.remove('open');
   document.body.style.overflow = '';
   modalPid = null;
+  if(typeof resetMeta === 'function') resetMeta();
 }
 
 function addFromModal() {
@@ -7651,7 +8001,9 @@ var INFO_CATEGORIAS = {
 
   colageno: '<strong>El colageno hidrolizado</strong> provee los aminoacidos especificos (glicina, prolina, hidroxiprolina) que estimulan la sintesis de colageno endogeno en cartílagos, tendones, ligamentos, piel y huesos. Los resultados son acumulativos — minimo 3 meses de consumo sostenido para notar diferencia en articulaciones. <br><br><strong>Tipos:</strong> Tipo I y III (piel, tendones, huesos) — mas comun. Tipo II (cartilago articular) — especifico para rodillas y cadera. Siempre tomar con vitamina C que es cofactor indispensable para la sintesis de colageno.',
 
-  vitamin: '<strong>Las vitaminas y minerales</strong> son la base que permite que todos los demas suplementos funcionen. Los mas importantes para deportistas: Omega 3 (EPA/DHA) — antiinflamatorio, salud cardiovascular y cerebral. Magnesio — contraccion muscular, sintesis de proteinas, calidad del sueno. Zinc + B6 (ZMA) — produccion natural de testosterona, recuperacion nocturna. Vitamina C — antioxidante, sintesis de colageno, inmunidad.',
+  magnesio: '<strong>Magnesio y Omega 3</strong> son dos pilares fundamentales para deportistas y salud general. <br><br><strong>Magnesio:</strong> Interviene en mas de 300 reacciones enzimaticas: contraccion muscular, sintesis de proteinas, funcion nerviosa y calidad del sueno. El <strong>bisglicinato</strong> tiene la mayor biodisponibilidad y es suave con el estomago. El <strong>citrato</strong> tiene buena absorcion y ayuda con calambres. Dosis recomendada: 200-400mg/dia. <br><br><strong>Omega 3 (EPA/DHA):</strong> Acidos grasos esenciales con potente efecto antiinflamatorio, mejoran la salud cardiovascular, cerebral y articular. Reducen el dolor muscular post-ejercicio y mejoran la recuperacion. Dosis: 1-3g de EPA+DHA por dia con comida.',
+
+  vitamin: '<strong>Las vitaminas y minerales</strong> son la base que permite que todos los demas suplementos funcionen. Los mas importantes para deportistas: Zinc + B6 (ZMA) — produccion natural de testosterona, recuperacion nocturna. Vitamina C — antioxidante, sintesis de colageno, inmunidad. Multivitaminicos — cubren microdeficiencias en dietas restrictivas.',
 
   hidratacion: '<strong>Los suplementos de hidratacion</strong> reemplazan electrolitos (sodio, potasio, magnesio) perdidos en el sudor y proveen carbohidratos para mantener el rendimiento. Son fundamentales en sesiones de mas de 60 minutos, en condiciones de calor o para deportes de resistencia.',
 
@@ -7721,13 +8073,22 @@ var CONSEJOS_CAT = {
   hidratacion: function(prods) {
     return '<h4>Hidratacion: cuando usar cada opcion</h4><p>Para sesiones cortas (menos de 60 min): agua sola es suficiente. Para sesiones largas (60-120 min): bebida isotonica con electrolitos. Para entrenamiento de resistencia (+2hs) o condiciones de calor extremo: bebida isotonica + carbohidratos. <br><br>La <strong>maltodextrina/fructosa</strong> es para energia rapida (pre o durante). Los <strong>recovery drinks</strong> son para post-entreno con proteina + carbohidratos.</p>';
   },
-  vitamin: function(prods) {
+  magnesio: function(prods) {
+    var bisg = prods.filter(function(p){ var n=p.name.toLowerCase(); return n.indexOf('bisglicinato')>=0||n.indexOf('bisglycinate')>=0; });
+    var citr = prods.filter(function(p){ var n=p.name.toLowerCase(); return n.indexOf('citrato')>=0; });
     var omega = prods.filter(function(p){ return p.name.toLowerCase().indexOf('omega')>=0; });
+    var html = '<h4>Como elegir Magnesio y Omega 3</h4>';
+    if (bisg.length) html += '<p><span class="comp-tag-ok">MEJOR ABSORCION</span> ' + bisg.map(function(p){return '<strong>'+p.name+'</strong>';}).join(', ') + ': El bisglicinato de magnesio tiene la mayor biodisponibilidad — se absorbe mejor y no genera molestias digestivas. Ideal para descanso, calambres y recuperacion muscular. Tomar de noche.</p>';
+    if (citr.length) html += '<p><span class="comp-tag-ok">CLASICO EFICAZ</span> ' + citr.map(function(p){return '<strong>'+p.name+'</strong>';}).join(', ') + ': El citrato de magnesio tiene muy buena absorcion y es mas economico que el bisglicinato. Excelente para calambres y funcion muscular general.</p>';
+    if (omega.length) html += '<p><span class="comp-tag-ok">SALUD INTEGRAL</span> ' + omega.map(function(p){return '<strong>'+p.name+'</strong>';}).join(', ') + ': Comparar siempre la cantidad de EPA+DHA por capsula (no el total de aceite). Buscar al menos 300mg de EPA+DHA por capsula. Tomar con comida para mejor absorcion.</p>';
+    html += '<p><strong>Combo ideal:</strong> Magnesio de noche (mejora el sueno) + Omega 3 con el almuerzo (antiinflamatorio). Juntos cubren las dos deficiencias mas comunes en deportistas.</p>';
+    return html;
+  },
+  vitamin: function(prods) {
     var zma = prods.filter(function(p){ return p.name.toLowerCase().indexOf('zma')>=0; });
-    var mag = prods.filter(function(p){ return p.name.toLowerCase().indexOf('magnesio')>=0||p.name.toLowerCase().indexOf('magnesium')>=0; });
     var html = '<h4>Guia de vitaminas y minerales</h4>';
-    if (omega.length) html += '<p><strong>Omega 3:</strong> Comparar siempre la cantidad de EPA+DHA (no el total de aceite de pescado). Buscar al menos 300mg de EPA+DHA por capsula. El omega 3 de 60 capsulas es para un mes; el de 200 capsulas para 3 meses — calcular el costo por dia para comparar correctamente.</p>';
-    if (zma.length || mag.length) html += '<p><strong>ZMA vs Magnesio solo:</strong> El ZMA agrega Zinc y B6 al Magnesio — interesante si ademas queres potenciar la recuperacion nocturna y los niveles de testosterona natural. El citrato de magnesio solo es suficiente si solo queres mejor sueno y funcion muscular.</p>';
+    if (zma.length) html += '<p><strong>ZMA:</strong> Zinc + Magnesio + B6 — formulacion clasica para potenciar la recuperacion nocturna y los niveles de testosterona natural. Tomar antes de dormir con el estomago vacio.</p>';
+    html += '<p>Los multivitaminicos cubren microdeficiencias comunes en dietas restrictivas. Las vitaminas individuales son utiles cuando se identifica una carencia especifica.</p>';
     return html;
   },
   barra: function(prods) {
@@ -7751,6 +8112,10 @@ var COMPLEMENTOS = {
   'colageno|aminoacido': 'El colageno y los aminoacidos/BCAAs son complementarios sin superposicion. El colageno aporta glicina, prolina e hidroxiprolina (no ramificados) que no estan en los BCAAs. Pueden tomarse juntos sin problema.',
   'vitamin|preworkout': 'Las vitaminas y minerales son la base de salud que hace que el pre-entrenamiento funcione mejor. El magnesio especificamente mejora la respuesta al entrenamiento y la recuperacion.',
   'creatina|colageno': 'No compiten entre si y son complementarios. La creatina para el rendimiento muscular; el colageno para proteger las estructuras articulares que soportan el entrenamiento intenso. Stack muy recomendado para personas que entrenan fuerza regularmente.',
+  'magnesio|creatina': 'Combo excelente. El magnesio mejora la contraccion muscular, la recuperacion y el descanso nocturno. La creatina mejora la fuerza y el rendimiento. Juntos potencian tanto el entrenamiento como la recuperacion. El magnesio de noche, la creatina a cualquier hora.',
+  'magnesio|proteina': 'El magnesio participa directamente en la sintesis de proteinas — sin magnesio suficiente, la proteina no se aprovecha al maximo. Ademas el magnesio mejora la calidad del sueno, que es cuando mas se recupera el musculo. Magnesio de noche + proteina post-entrenamiento.',
+  'magnesio|colageno': 'Duo ideal para salud articular y recuperacion. El colageno repara tejidos conectivos y el magnesio reduce la inflamacion y los calambres. Muy recomendado para mayores de 30 anos o deportistas con desgaste articular.',
+  'magnesio|preworkout': 'El magnesio mejora la funcion neuromuscular y puede potenciar el efecto del pre-entreno. Ojo: no tomarlos juntos — el magnesio puede relajar y el pre-entreno estimula. Pre-entreno antes de entrenar, magnesio de noche.',
 };
 
 var COMPARACIONES_PARES = {
@@ -8195,6 +8560,588 @@ window.addEventListener('load', function() {
   renderIndum();
   setTimeout(cargarIndumentariaSheets, 3000);
 });
+
+// ── RESEÑAS / VALORACIONES ──
+let _reviews = {};
+function loadReviews(){
+  try{ const s=localStorage.getItem('maxup_reviews'); if(s) _reviews=JSON.parse(s); }catch(e){_reviews={};}
+}
+function saveReviews(){ try{localStorage.setItem('maxup_reviews',JSON.stringify(_reviews));}catch(e){} }
+
+function submitReview(pid){
+  var stars = document.querySelector('input[name="rev-stars-'+pid+'"]:checked');
+  var comment = document.getElementById('rev-comment-'+pid);
+  if(!stars){ showToast('⚠️ Seleccioná las estrellas'); return; }
+  var rating = Number(stars.value);
+  var text = comment ? comment.value.trim() : '';
+  if(!_reviews[pid]) _reviews[pid] = [];
+  _reviews[pid].push({ rating: rating, text: text, fecha: new Date().toLocaleDateString('es-AR') });
+  saveReviews();
+  showToast('⭐ ¡Gracias por tu valoración!');
+  // Actualizar display
+  var revBox = document.getElementById('reviews-'+pid);
+  if(revBox) revBox.innerHTML = renderReviews(pid);
+}
+
+function renderReviews(pid){
+  var revs = _reviews[pid] || [];
+  if(revs.length===0) return '<div style="font-size:.82rem;color:#666;margin-top:8px">Sin valoraciones aún</div>';
+  var avg = revs.reduce(function(s,r){return s+r.rating;},0) / revs.length;
+  var stars = '★'.repeat(Math.round(avg)) + '☆'.repeat(5-Math.round(avg));
+  var html = '<div style="font-size:.85rem;margin-top:8px;color:#FFD700">' + stars + ' <span style="color:var(--gray);font-size:.78rem">' + avg.toFixed(1) + ' (' + revs.length + ')</span></div>';
+  // Mostrar últimas 2
+  revs.slice(-2).forEach(function(r){
+    if(r.text) html += '<div style="font-size:.75rem;color:var(--gray);margin-top:4px;padding:4px 8px;background:rgba(255,255,255,.03);border-radius:6px">"' + r.text.substring(0,80) + '"</div>';
+  });
+  return html;
+}
+
+function getAvgRating(pid){
+  var revs = _reviews[pid] || [];
+  if(revs.length===0) return 0;
+  return revs.reduce(function(s,r){return s+r.rating;},0) / revs.length;
+}
+
+loadReviews();
+
+// ── COMBOS ──
+const COMBOS = [
+  {
+    nombre: 'Combo Inicio',
+    emoji: '🚀',
+    desc: 'Proteína + Creatina — Los dos esenciales para empezar a entrenar en serio.',
+    items: ['proteina','creatina'],
+    descuento: 8,
+    color: '#00C8FF'
+  },
+  {
+    nombre: 'Combo Rendimiento',
+    emoji: '⚡',
+    desc: 'Pre-entreno + Creatina + Aminoácidos — Para entrenar al máximo nivel.',
+    items: ['preworkout','creatina','aminoacido'],
+    descuento: 10,
+    color: '#FF0099'
+  },
+  {
+    nombre: 'Combo Salud',
+    emoji: '💊',
+    desc: 'Colágeno + Magnesio + Omega 3 — Base para salud articular y bienestar.',
+    items: ['colageno','magnesio'],
+    descuento: 7,
+    color: '#00E676'
+  },
+  {
+    nombre: 'Combo Definición',
+    emoji: '🔥',
+    desc: 'Proteína + Quemador — Para perder grasa manteniendo la masa muscular.',
+    items: ['proteina','quemador'],
+    descuento: 8,
+    color: '#FFA500'
+  }
+];
+
+function mostrarCombos(){
+  var sec = document.getElementById('combosSection');
+  var grid = document.getElementById('combosGrid');
+  sec.style.display = 'block';
+  grid.innerHTML = COMBOS.map(function(c){
+    var catLinks = c.items.map(function(cat){
+      var emoji = {'proteina':'🥛','creatina':'⚡','aminoacido':'🧬','preworkout':'🔥','quemador':'🌡️','colageno':'🦴','magnesio':'🧲'}[cat]||'📦';
+      var nombre = {'proteina':'Proteína','creatina':'Creatina','aminoacido':'Aminoácidos','preworkout':'Pre-Entreno','quemador':'Quemador','colageno':'Colágeno','magnesio':'Magnesio/Omega3'}[cat]||cat;
+      return '<span style="background:rgba(255,255,255,.06);padding:4px 10px;border-radius:20px;font-size:.78rem;cursor:pointer" onclick="setCategory(\''+cat+'\')">' + emoji + ' ' + nombre + '</span>';
+    }).join(' ');
+    return '<div style="background:var(--dark2);border:1px solid '+c.color+'33;border-radius:12px;overflow:hidden">'
+      + '<div style="background:'+c.color+'15;border-bottom:1px solid '+c.color+'33;padding:14px;text-align:center">'
+      + '<span style="font-size:2rem">' + c.emoji + '</span>'
+      + '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:.08em;color:'+c.color+';margin-top:4px">' + c.nombre + '</div>'
+      + '<div style="background:'+c.color+';color:#000;display:inline-block;padding:2px 12px;border-radius:20px;font-size:.75rem;font-weight:700;margin-top:6px">' + c.descuento + '% OFF</div>'
+      + '</div>'
+      + '<div style="padding:14px">'
+      + '<p style="color:#999;font-size:.85rem;margin-bottom:12px;line-height:1.5">' + c.desc + '</p>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap">' + catLinks + '</div>'
+      + '<div style="margin-top:12px;font-size:.78rem;color:var(--gray)">💡 Agregá productos de cada categoría al carrito y el descuento se aplica automáticamente en el total.</div>'
+      + '</div></div>';
+  }).join('');
+}
+
+// ── FAQ ──
+(function(){
+  var faqs = [
+    { q:'¿Hacen envíos a todo el país?', a:'Sí, enviamos por Correo Argentino a todo el país. El costo se cotiza por WhatsApp según peso y destino. También podés retirar en nuestro local en Calixto Gauna 1045, General Güemes, Salta.' },
+    { q:'¿Cuánto tarda el envío?', a:'Envíos locales (Salta): 1-2 días hábiles. Interior del país: 3-7 días hábiles dependiendo de la zona. Te enviamos el código de seguimiento apenas despachamos.' },
+    { q:'¿Aceptan tarjeta de crédito?', a:'Sí, aceptamos transferencia bancaria, efectivo, Mercado Pago y tarjetas. Los precios publicados son para efectivo/transferencia. Tarjeta/QR/débito tiene un 8% adicional (precio tachado en cada producto).' },
+    { q:'¿Los productos son originales?', a:'100% originales y sellados de fábrica. Trabajamos directamente con distribuidores oficiales de cada marca. Todos los productos tienen fecha de vencimiento visible.' },
+    { q:'¿Tienen local físico?', a:'Sí, estamos en Calixto Gauna 1045, General Güemes, Salta. Podés venir a ver los productos, consultar y retirar tu pedido personalmente.' },
+    { q:'¿Cómo funciona el sistema de puntos?', a:'Cada $1.000 en compras = 1 punto. Cuando juntás 250 puntos podés canjearlos por $5.000 de descuento en compras mayores a $50.000. Los puntos se acumulan automáticamente.' },
+    { q:'¿Tienen descuentos por cantidad?', a:'Sí, comprando 2 o más del mismo producto tenés un 5% off automático. Además hay descuentos por monto total: 5% desde $100.000, 10% desde $220.000 y 15% desde $270.000.' },
+    { q:'¿Puedo usar cupón de descuento?', a:'Sí, ingresá tu código en el campo "Cupón" dentro del carrito antes de finalizar el pedido. Seguinos en Instagram y TikTok para enterarte de los cupones activos.' },
+  ];
+  var el = document.getElementById('faqList');
+  if(!el) return;
+  el.innerHTML = faqs.map(function(f,i){
+    return '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;margin-bottom:8px;overflow:hidden">'
+      + '<div onclick="this.parentElement.classList.toggle(\'faq-open\');this.querySelector(\'.faq-arrow\').textContent=this.parentElement.classList.contains(\'faq-open\')?\'▴\':\'▾\'" style="padding:16px 20px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:.95rem">'
+      + '<span>' + f.q + '</span><span class="faq-arrow" style="color:var(--cyan);font-size:1.1rem">▾</span></div>'
+      + '<div style="max-height:0;overflow:hidden;transition:max-height .3s;padding:0 20px"><p style="color:var(--gray);font-size:.88rem;line-height:1.7;padding-bottom:16px">' + f.a + '</p></div>'
+      + '</div>';
+  }).join('');
+})();
+
+// ── BANNER ROTATIVO PROMOS ──
+(function(){
+  var msgs = [
+    'ENVÍO A TODO EL PAÍS 📦 STOCK REAL ACTUALIZADO',
+    '💰 CÓDIGO MAXUP5 = 5% OFF EN TU COMPRA',
+    '⚡ DESCUENTO AUTOMÁTICO EN COMPRAS +$100.000',
+    '🏪 RETIRÁ EN LOCAL — CALIXTO GAUNA 1045, GRAL. GÜEMES',
+    '🏷️ ACUMULÁ PUNTOS Y CANJEÁ DESCUENTOS'
+  ];
+  var idx = 0;
+  var el = document.getElementById('promoBannerText');
+  if(!el) return;
+  setInterval(function(){
+    el.style.opacity = '0';
+    setTimeout(function(){
+      idx = (idx+1) % msgs.length;
+      el.textContent = msgs[idx];
+      el.style.opacity = '1';
+    }, 400);
+  }, 4000);
+})();
+
+// ── TEMA CLARO/OSCURO ──
+function toggleTheme(){
+  document.body.classList.toggle('light');
+  var isLight = document.body.classList.contains('light');
+  var btn = document.getElementById('themeToggle');
+  if(btn) btn.textContent = isLight ? '🌞' : '🌙';
+  try{ localStorage.setItem('maxup_theme', isLight?'light':'dark'); }catch(e){}
+}
+// Restaurar tema guardado
+(function(){
+  try{
+    if(localStorage.getItem('maxup_theme')==='light'){
+      document.body.classList.add('light');
+      var btn = document.getElementById('themeToggle');
+      if(btn) btn.textContent = '🌞';
+    }
+  }catch(e){}
+})();
+
+// ── PWA: Registrar Service Worker ──
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(()=>console.log('✅ SW registrado')).catch(()=>{});
+}
+
+// ══════════════════════════════════════════════════════════
+// ║ MEJORAS BATCH 2 — 16 FUNCIONALIDADES NUEVAS           ║
+// ══════════════════════════════════════════════════════════
+
+// ── #3: CARRUSEL NUEVOS INGRESOS ──
+function renderNuevosIngresos(){
+  var nuevos = PRODUCTS.filter(function(p){
+    return p.badge === 'new' || p.badgeText === 'Nuevo' || p.badgeText === 'Premium';
+  }).slice(0, 12);
+  if(nuevos.length === 0) nuevos = PRODUCTS.slice(0, 8);
+  var sec = document.getElementById('nuevosSection');
+  var track = document.getElementById('nuevosTrack');
+  if(!sec || !track || nuevos.length < 3) return;
+  sec.style.display = 'block';
+  track.innerHTML = nuevos.map(function(p){
+    var imgSrc = (p.imgs && p.imgs[0]) || p.img || '';
+    return '<div class="nuevos-card" onclick="openProdModal(\''+p.id+'\')">'
+      + (imgSrc ? '<img src="'+imgSrc+'" alt="'+p.name+'" loading="lazy">' : '<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#111">'+p.emoji+'</div>')
+      + '<div class="nuevos-card-body">'
+      + '<div class="nuevos-card-brand">'+p.brand+'</div>'
+      + '<div class="nuevos-card-name">'+p.name+'</div>'
+      + '<div class="nuevos-card-price">'+fmt(p.price)+'</div>'
+      + '</div></div>';
+  }).join('');
+}
+
+// ── #4: AVISAR CUANDO HAYA STOCK ──
+function avisarStock(pid, nombre, btn){
+  var tel = prompt('Ingresá tu WhatsApp para avisarte cuando haya stock de '+nombre+':');
+  if(!tel || tel.length < 8) return;
+  try{
+    var avisos = JSON.parse(localStorage.getItem('maxup_avisos_stock')||'[]');
+    avisos.push({ pid: pid, nombre: nombre, tel: tel, fecha: new Date().toISOString() });
+    localStorage.setItem('maxup_avisos_stock', JSON.stringify(avisos));
+  }catch(e){}
+  btn.textContent = '✅ Te avisamos!';
+  btn.disabled = true;
+  btn.style.color = '#00E676';
+  btn.style.borderColor = 'rgba(0,230,118,.3)';
+  showToast('🔔 Te vamos a avisar cuando '+nombre+' tenga stock');
+}
+
+// ── #5: DESCUENTO POR CANTIDAD (5% comprando 2+) ──
+function getDescuentoCantidad(){
+  var descTotal = 0;
+  cart.forEach(function(item){
+    if(item.qty >= 2){
+      descTotal += Math.round(item.price * item.qty * 0.05);
+    }
+  });
+  return descTotal;
+}
+
+// ── #7: HISTORIAL DE PEDIDOS ──
+function buscarHistorial(){
+  var phone = document.getElementById('historialPhone').value.trim();
+  var list = document.getElementById('historialList');
+  if(!phone || phone.length < 8){
+    list.innerHTML = '<p style="color:#FF3D3D">Ingresá un número válido</p>';
+    return;
+  }
+  list.innerHTML = '<p style="color:var(--cyan)">🔄 Buscando...</p>';
+  fetch(API_URL + '?accion=historial_cliente&telefono=' + encodeURIComponent(phone))
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data.ok || !data.pedidos || data.pedidos.length === 0){
+        list.innerHTML = '<p style="text-align:center;padding:20px">📭 No se encontraron pedidos con este número.<br><span style="font-size:.8rem;color:#666">Asegurate de usar el mismo número con que hiciste el pedido.</span></p>';
+        return;
+      }
+      // Mostrar puntos
+      var puntos = data.puntos || 0;
+      var puntosHtml = '<div style="text-align:center;padding:12px;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.2);border-radius:10px;margin-bottom:16px">'
+        + '<div class="puntos-badge" style="font-size:.85rem;margin-bottom:4px">⭐ '+puntos+' puntos</div>'
+        + '<div style="font-size:.75rem;color:#aaa">250 puntos = $5.000 de descuento en compras +$50.000</div>'
+        + (puntos >= 250 ? '<div style="margin-top:6px;font-size:.82rem;color:#00E676;font-weight:700">🎉 ¡Podés canjear tus puntos! Avisanos por WhatsApp.</div>' : '<div style="margin-top:6px;font-size:.75rem;color:#666">Te faltan '+(250-puntos)+' puntos para tu próximo descuento</div>')
+        + '</div>';
+      list.innerHTML = puntosHtml + data.pedidos.map(function(p){
+        var estadoColor = {'pendiente':'#FFA500','confirmado':'#00C8FF','preparando':'#9933FF','enviado':'#00E676','entregado':'#00FF88','cancelado':'#FF3D3D'}[p.estado] || '#aaa';
+        return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px;margin-bottom:8px">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+          + '<span style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--cyan);letter-spacing:.06em">'+p.codigo+'</span>'
+          + '<span style="font-size:.72rem;padding:3px 10px;border-radius:12px;background:'+estadoColor+'20;color:'+estadoColor+';font-weight:700;text-transform:uppercase;border:1px solid '+estadoColor+'40">'+p.estado+'</span>'
+          + '</div>'
+          + '<div style="font-size:.8rem;color:#888">'+p.fecha+'</div>'
+          + '<div style="font-size:.9rem;color:var(--cyan);font-weight:700;margin-top:4px">'+fmt(p.total)+'</div>'
+          + '</div>';
+      }).join('');
+    }).catch(function(){
+      list.innerHTML = '<p style="color:#FF3D3D">Error al buscar. Intentá de nuevo.</p>';
+    });
+}
+
+// ── #8: CALCULADORA DE PROTEÍNA / CREATINA ──
+function calcularSuplemento(){
+  var peso = parseInt(document.getElementById('calcProtPeso').value);
+  var tipo = document.getElementById('calcProtTipo').value;
+  var obj = document.getElementById('calcProtObj').value;
+  var res = document.getElementById('calcProtResultado');
+  if(!peso || peso < 30 || peso > 250){
+    res.innerHTML = '<p style="color:#FF3D3D;text-align:center;margin-top:12px">Ingresá un peso válido (30-250 kg)</p>';
+    return;
+  }
+  var html = '';
+  if(tipo === 'proteina'){
+    var grPorKg = obj === 'ganar' ? 2.2 : obj === 'definir' ? 2.4 : 1.6;
+    var protTotal = Math.round(peso * grPorKg);
+    var protDieta = Math.round(protTotal * 0.6);
+    var protSupl = protTotal - protDieta;
+    var scoops = Math.ceil(protSupl / 24);
+    var grPorDia = scoops * 30;
+    var duracion1kg = Math.floor(1000 / grPorDia);
+    var duracion2lb = Math.floor(908 / grPorDia);
+    html = '<div class="calc-prot-result">'
+      + '<div style="text-align:center;margin-bottom:12px"><span style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--cyan)">Tu plan de proteína</span></div>'
+      + '<div class="calc-prot-row"><span>Proteína diaria total</span><span style="color:var(--cyan);font-weight:700">'+protTotal+'g/día</span></div>'
+      + '<div class="calc-prot-row"><span>De la dieta (~60%)</span><span>'+protDieta+'g</span></div>'
+      + '<div class="calc-prot-row"><span>Del suplemento</span><span style="color:#00E676;font-weight:700">'+protSupl+'g ('+scoops+' scoop'+(scoops>1?'s':'')+')</span></div>'
+      + '<div class="calc-prot-row"><span>📦 Doypack 2 lb (908g)</span><span>Dura ~'+duracion2lb+' días</span></div>'
+      + '<div class="calc-prot-row"><span>📦 Pote 1 kg</span><span>Dura ~'+duracion1kg+' días</span></div>'
+      + '<div style="margin-top:12px;text-align:center"><a href="#catalogo" onclick="setCat(\'proteina\')" style="color:var(--cyan);font-weight:700;font-size:.88rem">→ Ver proteínas disponibles</a></div>'
+      + '</div>';
+  } else {
+    var fase = obj === 'ganar' ? 'carga' : 'mantener';
+    var grDia = fase === 'carga' ? 20 : (peso > 80 ? 5 : 3);
+    var duracion300 = Math.floor(300 / grDia);
+    var duracion500 = Math.floor(500 / grDia);
+    html = '<div class="calc-prot-result">'
+      + '<div style="text-align:center;margin-bottom:12px"><span style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--cyan)">Tu plan de creatina</span></div>'
+      + '<div class="calc-prot-row"><span>Fase recomendada</span><span style="color:var(--cyan);font-weight:700">'+(fase==='carga'?'Carga (5-7 días)':'Mantenimiento')+'</span></div>'
+      + '<div class="calc-prot-row"><span>Dosis diaria</span><span style="color:#00E676;font-weight:700">'+grDia+'g/día</span></div>'
+      + (fase==='carga' ? '<div class="calc-prot-row"><span>Luego mantenimiento</span><span>'+(peso>80?5:3)+'g/día</span></div>' : '')
+      + '<div class="calc-prot-row"><span>📦 Pote 300g</span><span>Dura ~'+duracion300+' días</span></div>'
+      + '<div class="calc-prot-row"><span>📦 Pote 500g</span><span>Dura ~'+duracion500+' días</span></div>'
+      + '<div style="margin-top:8px;font-size:.78rem;color:#aaa;text-align:center">💡 Tomá la creatina todos los días, con o sin entrenamiento.</div>'
+      + '<div style="margin-top:12px;text-align:center"><a href="#catalogo" onclick="setCat(\'creatina\')" style="color:var(--cyan);font-weight:700;font-size:.88rem">→ Ver creatinas disponibles</a></div>'
+      + '</div>';
+  }
+  res.innerHTML = html;
+}
+
+// ── #9: FILTRO POR RANGO DE PRECIO VISUAL ──
+var _precioBadgeMax = 999999;
+function filtroPrecioBadge(max, btn){
+  document.querySelectorAll('.precio-badge').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  if(max < 0){
+    // "Más de $100.000"
+    _precioBadgeMax = -max;
+    precioMax = 999999;
+  } else {
+    _precioBadgeMax = max;
+    precioMax = max < 999999 ? max : 200000;
+  }
+  var range = document.getElementById('precioRange');
+  if(range && max > 0 && max < 999999) range.value = max;
+  else if(range) range.value = 200000;
+  var label = document.getElementById('precioVal');
+  if(label) label.textContent = max >= 999999 ? 'Sin límite' : max < 0 ? '+$100.000' : '$'+max.toLocaleString('es-AR');
+  applyFilters();
+}
+
+// ── #10: NOTIFICACIONES PUSH WEB ──
+function solicitarPush(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'granted'){
+    showToast('🔔 Notificaciones ya activadas');
+    return;
+  }
+  Notification.requestPermission().then(function(perm){
+    if(perm === 'granted'){
+      showToast('🔔 ¡Notificaciones activadas!');
+      try{ localStorage.setItem('maxup_push','true'); }catch(e){}
+      // Enviar notificación de prueba
+      new Notification('MAXUP Suplementos', {
+        body: '¡Listo! Te avisaremos de ofertas y nuevos productos.',
+        icon: 'favicon.png'
+      });
+    }
+  });
+}
+// Auto-solicitar después de 30 segundos si no se pidió antes
+setTimeout(function(){
+  try{
+    if(!localStorage.getItem('maxup_push_asked') && 'Notification' in window && Notification.permission === 'default'){
+      localStorage.setItem('maxup_push_asked','true');
+      // No preguntar automáticamente, solo preparar el botón
+    }
+  }catch(e){}
+}, 30000);
+
+// ── #11: LAZY LOADING OPTIMIZADO CON INTERSECTION OBSERVER ──
+(function(){
+  if(!('IntersectionObserver' in window)) return;
+  var imgObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting){
+        var img = entry.target;
+        if(img.dataset.src){
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+        }
+        imgObs.unobserve(img);
+      }
+    });
+  }, { rootMargin: '200px' });
+  // Observar imágenes con data-src
+  new MutationObserver(function(){
+    document.querySelectorAll('img[data-src]').forEach(function(img){
+      imgObs.observe(img);
+    });
+  }).observe(document.body, { childList: true, subtree: true });
+})();
+
+// ── #12: COMPRESIÓN AUTOMÁTICA DE IMÁGENES (vía weserv.nl proxy) ──
+function optimizeImgUrl(url){
+  if(!url) return url;
+  if(url.indexOf('images.weserv.nl') >= 0) return url;
+  if(url.indexOf('data:') === 0) return url;
+  if(url.indexOf('.svg') >= 0) return url;
+  return 'https://images.weserv.nl/?url=' + encodeURIComponent(url.replace(/^https?:\/\//, '')) + '&w=400&output=webp&q=80';
+}
+
+// ── #15: META TAGS DINÁMICOS POR PRODUCTO ──
+function updateMetaForProduct(p){
+  if(!p) return;
+  var title = p.name + ' — ' + p.brand + ' | MAXUP Suplementos';
+  var desc = p.desc ? p.desc.substring(0, 160) : p.name + ' de ' + p.brand + '. Disponible en MAXUP Suplementos.';
+  document.title = title;
+  var metaDesc = document.querySelector('meta[name="description"]');
+  if(metaDesc) metaDesc.content = desc;
+  var ogTitle = document.querySelector('meta[property="og:title"]');
+  if(ogTitle) ogTitle.content = title;
+  var ogDesc = document.querySelector('meta[property="og:description"]');
+  if(ogDesc) ogDesc.content = desc;
+  var ogImg = document.querySelector('meta[property="og:image"]');
+  if(ogImg && p.img) ogImg.content = p.img;
+}
+// Restaurar metas al cerrar modal
+var _originalTitle = document.title;
+var _originalDesc = document.querySelector('meta[name="description"]')?.content || '';
+function resetMeta(){
+  document.title = _originalTitle;
+  var metaDesc = document.querySelector('meta[name="description"]');
+  if(metaDesc) metaDesc.content = _originalDesc;
+}
+
+// ── #16: SISTEMA DE PUNTOS ──
+// Cada $1.000 en compras = 1 punto. 250 puntos = $5.000 de descuento en compras >$50.000.
+var _puntosCliente = 0;
+function cargarPuntos(telefono){
+  if(!telefono || telefono.length < 8) return;
+  fetch(API_URL + '?accion=puntos_cliente&telefono=' + encodeURIComponent(telefono))
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data.ok) _puntosCliente = data.puntos || 0;
+    }).catch(function(){});
+}
+function mostrarPuntosEnCheckout(){
+  var phone = document.getElementById('clientPhone').value.trim();
+  if(!phone || phone.length < 8) return;
+  cargarPuntos(phone);
+}
+
+// ── INTEGRAR DESCUENTO POR CANTIDAD EN renderCart ──
+// Parchear renderCart para incluir descuento por cantidad
+var _origRenderCart = renderCart;
+renderCart = function(){
+  _origRenderCart();
+  // Añadir info de descuento por cantidad en promoBar si aplica
+  var descQty = getDescuentoCantidad();
+  if(descQty > 0 && cart.length > 0){
+    var promoBar = document.getElementById('promoBar');
+    if(promoBar){
+      promoBar.innerHTML += '<br><span style="color:#00E676;font-size:.78rem">🏷️ 5% off por cantidad (2+ iguales): -'+fmt(descQty)+'</span>';
+    }
+  }
+};
+
+// ── INTEGRAR DESCUENTO POR CANTIDAD EN buildMiniList ──
+var _origBuildMiniList = buildMiniList;
+buildMiniList = function(){
+  _origBuildMiniList();
+  var descQty = getDescuentoCantidad();
+  if(descQty > 0){
+    var el = document.getElementById('orderMiniList');
+    if(el){
+      // Insertar antes del TOTAL row
+      var totalDiv = el.querySelector('div:last-child');
+      if(totalDiv){
+        var qtyDiv = document.createElement('div');
+        qtyDiv.className = 'omi';
+        qtyDiv.style.color = '#00E676';
+        qtyDiv.innerHTML = '<span>🏷️ 5% off por cantidad (2+ iguales)</span><span>-'+fmt(descQty)+'</span>';
+        el.insertBefore(qtyDiv, totalDiv);
+      }
+    }
+  }
+};
+
+// ── INTEGRAR META TAGS DINÁMICOS EN MODAL ──
+var _origOpenProdModal = typeof openProdModal === 'function' ? openProdModal : null;
+if(_origOpenProdModal){
+  var _wrappedOpenProdModal = openProdModal;
+  openProdModal = function(pid){
+    _wrappedOpenProdModal(pid);
+    var p = getProduct(pid);
+    if(p) updateMetaForProduct(p);
+  };
+}
+
+// ── INTEGRAR NUEVOS INGRESOS DESPUÉS DE CARGAR PRODUCTOS ──
+var _origRenderAll = renderAll;
+renderAll = function(){
+  _origRenderAll();
+  renderNuevosIngresos();
+};
+
+// ── AGREGAR BOTÓN AVISAR STOCK EN PRODUCTOS AGOTADOS ──
+// Se inyecta después de renderAll vía MutationObserver
+(function(){
+  var applied = false;
+  function injectAvisarStock(){
+    if(applied) return;
+    document.querySelectorAll('.prod-card').forEach(function(card){
+      var pid = card.dataset.id;
+      var p = getProduct(pid);
+      if(!p) return;
+      var totalStock = p.flavors.reduce(function(s,f){ return s+f.stock; }, 0);
+      if(totalStock === 0 && !card.querySelector('.avisar-stock-btn')){
+        var actions = card.querySelector('.prod-actions');
+        if(actions){
+          var btn = document.createElement('button');
+          btn.className = 'avisar-stock-btn';
+          btn.textContent = '🔔 Avisarme cuando haya stock';
+          btn.onclick = function(){ avisarStock(pid, p.name, btn); };
+          actions.parentNode.insertBefore(btn, actions.nextSibling);
+        }
+      }
+    });
+    applied = true;
+    setTimeout(function(){ applied = false; }, 2000);
+  }
+  // Ejecutar después de cada render
+  var origApply = applyFilters;
+  applyFilters = function(){
+    origApply();
+    setTimeout(injectAvisarStock, 100);
+  };
+})();
+
+// ── #2: TEMPORIZADOR DE OFERTA EN PRODUCTOS CON BADGE ──
+(function(){
+  function initTimers(){
+    document.querySelectorAll('.prod-badge.badge-sale,.prod-badge.badge-oferta').forEach(function(badge){
+      if(badge.dataset.timer) return;
+      badge.dataset.timer = 'true';
+      // Crear un temporizador de oferta hasta fin del día
+      var card = badge.closest('.prod-card');
+      if(!card) return;
+      var timerEl = document.createElement('div');
+      timerEl.style.cssText = 'font-size:.65rem;color:#FF0099;font-weight:700;text-align:center;padding:2px 0;letter-spacing:.04em';
+      badge.parentNode.insertBefore(timerEl, badge.nextSibling);
+      function updateTimer(){
+        var now = new Date();
+        var end = new Date(now);
+        end.setHours(23,59,59,999);
+        var diff = end - now;
+        var h = Math.floor(diff/3600000);
+        var m = Math.floor((diff%3600000)/60000);
+        var s = Math.floor((diff%60000)/1000);
+        timerEl.textContent = '⏰ '+h+'h '+m+'m '+s+'s';
+      }
+      updateTimer();
+      setInterval(updateTimer, 1000);
+    });
+  }
+  // Ejecutar después de que se rendericen las cards
+  setTimeout(initTimers, 2000);
+  // Re-ejecutar si se cargan nuevos productos
+  var origRenderAll2 = renderAll;
+  renderAll = function(){
+    origRenderAll2();
+    setTimeout(initTimers, 500);
+  };
+})();
+
+// ── APLICAR FILTRO POR PRECIO BADGE EN applyFilters ──
+(function(){
+  var origApply2 = applyFilters;
+  applyFilters = function(){
+    origApply2();
+    // Filtro adicional por badge de precio
+    if(_precioBadgeMax < 999999){
+      var lastBadgeBtn = document.querySelector('.precio-badge[data-max="100001"]');
+      var isOverFilter = lastBadgeBtn && lastBadgeBtn.classList.contains('active');
+      document.querySelectorAll('.prod-card').forEach(function(card){
+        if(card.style.display === 'none') return;
+        var pid = card.dataset.id;
+        var p = getProduct(pid);
+        if(!p) return;
+        if(isOverFilter){
+          if(p.price < 100000) card.style.display = 'none';
+        } else {
+          if(p.price > _precioBadgeMax) card.style.display = 'none';
+        }
+      });
+    }
+  };
+})();
 
 </script>
 </div><!-- /appContent -->
