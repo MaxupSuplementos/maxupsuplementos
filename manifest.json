@@ -1,0 +1,22 @@
+{
+  "name": "MAXUP Suplementos",
+  "short_name": "MAXUP",
+  "description": "Tienda de suplementos deportivos en General Güemes, Salta",
+  "start_url": "/maxupsuplementos/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#00C8FF",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
