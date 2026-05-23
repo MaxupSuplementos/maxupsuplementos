@@ -510,7 +510,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 }
 @media(max-width:600px){
   .footer-inner{grid-template-columns:1fr}
-  .hero{padding:100px 16px 48px}
+  .hero{padding:150px 16px 48px}
   .form-row{grid-template-columns:1fr}
   #productsGrid{grid-template-columns:repeat(2,1fr)!important;gap:10px}
   .prod-name{font-size:.85rem!important}
@@ -530,14 +530,17 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   .nav-mobile-bar{display:flex!important}
 }
 /* Barra mobile bajo el nav para accesos rápidos */
-.nav-mobile-bar{display:none;position:fixed;top:62px;left:0;right:0;z-index:199;
-  background:rgba(0,0,0,.95);border-bottom:1px solid rgba(0,200,255,.15);
-  padding:6px 12px;gap:8px;overflow-x:auto;white-space:nowrap}
-.nav-mobile-bar a{color:var(--gray);font-size:.78rem;font-weight:600;
-  letter-spacing:.05em;text-transform:uppercase;text-decoration:none;
-  padding:5px 12px;border:1px solid rgba(0,200,255,.2);border-radius:20px;
-  flex-shrink:0;transition:all .2s;display:inline-block}
-.nav-mobile-bar a:hover,.nav-mobile-bar a:active{color:var(--cyan);border-color:var(--cyan)}
+.nav-mobile-bar{display:none;position:fixed;top:90px;left:0;right:0;z-index:199;
+  background:rgba(5,5,15,.97);border-bottom:1px solid rgba(0,200,255,.2);
+  padding:10px 12px;gap:8px;overflow-x:auto;white-space:nowrap;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.nav-mobile-bar a{color:#ccc;font-size:.82rem;font-weight:700;
+  letter-spacing:.04em;text-decoration:none;
+  padding:8px 14px;border:1.5px solid rgba(0,200,255,.25);border-radius:22px;
+  flex-shrink:0;transition:all .2s;display:inline-block;
+  background:rgba(0,200,255,.06)}
+.nav-mobile-bar a:hover,.nav-mobile-bar a:active{color:#fff;border-color:var(--cyan);background:rgba(0,200,255,.15)}
 
 /* ── GALLERY ── */
 .prod-img-wrap{position:relative;overflow:hidden;background:#000 !important;}
@@ -821,11 +824,11 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 .puntos-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:700;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.25);color:#FFD700}
 </style>
 </head>
-<body style="overflow:hidden">
+<body>
 
-<!-- ── PANTALLA MANTENIMIENTO (oculta todo — arranca visible, se oculta si no hay mantenimiento) ── -->
+<!-- ── PANTALLA MANTENIMIENTO (arranca oculta — se muestra solo si la API confirma mantenimiento) ── -->
 <style>
-#mantScreen{position:fixed;inset:0;z-index:99999;background:#0a0a0a;overflow-y:auto}
+#mantScreen{position:fixed;inset:0;z-index:99999;background:#0a0a0a;overflow-y:auto;display:none}
 .mant-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
 .mant-img{width:100%;max-width:520px;border-radius:12px;display:block;
   box-shadow:0 8px 40px rgba(0,0,0,.5)}
@@ -876,7 +879,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   </div>
 </div>
 
-<div id="appContent" style="display:none">
+<div id="appContent">
 <!-- ── NAV ── -->
 <nav>
   <a href="#" class="nav-logo" id="navLogoLink">
@@ -1497,26 +1500,22 @@ const WA_DEFAULT = '5491168461457';        // Número de WhatsApp (sin + ni espa
 const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
 
 // ── CHEQUEO DE MANTENIMIENTO ──────────────────────────────
-// Arranca con mantScreen visible y appContent oculto.
-// Si NO hay mantenimiento → oculta mantScreen, muestra appContent.
-// Si hay mantenimiento → se queda como está (solo se ve la pantalla de mantenimiento).
+// Arranca con appContent visible y mantScreen oculto.
+// Si la API confirma mantenimiento activo → oculta appContent, muestra mantScreen.
+// Si no hay mantenimiento o falla la API → se queda como está (página normal).
 (function(){
   fetch(API_URL + '?accion=mantenimiento')
     .then(function(r){ return r.json(); })
     .then(function(data){
       if (data.ok && data.activo) {
-        // Mantenimiento activo: ya está todo correcto, no hacer nada
-      } else {
-        // Sin mantenimiento: mostrar la página normal
-        document.getElementById('mantScreen').style.display = 'none';
-        document.getElementById('appContent').style.display = 'block';
-        document.body.style.overflow = '';
+        // Mantenimiento activo: ocultar página, mostrar pantalla mantenimiento
+        document.getElementById('appContent').style.display = 'none';
+        document.getElementById('mantScreen').style.display = 'block';
+        document.body.style.overflow = 'hidden';
       }
+      // Si no hay mantenimiento, no hacer nada (página ya visible)
     }).catch(function(){
-      // Si falla la API, mostrar la página normal para no bloquear al usuario
-      document.getElementById('mantScreen').style.display = 'none';
-      document.getElementById('appContent').style.display = 'block';
-      document.body.style.overflow = '';
+      // Si falla la API, no hacer nada (página ya visible)
     });
 })();
 
