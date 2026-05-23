@@ -211,19 +211,25 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
 
   <div class="tabs">
     <button class="tab activo" onclick="switchTab('resumen',this)">📊 Resumen</button>
+    <button class="tab" onclick="switchTab('dashboard',this)">📈 Dashboard</button>
     <button class="tab" onclick="switchTab('pedidos',this)">📦 Pedidos <span class="badge" id="badgePedidos"></span></button>
-    <button class="tab" onclick="switchTab('stock',this)">⚠️ Stock bajo</button>
+    <button class="tab" onclick="switchTab('stock',this)">⚠️ Stock bajo <span class="badge" id="badgeStock" style="display:none;background:var(--orange)"></span></button>
+    <button class="tab" onclick="switchTab('cupones',this)">🏷️ Cupones</button>
     <button class="tab" onclick="switchTab('descuentos',this)">🎁 Descuentos</button>
     <button class="tab" onclick="switchTab('vencer',this)">⏰ Por vencer <span class="badge" id="badgeVencer"></span></button>
+    <button class="tab" onclick="switchTab('log',this)">📋 Actividad</button>
     <button class="tab" onclick="switchTab('ajustes',this)">⚙️ Ajustes</button>
   </div>
 
   <div class="content">
     <div id="tabResumen"></div>
+    <div id="tabDashboard" style="display:none"></div>
     <div id="tabPedidos" style="display:none"></div>
     <div id="tabStock" style="display:none"></div>
+    <div id="tabCupones" style="display:none"></div>
     <div id="tabDescuentos" style="display:none"></div>
     <div id="tabVencer" style="display:none"></div>
+    <div id="tabLog" style="display:none"></div>
     <div id="tabAjustes" style="display:none"></div>
   </div>
 </div>
@@ -257,6 +263,7 @@ function login() {
         cargarResumen();
         iniciarAutoRefresh();
         _chequearMant();
+        logActivity('Login exitoso', 'Acceso al panel de administración');
       } else {
         document.getElementById('loginError').style.display = 'block';
         setTimeout(function(){ document.getElementById('loginError').style.display='none'; }, 2500);
@@ -340,28 +347,30 @@ function detenerAutoRefresh() {
 }
 
 // ── TABS ─────────────────────────────────────────────────────
+var ALL_TABS = ['resumen','dashboard','pedidos','stock','cupones','descuentos','vencer','log','ajustes'];
+
 function switchTab(tab, el) {
   tabActual = tab;
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('activo'); });
   el.classList.add('activo');
-  ['resumen','pedidos','stock','descuentos','vencer','ajustes'].forEach(function(t){
+  ALL_TABS.forEach(function(t){
     document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === tab ? 'block' : 'none';
   });
   if (tab === 'resumen')     cargarResumen();
+  if (tab === 'dashboard')   cargarDashboard();
   if (tab === 'pedidos')     cargarPedidos();
   if (tab === 'stock')       cargarStock();
+  if (tab === 'cupones')     cargarCupones();
   if (tab === 'descuentos')  cargarDescuentos();
   if (tab === 'vencer')      cargarVencer();
+  if (tab === 'log')         cargarLog();
   if (tab === 'ajustes')     cargarAjustes();
 }
 
 function recargarTab() {
-  if (tabActual === 'resumen')    cargarResumen();
-  if (tabActual === 'pedidos')    cargarPedidos();
-  if (tabActual === 'stock')      cargarStock();
-  if (tabActual === 'descuentos') cargarDescuentos();
-  if (tabActual === 'vencer')     cargarVencer();
-  if (tabActual === 'ajustes')    cargarAjustes();
+  var fn = {resumen:cargarResumen,dashboard:cargarDashboard,pedidos:cargarPedidos,stock:cargarStock,
+    cupones:cargarCupones,descuentos:cargarDescuentos,vencer:cargarVencer,log:cargarLog,ajustes:cargarAjustes};
+  if(fn[tabActual]) fn[tabActual]();
 }
 
 // ── HELPERS ──────────────────────────────────────────────────
@@ -393,12 +402,31 @@ function cargarResumen() {
     var diffClass = diff >= 0 ? 'up' : 'down';
     var diffTxt = (diff >= 0 ? '▲' : '▼') + ' ' + Math.abs(diff) + '% vs ayer';
 
+    var ticketHtml = '';
+    if(data.ventasHoy > 0){
+      var ticketProm = Math.round(data.hoy / data.ventasHoy);
+      ticketHtml = '<div class="stat-card"><div class="stat-label">Ticket promedio</div><div class="stat-val cyan">' + fmt(ticketProm) + '</div></div>';
+    }
+
     var html = '<div class="stats-grid">'
       + '<div class="stat-card"><div class="stat-label">Facturado hoy</div><div class="stat-val cyan">' + fmt(data.hoy) + '</div><div class="stat-sub ' + diffClass + '">' + diffTxt + '</div></div>'
       + '<div class="stat-card"><div class="stat-label">Ventas hoy</div><div class="stat-val green">' + data.ventasHoy + '</div><div class="stat-sub">Ayer: ' + data.ventasAyer + '</div></div>'
       + '<div class="stat-card"><div class="stat-label">Pedidos web</div><div class="stat-val pink">' + data.pedidosWeb + '</div><div class="stat-sub">Hoy ' + data.fecha + '</div></div>'
       + '<div class="stat-card"><div class="stat-label">Facturado ayer</div><div class="stat-val" style="color:var(--gray)">' + fmt(data.ayer) + '</div><div class="stat-sub">' + data.ventasAyer + ' ventas</div></div>'
+      + ticketHtml
       + '</div>';
+
+    // Alerta de stock bajo
+    if(data.stockBajo && data.stockBajo.length > 0){
+      var badge = document.getElementById('badgeStock');
+      if(badge){ badge.textContent = data.stockBajo.length; badge.style.display='inline'; }
+      html += '<div style="background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);border-radius:10px;padding:14px;margin-bottom:16px">'
+        + '<div style="font-weight:700;font-size:.9rem;color:var(--orange);margin-bottom:8px">⚠️ ALERTA: ' + data.stockBajo.length + ' producto(s) con stock bajo</div>';
+      data.stockBajo.forEach(function(p){
+        html += '<div style="font-size:.82rem;color:var(--gray);padding:2px 0">' + (p.stock===0?'🔴':'🟡') + ' <strong style="color:var(--white)">' + p.nombre + '</strong> — ' + p.stock + ' unid.</div>';
+      });
+      html += '<button class="filtro-btn" style="margin-top:8px" onclick="switchTab(\'stock\',document.querySelectorAll(\'.tab\')[3])">Ver todos →</button></div>';
+    }
 
     if (data.items && data.items.length > 0) {
       html += '<div class="section-title">Ventas de hoy <span>(' + data.items.length + ')</span></div>'
@@ -538,9 +566,32 @@ function cambiarEstado(codigo, nuevoEstado) {
     .then(function(data) {
       if (data.ok) {
         showToast('✅ ' + codigo + ' → ' + nuevoEstado);
+        logActivity('Cambio de estado', codigo + ' → ' + nuevoEstado);
         if (window._pedidosCache) {
           window._pedidosCache.forEach(function(p){ if(p.codigo===codigo) p.estado=nuevoEstado; });
           renderPedidos(window._pedidosCache);
+        }
+        // ── #1: NOTIFICACIÓN WHATSAPP AUTOMÁTICA AL CLIENTE ──
+        var pedido = window._pedidosCache ? window._pedidosCache.find(function(p){ return p.codigo===codigo; }) : null;
+        if(pedido && pedido.telefono){
+          var mensajesEstado = {
+            'Confirmado': '✅ ¡Tu pedido *'+codigo+'* fue confirmado! Lo estamos preparando. Te avisamos cuando esté listo.',
+            'Preparando': '📦 Tu pedido *'+codigo+'* se está preparando. ¡Ya falta poco!',
+            'Enviado': '🚚 ¡Tu pedido *'+codigo+'* fue enviado! Te mandamos el seguimiento a la brevedad.',
+            'Listo para retirar': '🏪 Tu pedido *'+codigo+'* está listo para retirar en Calixto Gauna 1045, Gral. Güemes, Salta.',
+            'Entregado': '🎉 ¡Pedido *'+codigo+'* entregado! Gracias por elegir MAXUP. ⭐ Si te gustó, contanos tu experiencia.',
+            'Retirado': '🎉 ¡Pedido *'+codigo+'* retirado! Gracias por elegir MAXUP. ⭐ Si te gustó, contanos tu experiencia.',
+            'Cancelado': '❌ Tu pedido *'+codigo+'* fue cancelado. Si tenés dudas, escribinos.'
+          };
+          var waMsg = mensajesEstado[nuevoEstado];
+          if(waMsg){
+            var tel = pedido.telefono.replace(/[^0-9]/g,'');
+            if(tel.length < 10) tel = '54' + tel;
+            var waUrl = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(waMsg + '\n\n— MAXUP Suplementos 💪');
+            if(confirm('¿Enviar notificación por WhatsApp al cliente?\n\nMensaje: ' + waMsg.replace(/\*/g,''))){
+              window.open(waUrl, '_blank');
+            }
+          }
         }
       } else {
         showToast('❌ Error: ' + (data.error || 'No se pudo actualizar'));
@@ -704,6 +755,14 @@ function cargarAjustes() {
       + '<a href="https://maxupsuplementos.github.io/maxupsuplementos/promo.html" target="_blank" style="color:var(--cyan);text-decoration:none">🎨 Promo Express</a>'
       + '</div></div>';
 
+    // Backup
+    html += '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:20px;margin-top:16px">'
+      + '<div style="font-weight:700;font-size:.95rem;margin-bottom:12px">💾 Backup de datos</div>'
+      + '<div style="color:var(--gray);font-size:.85rem;margin-bottom:14px">Descargá una copia de la hoja de Google Sheets para tener un respaldo.</div>'
+      + '<a href="https://docs.google.com/spreadsheets/d/17rFBpuvjam54M3NGE8Pmtc9YwBBRhVYI8bgGpckiAXo/export?format=xlsx" target="_blank" class="filtro-btn" style="text-decoration:none;display:inline-block">📥 Descargar backup (.xlsx)</a>'
+      + '<a href="https://docs.google.com/spreadsheets/d/17rFBpuvjam54M3NGE8Pmtc9YwBBRhVYI8bgGpckiAXo/export?format=csv" target="_blank" class="filtro-btn" style="text-decoration:none;display:inline-block;margin-left:8px">📄 Descargar CSV</a>'
+      + '</div>';
+
     el.innerHTML = html;
   }).catch(function(){ el.innerHTML = '<div class="empty-txt">⚠️ No se pudo conectar.</div>'; });
 }
@@ -726,6 +785,7 @@ function toggleMantenimiento(activar) {
       if (data.ok) {
         _mantActivo = data.activo;
         showToast(data.activo ? '🔧 Mantenimiento ACTIVADO' : '✅ Mantenimiento DESACTIVADO');
+        logActivity(data.activo ? 'Mantenimiento activado' : 'Mantenimiento desactivado', msg || 'Sin mensaje');
         actualizarBannerMant(data);
         if (tabActual === 'ajustes') cargarAjustes();
       } else {
@@ -750,6 +810,152 @@ function _chequearMant() {
   api('accion=admin_mantenimiento').then(function(data){
     if(data.ok) actualizarBannerMant(data);
   }).catch(function(){});
+}
+
+// ── DASHBOARD (estadísticas con gráfico) ────────────────────
+function cargarDashboard() {
+  var el = document.getElementById('tabDashboard');
+  el.innerHTML = '<div class="loading-txt">Cargando estadísticas...</div>';
+  api('accion=admin_dashboard').then(function(data) {
+    if (!data.ok) { el.innerHTML = '<div class="empty-txt">Error: ' + (data.error||'Endpoint no disponible aún') + '</div>'; return; }
+
+    var html = '<div class="section-title">📈 <span>Dashboard de ventas</span></div>';
+
+    // Stats generales
+    html += '<div class="stats-grid">'
+      + '<div class="stat-card"><div class="stat-label">Ventas esta semana</div><div class="stat-val cyan">' + fmt(data.semana||0) + '</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Ventas este mes</div><div class="stat-val green">' + fmt(data.mes||0) + '</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Pedidos este mes</div><div class="stat-val pink">' + (data.pedidosMes||0) + '</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Ticket promedio mes</div><div class="stat-val" style="color:var(--orange)">' + fmt(data.ticketProm||0) + '</div></div>'
+      + '</div>';
+
+    // Top productos
+    if(data.topProductos && data.topProductos.length > 0){
+      html += '<div class="section-title" style="margin-top:20px">🏆 <span>Productos más vendidos (mes)</span></div>'
+        + '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px">';
+      data.topProductos.forEach(function(p, i){
+        var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'  '+(i+1)+'.';
+        html += '<div class="venta-item"><div><div class="venta-prod">' + medal + ' ' + p.nombre + '</div>'
+          + '<div class="venta-cli">' + p.cantidad + ' vendidos · ' + (p.marca||'') + '</div></div>'
+          + '<div class="venta-monto">' + fmt(p.total) + '</div></div>';
+      });
+      html += '</div>';
+    }
+
+    // Top marcas
+    if(data.topMarcas && data.topMarcas.length > 0){
+      html += '<div class="section-title" style="margin-top:20px">🏅 <span>Marcas más vendidas (mes)</span></div>'
+        + '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px">';
+      data.topMarcas.forEach(function(m){
+        html += '<div class="venta-item"><div class="venta-prod">' + m.marca + '</div>'
+          + '<div class="venta-monto">' + fmt(m.total) + '</div></div>';
+      });
+      html += '</div>';
+    }
+
+    // Gráfico de barras simple (últimos 7 días)
+    if(data.ultimos7 && data.ultimos7.length > 0){
+      var max = Math.max.apply(null, data.ultimos7.map(function(d){return d.total;})) || 1;
+      html += '<div class="section-title" style="margin-top:20px">📊 <span>Últimos 7 días</span></div>'
+        + '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px;display:flex;gap:6px;align-items:flex-end;height:180px">';
+      data.ultimos7.forEach(function(d){
+        var pct = Math.max(5, Math.round(d.total/max*100));
+        html += '<div style="flex:1;text-align:center">'
+          + '<div style="font-size:.65rem;color:var(--cyan);font-weight:700;margin-bottom:4px">' + fmt(d.total) + '</div>'
+          + '<div style="height:' + pct + '%;background:linear-gradient(to top,var(--cyan),var(--pink));border-radius:4px 4px 0 0;min-height:4px;transition:height .5s"></div>'
+          + '<div style="font-size:.65rem;color:var(--gray);margin-top:4px">' + d.dia + '</div>'
+          + '</div>';
+      });
+      html += '</div>';
+    }
+
+    el.innerHTML = html;
+  }).catch(function(){ el.innerHTML = '<div class="empty-txt">⚠️ No se pudo conectar. Esta función requiere actualizar la API.</div>'; });
+}
+
+// ── CUPONES ─────────────────────────────────────────────────
+function cargarCupones() {
+  var el = document.getElementById('tabCupones');
+  var html = '<div class="section-title">🏷️ <span>Cupones de descuento activos</span></div>';
+  html += '<div style="color:var(--gray);font-size:.85rem;margin-bottom:16px">Los cupones se configuran en el código del index.html. Estos son los activos actualmente:</div>';
+
+  var cupones = [
+    { code:'MAXUP5', pct:5, desc:'Cupón general para redes sociales (TikTok, Instagram)' },
+    { code:'MAXUP10', pct:10, desc:'Cupón especial para clientes VIP o campañas puntuales' },
+    { code:'PRIMERA15', pct:15, desc:'Primera compra — ideal para nuevos clientes' },
+  ];
+
+  cupones.forEach(function(c){
+    html += '<div style="background:var(--dark2);border:1px solid rgba(0,200,255,.15);border-radius:10px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px">'
+      + '<div style="background:var(--grad);color:#000;font-family:Bebas Neue,sans-serif;font-size:1.4rem;padding:10px 16px;border-radius:8px;letter-spacing:.1em;min-width:120px;text-align:center">' + c.code + '</div>'
+      + '<div style="flex:1">'
+      + '<div style="font-weight:700;font-size:.95rem;color:var(--cyan)">' + c.pct + '% de descuento</div>'
+      + '<div style="font-size:.82rem;color:var(--gray)">' + c.desc + '</div>'
+      + '</div></div>';
+  });
+
+  html += '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:20px;margin-top:20px">'
+    + '<div style="font-weight:700;font-size:.95rem;margin-bottom:10px">💡 Tips para usar cupones</div>'
+    + '<div style="font-size:.85rem;color:var(--gray);line-height:1.8">'
+    + '• Compartí <strong style="color:var(--cyan)">MAXUP5</strong> en TikTok e Instagram Stories<br>'
+    + '• Usá <strong style="color:var(--cyan)">PRIMERA15</strong> para atraer clientes nuevos<br>'
+    + '• El campo de cupón aparece en el carrito antes de finalizar el pedido<br>'
+    + '• Los cupones se pueden combinar con descuentos por monto<br>'
+    + '• Para agregar o modificar cupones, avisame y lo actualizo en el código</div>'
+    + '</div>';
+
+  el.innerHTML = html;
+}
+
+// ── LOG DE ACTIVIDAD ────────────────────────────────────────
+var _activityLog = [];
+
+function logActivity(accion, detalle) {
+  _activityLog.unshift({
+    fecha: new Date().toLocaleString('es-AR'),
+    accion: accion,
+    detalle: detalle
+  });
+  // Mantener máximo 100 entradas
+  if(_activityLog.length > 100) _activityLog.length = 100;
+  try{ localStorage.setItem('maxup_admin_log', JSON.stringify(_activityLog)); }catch(e){}
+}
+
+function cargarLog() {
+  // Cargar desde localStorage
+  try{
+    var saved = localStorage.getItem('maxup_admin_log');
+    if(saved) _activityLog = JSON.parse(saved);
+  }catch(e){}
+
+  var el = document.getElementById('tabLog');
+  if(_activityLog.length === 0){
+    el.innerHTML = '<div class="empty-txt">No hay actividad registrada todavía.<br>Las acciones (cambios de estado, mantenimiento, etc.) se registrarán aquí.</div>';
+    return;
+  }
+
+  var html = '<div class="section-title">📋 <span>Registro de actividad</span></div>'
+    + '<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="filtro-btn" onclick="limpiarLog()">🗑️ Limpiar log</button></div>';
+
+  _activityLog.forEach(function(entry){
+    var icon = entry.accion.indexOf('estado')>=0 ? '📦' : entry.accion.indexOf('mant')>=0 ? '🔧' : entry.accion.indexOf('login')>=0 ? '🔑' : '📝';
+    html += '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.04);border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;gap:10px;align-items:center">'
+      + '<span style="font-size:1.2rem">' + icon + '</span>'
+      + '<div style="flex:1"><div style="font-size:.88rem;font-weight:600">' + entry.accion + '</div>'
+      + '<div style="font-size:.78rem;color:var(--gray)">' + entry.detalle + '</div></div>'
+      + '<div style="font-size:.72rem;color:var(--gray);white-space:nowrap">' + entry.fecha + '</div>'
+      + '</div>';
+  });
+
+  el.innerHTML = html;
+}
+
+function limpiarLog(){
+  if(!confirm('¿Limpiar todo el registro de actividad?')) return;
+  _activityLog = [];
+  try{ localStorage.removeItem('maxup_admin_log'); }catch(e){}
+  cargarLog();
+  showToast('🗑️ Log limpiado');
 }
 </script>
 </body>
