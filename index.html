@@ -31,9 +31,9 @@
 <meta property="og:url" content="https://maxupsuplementos.com.ar/">
 <meta property="og:title" content="MAXUP Suplementos — General Güemes, Salta">
 <meta property="og:description" content="+170 productos de las mejores marcas. Proteínas, creatina, colágeno y más. Envíos a todo el país.">
-<meta property="og:image" content="https://maxupsuplementos.com.ar/og-preview.png">
-<meta property="og:image:secure_url" content="https://maxupsuplementos.com.ar/og-preview.png">
-<meta property="og:image:type" content="image/png">
+<meta property="og:image" content="https://maxupsuplementos.com.ar/og-preview.jpg">
+<meta property="og:image:secure_url" content="https://maxupsuplementos.com.ar/og-preview.jpg">
+<meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="es_AR">
@@ -43,7 +43,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="MAXUP Suplementos — General Güemes, Salta">
 <meta name="twitter:description" content="+170 productos de las mejores marcas. Proteínas, creatina, colágeno y más.">
-<meta name="twitter:image" content="https://maxupsuplementos.com.ar/og-preview.png">
+<meta name="twitter:image" content="https://maxupsuplementos.com.ar/og-preview.jpg">
 
 <!-- ── SCHEMA.ORG — TIENDA LOCAL ── -->
 <script type="application/ld+json">
@@ -123,12 +123,12 @@ body::before{content:'';position:fixed;inset:0;
 /* ── NAV ── */
 nav{position:fixed;top:28px;width:100%;z-index:200;background:rgba(0,0,0,.92);
   backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,200,255,.12);
-  padding:10px 32px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  padding:6px 24px;display:flex;align-items:center;gap:12px;flex-wrap:nowrap}
 .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-.nav-logo img{height:42px;filter:drop-shadow(0 0 14px rgba(0,200,255,.55))}
-.nav-brand{font-family:Bebas Neue,sans-serif;font-size:1.45rem;letter-spacing:.12em;
+.nav-logo img{height:34px;filter:drop-shadow(0 0 14px rgba(0,200,255,.55))}
+.nav-brand{font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:.12em;
   background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.nav-search{flex:1;min-width:180px;max-width:340px;position:relative}
+.nav-search{flex:1;min-width:140px;max-width:280px;position:relative}
 .nav-search input{width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(0,200,255,.18);
   color:var(--white);font-family:'Rajdhani',sans-serif;font-size:.92rem;
   padding:8px 14px 8px 36px;border-radius:100px;outline:none;transition:border-color .2s}
@@ -136,12 +136,12 @@ nav{position:fixed;top:28px;width:100%;z-index:200;background:rgba(0,0,0,.92);
 .nav-search input::placeholder{color:rgba(255,255,255,.3)}
 .nav-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);
   width:14px;height:14px;fill:none;stroke:var(--gray);stroke-width:2;pointer-events:none}
-.nav-links{display:flex;gap:20px;list-style:none;align-items:center;margin-left:auto}
-.nav-links a{color:var(--gray);text-decoration:none;font-size:.86rem;font-weight:600;
-  letter-spacing:.06em;text-transform:uppercase;transition:color .2s}
+.nav-links{display:flex;gap:10px;list-style:none;align-items:center;margin-left:auto;flex-shrink:0;overflow-x:auto}
+.nav-links a{color:var(--gray);text-decoration:none;font-size:.78rem;font-weight:600;
+  letter-spacing:.04em;text-transform:uppercase;transition:color .2s;white-space:nowrap}
 .nav-links a:hover{color:var(--cyan)}
-.nav-cta{background:var(--grad);color:#000!important;padding:7px 16px;
-  border-radius:3px;font-weight:700!important;font-size:.82rem!important}
+.nav-cta{background:var(--grad);color:#000!important;padding:5px 12px;
+  border-radius:3px;font-weight:700!important;font-size:.76rem!important}
 .nav-wa{background:linear-gradient(135deg,#25D366,#128C7E)!important}
 
 /* ── CART FAB ── */
@@ -242,26 +242,26 @@ body.light .footer{background:rgba(0,0,0,.03)}
 .no-results span{font-size:3rem;display:block;margin-bottom:12px}
 
 /* ── PRODUCT GRID & CARD ── */
-#productsGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+#productsGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
 .prod-card{background:#000);border:1px solid rgba(255,255,255,.06);border-radius:10px;
   overflow:hidden;transition:transform .3s,border-color .3s,box-shadow .3s;
   position:relative;display:flex;flex-direction:column}
 .prod-card:hover{transform:translateY(-4px);border-color:rgba(0,200,255,.3);
   box-shadow:0 14px 44px rgba(0,200,255,.08)}
-.prod-img-wrap{height:200px;display:flex;align-items:center;justify-content:center;
+.prod-img-wrap{height:160px;display:flex;align-items:center;justify-content:center;
   position:relative;overflow:hidden;background:#000 !important;cursor:pointer}
 .gallery-slide img{background:#000;transition:opacity .2s}
 .prod-img-wrap img{background:#000 !important;}
 .prod-img-wrap img{width:100%;height:100%;object-fit:contain;padding:14px;transition:transform .4s}
 .prod-card:hover .prod-img-wrap img{transform:scale(1.06)}
 .prod-emoji{font-size:4.5rem;line-height:1;user-select:none}
-.prod-body{padding:18px;flex:1;display:flex;flex-direction:column}
+.prod-body{padding:12px;flex:1;display:flex;flex-direction:column}
 .prod-brand{font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
   color:var(--cyan);margin-bottom:4px}
-.prod-name{font-family:Bebas Neue,sans-serif;font-size:1.42rem;letter-spacing:.04em;
-  line-height:1.1;margin-bottom:8px}
-.prod-desc{font-size:.85rem;color:var(--gray);line-height:1.55;flex:1;margin-bottom:12px;
-  max-height:80px;overflow:hidden;position:relative}
+.prod-name{font-family:Bebas Neue,sans-serif;font-size:1.25rem;letter-spacing:.04em;
+  line-height:1.1;margin-bottom:6px}
+.prod-desc{font-size:.8rem;color:var(--gray);line-height:1.4;flex:1;margin-bottom:8px;
+  max-height:42px;overflow:hidden;position:relative}
 .prod-desc.expanded{max-height:none}
 .read-more{font-size:.75rem;color:var(--cyan);cursor:pointer;font-weight:600;
   letter-spacing:.06em;margin-bottom:8px;display:inline-block}
@@ -271,8 +271,8 @@ body.light .footer{background:rgba(0,0,0,.03)}
 .flavor-label{font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
   color:var(--gray);margin-bottom:6px}
 .flavor-select{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(0,200,255,.2);
-  color:var(--white);font-family:'Rajdhani',sans-serif;font-size:.92rem;font-weight:600;
-  padding:8px 12px;border-radius:6px;outline:none;cursor:pointer;margin-bottom:12px;
+  color:var(--white);font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:600;
+  padding:6px 10px;border-radius:6px;outline:none;cursor:pointer;margin-bottom:8px;
   transition:border-color .2s;appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300C8FF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
@@ -282,9 +282,9 @@ body.light .footer{background:rgba(0,0,0,.03)}
 
 /* Price + stock */
 .prod-footer{display:flex;align-items:center;justify-content:space-between;
-  padding-top:12px;border-top:1px solid rgba(255,255,255,.05);margin-bottom:12px}
+  padding-top:8px;border-top:1px solid rgba(255,255,255,.05);margin-bottom:8px}
 .prod-price-label{font-size:.6rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--gray)}
-.prod-price-val{font-family:Bebas Neue,sans-serif;font-size:1.9rem;
+.prod-price-val{font-family:Bebas Neue,sans-serif;font-size:1.6rem;
   background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
 .prod-stock-info{text-align:right}
 .prod-stock-num{font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--white);line-height:1}
@@ -516,12 +516,15 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   .footer-inner{grid-template-columns:1fr}
   .hero{padding:150px 16px 48px}
   .form-row{grid-template-columns:1fr}
-  #productsGrid{grid-template-columns:repeat(2,1fr)!important;gap:10px}
-  .prod-name{font-size:.85rem!important}
-  .prod-price-val{font-size:1.2rem!important}
-  .prod-img-wrap{height:180px!important}
-  .prod-card{border-radius:10px}
-  .prod-body{padding:10px!important}
+  #productsGrid{grid-template-columns:repeat(2,1fr)!important;gap:8px}
+  .prod-name{font-size:.82rem!important}
+  .prod-price-val{font-size:1.15rem!important}
+  .prod-img-wrap{height:130px!important}
+  .prod-card{border-radius:8px}
+  .prod-body{padding:8px!important}
+  .prod-desc{max-height:34px!important;font-size:.75rem!important}
+  .flavor-select{font-size:.78rem!important;padding:5px 8px!important}
+  .flavor-label{font-size:.6rem!important;margin-bottom:3px!important}
   /* Comparador mobile */
   .comp-selector{flex-direction:column;align-items:stretch}
   .comp-select{max-width:none}
@@ -4963,6 +4966,9 @@ function applyFilters(){
   const visibles = cards.filter(card => {
     let matchCat;
     if(activeCat==='favoritos') matchCat = _favoritos.indexOf(card.dataset.id)>=0;
+    else if(activeCat==='magnesio'){
+      matchCat = card.dataset.cat==='magnesio' || /magnesio|omega|zma/i.test(card.dataset.search);
+    }
     else matchCat = activeCat==='all' || card.dataset.cat===activeCat;
     const matchSearch = !activeSearch || card.dataset.search.includes(activeSearch);
     return matchCat && matchSearch;
