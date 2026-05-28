@@ -8612,12 +8612,22 @@ function getAvgRating(pid){
 loadReviews();
 
 // ── COMBOS ──
+// Buscar producto por nombre parcial (funciona con IDs del Sheets o nombres)
+function _buscarProducto(keyword){
+  var kw = keyword.toLowerCase();
+  return PRODUCTS.find(function(p){
+    return p.name && p.name.toLowerCase().indexOf(kw) >= 0;
+  }) || PRODUCTS.find(function(p){
+    return p.id && p.id.toLowerCase().indexOf(kw) >= 0;
+  });
+}
+
 const COMBOS = [
   {
     id: 'combo_principiante',
     nombre: '💥 Combo Principiante',
     desc: 'Los 2 básicos para arrancar a entrenar en serio. Proteína para la recuperación + Creatina para la fuerza.',
-    productos: ['sn_whey_dp','sn_creat_doy'],
+    buscar: ['Whey Protein Doypack 2 Lb','Creatina 300g Doypack'],
     precio: 0,
     color: '#00C8FF'
   },
@@ -8625,7 +8635,7 @@ const COMBOS = [
     id: 'combo_fuerza',
     nombre: '🏋️ Combo Fuerza Total',
     desc: 'Creatina para potencia + Pre-entreno para energía explosiva + BCAAs para no catabolizar.',
-    productos: ['sn_creat_pote','sn_tnt','sn_mtor'],
+    buscar: ['Creatina 300g Pote','TNT Dynamite','MTOR BCAA'],
     precio: 0,
     color: '#FF0099'
   },
@@ -8633,7 +8643,7 @@ const COMBOS = [
     id: 'combo_masa',
     nombre: '💪 Combo Masa Muscular',
     desc: 'Gainer hipercalórico + Creatina + Glutamina. La tríada para ganar volumen rápido.',
-    productos: ['sn_mutant','sn_creat_500','sn_glut'],
+    buscar: ['MutantMass','Creatina 500g Pote','L-Glutamina 300g'],
     precio: 0,
     color: '#9933FF'
   },
@@ -8641,7 +8651,7 @@ const COMBOS = [
     id: 'combo_definicion',
     nombre: '🔥 Combo Definición',
     desc: 'Proteína baja en grasa + Quemador + L-Carnitina. Perdé grasa sin perder músculo.',
-    productos: ['gn_ripped','sn_thermo','sn_lcarnitina'],
+    buscar: ['Whey Ripped','Thermo Fuel','L-Carnitina 60'],
     precio: 0,
     color: '#FFA500'
   },
@@ -8649,7 +8659,7 @@ const COMBOS = [
     id: 'combo_salud',
     nombre: '🧬 Combo Salud & Bienestar',
     desc: 'Omega 3 (cardiovascular) + Magnesio (sueño y calambres) + Multivitamínico. Tu base diaria de salud.',
-    productos: ['sn_omega3','sn_citr60','sn_multi'],
+    buscar: ['Omega 3 Fish Oil 60','Citrato de Magnesio 60 Caps','Multivitamínico 60 Caps'],
     precio: 0,
     color: '#00E676'
   },
@@ -8657,7 +8667,7 @@ const COMBOS = [
     id: 'combo_recuperacion',
     nombre: '🛌 Combo Recuperación Nocturna',
     desc: 'ZMA para testosterona y sueño + Magnesio para relajar los músculos + Glutamina para reparar fibras.',
-    productos: ['sn_zma','grg_citr','sn_glut'],
+    buscar: ['ZMA 90 Caps','Citrato de Magnesio 144g','L-Glutamina 300g'],
     precio: 0,
     color: '#7B68EE'
   },
@@ -8665,7 +8675,7 @@ const COMBOS = [
     id: 'combo_mujer',
     nombre: '👑 Combo Mujer Fit',
     desc: 'Proteína By Pampita + Colágeno con Hialurónico + Quemador Woman. Todo lo que necesitás para verte y sentirte increíble.',
-    productos: ['wo_prot','wo_colageno','wo_fatburner'],
+    buscar: ['Proteína By Pampita 454g','Colágeno + Hialurónico','Fat Burner 60'],
     precio: 0,
     color: '#FF69B4'
   },
@@ -8673,7 +8683,7 @@ const COMBOS = [
     id: 'combo_resistencia',
     nombre: '🏃 Combo Resistencia & Cardio',
     desc: 'Hidratación intra-entreno + BCAAs anti-catabolismo + L-Carnitina para usar grasa como energía. Ideal runners y CrossFit.',
-    productos: ['sn_hydroplus','ena_bcaa','ena_lcarnitina'],
+    buscar: ['Hydroplus Endurance','BCAA 2:1:1 90','L-Carnitina 1500'],
     precio: 0,
     color: '#00BCD4'
   },
@@ -8681,7 +8691,7 @@ const COMBOS = [
     id: 'combo_articulaciones',
     nombre: '🦴 Combo Articulaciones & Piel',
     desc: 'Colágeno hidrolizado + Omega 3 antiinflamatorio + Vitamina C para síntesis de colágeno. Articulaciones sanas y piel firme.',
-    productos: ['gn_col200p','lap_omega3','sn_vitc'],
+    buscar: ['Colágeno Hidrolizado 200g Pote','Omega 3 con Omega 6','Vitamina C'],
     precio: 0,
     color: '#26A69A'
   },
@@ -8689,29 +8699,27 @@ const COMBOS = [
     id: 'combo_bestia',
     nombre: '🦍 Combo Bestia Mode',
     desc: 'El pack completo: Proteína Premium + Creatina 500g + Pre-entreno + Aminoácidos. Para quienes van con todo.',
-    productos: ['sn_plat_2lb','sn_creat_500','gn_prework','sn_eaas'],
+    buscar: ['Platinum Whey Protein 2 Lb','Creatina 500g Pote','Pre Work Gold','EAA'],
     precio: 0,
     color: '#E91E63'
   }
 ];
 
-function getComboStock(combo){
-  var min = Infinity;
-  combo.productos.forEach(function(pid){
-    var p = PRODUCTS.find(function(x){return x.id===pid});
-    if(p){
-      var total = p.flavors.reduce(function(s,f){return s+f.stock},0);
-      if(total < min) min = total;
-    } else { min = 0; }
-  });
-  return min === Infinity ? 0 : min;
+function _resolverComboProductos(combo){
+  return combo.buscar.map(function(kw){
+    return _buscarProducto(kw);
+  }).filter(Boolean);
 }
 
-function getComboProductNames(combo){
-  return combo.productos.map(function(pid){
-    var p = PRODUCTS.find(function(x){return x.id===pid});
-    return p ? p.name : pid;
+function getComboStock(combo){
+  var prods = _resolverComboProductos(combo);
+  if(prods.length === 0) return 0;
+  var min = Infinity;
+  prods.forEach(function(p){
+    var total = p.flavors.reduce(function(s,f){return s+f.stock},0);
+    if(total < min) min = total;
   });
+  return min === Infinity ? 0 : min;
 }
 
 function mostrarCombos(){
@@ -8719,14 +8727,19 @@ function mostrarCombos(){
   var grid = document.getElementById('combosGrid');
   sec.style.display = 'block';
   grid.innerHTML = COMBOS.map(function(c){
+    var prods = _resolverComboProductos(c);
     var stock = getComboStock(c);
-    var nombres = getComboProductNames(c);
-    var itemsHtml = nombres.map(function(n){
-      return '<div style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:#ccc">'
-        + '<span style="color:'+c.color+'">✦</span> ' + n + '</div>';
-    }).join('');
+    var itemsHtml = prods.length > 0
+      ? prods.map(function(p){
+          return '<div style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:#ccc">'
+            + '<span style="color:'+c.color+'">✦</span> ' + p.name + (p.brand?' <span style="color:#666;font-size:.7rem">('+ p.brand +')</span>':'') + '</div>';
+        }).join('')
+      : c.buscar.map(function(n){
+          return '<div style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:#666">'
+            + '<span style="color:'+c.color+'">✦</span> ' + n + '</div>';
+        }).join('');
     var stockColor = stock===0?'#ff4444':stock<=3?'#FFA500':'#00E676';
-    var stockText = stock===0?'Sin stock':stock+' disponibles';
+    var stockText = stock===0?(prods.length===0?'Cargando...':'Sin stock'):stock+' disponibles';
     var precioHtml = c.precio > 0
       ? '<div style="font-family:Bebas Neue,sans-serif;font-size:1.8rem;background:linear-gradient(90deg,'+c.color+',#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:8px">$'+c.precio.toLocaleString('es-AR')+'</div>'
       : '<div style="font-size:.85rem;color:'+c.color+';font-weight:700;margin-top:8px">📩 Consultá precio por WhatsApp</div>';
@@ -8744,7 +8757,7 @@ function mostrarCombos(){
       + precioHtml
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">'
       + '<span style="font-size:.75rem;color:'+stockColor+'">● '+stockText+'</span>'
-      + '<span style="font-size:.68rem;color:#666">'+c.productos.length+' productos</span>'
+      + '<span style="font-size:.68rem;color:#666">'+c.buscar.length+' productos</span>'
       + '</div>'
       + addBtnHtml
       + '</div></div>';
@@ -8754,16 +8767,14 @@ function mostrarCombos(){
 function agregarCombo(comboId){
   var combo = COMBOS.find(function(c){return c.id===comboId});
   if(!combo || combo.precio<=0) return;
+  var prods = _resolverComboProductos(combo);
+  if(prods.length===0){ showToast('❌ Productos no encontrados'); return; }
   var stock = getComboStock(combo);
   if(stock<=0){ showToast('❌ Combo sin stock'); return; }
-  // Agregar cada producto del combo al carrito
-  combo.productos.forEach(function(pid){
-    var p = PRODUCTS.find(function(x){return x.id===pid});
-    if(p){
-      var flav = p.flavors[0];
-      if(flav && flav.stock > 0){
-        addToCart(pid, flav.name, 1);
-      }
+  prods.forEach(function(p){
+    var flav = p.flavors[0];
+    if(flav && flav.stock > 0){
+      addToCart(p.id, flav.name, 1);
     }
   });
   showToast('✅ ' + combo.nombre + ' agregado al carrito');
