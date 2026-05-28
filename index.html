@@ -728,14 +728,14 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 .wa-float:hover{transform:scale(1.1)}
 
 /* Scroll top */
-.scroll-top-btn{width:30px;height:30px;border-radius:50%;background:rgba(255,0,153,.25);
-  border:1.5px solid rgba(255,0,153,.5);color:var(--cyan);font-size:.85rem;
+.scroll-top-btn{width:30px;height:30px;border-radius:50%;background:rgba(0,200,255,.12);
+  border:1.5px solid rgba(0,200,255,.5);color:#00C8FF;font-size:.85rem;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:opacity .3s,transform .3s;font-weight:700;
   opacity:0;pointer-events:none;transform:scale(0.7)}
 .scroll-top-btn.visible{opacity:1;pointer-events:auto;transform:scale(1)}
 .scroll-top-btn.visible{display:flex}
-.scroll-top-btn:hover{background:rgba(255,0,153,.4);transform:translateY(-3px)}
+.scroll-top-btn:hover{background:rgba(0,200,255,.25);transform:translateY(-3px)}
 
 @media(max-width:600px){
   .fab-group{bottom:14px;right:10px;gap:6px}
@@ -8614,61 +8614,159 @@ loadReviews();
 // ── COMBOS ──
 const COMBOS = [
   {
-    nombre: 'Combo Inicio',
-    emoji: '🚀',
-    desc: 'Proteína + Creatina — Los dos esenciales para empezar a entrenar en serio.',
-    items: ['proteina','creatina'],
-    descuento: 8,
+    id: 'combo_principiante',
+    nombre: '💥 Combo Principiante',
+    desc: 'Los 2 básicos para arrancar a entrenar en serio. Proteína para la recuperación + Creatina para la fuerza.',
+    productos: ['sn_whey_dp','sn_creat_doy'],
+    precio: 0,
     color: '#00C8FF'
   },
   {
-    nombre: 'Combo Rendimiento',
-    emoji: '⚡',
-    desc: 'Pre-entreno + Creatina + Aminoácidos — Para entrenar al máximo nivel.',
-    items: ['preworkout','creatina','aminoacido'],
-    descuento: 10,
+    id: 'combo_fuerza',
+    nombre: '🏋️ Combo Fuerza Total',
+    desc: 'Creatina para potencia + Pre-entreno para energía explosiva + BCAAs para no catabolizar.',
+    productos: ['sn_creat_pote','sn_tnt','sn_mtor'],
+    precio: 0,
     color: '#FF0099'
   },
   {
-    nombre: 'Combo Salud',
-    emoji: '💊',
-    desc: 'Colágeno + Magnesio + Omega 3 — Base para salud articular y bienestar.',
-    items: ['colageno','magnesio'],
-    descuento: 7,
+    id: 'combo_masa',
+    nombre: '💪 Combo Masa Muscular',
+    desc: 'Gainer hipercalórico + Creatina + Glutamina. La tríada para ganar volumen rápido.',
+    productos: ['sn_mutant','sn_creat_500','sn_glut'],
+    precio: 0,
+    color: '#9933FF'
+  },
+  {
+    id: 'combo_definicion',
+    nombre: '🔥 Combo Definición',
+    desc: 'Proteína baja en grasa + Quemador + L-Carnitina. Perdé grasa sin perder músculo.',
+    productos: ['gn_ripped','sn_thermo','sn_lcarnitina'],
+    precio: 0,
+    color: '#FFA500'
+  },
+  {
+    id: 'combo_salud',
+    nombre: '🧬 Combo Salud & Bienestar',
+    desc: 'Omega 3 (cardiovascular) + Magnesio (sueño y calambres) + Multivitamínico. Tu base diaria de salud.',
+    productos: ['sn_omega3','sn_citr60','sn_multi'],
+    precio: 0,
     color: '#00E676'
   },
   {
-    nombre: 'Combo Definición',
-    emoji: '🔥',
-    desc: 'Proteína + Quemador — Para perder grasa manteniendo la masa muscular.',
-    items: ['proteina','quemador'],
-    descuento: 8,
-    color: '#FFA500'
+    id: 'combo_recuperacion',
+    nombre: '🛌 Combo Recuperación Nocturna',
+    desc: 'ZMA para testosterona y sueño + Magnesio para relajar los músculos + Glutamina para reparar fibras.',
+    productos: ['sn_zma','grg_citr','sn_glut'],
+    precio: 0,
+    color: '#7B68EE'
+  },
+  {
+    id: 'combo_mujer',
+    nombre: '👑 Combo Mujer Fit',
+    desc: 'Proteína By Pampita + Colágeno con Hialurónico + Quemador Woman. Todo lo que necesitás para verte y sentirte increíble.',
+    productos: ['wo_prot','wo_colageno','wo_fatburner'],
+    precio: 0,
+    color: '#FF69B4'
+  },
+  {
+    id: 'combo_resistencia',
+    nombre: '🏃 Combo Resistencia & Cardio',
+    desc: 'Hidratación intra-entreno + BCAAs anti-catabolismo + L-Carnitina para usar grasa como energía. Ideal runners y CrossFit.',
+    productos: ['sn_hydroplus','ena_bcaa','ena_lcarnitina'],
+    precio: 0,
+    color: '#00BCD4'
+  },
+  {
+    id: 'combo_articulaciones',
+    nombre: '🦴 Combo Articulaciones & Piel',
+    desc: 'Colágeno hidrolizado + Omega 3 antiinflamatorio + Vitamina C para síntesis de colágeno. Articulaciones sanas y piel firme.',
+    productos: ['gn_col200p','lap_omega3','sn_vitc'],
+    precio: 0,
+    color: '#26A69A'
+  },
+  {
+    id: 'combo_bestia',
+    nombre: '🦍 Combo Bestia Mode',
+    desc: 'El pack completo: Proteína Premium + Creatina 500g + Pre-entreno + Aminoácidos. Para quienes van con todo.',
+    productos: ['sn_plat_2lb','sn_creat_500','gn_prework','sn_eaas'],
+    precio: 0,
+    color: '#E91E63'
   }
 ];
+
+function getComboStock(combo){
+  var min = Infinity;
+  combo.productos.forEach(function(pid){
+    var p = PRODUCTS.find(function(x){return x.id===pid});
+    if(p){
+      var total = p.flavors.reduce(function(s,f){return s+f.stock},0);
+      if(total < min) min = total;
+    } else { min = 0; }
+  });
+  return min === Infinity ? 0 : min;
+}
+
+function getComboProductNames(combo){
+  return combo.productos.map(function(pid){
+    var p = PRODUCTS.find(function(x){return x.id===pid});
+    return p ? p.name : pid;
+  });
+}
 
 function mostrarCombos(){
   var sec = document.getElementById('combosSection');
   var grid = document.getElementById('combosGrid');
   sec.style.display = 'block';
   grid.innerHTML = COMBOS.map(function(c){
-    var catLinks = c.items.map(function(cat){
-      var emoji = {'proteina':'🥛','creatina':'⚡','aminoacido':'🧬','preworkout':'🔥','quemador':'🌡️','colageno':'🦴','magnesio':'🧲'}[cat]||'📦';
-      var nombre = {'proteina':'Proteína','creatina':'Creatina','aminoacido':'Aminoácidos','preworkout':'Pre-Entreno','quemador':'Quemador','colageno':'Colágeno','magnesio':'Magnesio/Omega3'}[cat]||cat;
-      return '<span style="background:rgba(255,255,255,.06);padding:4px 10px;border-radius:20px;font-size:.78rem;cursor:pointer" onclick="setCategory(\''+cat+'\')">' + emoji + ' ' + nombre + '</span>';
-    }).join(' ');
-    return '<div style="background:var(--dark2);border:1px solid '+c.color+'33;border-radius:12px;overflow:hidden">'
-      + '<div style="background:'+c.color+'15;border-bottom:1px solid '+c.color+'33;padding:14px;text-align:center">'
-      + '<span style="font-size:2rem">' + c.emoji + '</span>'
-      + '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:.08em;color:'+c.color+';margin-top:4px">' + c.nombre + '</div>'
-      + '<div style="background:'+c.color+';color:#000;display:inline-block;padding:2px 12px;border-radius:20px;font-size:.75rem;font-weight:700;margin-top:6px">' + c.descuento + '% OFF</div>'
+    var stock = getComboStock(c);
+    var nombres = getComboProductNames(c);
+    var itemsHtml = nombres.map(function(n){
+      return '<div style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:#ccc">'
+        + '<span style="color:'+c.color+'">✦</span> ' + n + '</div>';
+    }).join('');
+    var stockColor = stock===0?'#ff4444':stock<=3?'#FFA500':'#00E676';
+    var stockText = stock===0?'Sin stock':stock+' disponibles';
+    var precioHtml = c.precio > 0
+      ? '<div style="font-family:Bebas Neue,sans-serif;font-size:1.8rem;background:linear-gradient(90deg,'+c.color+',#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:8px">$'+c.precio.toLocaleString('es-AR')+'</div>'
+      : '<div style="font-size:.85rem;color:'+c.color+';font-weight:700;margin-top:8px">📩 Consultá precio por WhatsApp</div>';
+    var addBtnHtml = stock > 0 && c.precio > 0
+      ? '<button onclick="agregarCombo(\''+c.id+'\')" style="width:100%;margin-top:10px;padding:10px;border:none;border-radius:8px;background:'+c.color+';color:#000;font-family:Rajdhani,sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;transition:opacity .2s">🛒 Agregar Combo</button>'
+      : '';
+    return '<div style="background:var(--dark2);border:1px solid '+c.color+'33;border-radius:12px;overflow:hidden;transition:border-color .3s" onmouseenter="this.style.borderColor=\''+c.color+'88\'" onmouseleave="this.style.borderColor=\''+c.color+'33\'">'
+      + '<div style="background:'+c.color+'10;border-bottom:1px solid '+c.color+'22;padding:16px">'
+      + '<div style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;letter-spacing:.06em;color:'+c.color+'">' + c.nombre + '</div>'
+      + '<p style="color:#999;font-size:.82rem;margin-top:6px;line-height:1.5">' + c.desc + '</p>'
       + '</div>'
       + '<div style="padding:14px">'
-      + '<p style="color:#999;font-size:.85rem;margin-bottom:12px;line-height:1.5">' + c.desc + '</p>'
-      + '<div style="display:flex;gap:6px;flex-wrap:wrap">' + catLinks + '</div>'
-      + '<div style="margin-top:12px;font-size:.78rem;color:var(--gray)">💡 Agregá productos de cada categoría al carrito y el descuento se aplica automáticamente en el total.</div>'
+      + '<div style="font-size:.68rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gray);margin-bottom:8px">Incluye:</div>'
+      + itemsHtml
+      + precioHtml
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">'
+      + '<span style="font-size:.75rem;color:'+stockColor+'">● '+stockText+'</span>'
+      + '<span style="font-size:.68rem;color:#666">'+c.productos.length+' productos</span>'
+      + '</div>'
+      + addBtnHtml
       + '</div></div>';
   }).join('');
+}
+
+function agregarCombo(comboId){
+  var combo = COMBOS.find(function(c){return c.id===comboId});
+  if(!combo || combo.precio<=0) return;
+  var stock = getComboStock(combo);
+  if(stock<=0){ showToast('❌ Combo sin stock'); return; }
+  // Agregar cada producto del combo al carrito
+  combo.productos.forEach(function(pid){
+    var p = PRODUCTS.find(function(x){return x.id===pid});
+    if(p){
+      var flav = p.flavors[0];
+      if(flav && flav.stock > 0){
+        addToCart(pid, flav.name, 1);
+      }
+    }
+  });
+  showToast('✅ ' + combo.nombre + ' agregado al carrito');
 }
 
 // ── FAQ ──
