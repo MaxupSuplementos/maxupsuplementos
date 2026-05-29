@@ -8783,18 +8783,18 @@ function mostrarCombos(){
   grid.innerHTML = COMBOS.map(function(c){
     var slotsHtml = c.slots.map(function(slot, i){
       var prods = _getProductsByCat(slot.cat);
-      var opts = '<option value="">— '+slot.label+' —</option>';
+      var opts = '<option value="" style="background:#1a1a2e;color:'+c.color+'">— '+slot.label+' —</option>';
       opts += prods.map(function(p){
         var stock = p.flavors.reduce(function(s,f){return s+f.stock},0);
         var precio = p.price || 0;
-        return '<option value="'+p.id+'">'+p.name+(p.brand?' ('+p.brand+')':'')
+        return '<option value="'+p.id+'" style="background:#1a1a2e;color:#e0e0e0;padding:6px">'+p.name+(p.brand?' ('+p.brand+')':'')
           +' — $'+precio.toLocaleString('es-AR')
           +(stock<=3?' ⚠️ Últimas '+stock:'')
           +'</option>';
       }).join('');
       return '<div style="margin-bottom:8px">'
         + '<div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:'+c.color+';margin-bottom:4px">'+slot.label+'</div>'
-        + '<select id="combo-sel-'+c.id+'-'+i+'" onchange="actualizarComboPrice(\''+c.id+'\')" style="width:100%;background:rgba(255,255,255,.06);border:1px solid '+c.color+'44;color:#fff;font-family:Rajdhani,sans-serif;font-size:.82rem;font-weight:600;padding:8px 10px;border-radius:6px;outline:none;cursor:pointer;appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'%3E%3Cpath d=\'M1 1l5 5 5-5\' stroke=\'%2300C8FF\' stroke-width=\'1.5\' fill=\'none\' stroke-linecap=\'round\'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 10px center;padding-right:30px">'
+        + '<select id="combo-sel-'+c.id+'-'+i+'" onchange="actualizarComboPrice(\''+c.id+'\')" style="width:100%;background:#1a1a2e;border:1.5px solid '+c.color+'66;color:'+c.color+';font-family:Rajdhani,sans-serif;font-size:.82rem;font-weight:600;padding:8px 10px;border-radius:6px;outline:none;cursor:pointer;appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'%3E%3Cpath d=\'M1 1l5 5 5-5\' stroke=\''+encodeURIComponent(c.color)+'\' stroke-width=\'1.5\' fill=\'none\' stroke-linecap=\'round\'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 10px center;padding-right:30px">'
         + opts + '</select>'
         + (prods.length===0?'<div style="font-size:.72rem;color:#ff4444;margin-top:3px">Sin productos disponibles</div>':'')
         + '</div>';
