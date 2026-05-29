@@ -8754,7 +8754,31 @@ function _comboPrice(comboId){
   return total;
 }
 
+function _comboThumbUrl(src){
+  if(!src) return '';
+  // Si es weserv, pedir versión chica para carga rápida
+  if(src.indexOf('weserv.nl')!==-1) return src + (src.indexOf('?')!==-1?'&':'?') + 'w=80&h=80&fit=cover';
+  return src;
+}
 function actualizarComboPrice(comboId){
+  var combo = COMBOS.find(function(c){return c.id===comboId});
+  // Actualizar miniaturas
+  if(combo){
+    combo.slots.forEach(function(slot, i){
+      var sel = document.getElementById('combo-sel-'+comboId+'-'+i);
+      var thumb = document.getElementById('combo-thumb-'+comboId+'-'+i);
+      if(!sel || !thumb) return;
+      var p = sel.value ? PRODUCTS.find(function(x){return x.id===sel.value}) : null;
+      if(p){
+        var imgSrc = p.img || getFallbackImg(p.cat);
+        thumb.innerHTML = '<img src="'+_comboThumbUrl(imgSrc)+'" alt="" style="width:100%;height:100%;object-fit:cover" loading="lazy">';
+        thumb.style.borderColor = (combo.color || '#00C8FF') + '88';
+      } else {
+        thumb.innerHTML = '<span style="font-size:.6rem;color:#555">📦</span>';
+        thumb.style.borderColor = (combo.color || '#00C8FF') + '33';
+      }
+    });
+  }
   var total = _comboPrice(comboId);
   var descEl = document.getElementById('combo-total-'+comboId);
   var btnEl = document.getElementById('combo-btn-'+comboId);
@@ -8794,8 +8818,13 @@ function mostrarCombos(){
       }).join('');
       return '<div style="margin-bottom:8px">'
         + '<div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:'+c.color+';margin-bottom:4px">'+slot.label+'</div>'
-        + '<select id="combo-sel-'+c.id+'-'+i+'" onchange="actualizarComboPrice(\''+c.id+'\')" style="width:100%;background:#1a1a2e;border:1.5px solid '+c.color+'66;color:'+c.color+';font-family:Rajdhani,sans-serif;font-size:.82rem;font-weight:600;padding:8px 10px;border-radius:6px;outline:none;cursor:pointer;appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'%3E%3Cpath d=\'M1 1l5 5 5-5\' stroke=\''+encodeURIComponent(c.color)+'\' stroke-width=\'1.5\' fill=\'none\' stroke-linecap=\'round\'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 10px center;padding-right:30px">'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        + '<div id="combo-thumb-'+c.id+'-'+i+'" style="width:40px;height:40px;border-radius:6px;overflow:hidden;flex-shrink:0;background:rgba(255,255,255,.04);border:1px solid '+c.color+'33;display:flex;align-items:center;justify-content:center">'
+        + '<span style="font-size:.6rem;color:#555">📦</span>'
+        + '</div>'
+        + '<select id="combo-sel-'+c.id+'-'+i+'" onchange="actualizarComboPrice(\''+c.id+'\')" style="flex:1;min-width:0;background:#1a1a2e;border:1.5px solid '+c.color+'66;color:'+c.color+';font-family:Rajdhani,sans-serif;font-size:.82rem;font-weight:600;padding:8px 10px;border-radius:6px;outline:none;cursor:pointer;appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'%3E%3Cpath d=\'M1 1l5 5 5-5\' stroke=\''+encodeURIComponent(c.color)+'\' stroke-width=\'1.5\' fill=\'none\' stroke-linecap=\'round\'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 10px center;padding-right:30px">'
         + opts + '</select>'
+        + '</div>'
         + (prods.length===0?'<div style="font-size:.72rem;color:#ff4444;margin-top:3px">Sin productos disponibles</div>':'')
         + '</div>';
     }).join('');
