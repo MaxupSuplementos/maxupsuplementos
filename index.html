@@ -6014,7 +6014,7 @@ function _inferirCategoria(nombre) {
 
   // ACCESORIOS — antes de barras para evitar "tope barra olimpica"
   if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|munequera|hand.{0,8}grip|ejercitador.{0,10}dedo|mini.{0,8}batidora|batidora.{0,8}pila|bolso|scoop|bidon|llavero|vincha|tope.{0,8}barra|latex|banda.{0,30}elastic|tobillera/.test(n)) return 'accesorio';
-  if (/botella|shaker/.test(n)) return 'accesorio';
+  if (/botella|shaker|new.{0,3}protein/.test(n)) return 'accesorio';
 
   // CREATINA
   if (/creatin/.test(n)) return 'creatina';
