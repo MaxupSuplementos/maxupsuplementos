@@ -302,7 +302,7 @@ body.light .footer{background:rgba(0,0,0,.03)}
   color:var(--cyan);margin-bottom:4px}
 .prod-name{font-family:Bebas Neue,sans-serif;font-size:1.25rem;letter-spacing:.04em;
   line-height:1.1;margin-bottom:6px}
-.prod-desc{font-size:.8rem;color:var(--gray);line-height:1.4;flex:1;margin-bottom:8px;
+.prod-desc{font-size:.8rem;color:var(--gray);line-height:1.4;flex:1;margin-bottom:8px;display:none;
   max-height:42px;overflow:hidden;position:relative}
 .prod-desc.expanded{max-height:none}
 .read-more{font-size:.75rem;color:var(--cyan);cursor:pointer;font-weight:600;
@@ -564,7 +564,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   .prod-img-wrap{height:130px!important}
   .prod-card{border-radius:8px}
   .prod-body{padding:8px!important}
-  .prod-desc{max-height:34px!important;font-size:.75rem!important}
+  .prod-desc{display:none!important}
   .flavor-select{font-size:.78rem!important;padding:5px 8px!important}
   .flavor-label{font-size:.6rem!important;margin-bottom:3px!important}
   /* Comparador mobile */
@@ -833,21 +833,22 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 .faq-open > div:last-child{max-height:200px!important;padding:0 20px!important}
 
 /* ── CARRUSEL NUEVOS INGRESOS ── */
-.nuevos-section{padding:20px 32px 0;max-width:1440px;margin:0 auto;position:relative;z-index:1}
-.nuevos-track{display:flex;gap:14px;overflow-x:auto;scroll-behavior:smooth;padding:16px 0 12px;scrollbar-width:none}
+.nuevos-section{padding:14px 32px 0;max-width:1440px;margin:0 auto;position:relative;z-index:1}
+.nuevos-track{display:flex;gap:10px;overflow-x:auto;scroll-behavior:smooth;padding:10px 0 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;cursor:grab}
+.nuevos-track:active{cursor:grabbing}
 .nuevos-track::-webkit-scrollbar{display:none}
-.nuevos-card{min-width:180px;max-width:180px;background:var(--dark2);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .2s;flex-shrink:0}
-.nuevos-card:hover{border-color:rgba(0,200,255,.4);transform:translateY(-3px)}
+.nuevos-card{min-width:130px;max-width:130px;background:var(--dark2);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .2s;flex-shrink:0}
+.nuevos-card:hover{border-color:rgba(0,200,255,.4);transform:translateY(-2px)}
 .nuevos-card img{width:100%;aspect-ratio:1;object-fit:cover;background:#111}
-.nuevos-card-body{padding:10px}
-.nuevos-card-brand{font-size:.65rem;color:var(--cyan);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-.nuevos-card-name{font-size:.8rem;font-weight:600;line-height:1.3;margin:3px 0}
-.nuevos-card-price{font-size:.95rem;font-weight:800;color:var(--cyan);font-family:Bebas Neue,sans-serif}
-.nuevos-nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:rgba(0,200,255,.15);border:1px solid rgba(0,200,255,.3);color:var(--cyan);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;transition:background .2s}
+.nuevos-card-body{padding:6px 8px 8px}
+.nuevos-card-brand{font-size:.55rem;color:var(--cyan);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.nuevos-card-name{font-size:.68rem;font-weight:600;line-height:1.25;margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nuevos-card-price{font-size:.82rem;font-weight:800;color:var(--cyan);font-family:Bebas Neue,sans-serif}
+.nuevos-nav{position:absolute;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:rgba(0,200,255,.15);border:1px solid rgba(0,200,255,.3);color:var(--cyan);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;transition:background .2s}
 .nuevos-nav:hover{background:rgba(0,200,255,.3)}
-.nuevos-nav.prev{left:8px}
-.nuevos-nav.next{right:8px}
-@media(max-width:600px){.nuevos-card{min-width:150px;max-width:150px}}
+.nuevos-nav.prev{left:4px}
+.nuevos-nav.next{right:4px}
+@media(max-width:600px){.nuevos-card{min-width:110px;max-width:110px}}
 
 /* ── AVISAR STOCK ── */
 .avisar-stock-btn{width:100%;padding:8px;border:1px solid rgba(255,165,0,.3);background:rgba(255,165,0,.08);color:#FFA500;border-radius:8px;font-family:Rajdhani,sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.04em}
@@ -983,7 +984,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <img id="heroLogo" src="logo.png" class="hero-logo" alt="MAXUP">
     <h1>MAXUP<br>SUPLEMENTOS</h1>
     <p>Los mejores suplementos deportivos al mejor precio. +170 productos de las principales marcas. Stock real, envío rápido a todo el país.</p>
-    <div class="hero-btns">
+    <div class="hero-btns" style="display:none">
       <a href="#catalogo" class="btn btn-primary">Ver Catálogo</a>
       <a href="https://wa.me/5491168461457" target="_blank" class="btn btn-outline btn-wa">📲 Pedir por WhatsApp</a>
     </div>
@@ -1006,9 +1007,9 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 
 <!-- ── CARRUSEL NUEVOS INGRESOS ── -->
 <div class="nuevos-section" id="nuevosSection" style="display:none">
-  <div style="text-align:center;margin-bottom:4px">
-    <span style="font-size:.7rem;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan)">Recién llegados</span>
-    <h2 style="font-family:Bebas Neue,sans-serif;font-size:clamp(1.3rem,3vw,1.8rem);letter-spacing:.05em;margin-top:4px">✨ NUEVOS INGRESOS</h2>
+  <div style="text-align:center;margin-bottom:2px">
+    <span style="font-size:.58rem;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan)">Recién llegados</span>
+    <h2 style="font-family:Bebas Neue,sans-serif;font-size:clamp(1rem,2.5vw,1.3rem);letter-spacing:.05em;margin-top:2px">✨ NUEVOS INGRESOS</h2>
   </div>
   <button class="nuevos-nav prev" onclick="document.getElementById('nuevosTrack').scrollBy({left:-200,behavior:'smooth'})">‹</button>
   <button class="nuevos-nav next" onclick="document.getElementById('nuevosTrack').scrollBy({left:200,behavior:'smooth'})">›</button>
@@ -9449,6 +9450,16 @@ var _origRenderAll = renderAll;
 renderAll = function(){
   _origRenderAll();
   renderNuevosIngresos();
+  // Drag-to-scroll para el carrusel (touch + mouse)
+  var track = document.getElementById('nuevosTrack');
+  if(track && !track._dragInit){
+    track._dragInit = true;
+    var isDown=false, startX=0, scrollL=0;
+    track.addEventListener('mousedown',function(e){isDown=true;startX=e.pageX-track.offsetLeft;scrollL=track.scrollLeft;track.style.cursor='grabbing'});
+    track.addEventListener('mouseleave',function(){isDown=false;track.style.cursor='grab'});
+    track.addEventListener('mouseup',function(){isDown=false;track.style.cursor='grab'});
+    track.addEventListener('mousemove',function(e){if(!isDown)return;e.preventDefault();track.scrollLeft=scrollL-(e.pageX-track.offsetLeft-startX)});
+  }
 };
 
 // ── AGREGAR BOTÓN AVISAR STOCK EN PRODUCTOS AGOTADOS ──
