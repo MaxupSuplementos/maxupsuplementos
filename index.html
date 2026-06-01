@@ -716,16 +716,19 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 .comp-btn{padding:11px 28px;background:var(--grad);color:#000;border:none;
   border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:1.1rem;cursor:pointer}
 
-/* ── MARCAS CARRUSEL ── */
-.marcas-section{padding:50px 24px;overflow:hidden;border-top:1px solid rgba(255,255,255,.05)}
-.marcas-track{display:flex;gap:32px;animation:slideMarcas 45s linear infinite;width:max-content}
-.marcas-track:hover{animation-play-state:paused}
-.marca-chip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-  border-radius:8px;padding:10px 20px;font-family:Bebas Neue,sans-serif;
-  font-size:1rem;letter-spacing:.1em;color:#ccc;white-space:nowrap;cursor:pointer;
-  transition:all .2s}
-.marca-chip:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,200,255,.08)}
-@keyframes slideMarcas{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+/* ── FILTROS DESPLEGABLES ── */
+.filtros-dropdowns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:28px}
+.filtro-group{flex:1;min-width:200px;max-width:340px}
+.filtro-select{width:100%;padding:12px 18px;background:#1a1a2e;color:#e0e0e0;border:1px solid rgba(0,200,255,.25);
+  border-radius:10px;font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:.08em;
+  cursor:pointer;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300c8ff' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;transition:all .25s}
+.filtro-select:hover,.filtro-select:focus{border-color:var(--cyan);box-shadow:0 0 16px rgba(0,200,255,.15);outline:none}
+.filtro-select option{background:#1a1a2e;color:#e0e0e0;padding:8px}
+body.light .filtro-select{background:#f5f5f5;color:#333;border-color:rgba(0,150,200,.3)}
+body.light .filtro-select option{background:#f5f5f5;color:#333}
+@media(max-width:600px){.filtros-dropdowns{flex-direction:column;align-items:stretch}.filtro-group{max-width:100%}}
 
 /* ── TESTIMONIOS ── */
 .testim-section{padding:70px 24px;background:rgba(255,0,153,.02)}
@@ -1025,40 +1028,32 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
     <p class="section-desc">Precios y stock real actualizado. Filtrá por categoría o buscá tu producto.</p>
   </div>
   <div id="searchInfo" class="search-info"></div>
-  <!-- ── MARCAS (inline sobre catálogo) ── -->
-<div style="overflow:hidden;margin-bottom:20px">
-  <div class="marcas-track" id="marcasTrack"></div>
-</div>
-
-<div class="precio-filter">
-    <label>Precio máx:</label>
-    <input type="range" class="precio-range" id="precioRange" min="0" max="200000" value="200000" step="1000" oninput="filtrarPrecio(this.value)">
-    <span class="precio-val" id="precioVal">Sin límite</span>
-  </div>
-  <!-- Filtro precio visual badges -->
-  <div class="precio-badges" id="precioBadges">
-    <button class="precio-badge active" data-max="999999" onclick="filtroPrecioBadge(999999,this)">Todos</button>
-    <button class="precio-badge" data-max="25000" onclick="filtroPrecioBadge(25000,this)">💲 Hasta $25.000</button>
-    <button class="precio-badge" data-max="50000" onclick="filtroPrecioBadge(50000,this)">💲💲 Hasta $50.000</button>
-    <button class="precio-badge" data-max="100000" onclick="filtroPrecioBadge(100000,this)">💲💲💲 Hasta $100.000</button>
-    <button class="precio-badge" data-max="100001" onclick="filtroPrecioBadge(-100001,this)">🔥 Más de $100.000</button>
-  </div>
-  <div class="cat-tabs" id="catTabs">
-    <button class="cat-tab active" data-cat="all">Todos</button>
-    <button class="cat-tab" data-cat="favoritos" style="border-color:rgba(255,0,153,.3);color:#FF0099">❤️ Favoritos</button>
-    <button class="cat-tab" data-cat="proteina">🥛 Proteínas</button>
-    <button class="cat-tab" data-cat="gainer">💪 Gainers</button>
-    <button class="cat-tab" data-cat="creatina">⚡ Creatinas</button>
-    <button class="cat-tab" data-cat="aminoacido">🧬 Aminoácidos</button>
-    <button class="cat-tab" data-cat="vitamin">💊 Vitaminas</button>
-    <button class="cat-tab" data-cat="magnesio">🧲 Magnesio / Omega 3</button>
-    <button class="cat-tab" data-cat="preworkout">🔥 Pre-Entreno</button>
-    <button class="cat-tab" data-cat="quemador">🌡️ Quemadores</button>
-    <button class="cat-tab" data-cat="colageno">🦴 Colágeno</button>
-    <button class="cat-tab" data-cat="hidratacion">💧 Hidratación</button>
-    <button class="cat-tab" data-cat="barra">🍫 Barras & Snacks</button>
-    <button class="cat-tab" data-cat="accesorio">🏋️ Accesorios</button>
-    <button class="cat-tab" data-cat="combo" style="border-color:rgba(153,51,255,.3);color:#9933FF" onclick="mostrarCombos()">🎁 Combos</button>
+  <!-- ── FILTROS DESPLEGABLES ── -->
+  <div class="filtros-dropdowns" id="filtrosDropdowns">
+    <div class="filtro-group">
+      <select class="filtro-select" id="filtroBrand" onchange="onBrandFilter(this.value)">
+        <option value="all">FILTRA POR MARCA</option>
+      </select>
+    </div>
+    <div class="filtro-group">
+      <select class="filtro-select" id="filtroTipo" onchange="onTipoFilter(this.value)">
+        <option value="all">FILTRA POR TIPO</option>
+        <option value="favoritos">❤️ Favoritos</option>
+        <option value="proteina">🥛 Proteinas</option>
+        <option value="gainer">💪 Gainers</option>
+        <option value="creatina">⚡ Creatinas</option>
+        <option value="aminoacido">🧬 Aminoacidos</option>
+        <option value="vitamin">💊 Vitaminas</option>
+        <option value="magnesio">🧲 Magnesio / Omega 3</option>
+        <option value="preworkout">🔥 Pre-Entreno</option>
+        <option value="quemador">🌡️ Quemadores</option>
+        <option value="colageno">🦴 Colageno</option>
+        <option value="hidratacion">💧 Hidratacion</option>
+        <option value="barra">🍫 Barras & Snacks</option>
+        <option value="accesorio">🏋️ Accesorios</option>
+        <option value="combo">🎁 Combos</option>
+      </select>
+    </div>
   </div>
 
   <!-- COMBOS -->
@@ -4845,6 +4840,7 @@ var PRODUCTS_ESTATICO = PRODUCTS.slice(); // Copia estática para el comparador
    RENDER ENGINE
 ════════════════════════════════════════════════════════ */
 let activeCat = 'all';
+let activeBrand = 'all';
 let activeSearch = '';
 let paginaActual = 1;
 const ITEMS_POR_PAGINA = 30;
@@ -4852,6 +4848,7 @@ const ITEMS_POR_PAGINA = 30;
 function syncURLIndex(){
   var p=new URLSearchParams();
   if(activeCat!=='all')p.set('cat',activeCat);
+  if(activeBrand!=='all')p.set('marca',activeBrand);
   if(activeSearch)p.set('buscar',activeSearch);
   if(paginaActual>1)p.set('pag',paginaActual);
   if(typeof precioMax!=='undefined'&&precioMax<200000)p.set('precio',precioMax);
@@ -4861,7 +4858,8 @@ function syncURLIndex(){
 
 function readURLIndex(){
   var p=new URLSearchParams(location.search);
-  if(p.get('cat')){activeCat=p.get('cat');document.querySelectorAll('.cat-tab').forEach(function(t){t.classList.toggle('active',t.dataset.cat===activeCat);});}
+  if(p.get('cat')){activeCat=p.get('cat');var ft=document.getElementById('filtroTipo');if(ft)ft.value=activeCat;}
+  if(p.get('marca')){activeBrand=p.get('marca').toLowerCase();var fb=document.getElementById('filtroBrand');if(fb)fb.value=activeBrand;}
   if(p.get('buscar')){activeSearch=p.get('buscar').toLowerCase().trim();var si=document.getElementById('searchInput');if(si)si.value=p.get('buscar');}
   if(p.get('pag'))paginaActual=parseInt(p.get('pag'))||1;
   if(p.get('precio')&&typeof precioMax!=='undefined'){precioMax=parseInt(p.get('precio'));var r=document.getElementById('precioRange');if(r)r.value=precioMax;var l=document.getElementById('precioVal');if(l)l.textContent=precioMax>=200000?'Sin límite':'$'+precioMax.toLocaleString('es-AR');}
@@ -4947,7 +4945,7 @@ function buildCard(p){
 
   const isFav = _favoritos.indexOf(p.id) >= 0;
   return `
-<div class="prod-card" data-id="${p.id}" data-cat="${p.cat}"
+<div class="prod-card" data-id="${p.id}" data-cat="${p.cat}" data-brand="${(p.brand||'').toLowerCase()}"
      data-search="${(p.name+' '+p.brand+' '+p.cat+' '+p.flavors.map(f=>f.name).join(' ')).toLowerCase()}">
   ${badgeHtml}
   <button class="fav-btn${isFav?' active':''}" onclick="toggleFav('${p.id}',event)" title="Favorito">${isFav?'❤️':'🤍'}</button>
@@ -4998,7 +4996,7 @@ function buildCard(p){
 function renderAll(){
   const grid = document.getElementById('productsGrid');
   grid.innerHTML = PRODUCTS.map(p => buildCard(p)).join('');
-  poblarMarcas();
+  poblarFiltroBrands();
   poblarComparador();
   setTimeout(makeCardsClickable, 100);
   // Aplicar paginación inmediatamente (sin scroll reveal para que funcione bien)
@@ -5015,8 +5013,9 @@ function applyFilters(){
       matchCat = card.dataset.cat==='magnesio' || /magnesio|omega|zma/i.test(card.dataset.search);
     }
     else matchCat = activeCat==='all' || card.dataset.cat===activeCat;
+    const matchBrand = activeBrand==='all' || card.dataset.brand===activeBrand;
     const matchSearch = !activeSearch || card.dataset.search.includes(activeSearch);
-    return matchCat && matchSearch;
+    return matchCat && matchBrand && matchSearch;
   });
   // Reset página si cambió el filtro
   const totalPags = Math.ceil(visibles.length / ITEMS_POR_PAGINA);
@@ -5081,20 +5080,42 @@ function renderPaginacion(total){
 function setCat(cat){
   activeCat = cat;
   paginaActual = 1;
-  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll(`.cat-tab[data-cat="${cat}"]`).forEach(t=>t.classList.add('active'));
+  var sel = document.getElementById('filtroTipo');
+  if(sel) sel.value = cat;
   applyFilters();syncURLIndex();
 }
 
-document.getElementById('catTabs').addEventListener('click',e=>{
-  const tab = e.target.closest('.cat-tab');
-  if(!tab) return;
-  activeCat = tab.dataset.cat;
+function onTipoFilter(val){
+  if(val==='combo'){ mostrarCombos(); return; }
+  activeCat = val;
   paginaActual = 1;
-  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
-  tab.classList.add('active');
+  // Ocultar combos si estaban visibles
+  var cs = document.getElementById('combosSection');
+  if(cs) cs.style.display = 'none';
+  var pg = document.getElementById('productsGrid');
+  if(pg) pg.style.display = '';
   applyFilters();syncURLIndex();
-});
+}
+
+function onBrandFilter(val){
+  activeBrand = val;
+  paginaActual = 1;
+  applyFilters();syncURLIndex();
+}
+
+function poblarFiltroBrands(){
+  var sel = document.getElementById('filtroBrand');
+  if(!sel) return;
+  var marcas = [...new Set(PRODUCTS.map(function(p){return p.brand}).filter(Boolean))].sort();
+  // Mantener la primera opcion "FILTRA POR MARCA"
+  sel.innerHTML = '<option value="all">FILTRA POR MARCA</option>';
+  marcas.forEach(function(m){
+    var opt = document.createElement('option');
+    opt.value = m.toLowerCase();
+    opt.textContent = m;
+    sel.appendChild(opt);
+  });
+}
 
 document.getElementById('searchInput').addEventListener('focus',()=>{
   document.getElementById('catalogo').scrollIntoView({behavior:'smooth', block:'start'});
@@ -5102,9 +5123,12 @@ document.getElementById('searchInput').addEventListener('focus',()=>{
 document.getElementById('searchInput').addEventListener('input',e=>{
   activeSearch = e.target.value.toLowerCase().trim();
   activeCat = 'all';
+  activeBrand = 'all';
   paginaActual = 1;
-  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelector('.cat-tab[data-cat="all"]').classList.add('active');
+  var selTipo = document.getElementById('filtroTipo');
+  var selBrand = document.getElementById('filtroBrand');
+  if(selTipo) selTipo.value = 'all';
+  if(selBrand) selBrand.value = 'all';
   applyFilters();syncURLIndex();
 });
 
@@ -8304,27 +8328,9 @@ function formatearAnalisis(texto) {
 }
 
 // ══════════════════════════════════════════════════════════
-//  MARCAS CARRUSEL
+//  FILTROS DESPLEGABLES (reemplazan carrusel de marcas)
 // ══════════════════════════════════════════════════════════
-function poblarMarcas() {
-  const marcas = [...new Set(PRODUCTS.map(p => p.brand).filter(Boolean))].sort();
-  const track = document.getElementById('marcasTrack');
-  if (!track) return;
-  // Duplicar para loop infinito
-  const items = [...marcas, ...marcas].map(m =>
-    `<div class="marca-chip" onclick="filtrarMarca('${m}')">${m}</div>`
-  ).join('');
-  track.innerHTML = items;
-}
-
-function filtrarMarca(marca) {
-  // Scroll al catálogo y filtrar
-  document.getElementById('catalogo').scrollIntoView({behavior:'smooth'});
-  setTimeout(() => {
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) { searchInput.value = marca; searchInput.dispatchEvent(new Event('input')); }
-  }, 600);
-}
+// poblarFiltroBrands() ya está definido arriba junto con onBrandFilter/onTipoFilter
 
 // ══════════════════════════════════════════════════════════
 //  FILTRO DE PRECIO
@@ -8906,6 +8912,12 @@ function mostrarCombos(){
   var sec = document.getElementById('combosSection');
   var grid = document.getElementById('combosGrid');
   sec.style.display = 'block';
+  // Ocultar grid normal y paginacion
+  var pg = document.getElementById('productsGrid');
+  if(pg) pg.style.display = 'none';
+  var pag = document.getElementById('paginacion');
+  if(pag) pag.style.display = 'none';
+  activeCat = 'combo';
 
   grid.innerHTML = COMBOS.map(function(c){
     var slotsHtml = c.slots.map(function(slot, i){
