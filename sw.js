@@ -1,8 +1,10 @@
 // MAXUP Service Worker — Cache & Offline
-const CACHE_NAME = 'maxup-v3';
+const CACHE_NAME = 'maxup-v4';
 const ASSETS = [
   './',
-  './index.html',
+  './index (3).html',
+  './styles.css',
+  './app.js',
   './logo.png',
   './favicon.png',
   './mantenimiento.png',
