@@ -417,9 +417,11 @@ function galMoveI(id,dir,e){
   var dots=wrap.querySelectorAll('.gal-dot-i');
   var counter=wrap.querySelector('.gal-counter-i');
   var cur=0;slides.forEach(function(s,i){if(s.classList.contains('active'))cur=i;});
-  slides[cur].classList.remove('active');if(dots[cur])dots[cur].classList.remove('active');
+  slides[cur].classList.remove('active');slides[cur].style.display='none';
+  if(dots[cur])dots[cur].classList.remove('active');
   cur=(cur+dir+slides.length)%slides.length;
-  slides[cur].classList.add('active');if(dots[cur])dots[cur].classList.add('active');
+  slides[cur].classList.add('active');slides[cur].style.display='flex';
+  if(dots[cur])dots[cur].classList.add('active');
   if(counter)counter.textContent=(cur+1)+' / '+slides.length;
 }
 function galGoI(id,idx,e){
@@ -428,9 +430,9 @@ function galGoI(id,idx,e){
   var slides=wrap.querySelectorAll('.gal-slide');
   var dots=wrap.querySelectorAll('.gal-dot-i');
   var counter=wrap.querySelector('.gal-counter-i');
-  slides.forEach(function(s){s.classList.remove('active');});
+  slides.forEach(function(s){s.classList.remove('active');s.style.display='none';});
   dots.forEach(function(d){d.classList.remove('active');});
-  if(slides[idx])slides[idx].classList.add('active');
+  if(slides[idx]){slides[idx].classList.add('active');slides[idx].style.display='flex';}
   if(dots[idx])dots[idx].classList.add('active');
   if(counter)counter.textContent=(idx+1)+' / '+slides.length;
 }
