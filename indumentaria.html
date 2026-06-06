@@ -118,6 +118,38 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 .mstock-txt{font-size:.7rem;color:#555;margin-bottom:12px}
 .mwabtn{width:100%;background:var(--grad);color:#000;border:none;border-radius:10px;padding:13px;font-size:.95rem;font-weight:700;cursor:pointer;letter-spacing:.05em;transition:opacity .2s;font-family:"DM Sans",sans-serif}
 .mwabtn:hover{opacity:.88}
+.mwabtn.added{background:#00E676!important;color:#000!important}
+.cart-float-btn{background:none;border:none;font-size:1.3rem;cursor:pointer;position:relative;padding:4px 8px}
+.cart-badge-i{position:absolute;top:-4px;right:-4px;background:var(--pink);color:#fff;font-size:.65rem;font-weight:700;border-radius:50%;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-family:sans-serif}
+.cart-badge-i.hidden{display:none}
+.cart-overlay-i{position:fixed;top:0;right:-100%;width:100%;max-width:400px;height:100%;background:#0d0d1a;z-index:10000;transition:right .3s;box-shadow:-4px 0 20px rgba(0,0,0,.5);display:flex;flex-direction:column}
+.cart-overlay-i.open{right:0}
+.cart-panel-i{display:flex;flex-direction:column;height:100%}
+.cart-header-i{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1)}
+.cart-header-i h3{margin:0;color:#fff;font-size:1.1rem}
+.cart-close-i{background:none;border:none;color:#aaa;font-size:1.3rem;cursor:pointer}
+.cart-items-i{flex:1;overflow-y:auto;padding:12px 16px}
+.cart-empty-i{color:#666;text-align:center;padding:40px 0}
+.cart-item-i{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.ci-thumb-i{width:55px;height:55px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#1a1a2e}
+.ci-thumb-i img{width:100%;height:100%;object-fit:cover}
+.ci-info-i{flex:1;min-width:0}
+.ci-name-i{color:#fff;font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-detail-i{color:#888;font-size:.75rem;margin:2px 0}
+.ci-price-row-i{display:flex;align-items:center;gap:8px;margin-top:4px}
+.ci-qty-wrap-i{display:flex;align-items:center;gap:4px}
+.ci-qty-btn-i{width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:none;color:#fff;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ci-qty-val-i{color:#fff;font-size:.85rem;min-width:20px;text-align:center}
+.ci-subtotal-i{color:var(--cyan);font-weight:700;font-size:.9rem;margin-left:auto}
+.ci-remove-i{background:none;border:none;color:#666;cursor:pointer;font-size:.9rem;padding:2px 6px}
+.ci-remove-i:hover{color:#f44}
+.cart-summary-i{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1)}
+.cart-total-i{color:#fff;font-size:1.1rem;font-weight:700;margin-bottom:12px;text-align:center}
+.cart-total-i span{color:var(--cyan)}
+.cart-checkout-i{width:100%;background:var(--grad);color:#000;border:none;border-radius:10px;padding:14px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.03em;margin-bottom:8px}
+.cart-checkout-i:hover{opacity:.9}
+.cart-clear-i{width:100%;background:none;border:1px solid rgba(255,255,255,.15);color:#888;border-radius:10px;padding:10px;font-size:.8rem;cursor:pointer}
+.cart-clear-i:hover{color:#f44;border-color:#f44}
 .maviso{font-size:.72rem;color:#444;text-align:center;margin-top:8px}
 @media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr);gap:9px}.nav-links{display:none}}
 </style>
@@ -130,12 +162,13 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
     <li><a href="indumentaria.html" class="active">Indumentaria</a></li>
     <li><a href="mayorista.html">Mayoristas</a></li>
   </ul>
+  <button class="cart-float-btn" onclick="openCartI()" title="Carrito">🛒 <span class="cart-badge-i hidden" id="cartBadgeI">0</span></button>
 </nav>
 
 <div class="hero">
   <div class="hero-lbl">Ropa deportiva</div>
   <h1 class="hero-t">INDUMENTARIA</h1>
-  <p class="hero-d">Elegí tu prenda, seleccioná el talle y consultá por WhatsApp.</p>
+  <p class="hero-d">Elegí tu prenda, seleccioná talle y color, ¡y agregala al carrito!</p>
 </div>
 
 <div class="wrap">
@@ -181,8 +214,26 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
     <div class="msect" id="msectColor" style="display:none">Color disponible</div>
     <div class="mcolores" id="mColores"></div>
     <div class="mstock-txt" id="mStockTxt"></div>
-    <button class="mwabtn" onclick="waConsultar()">&#128242; CONSULTAR POR WHATSAPP</button>
-    <p class="maviso">Te respondemos para confirmar disponibilidad y coordinar la entrega.</p>
+    <button class="mwabtn" id="mAddBtn" onclick="addToCartI()">🛒 AGREGAR AL CARRITO</button>
+    <p class="maviso">Agregá tus prendas y hacé el pedido completo desde el carrito.</p>
+  </div>
+</div>
+
+<!-- CARRITO OVERLAY -->
+<div class="cart-overlay-i" id="cartOverlayI">
+  <div class="cart-panel-i">
+    <div class="cart-header-i">
+      <h3>🛒 Tu carrito</h3>
+      <button class="cart-close-i" onclick="closeCartI()">✕</button>
+    </div>
+    <div class="cart-items-i" id="cartItemsI">
+      <p class="cart-empty-i" id="cartEmptyI">Tu carrito está vacío</p>
+    </div>
+    <div class="cart-summary-i" id="cartSummaryI" style="display:none">
+      <div class="cart-total-i">Total: <span id="cartTotalI">$0</span></div>
+      <button class="cart-checkout-i" onclick="checkoutI()">📲 HACER PEDIDO POR WHATSAPP</button>
+      <button class="cart-clear-i" onclick="clearCartI()">🗑 Vaciar carrito</button>
+    </div>
   </div>
 </div>
 
@@ -494,26 +545,93 @@ function renderColores(talle){
 function bgClick(e){if(e.target===document.getElementById('mbg'))cModal();}
 function cModal(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
 
-function waConsultar(){
+// ── CARRITO ──
+var cartI=[];
+function loadCartI(){try{var s=localStorage.getItem('maxup_cart_indum');if(s)cartI=JSON.parse(s);}catch(e){cartI=[];}updateBadgeI();}
+function saveCartI(){try{localStorage.setItem('maxup_cart_indum',JSON.stringify(cartI));}catch(e){}}
+function fmtI(n){return '$'+n.toLocaleString('es-AR');}
+
+function addToCartI(){
   if(!mProd)return;
   var dispTalles=(mProd.variantes||[]).filter(function(v){return v.stock>0;});
-  if(!mSelTalle&&dispTalles.length>1){alert('Por favor elegí un talle antes de consultar.');return;}
+  if(!mSelTalle&&dispTalles.length>1){alert('Por favor elegí un talle.');return;}
   if(mSelTalle&&!mSelColor){
     var dispColores=(mProd.variantes||[]).filter(function(v){return v.talle===mSelTalle&&v.stock>0;});
-    if(dispColores.length>1){alert('Por favor elegí un color antes de consultar.');return;}
+    if(dispColores.length>1){alert('Por favor elegí un color.');return;}
   }
   var t=mSelTalle||(dispTalles[0]&&dispTalles[0].talle)||'T/U';
-  var c=mSelColor||(mSelTalle?(mProd.variantes||[]).find(function(v){return v.talle===t&&v.stock>0;}):dispTalles[0]);
-  var msg='Hola MAXUP! Me interesa esta prenda:'
-    +(mProd.codigo?'\nCódigo: #'+mProd.codigo:'')
-    +'\n&#128085; '+mProd.nombre
-    +(mProd.marca?'\n&#127991;️ Marca: '+mProd.marca:'')
-    +(t&&t!=='T/U'?'\n&#128207; Talle: '+t:'')
-    +(c&&c.color?'\n&#127754;️ Color: '+c.color:'')
-    +'\n&#128176; Precio: $'+mProd.precio.toLocaleString('es-AR')
-    +'\n\n¿Está disponible?';
+  var cv=mSelColor||(mSelTalle?(mProd.variantes||[]).find(function(v){return v.talle===t&&v.stock>0;}):dispTalles[0]);
+  var color=cv&&cv.color?cv.color:'';
+  var key=mProd.nombre+'__'+t+'__'+color;
+  var existing=cartI.find(function(x){return x.key===key;});
+  if(existing){
+    existing.qty++;
+  } else {
+    var imgs=mProd.imagenes&&mProd.imagenes.length?mProd.imagenes:(mProd.img?[mProd.img]:[]);
+    cartI.push({key:key,nombre:mProd.nombre,marca:mProd.marca||'',codigo:mProd.codigo||'',talle:t,color:color,precio:mProd.precio,precio_lista:mProd.precio_lista||0,img:imgs[0]||'',qty:1});
+  }
+  saveCartI();updateBadgeI();renderCartI();
+  var btn=document.getElementById('mAddBtn');
+  btn.classList.add('added');btn.textContent='✅ Agregado!';
+  setTimeout(function(){btn.classList.remove('added');btn.textContent='🛒 AGREGAR AL CARRITO';},1500);
+}
+
+function updateBadgeI(){
+  var b=document.getElementById('cartBadgeI');
+  var c=cartI.reduce(function(s,i){return s+i.qty;},0);
+  if(c===0){b.classList.add('hidden');}else{b.classList.remove('hidden');b.textContent=c;}
+}
+
+function openCartI(){document.getElementById('cartOverlayI').classList.add('open');renderCartI();}
+function closeCartI(){document.getElementById('cartOverlayI').classList.remove('open');}
+
+function renderCartI(){
+  var cont=document.getElementById('cartItemsI');
+  var empty=document.getElementById('cartEmptyI');
+  var summary=document.getElementById('cartSummaryI');
+  cont.querySelectorAll('.cart-item-i').forEach(function(e){e.remove();});
+  if(cartI.length===0){empty.style.display='block';summary.style.display='none';return;}
+  empty.style.display='none';summary.style.display='block';
+  var total=cartI.reduce(function(s,i){return s+i.precio*i.qty;},0);
+  document.getElementById('cartTotalI').textContent=fmtI(total);
+  cartI.forEach(function(item){
+    var el=document.createElement('div');el.className='cart-item-i';
+    var k=item.key.replace(/'/g,"\\'");
+    el.innerHTML='<div class="ci-thumb-i">'+(item.img?'<img src="'+item.img+'" alt="'+item.nombre+'">':'<span style="font-size:1.5rem;display:flex;align-items:center;justify-content:center;height:100%">👗</span>')+'</div>'
+      +'<div class="ci-info-i">'
+      +'<div class="ci-name-i">'+item.nombre+'</div>'
+      +'<div class="ci-detail-i">'+(item.marca?item.marca+' · ':'')+item.talle+(item.color?' · '+item.color:'')+'</div>'
+      +'<div class="ci-price-row-i">'
+      +'<div class="ci-qty-wrap-i"><button class="ci-qty-btn-i" onclick="changeQtyI(\''+k+'\',-1)">−</button><span class="ci-qty-val-i">'+item.qty+'</span><button class="ci-qty-btn-i" onclick="changeQtyI(\''+k+'\',1)">+</button></div>'
+      +'<span class="ci-subtotal-i">'+fmtI(item.precio*item.qty)+'</span>'
+      +'<button class="ci-remove-i" onclick="removeI(\''+k+'\')">✕</button>'
+      +'</div></div>';
+    cont.appendChild(el);
+  });
+}
+
+function changeQtyI(key,d){var i=cartI.find(function(x){return x.key===key;});if(!i)return;i.qty=Math.max(1,i.qty+d);saveCartI();renderCartI();updateBadgeI();}
+function removeI(key){cartI=cartI.filter(function(x){return x.key!==key;});saveCartI();renderCartI();updateBadgeI();}
+function clearCartI(){cartI=[];saveCartI();renderCartI();updateBadgeI();}
+
+function checkoutI(){
+  if(cartI.length===0)return;
+  var total=cartI.reduce(function(s,i){return s+i.precio*i.qty;},0);
+  var msg='Hola MAXUP! Quiero hacer este pedido de indumentaria:\n\n';
+  cartI.forEach(function(item,i){
+    msg+=(i+1)+'. 👗 '+item.nombre+'\n';
+    if(item.codigo)msg+='   Código: #'+item.codigo+'\n';
+    if(item.marca)msg+='   Marca: '+item.marca+'\n';
+    msg+='   Talle: '+item.talle+'\n';
+    if(item.color)msg+='   Color: '+item.color+'\n';
+    msg+='   Precio: '+fmtI(item.precio)+' x '+item.qty+'\n\n';
+  });
+  msg+='💰 Total: '+fmtI(total)+'\n\n¿Está todo disponible?';
   window.open('https://wa.me/543875104606?text='+encodeURIComponent(msg),'_blank');
 }
+
+// Cargar carrito al iniciar
+loadCartI();
 
 function mostrarCargando(){
   var grid=document.getElementById('grid');
