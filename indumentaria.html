@@ -150,6 +150,19 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 .cart-checkout-i:hover{opacity:.9}
 .cart-clear-i{width:100%;background:none;border:1px solid rgba(255,255,255,.15);color:#888;border-radius:10px;padding:10px;font-size:.8rem;cursor:pointer}
 .cart-clear-i:hover{color:#f44;border-color:#f44}
+.nuevos-sec{margin:0 auto 30px;max-width:1200px;padding:0 16px;overflow:hidden;display:none}
+.nuevos-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#fff;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.nuevos-track{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:8px;scrollbar-width:none}
+.nuevos-track::-webkit-scrollbar{display:none}
+.nuevos-card{min-width:160px;max-width:160px;scroll-snap-align:start;background:#12122a;border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .2s;border:1px solid rgba(255,255,255,.06)}
+.nuevos-card:hover{transform:translateY(-3px)}
+.nuevos-card-img{width:100%;height:180px;overflow:hidden;background:#1a1a2e}
+.nuevos-card-img img{width:100%;height:100%;object-fit:cover}
+.nuevos-card-body{padding:10px 12px}
+.nuevos-card-brand{font-size:.65rem;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.nuevos-card-name{font-size:.8rem;color:#fff;font-weight:600;margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nuevos-card-price{font-size:.9rem;color:var(--cyan);font-weight:700}
+.nuevos-badge{background:var(--grad);color:#000;font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.03em}
 .maviso{font-size:.72rem;color:#444;text-align:center;margin-top:8px}
 @media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr);gap:9px}.nav-links{display:none}}
 </style>
@@ -169,6 +182,12 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
   <div class="hero-lbl">Ropa deportiva</div>
   <h1 class="hero-t">INDUMENTARIA</h1>
   <p class="hero-d">Elegí tu prenda, seleccioná talle y color, ¡y agregala al carrito!</p>
+</div>
+
+<!-- ÚLTIMOS INGRESOS -->
+<div class="nuevos-sec" id="nuevosSecI">
+  <div class="nuevos-title">✨ Últimos ingresos <span class="nuevos-badge">NUEVO</span></div>
+  <div class="nuevos-track" id="nuevosTrackI"></div>
 </div>
 
 <div class="wrap">
@@ -658,8 +677,91 @@ async function cargarSheets(){
     PRODS=PRODS_ALL.slice();
     readURL();
     buildFiltros();render();
+    renderNuevosI();
     if(!location.search)window.scrollTo(0,0);
   }catch(e){mostrarError();}
+}
+
+function _detectarNuevosI(){
+  var STOCK_KEY='maxup_indum_stock';
+  var COLA_KEY='maxup_indum_nuevos';
+  var MAX_COLA=15;
+
+  // Leer stock anterior y cola de nuevos
+  var prevStock={};
+  var cola=[];
+  try{var s=localStorage.getItem(STOCK_KEY);if(s)prevStock=JSON.parse(s);}catch(e){}
+  try{var c=localStorage.getItem(COLA_KEY);if(c)cola=JSON.parse(c);}catch(e){}
+
+  // Armar stock actual
+  var curStock={};
+  PRODS_ALL.forEach(function(p){
+    var key=(p.marca||'')+'||'+p.nombre;
+    curStock[key]=p.stock;
+  });
+
+  // Detectar productos con aumento de stock o nuevos
+  var nuevosDetectados=[];
+  PRODS_ALL.forEach(function(p){
+    if(p.stock<=0)return;
+    var key=(p.marca||'')+'||'+p.nombre;
+    if(!(key in prevStock)){
+      // Producto nuevo
+      nuevosDetectados.push(key);
+    } else if(p.stock>prevStock[key]){
+      // Stock aumentó (reposición)
+      nuevosDetectados.push(key);
+    }
+  });
+
+  // Agregar nuevos detectados a la cola
+  nuevosDetectados.forEach(function(key){
+    var idx=cola.indexOf(key);
+    if(idx>=0)cola.splice(idx,1);
+    cola.push(key);
+  });
+
+  // Limitar cola
+  if(cola.length>MAX_COLA)cola=cola.slice(-MAX_COLA);
+
+  // Guardar estado actual
+  try{localStorage.setItem(STOCK_KEY,JSON.stringify(curStock));}catch(e){}
+  try{localStorage.setItem(COLA_KEY,JSON.stringify(cola));}catch(e){}
+
+  // Convertir cola a productos
+  var result=[];
+  cola.slice().reverse().forEach(function(key){
+    var p=PRODS_ALL.find(function(pr){return (pr.marca||'')+'||'+pr.nombre===key&&pr.stock>0;});
+    if(p)result.push(p);
+  });
+  return result;
+}
+
+function renderNuevosI(){
+  var sec=document.getElementById('nuevosSecI');
+  var track=document.getElementById('nuevosTrackI');
+  if(!sec||!track)return;
+
+  var nuevos=_detectarNuevosI();
+
+  // Fallback: si no hay detectados aún (primera visita), mostrar los últimos del Sheets
+  if(nuevos.length===0){
+    nuevos=PRODS_ALL.filter(function(p){return p.stock>0;}).slice(-10).reverse();
+  }
+
+  if(nuevos.length<3){sec.style.display='none';return;}
+  sec.style.display='block';
+  track.innerHTML=nuevos.map(function(p){
+    var idx=PRODS_ALL.indexOf(p);
+    var imgUrl=p.imagenes&&p.imagenes.length?p.imagenes[0]:(p.img||'');
+    return '<div class="nuevos-card" onclick="aModal('+idx+')">'
+      +'<div class="nuevos-card-img">'+(imgUrl?'<img src="'+imgUrl+'" alt="'+p.nombre+'" loading="lazy">':'<span style="font-size:2.5rem;display:flex;align-items:center;justify-content:center;height:100%">👗</span>')+'</div>'
+      +'<div class="nuevos-card-body">'
+      +'<div class="nuevos-card-brand">'+(p.marca||'')+'</div>'
+      +'<div class="nuevos-card-name">'+p.nombre+'</div>'
+      +'<div class="nuevos-card-price">$'+p.precio.toLocaleString('es-AR')+'</div>'
+      +'</div></div>';
+  }).join('');
 }
 
 cargarSheets();
