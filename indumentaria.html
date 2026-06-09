@@ -76,6 +76,11 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 .cstock{font-size:.68rem;padding:2px 7px;border-radius:10px;width:fit-content;margin-top:3px}
 .cstock.ok{background:rgba(0,255,136,.08);color:var(--green);border:1px solid rgba(0,255,136,.2)}
 .cstock.last{background:rgba(255,165,0,.1);color:#FFA500;border:1px solid rgba(255,165,0,.25)}
+.cstock.agotado{background:rgba(255,50,50,.1);color:#f44;border:1px solid rgba(255,50,50,.25)}
+.card-agotado{opacity:.7}
+.card-agotado .card-img-wrap{filter:grayscale(.4)}
+.agotado-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.75);color:#f44;font-weight:800;font-size:1rem;padding:6px 18px;border-radius:8px;letter-spacing:.08em;border:1px solid rgba(255,50,50,.4);z-index:5}
+.card-img-wrap{position:relative}
 .cbtn{margin-top:auto;padding:8px 10px;background:var(--grad);color:#000;border:none;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;width:100%;font-family:"DM Sans",sans-serif;transition:opacity .2s}
 .cbtn:hover{opacity:.85}
 /* PAG */
@@ -405,16 +410,19 @@ function render(){
       var s=tallesMap[t];
       return'<span class="cpill'+(s===0?' ago':'')+'">'+t+'</span>';
     }).join('');
-    var last=p.stock<=2;
-    return'<div class="card" onclick="aModal('+idx+')">'
-      +'<div class="card-img-wrap">'+imgHtml+'</div>'
+    var last=p.stock>0&&p.stock<=2;
+    var agotado=p._agotado;
+    var stockTxt=agotado?'AGOTADO':(last?'&#161;&#218;ltimas!':' '+p.stock+' disp.');
+    var stockClass=agotado?'agotado':(last?'last':'ok');
+    return'<div class="card'+(agotado?' card-agotado':'')+'" onclick="aModal('+idx+')">'
+      +'<div class="card-img-wrap">'+imgHtml+(agotado?'<div class="agotado-overlay">AGOTADO</div>':'')+'</div>'
       +'<div class="cbody">'
       +(p.marca?'<div class="cmarca">'+p.marca+'</div>':'')+'<div class="ccat">'+p.cat+'</div>'
       +'<div class="cnombre">'+p.nombre+'</div>'
       +(p.codigo?'<div class="ccodigo">#'+p.codigo+'</div>':'')+'<div class="cprecio">$'+p.precio.toLocaleString('es-AR')+'</div>'
       +'<div class="ctarjeta">Tarjeta $'+(p.precio_lista||Math.round(p.precio*1.06)).toLocaleString('es-AR')+'</div>'
       +'<div class="cvars">'+pills+'</div>'
-      +'<div class="cstock '+(last?'last':'ok')+'">'+(last?'&#161;&#218;ltimas!':' '+p.stock+' disp.')+'</div>'
+      +'<div class="cstock '+stockClass+'">'+stockTxt+'</div>'
       +'<button class="cbtn">Ver talles &amp; colores</button>'
       +'</div></div>';
   }).join('');
@@ -531,6 +539,20 @@ function aModal(idx){
     document.getElementById('msectColor').style.display='none';
     document.getElementById('mColores').innerHTML='';
     document.getElementById('mStockTxt').textContent='';
+  }
+
+  // Botón agregar al carrito — deshabilitar si agotado
+  var addBtn=document.getElementById('mAddBtn');
+  if(p._agotado){
+    addBtn.textContent='❌ AGOTADO';
+    addBtn.style.opacity='.5';
+    addBtn.style.cursor='not-allowed';
+    addBtn.onclick=null;
+  } else {
+    addBtn.textContent='🛒 AGREGAR AL CARRITO';
+    addBtn.style.opacity='1';
+    addBtn.style.cursor='pointer';
+    addBtn.onclick=addToCartI;
   }
 
   document.getElementById('mbg').classList.add('open');
@@ -677,6 +699,40 @@ function mostrarError(){
   if(grid)grid.innerHTML='<div class="empty"><p style="font-size:2rem">&#9888;</p><p style="margin-top:12px">No se pudieron cargar las prendas. <a href="javascript:location.reload()" style="color:#e53;text-decoration:underline">Reintentar</a></p></div>';
 }
 
+var DIAS_AGOTADO=20;
+function filtrarAgotados(prendas){
+  var KEY='maxup_indum_agotado';
+  var agotado={};
+  try{var s=localStorage.getItem(KEY);if(s)agotado=JSON.parse(s);}catch(e){}
+  var ahora=Date.now();
+  var resultado=[];
+  prendas.forEach(function(p){
+    var id=(p.marca||'')+'||'+p.nombre;
+    if(p.stock>0){
+      // Tiene stock → mostrar y limpiar tracking
+      delete agotado[id];
+      p._agotado=false;
+      resultado.push(p);
+    } else {
+      // Sin stock → verificar hace cuánto
+      if(!agotado[id]){
+        // Primera vez que lo vemos sin stock → registrar fecha
+        agotado[id]=ahora;
+      }
+      var diasSinStock=Math.floor((ahora-agotado[id])/(1000*60*60*24));
+      if(diasSinStock<DIAS_AGOTADO){
+        // Menos de 20 días → mostrar como agotado
+        p._agotado=true;
+        p._diasRestantes=DIAS_AGOTADO-diasSinStock;
+        resultado.push(p);
+      }
+      // Más de 20 días → no agregar (desaparece)
+    }
+  });
+  try{localStorage.setItem(KEY,JSON.stringify(agotado));}catch(e){}
+  return resultado;
+}
+
 async function cargarSheets(){
   mostrarCargando();
   try{
@@ -684,7 +740,7 @@ async function cargarSheets(){
     if(!r.ok){mostrarError();return;}
     var d=await r.json();
     if(!d.ok||!d.prendas||!d.prendas.length){mostrarError();return;}
-    PRODS_ALL=d.prendas;
+    PRODS_ALL=filtrarAgotados(d.prendas);
     PRODS=PRODS_ALL.slice();
     readURL();
     buildFiltros();render();
@@ -742,7 +798,7 @@ function _detectarNuevosI(){
   // Convertir cola a productos
   var result=[];
   cola.slice().reverse().forEach(function(key){
-    var p=PRODS_ALL.find(function(pr){return (pr.marca||'')+'||'+pr.nombre===key&&pr.stock>0;});
+    var p=PRODS_ALL.find(function(pr){return (pr.marca||'')+'||'+pr.nombre===key;});
     if(p)result.push(p);
   });
   return result;
@@ -757,7 +813,7 @@ function renderNuevosI(){
 
   // Fallback: si no hay detectados aún (primera visita), mostrar los últimos del Sheets
   if(nuevos.length===0){
-    nuevos=PRODS_ALL.filter(function(p){return p.stock>0;}).slice(-10).reverse();
+    nuevos=PRODS_ALL.slice(-10).reverse();
   }
 
   if(nuevos.length<3){sec.style.display='none';return;}
