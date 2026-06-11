@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAXUP — Generar Presupuesto</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--cyan:#00C8FF;--pink:#FF00AA;--dark:#0a0a1a;--card:#12122a}
+body{font-family:'Segoe UI',sans-serif;background:var(--dark);color:#e0e0e0;min-height:100vh}
+
+/* ── EDITOR (pantalla) ── */
+.editor{max-width:900px;margin:0 auto;padding:20px}
+.editor h1{font-size:1.5rem;color:var(--cyan);margin-bottom:20px;text-align:center}
+
+.section{background:var(--card);border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid rgba(255,255,255,.06)}
+.section h3{font-size:.9rem;color:var(--cyan);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em}
+
+.form-row{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.form-group{flex:1;min-width:200px}
+.form-group label{display:block;font-size:.75rem;color:#888;margin-bottom:4px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px;background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:.85rem}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--cyan)}
+textarea{resize:vertical;min-height:60px}
+
+/* Buscador productos */
+.prod-search-wrap{position:relative}
+#prodSearch{width:100%;padding:10px 14px;background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:.9rem}
+#prodSearch:focus{border-color:var(--cyan);outline:none}
+#prodResults{position:absolute;top:100%;left:0;right:0;max-height:250px;overflow-y:auto;background:#1a1a2e;border:1px solid var(--cyan);border-top:none;border-radius:0 0 8px 8px;display:none;z-index:100}
+.prod-result{padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);font-size:.85rem}
+.prod-result:hover{background:rgba(0,200,255,.1)}
+.prod-result .pr-brand{color:var(--cyan);font-size:.7rem;font-weight:700}
+.prod-result .pr-price{color:#888;font-size:.75rem;float:right}
+
+/* Tabla items */
+.items-table{width:100%;border-collapse:collapse;margin-top:10px}
+.items-table th{text-align:left;font-size:.7rem;color:#888;padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.1);text-transform:uppercase}
+.items-table td{padding:8px 6px;font-size:.85rem;border-bottom:1px solid rgba(255,255,255,.05)}
+.items-table .col-qty{width:70px}
+.items-table .col-price{width:100px}
+.items-table .col-total{width:100px;text-align:right;color:var(--cyan);font-weight:600}
+.items-table .col-del{width:40px;text-align:center}
+.items-table input[type=number]{width:100%;padding:6px;background:#0a0a1a;border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#fff;text-align:center;font-size:.85rem}
+.del-btn{background:none;border:none;color:#666;font-size:1.1rem;cursor:pointer}
+.del-btn:hover{color:#f44}
+
+/* Totales */
+.totales{text-align:right;margin-top:16px;font-size:1rem}
+.totales .total-line{padding:4px 0;color:#aaa}
+.totales .total-final{font-size:1.3rem;color:var(--cyan);font-weight:700;border-top:1px solid rgba(255,255,255,.1);padding-top:8px;margin-top:4px}
+
+/* Botones */
+.actions{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.btn{padding:14px 28px;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.03em}
+.btn-print{background:linear-gradient(135deg,var(--cyan),var(--pink));color:#000}
+.btn-print:hover{opacity:.9}
+.btn-wa{background:#25D366;color:#fff}
+.btn-wa:hover{opacity:.9}
+.btn-clear{background:none;border:1px solid rgba(255,255,255,.15);color:#888}
+.btn-clear:hover{color:#f44;border-color:#f44}
+
+/* ── PRESUPUESTO IMPRIMIBLE ── */
+@media print{
+  body{background:#fff!important;color:#000!important}
+  .editor,.actions,.no-print{display:none!important}
+  .print-doc{display:block!important}
+}
+
+.print-doc{display:none;max-width:800px;margin:0 auto;padding:40px;background:#fff;color:#000;font-family:'Segoe UI',Arial,sans-serif}
+
+.doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid #000}
+.doc-logo img{height:80px}
+.doc-logo .doc-biz{font-size:.75rem;color:#555;margin-top:6px;line-height:1.5}
+.doc-title{text-align:right}
+.doc-title h2{font-size:1.8rem;font-weight:800;letter-spacing:.05em}
+.doc-title .doc-meta{font-size:.8rem;color:#555;margin-top:6px;line-height:1.6}
+
+.doc-section{margin-bottom:20px}
+.doc-section h4{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:#888;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:4px}
+.doc-client{font-size:.85rem;line-height:1.6}
+
+.doc-table{width:100%;border-collapse:collapse;margin-bottom:20px}
+.doc-table th{background:#f5f5f5;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;padding:10px 8px;border-bottom:2px solid #333}
+.doc-table td{padding:10px 8px;font-size:.85rem;border-bottom:1px solid #eee}
+.doc-table .text-right{text-align:right}
+.doc-table tfoot td{font-weight:700;border-top:2px solid #333;font-size:.95rem}
+
+.doc-obs{font-size:.8rem;color:#555;margin-top:20px;padding-top:12px;border-top:1px solid #ddd}
+.doc-footer{margin-top:40px;text-align:center;font-size:.7rem;color:#aaa;border-top:1px solid #eee;padding-top:12px}
+.doc-stamp{font-size:.65rem;color:#999;text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- ── EDITOR ── -->
+<div class="editor no-print">
+  <h1>📄 Generar Presupuesto — MAXUP</h1>
+
+  <!-- DATOS NEGOCIO -->
+  <div class="section">
+    <h3>Datos del negocio</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Nombre del negocio</label><input id="bizName" value="MAXUP Suplementos"></div>
+      <div class="form-group"><label>Teléfono</label><input id="bizPhone" value="3875104606"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Dirección</label><input id="bizAddr" value="General Güemes, Salta"></div>
+      <div class="form-group"><label>Email</label><input id="bizEmail" value=""></div>
+    </div>
+  </div>
+
+  <!-- DATOS CLIENTE -->
+  <div class="section">
+    <h3>Datos del cliente</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Nombre / Razón Social</label><input id="cliName" placeholder="Nombre del cliente"></div>
+      <div class="form-group"><label>Teléfono</label><input id="cliPhone" placeholder="Teléfono"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Dirección</label><input id="cliAddr" placeholder="Dirección"></div>
+      <div class="form-group"><label>Localidad</label><input id="cliCity" placeholder="Localidad"></div>
+    </div>
+  </div>
+
+  <!-- PRODUCTOS -->
+  <div class="section">
+    <h3>Productos</h3>
+    <div class="prod-search-wrap">
+      <input id="prodSearch" type="text" placeholder="🔍 Buscar producto por nombre, marca o código..." autocomplete="off">
+      <div id="prodResults"></div>
+    </div>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Descripción</th>
+          <th class="col-qty">Cant.</th>
+          <th class="col-price">P. Unitario</th>
+          <th class="col-total">P. Total</th>
+          <th class="col-del"></th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody"></tbody>
+    </table>
+    <div class="totales">
+      <div class="total-line">Subtotal: <span id="subtotalTxt">$0</span></div>
+      <div class="total-final">TOTAL: <span id="totalTxt">$0</span></div>
+    </div>
+  </div>
+
+  <!-- OBSERVACIONES -->
+  <div class="section">
+    <h3>Observaciones</h3>
+    <textarea id="obsText" placeholder="Notas adicionales, formas de pago, validez del presupuesto...">Presupuesto válido por 5 días. Precios sujetos a modificación sin previo aviso. Efectivo o transferencia.</textarea>
+  </div>
+
+  <!-- ACCIONES -->
+  <div class="actions">
+    <button class="btn btn-print" onclick="generarPDF()">🖨️ Generar PDF</button>
+    <button class="btn btn-wa" onclick="enviarWA()">📲 Enviar por WhatsApp</button>
+    <button class="btn btn-clear" onclick="limpiarTodo()">🗑 Limpiar todo</button>
+  </div>
+</div>
+
+<!-- ── DOCUMENTO IMPRIMIBLE ── -->
+<div class="print-doc" id="printDoc">
+  <div class="doc-header">
+    <div class="doc-logo">
+      <img src="logo.png" alt="MAXUP">
+      <div class="doc-biz" id="printBiz"></div>
+    </div>
+    <div class="doc-title">
+      <h2>PRESUPUESTO</h2>
+      <div class="doc-meta" id="printMeta"></div>
+    </div>
+  </div>
+
+  <div class="doc-section">
+    <h4>Datos del cliente</h4>
+    <div class="doc-client" id="printClient"></div>
+  </div>
+
+  <div class="doc-section">
+    <h4>Detalle</h4>
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th>Descripción</th>
+          <th class="text-right">Cantidad</th>
+          <th class="text-right">P. Unitario</th>
+          <th class="text-right">P. Total</th>
+        </tr>
+      </thead>
+      <tbody id="printItems"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="text-right">TOTAL:</td>
+          <td class="text-right" id="printTotal"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="doc-obs" id="printObs"></div>
+  <div class="doc-footer">Documento no válido como factura — Presupuesto informativo</div>
+  <div class="doc-stamp" id="printStamp"></div>
+</div>
+
+<script>
+var API='https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
+var CATALOGO=[];
+var ITEMS=[];
+var presupuestoNum=0;
+
+// Cargar catálogo
+async function cargarCatalogo(){
+  try{
+    var r=await fetch(API+'?accion=catalogo');
+    var d=await r.json();
+    if(d.productos)CATALOGO=d.productos.map(function(p){
+      return{nombre:p.nombre,marca:p.marca||'',precio:p.precio_venta||p.precio_lista||0,stock:p.stock||0};
+    });
+  }catch(e){}
+  // También cargar indumentaria
+  try{
+    var r2=await fetch(API+'?accion=indumentaria');
+    var d2=await r2.json();
+    if(d2.ok&&d2.prendas)d2.prendas.forEach(function(p){
+      CATALOGO.push({nombre:p.nombre+(p.codigo?' (#'+p.codigo+')':''),marca:p.marca||'',precio:p.precio||0,stock:p.stock||0,tipo:'indum'});
+    });
+  }catch(e){}
+  // Cargar número de presupuesto
+  presupuestoNum=parseInt(localStorage.getItem('maxup_presup_num')||'0')+1;
+}
+cargarCatalogo();
+
+// Buscador
+var searchEl=document.getElementById('prodSearch');
+var resultsEl=document.getElementById('prodResults');
+searchEl.addEventListener('input',function(){
+  var q=this.value.toLowerCase().trim();
+  if(q.length<2){resultsEl.style.display='none';return;}
+  var matches=CATALOGO.filter(function(p){
+    return p.nombre.toLowerCase().indexOf(q)>=0||p.marca.toLowerCase().indexOf(q)>=0;
+  }).slice(0,15);
+  if(!matches.length){resultsEl.style.display='none';return;}
+  resultsEl.innerHTML=matches.map(function(p,i){
+    return '<div class="prod-result" data-idx="'+i+'" onclick="addFromSearch('+CATALOGO.indexOf(p)+')">'
+      +'<span class="pr-brand">'+p.marca+'</span> '+p.nombre
+      +'<span class="pr-price">$'+p.precio.toLocaleString('es-AR')+'</span></div>';
+  }).join('');
+  resultsEl.style.display='block';
+});
+document.addEventListener('click',function(e){if(!e.target.closest('.prod-search-wrap'))resultsEl.style.display='none';});
+
+function addFromSearch(idx){
+  var p=CATALOGO[idx];
+  ITEMS.push({desc:(p.marca?p.marca+' — ':'')+p.nombre,qty:1,price:p.precio});
+  renderItems();
+  searchEl.value='';
+  resultsEl.style.display='none';
+}
+
+function renderItems(){
+  var body=document.getElementById('itemsBody');
+  body.innerHTML='';
+  var total=0;
+  ITEMS.forEach(function(item,i){
+    var sub=item.qty*item.price;
+    total+=sub;
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+item.desc+'</td>'
+      +'<td class="col-qty"><input type="number" min="1" value="'+item.qty+'" onchange="updQty('+i+',this.value)"></td>'
+      +'<td class="col-price"><input type="number" min="0" value="'+item.price+'" onchange="updPrice('+i+',this.value)"></td>'
+      +'<td class="col-total">$'+sub.toLocaleString('es-AR')+'</td>'
+      +'<td class="col-del"><button class="del-btn" onclick="delItem('+i+')">✕</button></td>';
+    body.appendChild(tr);
+  });
+  document.getElementById('subtotalTxt').textContent='$'+total.toLocaleString('es-AR');
+  document.getElementById('totalTxt').textContent='$'+total.toLocaleString('es-AR');
+}
+
+function updQty(i,v){ITEMS[i].qty=Math.max(1,parseInt(v)||1);renderItems();}
+function updPrice(i,v){ITEMS[i].price=Math.max(0,parseFloat(v)||0);renderItems();}
+function delItem(i){ITEMS.splice(i,1);renderItems();}
+
+function fmt(n){return '$'+n.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+function generarPDF(){
+  if(!ITEMS.length){alert('Agregá al menos un producto');return;}
+
+  // Número de presupuesto
+  var num=String(presupuestoNum).padStart(4,'0');
+  localStorage.setItem('maxup_presup_num',presupuestoNum);
+  presupuestoNum++;
+
+  var hoy=new Date();
+  var fecha=hoy.toLocaleDateString('es-AR');
+  var vto=new Date(hoy.getTime()+5*24*60*60*1000).toLocaleDateString('es-AR');
+
+  // Datos negocio
+  document.getElementById('printBiz').innerHTML=
+    document.getElementById('bizAddr').value+'<br>'
+    +'Tel: '+document.getElementById('bizPhone').value
+    +(document.getElementById('bizEmail').value?'<br>'+document.getElementById('bizEmail').value:'');
+
+  // Meta
+  document.getElementById('printMeta').innerHTML=
+    '<strong>N°:</strong> 0000-'+num+'<br>'
+    +'<strong>Fecha:</strong> '+fecha+'<br>'
+    +'<strong>Fecha Vto:</strong> '+vto;
+
+  // Cliente
+  var cliName=document.getElementById('cliName').value||'CONSUMIDOR FINAL';
+  var cliPhone=document.getElementById('cliPhone').value;
+  var cliAddr=document.getElementById('cliAddr').value;
+  var cliCity=document.getElementById('cliCity').value;
+  document.getElementById('printClient').innerHTML=
+    '<strong>'+cliName+'</strong>'
+    +(cliPhone?'<br>Tel: '+cliPhone:'')
+    +(cliAddr?'<br>'+cliAddr:'')
+    +(cliCity?', '+cliCity:'');
+
+  // Items
+  var total=0;
+  document.getElementById('printItems').innerHTML=ITEMS.map(function(item){
+    var sub=item.qty*item.price;
+    total+=sub;
+    return '<tr><td>'+item.desc+'</td>'
+      +'<td class="text-right">'+item.qty.toFixed(2)+'</td>'
+      +'<td class="text-right">'+fmt(item.price)+'</td>'
+      +'<td class="text-right">'+fmt(sub)+'</td></tr>';
+  }).join('');
+  document.getElementById('printTotal').textContent=fmt(total);
+
+  // Observaciones
+  var obs=document.getElementById('obsText').value;
+  document.getElementById('printObs').innerHTML=obs?'<strong>Observaciones:</strong> '+obs.replace(/\n/g,'<br>'):'';
+
+  // Stamp
+  document.getElementById('printStamp').textContent='Generado el '+fecha+' a las '+hoy.toLocaleTimeString('es-AR')+' — '+document.getElementById('bizName').value;
+
+  // Mostrar e imprimir
+  document.getElementById('printDoc').style.display='block';
+  setTimeout(function(){window.print();},300);
+}
+
+function enviarWA(){
+  if(!ITEMS.length){alert('Agregá al menos un producto');return;}
+  var total=ITEMS.reduce(function(s,i){return s+i.qty*i.price;},0);
+  var cliName=document.getElementById('cliName').value||'Cliente';
+  var cliPhone=document.getElementById('cliPhone').value||'';
+
+  var msg='📄 *PRESUPUESTO — MAXUP Suplementos*\n\n';
+  msg+='👤 Cliente: '+cliName+'\n';
+  msg+='📅 Fecha: '+new Date().toLocaleDateString('es-AR')+'\n\n';
+  msg+='*DETALLE:*\n';
+  ITEMS.forEach(function(item,i){
+    msg+=(i+1)+'. '+item.desc+'\n';
+    msg+='   Cant: '+item.qty+' x $'+item.price.toLocaleString('es-AR')+' = $'+(item.qty*item.price).toLocaleString('es-AR')+'\n';
+  });
+  msg+='\n💰 *TOTAL: $'+total.toLocaleString('es-AR')+'*\n\n';
+  var obs=document.getElementById('obsText').value;
+  if(obs)msg+='📝 '+obs+'\n';
+
+  var tel=cliPhone.replace(/\D/g,'');
+  if(tel&&tel.length<12)tel='54'+tel;
+  var url=tel?'https://wa.me/'+tel+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
+  window.open(url,'_blank');
+}
+
+function limpiarTodo(){
+  if(!confirm('¿Limpiar todo el presupuesto?'))return;
+  ITEMS=[];
+  renderItems();
+  document.getElementById('cliName').value='';
+  document.getElementById('cliPhone').value='';
+  document.getElementById('cliAddr').value='';
+  document.getElementById('cliCity').value='';
+}
+</script>
+</body>
+</html>
