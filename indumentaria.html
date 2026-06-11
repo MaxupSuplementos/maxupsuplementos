@@ -174,7 +174,40 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 .nuevos-arr{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);color:#fff;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .nuevos-arr:hover{background:rgba(0,200,255,.15);border-color:var(--cyan)}
 .maviso{font-size:.72rem;color:#444;text-align:center;margin-top:8px}
-@media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr);gap:9px}.nav-links{display:none}}
+/* ── MOBILE FILTERS (dropdowns) ── */
+.mobile-filtros{display:none;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.mobile-filtros select{flex:1;min-width:140px;padding:10px 14px;background:#1a1a2e;color:#e0e0e0;border:1px solid rgba(0,200,255,.25);border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.06em;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg fill='%2300C8FF' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:20px}
+.mobile-filtros select:focus{border-color:var(--cyan);outline:none}
+
+@media(max-width:600px){
+  .grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .nav-links{display:none}
+  /* Ocultar filtros desktop, mostrar dropdowns */
+  .flbl,.frow,.gtabs{display:none!important}
+  .mobile-filtros{display:flex!important}
+  /* Cards compactas: solo imagen + nombre + precio */
+  .cmarca,.ccat,.ccodigo,.ctarjeta,.cvars,.cstock,.cbtn{display:none!important}
+  .cbody{padding:8px 10px!important}
+  .cnombre{font-size:.8rem!important;margin-bottom:2px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cprecio{font-size:.95rem!important}
+  .card{border-radius:10px!important}
+  .card-img-wrap img,.card-img-wrap .gal-slide img{height:auto!important;aspect-ratio:3/4;object-fit:cover!important}
+  /* Carrusel nuevos más compacto */
+  .nuevos-sec{margin-bottom:16px!important}
+  .nuevos-card{min-width:120px!important;max-width:120px!important}
+  .nuevos-card-img{height:140px!important}
+  .nuevos-card-body{padding:6px 8px!important}
+  .nuevos-card-brand{display:none!important}
+  .nuevos-card-name{font-size:.7rem!important}
+  .nuevos-card-price{font-size:.8rem!important}
+  .nuevos-title{font-size:1rem!important}
+  /* Búsqueda sticky */
+  .search-wrap{position:sticky;top:0;z-index:50;background:var(--dark);padding:8px 0;margin-bottom:8px}
+  /* Hero compacto */
+  .hero{padding:16px 20px!important;margin-bottom:8px!important}
+  .hero-t{font-size:1.5rem!important}
+  .hero-d{font-size:.75rem!important}
+}
 </style>
 </head>
 <body>
@@ -213,13 +246,27 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
     <button class="gtab" data-g="H" onclick="setGenero('H')">&#9794; Hombre</button>
   </div>
 
+  <!-- FILTROS MOBILE (dropdowns) -->
+  <div class="mobile-filtros" id="mobileFiltros">
+    <select id="mfGenero" onchange="setGenero(this.value)">
+      <option value="M">♀ MUJER</option>
+      <option value="H">♂ HOMBRE</option>
+    </select>
+    <select id="mfTipo" onchange="fil('cat',this.value)">
+      <option value="all">TIPO DE PRENDA</option>
+    </select>
+    <select id="mfMarca" onchange="fil('marca',this.value)">
+      <option value="all">MARCA</option>
+    </select>
+  </div>
+
   <!-- BÚSQUEDA -->
   <div class="search-wrap">
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     <input class="search-input" id="searchInput" type="text" placeholder="Buscar por nombre, marca o código (#420)..." oninput="buscar(this.value)">
   </div>
 
-  <!-- FILTROS CATEGORÍA -->
+  <!-- FILTROS CATEGORÍA (desktop) -->
   <div class="flbl">Tipo de prenda</div>
   <div class="frow" id="fCat"></div>
 
@@ -320,6 +367,7 @@ function setGenero(g){
   generoA=g;catA='all';marcaA='all';busqA='';pag=1;
   document.getElementById('searchInput').value='';
   document.querySelectorAll('.gtab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-g')===g);});
+  var mfG=document.getElementById('mfGenero');if(mfG)mfG.value=g;
   buildFiltros();
   render();syncURL();
 }
@@ -364,6 +412,20 @@ function buildFiltros(){
   fmarca.innerHTML='';
   mkBtn(fmarca,'all','Todas las marcas','marca');
   marcas.forEach(function(m){mkBtn(fmarca,m,m,'marca');});
+
+  // Mobile dropdowns
+  var mfTipo=document.getElementById('mfTipo');
+  var mfMarca=document.getElementById('mfMarca');
+  var mfGenero=document.getElementById('mfGenero');
+  if(mfTipo){
+    mfTipo.innerHTML='<option value="all">TIPO DE PRENDA</option>';
+    cats.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c.toUpperCase();if(catA===c)o.selected=true;mfTipo.appendChild(o);});
+  }
+  if(mfMarca){
+    mfMarca.innerHTML='<option value="all">MARCA</option>';
+    marcas.forEach(function(m){var o=document.createElement('option');o.value=m;o.textContent=m;if(marcaA===m)o.selected=true;mfMarca.appendChild(o);});
+  }
+  if(mfGenero)mfGenero.value=generoA;
 }
 
 function render(){
