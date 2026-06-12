@@ -205,6 +205,7 @@
     <li><button onclick="toggleTheme()" id="themeToggle" style="background:none;border:1px solid rgba(255,255,255,.15);color:#999;padding:5px 10px;border-radius:20px;cursor:pointer;font-size:.75rem;font-family:Rajdhani,sans-serif;font-weight:600" title="Cambiar tema">🌙</button></li>
     <li><a href="#" class="nav-cart-mini" onclick="openCart();return false">🛒 <span id="navCartCount" class="nav-cart-count hidden">0</span></a></li>
   </ul>
+  <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileMenu()" aria-label="Menú" aria-expanded="false">☰</button>
 </nav>
 
 <!-- ── BANNER ROTATIVO PROMOS ── -->
@@ -214,18 +215,19 @@
   <div id="promoBannerText" style="transition:opacity .4s">ENVÍO A TODO EL PAÍS 📦 STOCK REAL ACTUALIZADO</div>
 </div>
 
-<!-- ── BARRA MOBILE ── -->
-<div class="nav-mobile-bar">
-  <a href="#catalogo">🏪 Catálogo</a>
-  <a href="#comparador">⚖️ Comparar</a>
+<!-- ── MENÚ MOBILE DESPLEGABLE (hamburguesa) ── -->
+<div class="nav-mobile-bar" id="navMobileMenu">
+  <a href="#catalogo" onclick="closeMobileMenu()">🏪 Catálogo</a>
+  <a href="#comparador" onclick="closeMobileMenu()">⚖️ Comparar</a>
   <a href="indumentaria.html">👕 Indumentaria</a>
-  <a href="#recomendador">🎯 Recomendación</a>
-  <a href="#liquidaciones" style="color:#FF0099;border-color:rgba(255,0,153,.3)" onclick="mostrarLiquidaciones()">🔥 Ofertas</a>
+  <a href="#recomendador" onclick="closeMobileMenu()">🎯 Recomendación</a>
+  <a href="#liquidaciones" style="color:#FF0099;border-color:rgba(255,0,153,.3)" onclick="mostrarLiquidaciones();closeMobileMenu()">🔥 Ofertas</a>
   <a href="salud.html" style="color:var(--green);border-color:rgba(0,230,118,.3)">🏥 Salud</a>
   <a href="mayorista.html" style="color:#FFB800;border-color:rgba(255,184,0,.3)">🏭 Mayorista</a>
   <a href="estado.html" style="color:#00C8FF;border-color:rgba(0,200,255,.3)">📋 Mi Pedido</a>
   <a href="https://wa.me/5491168461457" target="_blank">📲 WhatsApp</a>
 </div>
+<div class="nav-menu-backdrop" id="navMenuBackdrop" onclick="closeMobileMenu()"></div>
 
 <!-- ── HERO ── -->
 <section class="hero">
@@ -790,6 +792,27 @@
     <br><button class="sa-close" onclick="cerrarStockAlert()">Cancelar</button>
   </div>
 </div>
+
+<!-- ── MENÚ MOBILE (hamburguesa) ── -->
+<script>
+function toggleMobileMenu(){
+  var m=document.getElementById('navMobileMenu');
+  var b=document.getElementById('navMenuBackdrop');
+  var h=document.getElementById('navHamburger');
+  if(!m)return;
+  var open=m.classList.toggle('open');
+  if(b)b.classList.toggle('open',open);
+  if(h){h.setAttribute('aria-expanded',open?'true':'false');h.textContent=open?'✕':'☰';}
+}
+function closeMobileMenu(){
+  var m=document.getElementById('navMobileMenu');
+  var b=document.getElementById('navMenuBackdrop');
+  var h=document.getElementById('navHamburger');
+  if(m)m.classList.remove('open');
+  if(b)b.classList.remove('open');
+  if(h){h.setAttribute('aria-expanded','false');h.textContent='☰';}
+}
+</script>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
 <script src="app.js" defer></script>
