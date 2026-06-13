@@ -7797,9 +7797,12 @@ function renderNuevosIngresos(){
   var nuevos = [], vistos = {};
   function _add(p){ if(!p) return; var k=(p.brand||'')+'||'+p.name; if(vistos[k]) return; vistos[k]=1; nuevos.push(p); }
 
+  // 1) Detección por navegador PRIMERO (instantánea): lo que ACABÁS de cargar
+  //    se ve al toque y queda fijo (no lo pisa la lista del servidor → sin parpadeo).
+  _detectarNuevosIngresos().forEach(_add);
+
+  // 2) Lista del SERVIDOR (global, igual para todos). Se SUMA, no reemplaza.
   if(_nuevosServer && _nuevosServer.length){
-    // ── FUENTE SERVIDOR: igual para todos los visitantes ──
-    // Cada item es {marca, nombre_crudo}; lo mapeamos al producto agrupado.
     _nuevosServer.forEach(function(it){
       var base = (typeof _extraerSabor==='function') ? _extraerSabor(it.nombre||'').base : (it.nombre||'');
       var marca = (it.marca||'').toUpperCase();
@@ -7809,13 +7812,13 @@ function renderNuevosIngresos(){
       });
       if(prod && prod.flavors && prod.flavors.reduce(function(s,f){return s+f.stock},0)>0) _add(prod);
     });
-  } else {
-    // ── FALLBACK (backend sin desplegar): detección por navegador ──
-    _detectarNuevosIngresos().forEach(_add);
-    PRODUCTS.filter(function(p){
-      return p.flavors && p.flavors.reduce(function(s,f){return s+f.stock},0) > 0 && p.price > 0;
-    }).slice(-12).reverse().forEach(_add);
   }
+
+  // 3) Completar con los más nuevos por orden de planilla (para no quedar vacío)
+  PRODUCTS.filter(function(p){
+    return p.flavors && p.flavors.reduce(function(s,f){return s+f.stock},0) > 0 && p.price > 0;
+  }).slice(-12).reverse().forEach(_add);
+
   nuevos = nuevos.slice(0, NUEVOS_MAX_SUP);
 
   var sec = document.getElementById('nuevosSection');
