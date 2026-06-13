@@ -430,7 +430,10 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
   .prod-card .prod-stock-info,
   .prod-card .prod-actions,
   .prod-card .avisar-stock-btn,
-  .prod-card [id^="reviews-"]{display:none!important}
+  .prod-card .card-rating-comments,
+  .prod-card .card-rating-empty{display:none!important}
+  /* La línea de estrellas SÍ se ve en mobile (compacta) */
+  .prod-card .card-rating{font-size:.72rem!important;margin-top:2px!important}
   .prod-footer{border-top:none!important;padding-top:0!important;margin-bottom:0!important;justify-content:flex-start!important}
   .prod-body{padding:8px 10px!important;gap:0}
   .prod-name{font-size:.82rem!important;margin-bottom:3px!important;
@@ -605,6 +608,58 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 @keyframes spin{to{transform:rotate(360deg)}}
 .comp-btn{padding:11px 28px;background:var(--grad);color:#000;border:none;
   border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:1.1rem;cursor:pointer}
+
+/* ── BUSCADOR CON SUGERENCIAS ── */
+.search-suggest{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:#0d0d16;border:1px solid rgba(0,200,255,.25);border-radius:12px;
+  box-shadow:0 12px 30px rgba(0,0,0,.6);z-index:300;max-height:62vh;overflow-y:auto;padding:6px}
+.ss-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer;transition:background .15s}
+.ss-item:hover,.ss-item:active{background:rgba(0,200,255,.12)}
+.ss-thumb{width:38px;height:38px;border-radius:7px;overflow:hidden;background:#111;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.ss-thumb img{width:100%;height:100%;object-fit:contain;padding:3px}
+.ss-info{flex:1;min-width:0}
+.ss-name{font-size:.82rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ss-brand{font-size:.68rem;color:var(--cyan);font-weight:600;letter-spacing:.04em}
+.ss-price{font-size:.85rem;font-weight:700;color:var(--cyan);white-space:nowrap}
+.ss-empty{padding:14px;text-align:center;color:var(--gray);font-size:.82rem}
+body.light .search-suggest{background:#fff;border-color:rgba(0,150,200,.3)}
+body.light .ss-name{color:#111}
+
+/* ── CATEGORÍAS DESTACADAS (home) ── */
+.cats-destacadas{max-width:1200px;margin:0 auto 14px;padding:6px 16px;position:relative;z-index:1}
+.cats-titulo{font-family:Bebas Neue,sans-serif;font-size:clamp(1.2rem,3vw,1.7rem);letter-spacing:.05em;text-align:center;margin-bottom:14px}
+.cats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.cat-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  padding:15px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(0,200,255,.16);
+  border-radius:14px;color:var(--white);font-family:Rajdhani,sans-serif;font-weight:700;
+  font-size:.84rem;cursor:pointer;transition:transform .2s,background .2s,border-color .2s}
+.cat-tile:hover{background:rgba(0,200,255,.1);border-color:var(--cyan);transform:translateY(-3px)}
+.cat-ico{font-size:1.8rem;line-height:1}
+.cat-tile-combo{border-color:rgba(153,51,255,.4);background:rgba(153,51,255,.08)}
+.cat-tile-combo:hover{background:rgba(153,51,255,.18);border-color:var(--purple)}
+body.light .cat-tile{background:#fff;border-color:rgba(0,0,0,.08);color:#111}
+body.light .cat-tile:hover{border-color:var(--cyan)}
+@media(max-width:600px){
+  .cats-grid{grid-template-columns:repeat(4,1fr);gap:7px}
+  .cat-tile{padding:11px 4px;font-size:.64rem;border-radius:11px;gap:3px}
+  .cat-ico{font-size:1.45rem}
+}
+
+/* ── VALORACIONES EN CARDS ── */
+.card-rating{font-size:.82rem;color:#FFD700;margin-top:6px;font-weight:600;letter-spacing:.02em}
+.card-rating span{color:var(--gray);font-size:.74rem;font-weight:500}
+.card-rating-empty{font-size:.76rem;color:#555;margin-top:6px}
+.card-rating-comments{margin-top:3px}
+.card-rating-c{font-size:.74rem;color:var(--gray);margin-top:4px;padding:4px 8px;background:rgba(255,255,255,.03);border-radius:6px;line-height:1.35}
+body.light .card-rating span{color:#777}
+
+/* ── FRANJA DE CONFIANZA ── */
+.trust-strip{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;
+  margin:10px 0;padding:9px 6px;border-top:1px solid rgba(255,255,255,.07);
+  border-bottom:1px solid rgba(255,255,255,.07)}
+.trust-strip span{font-size:.7rem;color:var(--gray);font-weight:600;white-space:nowrap;letter-spacing:.02em}
+body.light .trust-strip{border-color:rgba(0,0,0,.08)}
+body.light .trust-strip span{color:#555}
 
 /* ── UPSELL CARRITO ("Completá tu compra") ── */
 .cart-upsell{padding:10px 2px 2px;margin-top:8px;border-top:1px dashed rgba(0,200,255,.18)}
