@@ -3644,6 +3644,15 @@ function setCat(cat){
   applyFilters();syncURLIndex();
 }
 
+// Ir a una categoría desde los accesos rápidos de la home
+function irACategoria(cat){
+  var sel = document.getElementById('filtroTipo');
+  if(sel) sel.value = cat;
+  if(typeof onTipoFilter === 'function') onTipoFilter(cat);
+  var cont = document.getElementById('catalogo');
+  if(cont) cont.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
 function onTipoFilter(val){
   if(val==='combo'){ mostrarCombos(); return; }
   activeCat = val;
@@ -3713,7 +3722,40 @@ document.getElementById('searchInput').addEventListener('input',e=>{
   if(selBrand) selBrand.value = 'all';
   if(selOrden) selOrden.value = 'default';
   applyFilters();syncURLIndex();
+  renderSearchSuggest(e.target.value);
 });
+// Cerrar sugerencias al perder foco (con delay para que el click registre) y con Escape
+document.getElementById('searchInput').addEventListener('blur', function(){ setTimeout(cerrarSugerencias, 180); });
+document.getElementById('searchInput').addEventListener('keydown', function(e){ if(e.key==='Escape') cerrarSugerencias(); });
+
+// ── SUGERENCIAS DE BÚSQUEDA (autocompletado) ──
+function renderSearchSuggest(q){
+  var box = document.getElementById('searchSuggest');
+  if(!box) return;
+  q = (q||'').toLowerCase().trim();
+  if(q.length < 2){ box.style.display='none'; box.innerHTML=''; return; }
+  var matches = (typeof PRODUCTS!=='undefined'?PRODUCTS:[]).filter(function(p){
+    var stock = p.flavors ? p.flavors.reduce(function(s,f){return s+f.stock;},0) : 0;
+    if(stock<=0) return false;
+    return ((p.name||'')+' '+(p.brand||'')+' '+(p.cat||'')).toLowerCase().indexOf(q) >= 0;
+  }).slice(0, 6);
+  if(!matches.length){
+    box.innerHTML = '<div class="ss-empty">Sin coincidencias con "'+q+'"</div>';
+    box.style.display = 'block';
+    return;
+  }
+  box.innerHTML = matches.map(function(p){
+    var img = (p.imgs && p.imgs[0]) || p.img || '';
+    return '<div class="ss-item" onmousedown="event.preventDefault()" onclick="abrirDesdeSugerencia(\''+String(p.id).replace(/'/g,"\\'")+'\')">'
+      + '<div class="ss-thumb">' + (img?'<img src="'+img+'" alt="" loading="lazy">':'<span>'+(p.emoji||'💊')+'</span>') + '</div>'
+      + '<div class="ss-info"><div class="ss-name">'+p.name+'</div><div class="ss-brand">'+(p.brand||'')+'</div></div>'
+      + '<div class="ss-price">'+fmt(p.price)+'</div>'
+      + '</div>';
+  }).join('');
+  box.style.display = 'block';
+}
+function cerrarSugerencias(){ var b=document.getElementById('searchSuggest'); if(b){ b.style.display='none'; b.innerHTML=''; } }
+function abrirDesdeSugerencia(pid){ cerrarSugerencias(); if(typeof openProdModal==='function') openProdModal(pid); }
 
 /* ── FLAVOR ── */
 function getProduct(id){ return PRODUCTS.find(p=>p.id===id); }
@@ -4125,6 +4167,8 @@ function toggleAddress(){
 function selPay(m,el){
   document.querySelectorAll('.pay-option').forEach(o=>o.classList.remove('selected'));
   el.classList.add('selected');
+  var t = document.getElementById('finalizeBtnText');
+  if(t) t.textContent = (m==='mercadopago') ? 'Pagar con Mercado Pago' : 'Enviar pedido por WhatsApp';
 }
 
 function finalizarPedido(){
@@ -4197,20 +4241,51 @@ function finalizarPedido(){
     body: JSON.stringify(payload)
   }).then(function(r){ return r.json(); })
   .then(function(data) {
-    if (data && data.mensaje) {
-      try {
-        var parsed = JSON.parse(data.mensaje);
-        if (parsed.codigo) {
-          document.getElementById('codigoPedidoTexto').textContent = parsed.codigo;
-          document.getElementById('linkEstadoPedido').href =
-            'https://maxupsuplementos.github.io/maxupsuplementos/estado.html?pedido=' + parsed.codigo;
-        }
-      } catch(e) {}
-      var retiroBox = document.getElementById('retiroInfoBox');
-      if (retiroBox) retiroBox.style.display = (payload.entrega === 'retiro') ? 'block' : 'none';
+    // ── Pago con Mercado Pago: llevar al cliente a pagar ──
+    if (data && data.init_point) {
+      showToast('💳 Redirigiendo a Mercado Pago...');
+      setTimeout(function(){ window.location.href = data.init_point; }, 700);
+      return;
     }
+    if (pay === 'mercadopago' && data && data.ok && !data.init_point) {
+      showToast('⚠️ No se pudo generar el link de pago. Te contactamos por WhatsApp.');
+    }
+    // ── Mostrar confirmación al cliente ──
+    var codigo = (data && data.codigo) ? data.codigo : '';
+    var ct = document.getElementById('codigoPedidoTexto');
+    if (ct && codigo) ct.textContent = codigo;
+    var le = document.getElementById('linkEstadoPedido');
+    if (le && codigo) le.href = 'https://maxupsuplementos.github.io/maxupsuplementos/estado.html?pedido=' + codigo;
+    // Cajas según método/entrega
+    var retiroBox = document.getElementById('retiroInfoBox');
+    if (retiroBox) retiroBox.style.display = (delivery === 'retiro') ? 'block' : 'none';
+    var transferBox = document.getElementById('transferInfoBox');
+    if (transferBox) transferBox.style.display = (pay === 'transferencia') ? 'block' : 'none';
+    // Botón para enviar el pedido por WhatsApp al comercio (click directo = sin bloqueo de popup)
+    var waBtn = document.getElementById('waRepeatBtn');
+    if (waBtn) {
+      waBtn.textContent = '📲 Enviar pedido por WhatsApp';
+      waBtn.onclick = function(){ window.open('https://wa.me/' + waNum + '?text=' + encodeURIComponent(msg), '_blank'); };
+    }
+    // Pedido de reseña post-compra: botones para valorar lo comprado
+    var ppr = document.getElementById('postPurchaseReview');
+    if (ppr) {
+      var seen = {}, uniq = [];
+      (cart || []).forEach(function(i){ if(i.pid && !seen[i.pid]){ seen[i.pid]=1; uniq.push(i); } });
+      if (uniq.length) {
+        ppr.innerHTML = '<p style="color:#FFD700;font-size:.85rem;font-weight:700;margin-bottom:8px">⭐ Valorá tu compra y ayudá a otros</p>'
+          + uniq.slice(0,4).map(function(i){
+              return '<button onclick="rateProduct(\''+String(i.pid).replace(/\'/g,"\\\'")+'\')" style="display:inline-block;margin:3px;padding:6px 12px;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.4);color:#FFD700;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:Rajdhani,sans-serif">⭐ '+i.name+'</button>';
+            }).join('');
+      } else { ppr.innerHTML = ''; }
+    }
+    // Mostrar pantalla de éxito
+    var _form = document.getElementById('checkoutFormBody');
+    var _ok = document.getElementById('orderSuccess');
+    if (_form) _form.style.display = 'none';
+    if (_ok) _ok.style.display = 'block';
     setTimeout(function(){ cargarDesdeSheets(); }, 5000);
-  }).catch(function(){});
+  }).catch(function(){ showToast('⚠️ No pudimos registrar el pedido. Probá de nuevo o escribinos por WhatsApp.'); });
 }
 
 cargarLiquidaciones();
@@ -4282,6 +4357,16 @@ async function cargarLiquidaciones() {
         + '</div></div>';
     }).join('');
   } catch(e) {}
+}
+
+// Abrir un producto para valorarlo (desde el pedido de reseña post-compra)
+function rateProduct(pid){
+  closeCheckout();
+  setTimeout(function(){
+    if(typeof openProdModal==='function') openProdModal(pid);
+    var rs = document.getElementById('modalReviewSection');
+    if(rs) rs.scrollIntoView({behavior:'smooth', block:'center'});
+  }, 220);
 }
 
 function resetAfterOrder(){
@@ -4981,7 +5066,7 @@ function openProdModal(pid) {
     });
   }
   if(revList){
-    var revs = _reviews[pid] || [];
+    var revs = _reviews[_revKey(pid)] || [];
     if(revs.length > 0){
       var avg = revs.reduce(function(s,r){return s+r.rating;},0) / revs.length;
       revList.innerHTML = '<div style="font-size:.85rem;color:#FFD700">' + '★'.repeat(Math.round(avg)) + '☆'.repeat(5-Math.round(avg)) + ' <span style="color:#999">' + avg.toFixed(1) + ' (' + revs.length + ' valoraciones)</span></div>';
@@ -7345,8 +7430,28 @@ window.addEventListener('load', function() {
 
 // ── RESEÑAS / VALORACIONES ──
 let _reviews = {};
+// Clave ESTABLE por marca+nombre (no cambia aunque se reordene la planilla)
+function _revKey(pid){
+  var p = (typeof getProduct==='function') ? getProduct(pid) : null;
+  if(p) return ((p.brand||'')+'||'+(p.name||'')).toUpperCase();
+  return 'PID_'+pid;
+}
 function loadReviews(){
-  try{ const s=localStorage.getItem('maxup_reviews'); if(s) _reviews=JSON.parse(s); }catch(e){_reviews={};}
+  try{ const s=localStorage.getItem('maxup_reviews'); if(s) _reviews=JSON.parse(s)||{}; }catch(e){_reviews={};}
+  // Reseñas GLOBALES del servidor (iguales para todos los visitantes)
+  try{
+    fetch(API_URL + '?accion=resenas').then(function(r){return r.json();}).then(function(d){
+      if(d && d.ok && d.resenas){
+        _reviews = d.resenas;
+        try{ localStorage.setItem('maxup_reviews', JSON.stringify(_reviews)); }catch(e){}
+        // Actualizar las valoraciones visibles sin re-renderizar todo
+        document.querySelectorAll('.prod-card').forEach(function(card){
+          var box = document.getElementById('reviews-'+card.dataset.id);
+          if(box) box.innerHTML = renderReviews(card.dataset.id);
+        });
+      }
+    }).catch(function(){});
+  }catch(e){}
 }
 function saveReviews(){ try{localStorage.setItem('maxup_reviews',JSON.stringify(_reviews));}catch(e){} }
 
@@ -7356,30 +7461,36 @@ function submitReview(pid){
   if(!stars){ showToast('⚠️ Seleccioná las estrellas'); return; }
   var rating = Number(stars.value);
   var text = comment ? comment.value.trim() : '';
-  if(!_reviews[pid]) _reviews[pid] = [];
-  _reviews[pid].push({ rating: rating, text: text, fecha: new Date().toLocaleDateString('es-AR') });
+  var key = _revKey(pid);
+  var p = (typeof getProduct==='function') ? getProduct(pid) : null;
+  if(!_reviews[key]) _reviews[key] = [];
+  _reviews[key].push({ rating: rating, text: text, fecha: new Date().toLocaleDateString('es-AR'), nombre:'' });
   saveReviews();
   showToast('⭐ ¡Gracias por tu valoración!');
-  // Actualizar display
   var revBox = document.getElementById('reviews-'+pid);
   if(revBox) revBox.innerHTML = renderReviews(pid);
+  // Guardar en el servidor (global, para todos)
+  try{
+    fetch(API_URL, { method:'POST', body: JSON.stringify({ accion:'nueva_resena', key:key, producto:(p?p.name:''), rating:rating, texto:text }) });
+  }catch(e){}
 }
 
 function renderReviews(pid){
-  var revs = _reviews[pid] || [];
-  if(revs.length===0) return '<div style="font-size:.82rem;color:#666;margin-top:8px">Sin valoraciones aún</div>';
+  var revs = _reviews[_revKey(pid)] || [];
+  if(revs.length===0) return '<div class="card-rating-empty">Sin valoraciones aún</div>';
   var avg = revs.reduce(function(s,r){return s+r.rating;},0) / revs.length;
   var stars = '★'.repeat(Math.round(avg)) + '☆'.repeat(5-Math.round(avg));
-  var html = '<div style="font-size:.85rem;margin-top:8px;color:#FFD700">' + stars + ' <span style="color:var(--gray);font-size:.78rem">' + avg.toFixed(1) + ' (' + revs.length + ')</span></div>';
-  // Mostrar últimas 2
+  var html = '<div class="card-rating">' + stars + ' <span>' + avg.toFixed(1) + ' (' + revs.length + ')</span></div>';
+  html += '<div class="card-rating-comments">';
   revs.slice(-2).forEach(function(r){
-    if(r.text) html += '<div style="font-size:.75rem;color:var(--gray);margin-top:4px;padding:4px 8px;background:rgba(255,255,255,.03);border-radius:6px">"' + r.text.substring(0,80) + '"</div>';
+    if(r.text) html += '<div class="card-rating-c">"' + r.text.substring(0,80) + '"</div>';
   });
+  html += '</div>';
   return html;
 }
 
 function getAvgRating(pid){
-  var revs = _reviews[pid] || [];
+  var revs = _reviews[_revKey(pid)] || [];
   if(revs.length===0) return 0;
   return revs.reduce(function(s,r){return s+r.rating;},0) / revs.length;
 }
