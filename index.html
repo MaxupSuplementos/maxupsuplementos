@@ -189,7 +189,8 @@
   </a>
   <div class="nav-search">
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" id="searchInput" placeholder="Buscar producto, marca, sabor...">
+    <input type="text" id="searchInput" placeholder="Buscar producto, marca, sabor..." autocomplete="off">
+    <div class="search-suggest" id="searchSuggest"></div>
   </div>
   <ul class="nav-links">
     <li><a href="#catalogo">Suplementos</a></li>
@@ -266,6 +267,24 @@
   <button class="nuevos-nav prev" onclick="document.getElementById('nuevosTrack').scrollBy({left:-200,behavior:'smooth'})">‹</button>
   <button class="nuevos-nav next" onclick="document.getElementById('nuevosTrack').scrollBy({left:200,behavior:'smooth'})">›</button>
   <div class="nuevos-track" id="nuevosTrack"></div>
+</div>
+
+<!-- ── CATEGORÍAS DESTACADAS ── -->
+<div class="cats-destacadas">
+  <h2 class="cats-titulo">⚡ Comprá por categoría</h2>
+  <div class="cats-grid">
+    <button class="cat-tile" onclick="irACategoria('proteina')"><span class="cat-ico">🥛</span><span>Proteínas</span></button>
+    <button class="cat-tile" onclick="irACategoria('creatina')"><span class="cat-ico">⚡</span><span>Creatinas</span></button>
+    <button class="cat-tile" onclick="irACategoria('preworkout')"><span class="cat-ico">🔥</span><span>Pre-Entreno</span></button>
+    <button class="cat-tile" onclick="irACategoria('gainer')"><span class="cat-ico">💪</span><span>Gainers</span></button>
+    <button class="cat-tile" onclick="irACategoria('aminoacido')"><span class="cat-ico">🧬</span><span>Aminoácidos</span></button>
+    <button class="cat-tile" onclick="irACategoria('vitamin')"><span class="cat-ico">💊</span><span>Vitaminas</span></button>
+    <button class="cat-tile" onclick="irACategoria('colageno')"><span class="cat-ico">🦴</span><span>Colágeno</span></button>
+    <button class="cat-tile" onclick="irACategoria('barra')"><span class="cat-ico">🍫</span><span>Barras</span></button>
+    <button class="cat-tile" onclick="irACategoria('quemador')"><span class="cat-ico">🌡️</span><span>Quemadores</span></button>
+    <button class="cat-tile" onclick="irACategoria('accesorio')"><span class="cat-ico">🏋️</span><span>Accesorios</span></button>
+    <button class="cat-tile cat-tile-combo" onclick="irACategoria('combo')"><span class="cat-ico">🎁</span><span>Combos</span></button>
+  </div>
 </div>
 
 <!-- ── CATALOG ── -->
@@ -652,6 +671,11 @@
         <span class="cart-total-label">Total</span>
         <span class="cart-total-val" id="cartTotal">$0</span>
       </div>
+      <div class="trust-strip">
+        <span>🔒 Pedido seguro</span>
+        <span>✅ 100% original</span>
+        <span>📦 Envío a todo el país</span>
+      </div>
       <button class="checkout-btn" onclick="openCheckout()">✅ Finalizar Pedido</button>
       <button class="clear-cart-btn" onclick="clearCart()">🗑️ Vaciar carrito</button>
     </div>
@@ -722,7 +746,7 @@
         <label class="pay-option" onclick="selPay('mercadopago',this)">
           <input type="radio" name="pay" value="mercadopago">
           <span class="pay-icon">💳</span>
-          <div><div class="pay-label">Mercado Pago</div><div class="pay-sub">Link de pago — te lo enviamos</div></div>
+          <div><div class="pay-label">Mercado Pago</div><div class="pay-sub">Pagás al instante: tarjeta, QR o dinero en cuenta</div></div>
         </label>
       </div>
 
@@ -750,26 +774,40 @@
         </select>
       </div>
 
+      <div class="trust-strip">
+        <span>🔒 Pedido seguro</span>
+        <span>✅ 100% original</span>
+        <span>📦 Envío a todo el país</span>
+        <span>💬 Te confirmamos por WhatsApp</span>
+      </div>
       <button class="wa-btn" style="margin-top:8px" onclick="finalizarPedido()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-        Enviar pedido por WhatsApp
+        <span id="finalizeBtnText">Enviar pedido por WhatsApp</span>
       </button>
     </div>
 
     <div class="order-success" id="orderSuccess" style="display:none">
       <span>🎉</span>
-      <h3>¡Pedido Enviado!</h3>
-      <p>Se abrió WhatsApp con el detalle completo de tu pedido.<br>Te contactamos a la brevedad para confirmar.</p>
+      <h3>¡Pedido Registrado!</h3>
+      <p>Guardá tu código de pedido. Enviánoslo por WhatsApp con el botón de abajo para confirmar y coordinar el pago.</p>
       <div id="codigoPedidoBox" style="background:rgba(0,200,255,.08);border:1px solid rgba(0,200,255,.3);border-radius:10px;padding:14px;margin:14px 0;text-align:center">
         <p style="color:#999;font-size:.8rem;margin-bottom:4px">Tu código de pedido</p>
         <p id="codigoPedidoTexto" style="font-family:Bebas Neue,sans-serif;font-size:2rem;color:var(--cyan);letter-spacing:.1em">MXP-0000</p>
         <a id="linkEstadoPedido" href="#" target="_blank" style="color:var(--pink);font-size:.85rem;font-weight:600">📋 Ver estado de mi pedido →</a>
+      </div>
+      <div id="transferInfoBox" style="display:none;background:rgba(255,184,0,.07);border:1px solid rgba(255,184,0,.3);border-radius:10px;padding:14px;margin:10px 0;text-align:left">
+        <p style="color:#FFB800;font-size:.9rem;font-weight:700;margin-bottom:8px;text-align:center">💳 Datos para transferir</p>
+        <p style="color:#ddd;font-size:.9rem;margin:3px 0">Alias: <strong style="color:#fff">maxup24</strong></p>
+        <p style="color:#ddd;font-size:.9rem;margin:3px 0">Titular: <strong style="color:#fff">Ruben Dario Ghiggia</strong></p>
+        <p style="color:#ddd;font-size:.9rem;margin:3px 0">Cuenta: <strong style="color:#fff">Mercado Pago</strong></p>
+        <p style="color:#999;font-size:.78rem;margin-top:8px;text-align:center">Enviá el comprobante por WhatsApp para confirmar tu pedido 🙌</p>
       </div>
       <div id="retiroInfoBox" style="display:none;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:10px;padding:14px;margin:10px 0;text-align:center">
         <p style="color:#00E676;font-size:.85rem;font-weight:600;margin-bottom:4px">📍 Dirección de retiro</p>
         <p style="color:var(--gray);font-size:.88rem;margin-bottom:8px">Calixto Gauna 1045, General Güemes, Salta</p>
         <a href="https://www.google.com/maps/search/?api=1&query=Calixto+Gauna+1045+General+Guemes+Salta+Argentina" target="_blank" style="display:inline-block;padding:7px 16px;background:linear-gradient(135deg,#00C8FF,#FF0099);color:#fff;border-radius:6px;font-size:.82rem;font-weight:700;text-decoration:none">🗺️ CÓMO LLEGAR</a>
       </div>
+      <div id="postPurchaseReview" style="margin:12px 0"></div>
       <button class="wa-btn" id="waRepeatBtn">📲 Abrir WhatsApp nuevamente</button>
       <button class="clear-cart-btn" style="margin-top:10px" onclick="resetAfterOrder()">Seguir comprando</button>
     </div>
