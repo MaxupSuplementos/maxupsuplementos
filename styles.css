@@ -660,6 +660,17 @@ body.light .card-rating span{color:#777}
 body.light .trust-strip{border-color:rgba(0,0,0,.08)}
 body.light .trust-strip span{color:#555}
 
+/* ── SUGERENCIA DE COMBO ── */
+.combo-suggest{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;
+  background:linear-gradient(135deg,rgba(153,51,255,.14),rgba(255,0,153,.12));
+  border:1px solid rgba(153,51,255,.4);border-radius:12px;padding:11px 13px;margin-bottom:12px}
+.combo-suggest-txt{font-size:.82rem;line-height:1.4;color:#eee;flex:1;min-width:160px}
+.combo-suggest-txt strong{color:#fff}
+.combo-suggest-btn{background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;border:none;
+  border-radius:9px;padding:9px 14px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:.82rem;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .2s}
+.combo-suggest-btn:hover{opacity:.88}
+
 /* ── UPSELL CARRITO ("Completá tu compra") ── */
 .cart-upsell{padding:10px 2px 2px;margin-top:8px;border-top:1px dashed rgba(0,200,255,.18)}
 .cart-upsell:empty{display:none}
