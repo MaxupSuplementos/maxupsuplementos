@@ -15,10 +15,16 @@
 body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;min-height:100vh}
 .nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:16px;padding:0 24px;height:56px}
 .nav-brand{font-family:"Bebas Neue",sans-serif;font-size:1.4rem;letter-spacing:.1em;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
-.nav-links{display:flex;gap:20px;list-style:none;margin-left:auto}
+.nav-links{display:flex;gap:20px;list-style:none}
 .nav-links a{color:var(--gray);text-decoration:none;font-size:.84rem;font-weight:600;letter-spacing:.05em;transition:color .2s}
 .nav-links a:hover{color:var(--white)}
 .nav-links a.active{color:var(--cyan)}
+/* BUSCADOR EN EL NAV — anclado arriba junto al logo */
+.nav-search{flex:1;min-width:110px;max-width:460px;position:relative;display:flex;align-items:center}
+.nav-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--gray);fill:none;stroke-width:2;pointer-events:none}
+.nav-search .search-input{width:100%;background:var(--s1);border:1px solid var(--bdr);border-radius:10px;padding:9px 14px 9px 36px;color:var(--white);font-size:.86rem;font-family:"DM Sans",sans-serif;outline:none;transition:border-color .2s}
+.nav-search .search-input:focus{border-color:var(--cyan)}
+.nav-search .search-input::placeholder{color:#555}
 .hero{padding:40px 24px 20px;text-align:center;max-width:1400px;margin:0 auto}
 .hero-lbl{font-size:.7rem;font-weight:700;letter-spacing:.2em;color:var(--cyan);text-transform:uppercase;margin-bottom:8px}
 .hero-t{font-family:"Bebas Neue",sans-serif;font-size:clamp(2.5rem,8vw,4.5rem);letter-spacing:.06em;line-height:1;margin-bottom:8px}
@@ -211,8 +217,12 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
   .nuevos-card-name{font-size:.7rem!important}
   .nuevos-card-price{font-size:.8rem!important}
   .nuevos-title{font-size:1rem!important}
-  /* Búsqueda sticky — se bloquea justo debajo del header (a la par del logo) */
-  .search-wrap{position:sticky;top:56px;z-index:90;background:var(--bg);padding:10px 0;margin-bottom:8px;box-shadow:0 6px 12px -8px rgba(0,0,0,.8)}
+  /* Nav compacto en móvil: más espacio para el buscador */
+  .nav{padding:0 12px;gap:10px}
+  .nav-brand{font-size:1.15rem}
+  .nav-search{max-width:none}
+  .nav-search .search-input{font-size:.8rem;padding:8px 12px 8px 32px}
+  .nav-search svg{left:10px;width:14px;height:14px}
   /* Flechas de galería siempre visibles en mobile (no hay hover) */
   .gal-btn-i{opacity:1!important;width:30px;height:30px}
   .gal-dots-i,.gal-counter-i{opacity:1!important}
@@ -226,8 +236,12 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 <body>
 <nav class="nav">
   <a href="index.html" class="nav-brand">MAXUP</a>
+  <div class="nav-search">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="search-input" id="searchInput" type="text" placeholder="Buscar prenda, marca o código (#420)..." oninput="buscar(this.value)">
+  </div>
   <ul class="nav-links">
-    <li><a href="index.html">Catálogo</a></li>
+    <li><a href="index.html">Suplementos</a></li>
     <li><a href="indumentaria.html" class="active">Indumentaria</a></li>
     <li><a href="mayorista.html">Mayoristas</a></li>
   </ul>
@@ -271,12 +285,6 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
     <select id="mfMarca" onchange="fil('marca',this.value)">
       <option value="all">MARCA</option>
     </select>
-  </div>
-
-  <!-- BÚSQUEDA -->
-  <div class="search-wrap">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input class="search-input" id="searchInput" type="text" placeholder="Buscar por nombre, marca o código (#420)..." oninput="buscar(this.value)">
   </div>
 
   <!-- FILTROS CATEGORÍA (desktop) -->
@@ -531,7 +539,20 @@ function renderPag(total){
 
 function irP(n){pag=n;render();syncURL();window.scrollTo({top:0,behavior:'smooth'});}
 function setPPP(v){PPP=parseInt(v)||20;pag=1;render();syncURL();window.scrollTo({top:0,behavior:'smooth'});}
-function buscar(q){busqA=q;pag=1;render();syncURL();}
+function buscar(q){
+  busqA=q;pag=1;render();syncURL();
+  // Al buscar, saltar a los resultados (sin saltar si ya están a la vista)
+  if(q&&q.trim()){
+    var target=document.querySelector('.info-row')||document.getElementById('grid');
+    if(target){
+      var navH=64;
+      var top=target.getBoundingClientRect().top;
+      if(top>140||top<0){
+        window.scrollTo({top:Math.max(0,target.getBoundingClientRect().top+window.scrollY-navH),behavior:'smooth'});
+      }
+    }
+  }
+}
 function fil(tipo,val){
   if(tipo==='cat'){catA=val;}else{marcaA=val;}
   pag=1;buildFiltros();render();syncURL();
@@ -829,6 +850,7 @@ async function cargarSheets(){
     if(!r.ok){mostrarError();return;}
     var d=await r.json();
     if(!d.ok||!d.prendas||!d.prendas.length){mostrarError();return;}
+    NUEVOS_SERVER_I = Array.isArray(d.nuevos_ingresos) ? d.nuevos_ingresos : null;
     PRODS_ALL=filtrarAgotados(d.prendas);
     PRODS=PRODS_ALL.slice();
     readURL();
@@ -838,72 +860,70 @@ async function cargarSheets(){
   }catch(e){mostrarError();}
 }
 
+// Detección por TIEMPO (no se congela): marca prendas nuevas o con stock
+// aumentado con la fecha de detección; expiran a los 14 días.
 function _detectarNuevosI(){
-  var STOCK_KEY='maxup_indum_stock';
-  var COLA_KEY='maxup_indum_nuevos';
-  var MAX_COLA=15;
+  var STOCK_KEY='maxup_indum_snap_v2';   // foto del stock anterior
+  var NUEVOS_KEY='maxup_indum_ts_v2';    // {clave: timestamp}
+  var VENTANA_MS=14*24*60*60*1000;
+  var ahora=Date.now();
+  function pKey(p){return (p.marca||'')+'||'+p.nombre;}
 
-  // Leer stock anterior y cola de nuevos
-  var prevStock={};
-  var cola=[];
+  var prevStock=null,nuevosTs={};
   try{var s=localStorage.getItem(STOCK_KEY);if(s)prevStock=JSON.parse(s);}catch(e){}
-  try{var c=localStorage.getItem(COLA_KEY);if(c)cola=JSON.parse(c);}catch(e){}
+  try{var n=localStorage.getItem(NUEVOS_KEY);if(n)nuevosTs=JSON.parse(n)||{};}catch(e){}
 
-  // Armar stock actual
   var curStock={};
-  PRODS_ALL.forEach(function(p){
-    var key=(p.marca||'')+'||'+p.nombre;
-    curStock[key]=p.stock;
-  });
+  PRODS_ALL.forEach(function(p){curStock[pKey(p)]=p.stock;});
 
-  // Detectar productos con aumento de stock o nuevos
-  var nuevosDetectados=[];
-  PRODS_ALL.forEach(function(p){
-    if(p.stock<=0)return;
-    var key=(p.marca||'')+'||'+p.nombre;
-    if(!(key in prevStock)){
-      // Producto nuevo
-      nuevosDetectados.push(key);
-    } else if(p.stock>prevStock[key]){
-      // Stock aumentó (reposición)
-      nuevosDetectados.push(key);
-    }
-  });
+  // Detectar cambios solo si ya había foto previa (no inundar en 1ª visita)
+  if(prevStock){
+    PRODS_ALL.forEach(function(p){
+      if(p.stock<=0)return;
+      var k=pKey(p),prev=prevStock[k];
+      if(prev===undefined||p.stock>prev)nuevosTs[k]=ahora; // nueva o reposición
+    });
+  }
 
-  // Agregar nuevos detectados a la cola
-  nuevosDetectados.forEach(function(key){
-    var idx=cola.indexOf(key);
-    if(idx>=0)cola.splice(idx,1);
-    cola.push(key);
-  });
+  // Expirar lo viejo
+  Object.keys(nuevosTs).forEach(function(k){if(ahora-nuevosTs[k]>VENTANA_MS)delete nuevosTs[k];});
 
-  // Limitar cola
-  if(cola.length>MAX_COLA)cola=cola.slice(-MAX_COLA);
-
-  // Guardar estado actual
   try{localStorage.setItem(STOCK_KEY,JSON.stringify(curStock));}catch(e){}
-  try{localStorage.setItem(COLA_KEY,JSON.stringify(cola));}catch(e){}
+  try{localStorage.setItem(NUEVOS_KEY,JSON.stringify(nuevosTs));}catch(e){}
 
-  // Convertir cola a productos
-  var result=[];
-  cola.slice().reverse().forEach(function(key){
-    var p=PRODS_ALL.find(function(pr){return (pr.marca||'')+'||'+pr.nombre===key;});
-    if(p)result.push(p);
-  });
-  return result;
+  return Object.keys(nuevosTs)
+    .sort(function(a,b){return nuevosTs[b]-nuevosTs[a];})
+    .map(function(k){return PRODS_ALL.find(function(p){return pKey(p)===k;});})
+    .filter(function(p){return p&&p.stock>0;});
 }
+
+var NUEVOS_SERVER_I=null;   // lista de {marca,nombre} del servidor (igual para todos)
+var NUEVOS_MAX_I=10;        // máximo de prendas en el carrusel de indumentaria
 
 function renderNuevosI(){
   var sec=document.getElementById('nuevosSecI');
   var track=document.getElementById('nuevosTrackI');
   if(!sec||!track)return;
 
-  var nuevos=_detectarNuevosI();
+  var nuevos=[],vistos={};
+  function _add(p){if(!p)return;var k=(p.marca||'')+'||'+(p.codigo||'')+'||'+p.nombre;if(vistos[k])return;vistos[k]=1;nuevos.push(p);}
 
-  // Fallback: si no hay detectados aún (primera visita), mostrar los últimos del Sheets
-  if(nuevos.length===0){
-    nuevos=PRODS_ALL.slice(-10).reverse();
+  if(NUEVOS_SERVER_I && NUEVOS_SERVER_I.length){
+    // ── FUENTE SERVIDOR: igual para todos los visitantes ──
+    NUEVOS_SERVER_I.forEach(function(it){
+      var marca=(it.marca||'').toUpperCase();
+      var prod=PRODS_ALL.find(function(p){
+        return (p.marca||'').toUpperCase()===marca && p.nombre===it.nombre &&
+               (it.codigo ? String(p.codigo||'')===String(it.codigo) : true);
+      });
+      if(prod && prod.stock>0) _add(prod);
+    });
+  } else {
+    // ── FALLBACK (backend sin desplegar): detección por navegador ──
+    _detectarNuevosI().forEach(_add);
+    PRODS_ALL.filter(function(p){return p.stock>0;}).slice(-10).reverse().forEach(_add);
   }
+  nuevos=nuevos.slice(0,NUEVOS_MAX_I);
 
   if(nuevos.length<3){sec.style.display='none';return;}
   sec.style.display='block';
