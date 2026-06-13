@@ -456,8 +456,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 @media(max-width:600px){
   .filtros-dropdowns{flex-direction:row!important;flex-wrap:wrap!important;gap:8px!important;margin-bottom:16px!important}
   .filtro-group{flex:1 1 calc(50% - 4px)!important;min-width:0!important;max-width:none!important}
-  .filtro-group-orden{flex:1 1 100%!important}
-  .filtro-select{font-size:.82rem!important;padding:9px 12px!important;letter-spacing:.03em!important}
+  .filtro-select{font-size:.8rem!important;padding:9px 10px!important;letter-spacing:.02em!important}
 }
 /* ── MENÚ MOBILE DESPLEGABLE (hamburguesa) ── */
 /* Botón hamburguesa: oculto en desktop, visible en mobile */
