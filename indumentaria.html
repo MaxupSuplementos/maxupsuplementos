@@ -908,8 +908,11 @@ function renderNuevosI(){
   var nuevos=[],vistos={};
   function _add(p){if(!p)return;var k=(p.marca||'')+'||'+(p.codigo||'')+'||'+p.nombre;if(vistos[k])return;vistos[k]=1;nuevos.push(p);}
 
+  // 1) Detección por navegador PRIMERO (instantánea): lo recién cargado queda fijo arriba
+  _detectarNuevosI().forEach(_add);
+
+  // 2) Lista del SERVIDOR (global). Se SUMA, no reemplaza (evita el parpadeo).
   if(NUEVOS_SERVER_I && NUEVOS_SERVER_I.length){
-    // ── FUENTE SERVIDOR: igual para todos los visitantes ──
     NUEVOS_SERVER_I.forEach(function(it){
       var marca=(it.marca||'').toUpperCase();
       var prod=PRODS_ALL.find(function(p){
@@ -918,11 +921,11 @@ function renderNuevosI(){
       });
       if(prod && prod.stock>0) _add(prod);
     });
-  } else {
-    // ── FALLBACK (backend sin desplegar): detección por navegador ──
-    _detectarNuevosI().forEach(_add);
-    PRODS_ALL.filter(function(p){return p.stock>0;}).slice(-10).reverse().forEach(_add);
   }
+
+  // 3) Completar con las más nuevas por orden de planilla (para no quedar vacío)
+  PRODS_ALL.filter(function(p){return p.stock>0;}).slice(-10).reverse().forEach(_add);
+
   nuevos=nuevos.slice(0,NUEVOS_MAX_I);
 
   if(nuevos.length<3){sec.style.display='none';return;}
