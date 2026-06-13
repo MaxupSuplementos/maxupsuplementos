@@ -3321,7 +3321,16 @@ let activeCat = 'all';
 let activeBrand = 'all';
 let activeSearch = '';
 let paginaActual = 1;
-const ITEMS_POR_PAGINA = 30;
+let ITEMS_POR_PAGINA = 30;
+try{ var _pp = parseInt(localStorage.getItem('maxup_por_pagina')); if(_pp===30||_pp===50||_pp===100) ITEMS_POR_PAGINA=_pp; }catch(e){}
+function setPorPagina(v){
+  ITEMS_POR_PAGINA = parseInt(v) || 30;
+  try{ localStorage.setItem('maxup_por_pagina', String(ITEMS_POR_PAGINA)); }catch(e){}
+  paginaActual = 1;
+  applyFilters(); syncURLIndex();
+  var c = document.getElementById('catalogo');
+  if(c) c.scrollIntoView({behavior:'smooth', block:'start'});
+}
 
 function syncURLIndex(){
   var p=new URLSearchParams();
@@ -3485,6 +3494,8 @@ function renderAll(){
 var activeOrden = 'default';
 
 function applyFilters(){
+  var _pp = document.getElementById('filtroPorPagina');
+  if(_pp && _pp.value !== String(ITEMS_POR_PAGINA)) _pp.value = String(ITEMS_POR_PAGINA);
   const cards = Array.from(document.querySelectorAll('.prod-card'));
   // Filtrar
   let visibles = cards.filter(card => {
@@ -7908,12 +7919,9 @@ function renderNuevosIngresos(){
   var nuevos = [], vistos = {};
   function _add(p){ if(!p) return; var k=(p.brand||'')+'||'+p.name; if(vistos[k]) return; vistos[k]=1; nuevos.push(p); }
 
-  // 1) Detección por navegador PRIMERO (instantánea): lo que ACABÁS de cargar
-  //    se ve al toque y queda fijo (no lo pisa la lista del servidor → sin parpadeo).
-  _detectarNuevosIngresos().forEach(_add);
-
-  // 2) Lista del SERVIDOR (global, igual para todos). Se SUMA, no reemplaza.
   if(_nuevosServer && _nuevosServer.length){
+    // ── ÚNICA FUENTE: el servidor → TODOS los dispositivos ven EXACTAMENTE lo mismo ──
+    // (no se mezcla detección del navegador, así PC = móvil = todos los visitantes)
     _nuevosServer.forEach(function(it){
       var base = (typeof _extraerSabor==='function') ? _extraerSabor(it.nombre||'').base : (it.nombre||'');
       var marca = (it.marca||'').toUpperCase();
@@ -7923,12 +7931,12 @@ function renderNuevosIngresos(){
       });
       if(prod && prod.flavors && prod.flavors.reduce(function(s,f){return s+f.stock},0)>0) _add(prod);
     });
+  } else {
+    // ── Fallback SOLO si el servidor no responde (igual para todos: orden de planilla) ──
+    PRODUCTS.filter(function(p){
+      return p.flavors && p.flavors.reduce(function(s,f){return s+f.stock},0) > 0 && p.price > 0;
+    }).slice(-15).reverse().forEach(_add);
   }
-
-  // 3) Completar con los más nuevos por orden de planilla (para no quedar vacío)
-  PRODUCTS.filter(function(p){
-    return p.flavors && p.flavors.reduce(function(s,f){return s+f.stock},0) > 0 && p.price > 0;
-  }).slice(-12).reverse().forEach(_add);
 
   nuevos = nuevos.slice(0, NUEVOS_MAX_SUP);
 
