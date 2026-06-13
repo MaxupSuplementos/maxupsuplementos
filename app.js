@@ -3949,7 +3949,7 @@ function renderCart(){
   const empty = document.getElementById('cartEmpty');
   const summary = document.getElementById('cartSummary');
   container.querySelectorAll('.cart-item').forEach(e=>e.remove());
-  if(cart.length===0){ empty.style.display='block'; summary.style.display='none'; return; }
+  if(cart.length===0){ empty.style.display='block'; summary.style.display='none'; renderCartUpsell(); return; }
   empty.style.display='none'; summary.style.display='block';
   const base = cartTotal();
   const desc = getDescuentoMonto(base);
@@ -4006,6 +4006,38 @@ function renderCart(){
       </div>`;
     container.appendChild(el);
   });
+  renderCartUpsell();
+}
+
+// ── UPSELL: "Completá tu compra" (sugerencias de 1 toque en el carrito) ──
+function renderCartUpsell(){
+  var box = document.getElementById('cartUpsell');
+  if(!box) return;
+  if(!cart.length){ box.innerHTML=''; return; }
+  var inCart = {}; cart.forEach(function(i){ inCart[i.pid]=true; });
+  // Complementos baratos primero (accesorios, barras, hidratación, creatina, vitaminas)
+  var prefCats = {accesorio:1, barra:1, hidratacion:1, creatina:1, vitamin:1};
+  var cands = (typeof PRODUCTS!=='undefined'?PRODUCTS:[]).filter(function(p){
+    if(inCart[p.id]) return false;
+    var stock = p.flavors ? p.flavors.reduce(function(s,f){return s+f.stock;},0) : 0;
+    return stock>0 && p.price>0;
+  });
+  cands.sort(function(a,b){
+    var pa = prefCats[a.cat]?0:1, pb = prefCats[b.cat]?0:1;
+    if(pa!==pb) return pa-pb;
+    return a.price-b.price;
+  });
+  var sug = cands.slice(0,3);
+  if(!sug.length){ box.innerHTML=''; return; }
+  box.innerHTML = '<div class="cart-upsell-title">✨ Completá tu compra</div>' +
+    sug.map(function(p){
+      var img = (p.imgs && p.imgs[0]) || p.img || '';
+      return '<div class="cart-upsell-item">' +
+        '<div class="cu-thumb">' + (img?'<img src="'+img+'" alt="'+p.name+'" loading="lazy">':'<span>'+(p.emoji||'💊')+'</span>') + '</div>' +
+        '<div class="cu-info"><div class="cu-name">'+p.name+'</div><div class="cu-price">'+fmt(p.price)+'</div></div>' +
+        '<button class="cu-add" onclick="addToCartById(\''+p.id+'\')">+ Agregar</button>' +
+        '</div>';
+    }).join('');
 }
 
 function updateBadge(){
@@ -4606,7 +4638,9 @@ async function cargarDesdeSheets() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    
+    // Nuevos ingresos calculados en el servidor (iguales para todos los visitantes)
+    _nuevosServer = Array.isArray(data.nuevos_ingresos) ? data.nuevos_ingresos : null;
+
     const prods = data.productos || [];
     if (prods.length === 0) throw new Error('Sin productos');
     
@@ -4699,7 +4733,9 @@ async function cargarDesdeSheets() {
     }catch(e){}
 
     renderAll();
-    window.scrollTo(0, 0);
+    // Solo subir al inicio si el usuario NO scrolleó mientras cargaba
+    // (respeta la posición donde dejó la vista) y si no hay anclas (#seccion)
+    if(window.scrollY < 50 && !location.hash) window.scrollTo(0, 0);
     _generarSchemaProductos();
     console.log('✅ Catálogo cargado desde Sheets:', PRODUCTS.length, 'productos agrupados');
 
@@ -4717,7 +4753,8 @@ async function cargarDesdeSheets() {
         }
       }
     }catch(e2){}
-    renderAll(); window.scrollTo(0, 0);
+    renderAll();
+    if(window.scrollY < 50 && !location.hash) window.scrollTo(0, 0);
   }
 }
 
@@ -7703,83 +7740,83 @@ if('serviceWorker' in navigator){
 // ║ MEJORAS BATCH 2 — 16 FUNCIONALIDADES NUEVAS           ║
 // ══════════════════════════════════════════════════════════
 
-// ── #3: CARRUSEL NUEVOS INGRESOS (AUTO-DETECTA RESTOCK) ──
-// Detecta cualquier aumento de stock (5→8, 0→3, producto nuevo)
-// Mantiene los últimos 12 por orden de llegada (FIFO), no por tiempo
+// ── #3: CARRUSEL NUEVOS INGRESOS ──
+// Detección por TIEMPO (no se congela): marca productos nuevos o con stock
+// aumentado con la fecha de detección; expiran a los 14 días.
 function _detectarNuevosIngresos(){
-  var STOCK_KEY = 'maxup_stock_prev_v3';
-  var COLA_KEY  = 'maxup_nuevos_cola_v3';
-  var MAX_COLA  = 15;
+  var STOCK_KEY  = 'maxup_stock_snap_v4';   // foto del stock anterior
+  var NUEVOS_KEY = 'maxup_nuevos_ts_v4';    // {clave: timestamp de detección}
+  var VENTANA_MS = 14*24*60*60*1000;        // 14 días visibles
+  var ahora = Date.now();
 
-  // Clave estable por marca+nombre (no cambia al agregar filas)
+  // Clave estable por marca+nombre
   function pKey(p){ return (p.brand||'')+'||'+p.name; }
+  function stockDe(p){ return p.flavors ? p.flavors.reduce(function(s,f){return s+f.stock;},0) : 0; }
 
-  // Leer estado anterior
-  var prevStock = {};
-  var cola = [];
-  try {
-    var raw = localStorage.getItem(STOCK_KEY);
-    if(raw) prevStock = JSON.parse(raw);
-    var rawC = localStorage.getItem(COLA_KEY);
-    if(rawC) cola = JSON.parse(rawC);
-  } catch(e){}
+  var prevStock = null, nuevosTs = {};
+  try { var s=localStorage.getItem(STOCK_KEY);  if(s) prevStock = JSON.parse(s); } catch(e){}
+  try { var n=localStorage.getItem(NUEVOS_KEY); if(n) nuevosTs  = JSON.parse(n) || {}; } catch(e){}
 
-  // Detectar productos con aumento de stock o nuevos
-  var nuevosDetectados = [];
-  PRODUCTS.forEach(function(p){
-    var stockActual = p.flavors ? p.flavors.reduce(function(s,f){return s+f.stock},0) : 0;
-    var key = pKey(p);
-    var stockPrev = prevStock[key];
+  // Stock actual
+  var curStock = {};
+  PRODUCTS.forEach(function(p){ curStock[pKey(p)] = stockDe(p); });
 
-    if(stockPrev === undefined){
-      // Producto nuevo que no existía
-      if(stockActual > 0) nuevosDetectados.push(key);
-    } else if(stockActual > stockPrev){
-      // Stock aumentó
-      nuevosDetectados.push(key);
-    }
-  });
-
-  // Agregar nuevos detectados a la cola
-  nuevosDetectados.forEach(function(key){
-    cola = cola.filter(function(x){ return x !== key; });
-    cola.push(key);
-  });
-
-  if(cola.length > MAX_COLA){
-    cola = cola.slice(cola.length - MAX_COLA);
+  // Detectar cambios SOLO si ya teníamos una foto previa
+  // (en la primera visita no inundamos: solo guardamos la foto)
+  if(prevStock){
+    PRODUCTS.forEach(function(p){
+      var k = pKey(p), cur = curStock[k];
+      if(cur <= 0) return;
+      var prev = prevStock[k];
+      if(prev === undefined || cur > prev){
+        nuevosTs[k] = ahora; // producto nuevo o reposición → fecha de hoy
+      }
+    });
   }
 
-  // Guardar stock actual para próxima comparación
-  var stockActualMap = {};
-  PRODUCTS.forEach(function(p){
-    var st = p.flavors ? p.flavors.reduce(function(s,f){return s+f.stock},0) : 0;
-    stockActualMap[pKey(p)] = st;
+  // Expirar lo que pasó la ventana
+  Object.keys(nuevosTs).forEach(function(k){
+    if(ahora - nuevosTs[k] > VENTANA_MS) delete nuevosTs[k];
   });
 
-  try {
-    localStorage.setItem(STOCK_KEY, JSON.stringify(stockActualMap));
-    localStorage.setItem(COLA_KEY, JSON.stringify(cola));
-  } catch(e){}
+  // Guardar estado
+  try { localStorage.setItem(STOCK_KEY,  JSON.stringify(curStock)); } catch(e){}
+  try { localStorage.setItem(NUEVOS_KEY, JSON.stringify(nuevosTs)); } catch(e){}
 
-  // Devolver productos: más reciente primero
-  var resultado = cola.slice().reverse()
-    .map(function(key){ return PRODUCTS.find(function(p){return pKey(p)===key}); })
-    .filter(function(p){ return p && p.price > 0; });
-
-  return resultado;
+  // Detectados, más recientes primero
+  return Object.keys(nuevosTs)
+    .sort(function(a,b){ return nuevosTs[b]-nuevosTs[a]; })
+    .map(function(k){ return PRODUCTS.find(function(p){ return pKey(p)===k; }); })
+    .filter(function(p){ return p && p.price>0 && (p.flavors?p.flavors.reduce(function(s,f){return s+f.stock;},0):0)>0; });
 }
 
-function renderNuevosIngresos(){
-  var nuevos = _detectarNuevosIngresos();
+var _nuevosServer = null;       // lista de {marca,nombre} calculada en el servidor (global)
+var NUEVOS_MAX_SUP = 15;        // máximo de productos en el carrusel de suplementos
 
-  // Fallback: si la cola está vacía (primera vez), mostrar los últimos 8 con stock
-  // (los más recientes están al final de la hoja → más nuevos primero)
-  if(nuevos.length === 0){
-    nuevos = PRODUCTS.filter(function(p){
-      return p.flavors && p.flavors.reduce(function(s,f){return s+f.stock},0) > 0;
-    }).slice(-8).reverse();
+function renderNuevosIngresos(){
+  var nuevos = [], vistos = {};
+  function _add(p){ if(!p) return; var k=(p.brand||'')+'||'+p.name; if(vistos[k]) return; vistos[k]=1; nuevos.push(p); }
+
+  if(_nuevosServer && _nuevosServer.length){
+    // ── FUENTE SERVIDOR: igual para todos los visitantes ──
+    // Cada item es {marca, nombre_crudo}; lo mapeamos al producto agrupado.
+    _nuevosServer.forEach(function(it){
+      var base = (typeof _extraerSabor==='function') ? _extraerSabor(it.nombre||'').base : (it.nombre||'');
+      var marca = (it.marca||'').toUpperCase();
+      var prod = PRODUCTS.find(function(p){
+        return (p.brand||'').toUpperCase()===marca &&
+               ((p.name||'')===base || (p.name||'')===(it.nombre||''));
+      });
+      if(prod && prod.flavors && prod.flavors.reduce(function(s,f){return s+f.stock},0)>0) _add(prod);
+    });
+  } else {
+    // ── FALLBACK (backend sin desplegar): detección por navegador ──
+    _detectarNuevosIngresos().forEach(_add);
+    PRODUCTS.filter(function(p){
+      return p.flavors && p.flavors.reduce(function(s,f){return s+f.stock},0) > 0 && p.price > 0;
+    }).slice(-12).reverse().forEach(_add);
   }
+  nuevos = nuevos.slice(0, NUEVOS_MAX_SUP);
 
   var sec = document.getElementById('nuevosSection');
   var track = document.getElementById('nuevosTrack');
