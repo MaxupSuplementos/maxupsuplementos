@@ -4002,7 +4002,7 @@ function renderCart(){
   const empty = document.getElementById('cartEmpty');
   const summary = document.getElementById('cartSummary');
   container.querySelectorAll('.cart-item').forEach(e=>e.remove());
-  if(cart.length===0){ empty.style.display='block'; summary.style.display='none'; renderCartUpsell(); return; }
+  if(cart.length===0){ empty.style.display='block'; summary.style.display='none'; renderComboSuggest(); renderCartUpsell(); return; }
   empty.style.display='none'; summary.style.display='block';
   const base = cartTotal();
   const desc = getDescuentoMonto(base);
@@ -4059,7 +4059,50 @@ function renderCart(){
       </div>`;
     container.appendChild(el);
   });
+  renderComboSuggest();
   renderCartUpsell();
+}
+
+// ── SUGERENCIA DE COMBO: "armá un combo y ahorrá" según lo que hay en el carrito ──
+function sugerirCombo(){
+  if(!cart || !cart.length) return null;
+  var combos;
+  try{ combos = COMBOS; }catch(e){ return null; } // COMBOS se define más abajo; evitar error si se llama temprano
+  if(!combos || !combos.length) return null;
+  var cats = {};
+  cart.forEach(function(i){ var p=getProduct(i.pid); if(p && p.cat) cats[p.cat]=true; });
+  var mejor = null;
+  combos.forEach(function(combo){
+    var cubiertos = 0, faltan = [];
+    combo.slots.forEach(function(s){ if(cats[s.cat]) cubiertos++; else faltan.push(s); });
+    // Sirve si ya tenés al menos 1 parte y te falta al menos 1
+    if(cubiertos >= 1 && faltan.length >= 1){
+      if(!mejor || cubiertos > mejor.cubiertos || (cubiertos===mejor.cubiertos && faltan.length < mejor.faltan.length)){
+        mejor = { combo: combo, cubiertos: cubiertos, faltan: faltan };
+      }
+    }
+  });
+  return mejor;
+}
+
+function renderComboSuggest(){
+  var box = document.getElementById('comboSuggest');
+  if(!box) return;
+  var s = sugerirCombo();
+  if(!s){ box.innerHTML=''; return; }
+  var faltanTxt = s.faltan.map(function(sl){ return sl.label.replace(/^Eleg[ií] tus? /i,''); }).join(' + ');
+  box.innerHTML = '<div class="combo-suggest">'
+    + '<div class="combo-suggest-txt">🎁 ¡Estás a un paso del <strong>'+s.combo.nombre+'</strong>!<br>'
+    + 'Sumá <strong>'+faltanTxt+'</strong> y armalo en combo con <strong>'+COMBO_DESCUENTO+'% OFF</strong>.</div>'
+    + '<button class="combo-suggest-btn" onclick="irACombos()">🎁 Armar combo</button>'
+    + '</div>';
+}
+
+function irACombos(){
+  closeCart();
+  if(typeof mostrarCombos==='function') mostrarCombos();
+  var sec = document.getElementById('combosSection');
+  if(sec) setTimeout(function(){ sec.scrollIntoView({behavior:'smooth', block:'start'}); }, 100);
 }
 
 // ── UPSELL: "Completá tu compra" (sugerencias de 1 toque en el carrito) ──
@@ -4146,6 +4189,9 @@ function openCheckout(){
   document.getElementById('orderSuccess').style.display='none';
   document.getElementById('checkoutOverlay').classList.add('open');
   document.body.style.overflow='hidden';
+  // Mostrar/ocultar el campo de dirección según la opción de entrega activa
+  // (por defecto es "envío a domicilio", así el campo aparece desde el inicio)
+  toggleAddress();
 }
 function closeCheckout(){ document.getElementById('checkoutOverlay').classList.remove('open'); document.body.style.overflow=''; }
 
