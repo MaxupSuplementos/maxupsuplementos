@@ -4293,7 +4293,7 @@ function finalizarPedido(){
   msg+=`📱 *WhatsApp:* ${phone}\n`;
   if(email) msg+=`📧 *Email:* ${email}\n`;
   msg+=`\n📦 *Detalle:*\n`;
-  cart.forEach(i=>{ msg+=`  • ${i.emoji} ${i.name} — ${i.flavor} × ${i.qty}  →  ${fmt(i.price*i.qty)}\n`; });
+  cart.forEach(i=>{ msg+=`  • ${i.emoji} ${i.brand ? '['+i.brand+'] ' : ''}${i.name} — ${i.flavor} × ${i.qty}  →  ${fmt(i.price*i.qty)}\n`; });
   const _baseTotal = cartTotal();
   const _descQty = getDescuentoCantidad();
   const _baseTrasQty = _baseTotal - _descQty;
