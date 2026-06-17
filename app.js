@@ -3573,7 +3573,7 @@ function onOrdenFilter(val){
 }
 
 // ── #3 CHIPS FILTROS ACTIVOS ──
-var _tipoLabels = {favoritos:'❤️ Favoritos',proteina:'🥛 Proteinas',gainer:'💪 Gainers',creatina:'⚡ Creatinas',aminoacido:'🧬 Aminoacidos',vitamin:'💊 Vitaminas',magnesio:'🧲 Magnesio/Omega',preworkout:'🔥 Pre-Entreno',quemador:'🌡️ Quemadores',colageno:'🦴 Colageno',hidratacion:'💧 Hidratacion',barra:'🍫 Barras',accesorio:'🏋️ Accesorios',combo:'🎁 Combos'};
+var _tipoLabels = {favoritos:'❤️ Favoritos',proteina:'🥛 Proteinas',gainer:'💪 Gainers',creatina:'⚡ Creatinas',aminoacido:'🧬 Aminoacidos',vitamin:'💊 Vitaminas',magnesio:'🧲 Magnesio/Omega',preworkout:'🔥 Pre-Entreno',quemador:'🌡️ Quemadores',colageno:'🦴 Colageno',hidratacion:'💧 Hidratacion',barra:'🍴 Alimentos',accesorio:'🏋️ Accesorios',combo:'🎁 Combos'};
 var _ordenLabels = {'precio-asc':'💲 Menor precio','precio-desc':'💲 Mayor precio','nombre-asc':'🔤 A-Z','nombre-desc':'🔤 Z-A','stock-desc':'📦 Mayor stock'};
 
 function renderFiltrosActivos(){
@@ -4106,12 +4106,44 @@ function irACombos(){
 }
 
 // ── UPSELL: "Completá tu compra" (sugerencias de 1 toque en el carrito) ──
+// Mapa de afinidad: para cada categoría en el carrito, qué complementos tirar
+// (en orden de prioridad). Basado en cómo se combinan los productos.
+var _AFINIDAD_CAT = {
+  proteina:   ['creatina','barra','hidratacion','colageno'],
+  creatina:   ['proteina','preworkout','hidratacion','aminoacido'],
+  gainer:     ['creatina','proteina','aminoacido','hidratacion'],
+  preworkout: ['hidratacion','creatina','aminoacido'],
+  aminoacido: ['proteina','creatina','hidratacion'],
+  vitamin:    ['magnesio','colageno','proteina'],
+  magnesio:   ['vitamin','colageno','aminoacido'],
+  colageno:   ['proteina','vitamin','magnesio'],
+  quemador:   ['proteina','hidratacion','preworkout'],
+  hidratacion:['barra','preworkout','creatina'],
+  barra:      ['proteina','hidratacion','creatina'],
+  accesorio:  ['proteina','hidratacion','barra']
+};
+
 function renderCartUpsell(){
   var box = document.getElementById('cartUpsell');
   if(!box) return;
   if(!cart.length){ box.innerHTML=''; return; }
-  var inCart = {}; cart.forEach(function(i){ inCart[i.pid]=true; });
-  // Complementos baratos primero (accesorios, barras, hidratación, creatina, vitaminas)
+  var inCart = {}, catsEnCarrito = {};
+  cart.forEach(function(i){
+    inCart[i.pid]=true;
+    var p=getProduct(i.pid); if(p && p.cat) catsEnCarrito[p.cat]=true;
+  });
+  // Puntaje de complemento por categoría según lo que ya hay en el carrito.
+  // Cuanto más arriba esté en la lista de afinidad, más puntos.
+  var puntajeCat = {};
+  Object.keys(catsEnCarrito).forEach(function(c){
+    var lista = _AFINIDAD_CAT[c] || [];
+    lista.forEach(function(comp, idx){
+      if(catsEnCarrito[comp]) return; // ya lo tiene, no insistir
+      puntajeCat[comp] = (puntajeCat[comp]||0) + (lista.length - idx);
+    });
+  });
+  var hayAfinidad = Object.keys(puntajeCat).length>0;
+  // Fallback: complementos baratos universales si no hubo match de afinidad
   var prefCats = {accesorio:1, barra:1, hidratacion:1, creatina:1, vitamin:1};
   var cands = (typeof PRODUCTS!=='undefined'?PRODUCTS:[]).filter(function(p){
     if(inCart[p.id]) return false;
@@ -4119,11 +4151,20 @@ function renderCartUpsell(){
     return stock>0 && p.price>0;
   });
   cands.sort(function(a,b){
-    var pa = prefCats[a.cat]?0:1, pb = prefCats[b.cat]?0:1;
-    if(pa!==pb) return pa-pb;
+    if(hayAfinidad){
+      var sa = puntajeCat[a.cat]||0, sb = puntajeCat[b.cat]||0;
+      if(sa!==sb) return sb-sa; // mayor afinidad primero
+    } else {
+      var pa = prefCats[a.cat]?0:1, pb = prefCats[b.cat]?0:1;
+      if(pa!==pb) return pa-pb;
+    }
     return a.price-b.price;
   });
-  var sug = cands.slice(0,3);
+  // Diversificar: 1 por categoría primero (el mejor rankeado de cada una),
+  // luego completar hasta 3 si falta.
+  var sug = [], usadas = {};
+  cands.forEach(function(p){ if(sug.length<3 && !usadas[p.cat]){ usadas[p.cat]=1; sug.push(p); } });
+  if(sug.length<3){ cands.forEach(function(p){ if(sug.length<3 && sug.indexOf(p)<0) sug.push(p); }); }
   if(!sug.length){ box.innerHTML=''; return; }
   box.innerHTML = '<div class="cart-upsell-title">✨ Completá tu compra</div>' +
     sug.map(function(p){
@@ -5548,7 +5589,7 @@ var catLabels = {
   proteina:'Proteina', creatina:'Creatina', aminoacido:'Aminoacidos',
   preworkout:'Pre-entreno', quemador:'Quemador/Termogenico', gainer:'Gainer',
   colageno:'Colageno', vitamin:'Vitaminas y Minerales', hidratacion:'Hidratacion',
-  barra:'Barra proteica', accesorio:'Accesorio'
+  barra:'Alimentos', accesorio:'Accesorio'
 };
 
 
