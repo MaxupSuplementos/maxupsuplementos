@@ -253,7 +253,7 @@ function registrarPedidoWeb(data) {
       hojaPed.getRange(1,1,1,10).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
     }
     var itemsResumen = items.length > 0
-      ? items.map(function(i){ return i.nombre + ' x' + i.cantidad; }).join(' | ')
+      ? items.map(function(i){ return (i.marca ? '[' + i.marca + '] ' : '') + i.nombre + ' x' + i.cantidad; }).join(' | ')
       : 'Pedido web';
     var itemsJSON = items.length > 0 ? JSON.stringify(items) : '[]';
     hojaPed.appendRow([
@@ -267,7 +267,7 @@ function registrarPedidoWeb(data) {
   // ── Notificar por Telegram ──────────────────────────────
   try {
     var itemsTexto = items.length > 0
-      ? items.map(function(i) { return '  • ' + i.nombre + ' x' + i.cantidad; }).join('\n')
+      ? items.map(function(i) { return '  • ' + (i.marca ? '[' + i.marca + '] ' : '') + i.nombre + ' x' + i.cantidad; }).join('\n')
       : 'Pedido web';
     var msg = '🛒 NUEVO PEDIDO WEB — MAXUP\n\n'
       + '🔑 Código: ' + codigoPedido + '\n'
