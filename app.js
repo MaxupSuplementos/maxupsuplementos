@@ -2794,7 +2794,7 @@ const PRODUCTS = [
     "id": "shk_varios",
     "name": "Shakers deportivos",
     "brand": "Varios",
-    "cat": "accesorio",
+    "cat": "shaker",
     "emoji": "🥤",
     "img": "https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/Shaker-1_4f513345-ed58-4d2c-8f51-da1ebdb0588d.png?v=1756412538&width=1100&w=400&output=webp&q=82",
     "desc": "Vasos mezcladores deportivos con bola agitadora. Capacidad 500-700ml. Libre de BPA, fácil de limpiar. Para llevar tu proteína al gym sin complicaciones.",
@@ -2842,7 +2842,7 @@ const PRODUCTS = [
     "id": "shk_everlast",
     "name": "Shaker Everlast con compartimento",
     "brand": "Everlast",
-    "cat": "accesorio",
+    "cat": "shaker",
     "emoji": "🥤",
     "img": "https://images.weserv.nl/?url=m.media-amazon.com/images/I/41ljj4tKP5L._SY300_SX300_QL70_FMwebp_.jpg&w=400&output=webp&q=82",
     "desc": "Shaker premium Everlast con compartimento extra para suplementos en polvo. Sistema de cierre hermético anti-derrame. El shaker más completo del mercado.",
@@ -2858,7 +2858,7 @@ const PRODUCTS = [
     "id": "shk_gold_doble",
     "name": "Shaker Gold Doble",
     "brand": "Gold Nutrition",
-    "cat": "accesorio",
+    "cat": "shaker",
     "emoji": "🥤",
     "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_893667-MLA99594894568_122025-F.webp&w=400&output=webp&q=82",
     "desc": "Shaker doble Gold Nutrition con dos compartimentos separados. Para llevar diferentes suplementos en un solo vaso. El compañero de gym más práctico.",
@@ -2874,7 +2874,7 @@ const PRODUCTS = [
     "id": "lic_mini",
     "name": "Mini Licuadora Portátil",
     "brand": "Varios",
-    "cat": "accesorio",
+    "cat": "shaker",
     "emoji": "⚡",
     "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_783264-MLA82479583759_022025-F.webp&w=400&output=webp&q=82",
     "desc": "Mini licuadora USB portátil recargable. Para preparar tus proteínas y batidos en cualquier lugar. Batería de larga duración y cuchillas de acero inoxidable.",
@@ -3014,7 +3014,7 @@ const PRODUCTS = [
     "id": "acc_botella",
     "name": "Botella Mamushka 3 en 1",
     "brand": "Varios",
-    "cat": "accesorio",
+    "cat": "shaker",
     "emoji": "🍶",
     "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_946566-MLA99615928592_122025-F.webp&w=400&output=webp&q=82",
     "desc": "Botella deportiva 3 en 1 con compartimentos para suplementos. Sistema triple que te permite llevar agua, proteína y cápsulas en una sola botella.",
@@ -3034,7 +3034,7 @@ const PRODUCTS = [
     "id": "acc_botellasport",
     "name": "Botella Sport",
     "brand": "Varios",
-    "cat": "accesorio",
+    "cat": "shaker",
     "emoji": "🍶",
     "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_608099-MLA75199272882_032024-F.webp&w=400&output=webp&q=82",
     "desc": "Botella deportiva clásica. Libre de BPA, tapa de seguridad anti-derrame y boquilla ergonómica. Para hidratarte durante el entrenamiento sin interrupciones.",
@@ -3178,7 +3178,7 @@ const PRODUCTS = [
     "id": "acc_mini_batidora",
     "name": "Mini Batidora a Pilas",
     "brand": "Varios",
-    "cat": "accesorio",
+    "cat": "shaker",
     "emoji": "⚡",
     "img": "https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_675164-MLA87363005217_072025-F.webp&w=400&output=webp&q=82",
     "desc": "Mini batidora de mano a pilas para mezclar proteínas al instante. Compacta, silenciosa y fácil de limpiar. Para usar en casa, trabajo o hotel.",
@@ -3226,7 +3226,7 @@ const PRODUCTS = [
     "id": "mx_shaker",
     "name": "Shaker MAXUP Simple",
     "brand": "MAXUP",
-    "cat": "accesorio",
+    "cat": "shaker",
     "emoji": "🥤",
     "img": "https://images.weserv.nl/?url=i.ibb.co/VWNn63tk/IMG-20260324-182147752-MP-AE.jpg&w=400&output=webp&q=82",
     "desc": "El shaker oficial de MAXUP. Volumen 600ml con bola agitadora de acero. Logo MAXUP. Libre de BPA, fácil de limpiar. El shaker para el equipo MAXUP.",
@@ -3262,7 +3262,7 @@ const PRODUCTS = [
     "id": "mx_bidon",
     "name": "Bidón 1L MAXUP",
     "brand": "MAXUP",
-    "cat": "accesorio",
+    "cat": "shaker",
     "emoji": "🍶",
     "img": "",
     "desc": "Bidón deportivo oficial MAXUP de 1 litro. Para mantener la hidratación durante las sesiones largas. Material libre de BPA y cierre seguro anti-derrame.",
@@ -3573,7 +3573,7 @@ function onOrdenFilter(val){
 }
 
 // ── #3 CHIPS FILTROS ACTIVOS ──
-var _tipoLabels = {favoritos:'❤️ Favoritos',proteina:'🥛 Proteinas',gainer:'💪 Gainers',creatina:'⚡ Creatinas',aminoacido:'🧬 Aminoacidos',vitamin:'💊 Vitaminas',magnesio:'🧲 Magnesio/Omega',preworkout:'🔥 Pre-Entreno',quemador:'🌡️ Quemadores',colageno:'🦴 Colageno',hidratacion:'💧 Hidratacion',barra:'🍴 Alimentos',accesorio:'🏋️ Accesorios',combo:'🎁 Combos'};
+var _tipoLabels = {favoritos:'❤️ Favoritos',proteina:'🥛 Proteinas',gainer:'💪 Gainers',creatina:'⚡ Creatinas',aminoacido:'🧬 Aminoacidos',vitamin:'💊 Vitaminas',magnesio:'🧲 Magnesio/Omega',preworkout:'🔥 Pre-Entreno',quemador:'🌡️ Quemadores',colageno:'🦴 Colageno',hidratacion:'💧 Hidratacion',barra:'🍴 Alimentos',shaker:'🥤 Shakers',accesorio:'🏋️ Accesorios',combo:'🎁 Combos'};
 var _ordenLabels = {'precio-asc':'💲 Menor precio','precio-desc':'💲 Mayor precio','nombre-asc':'🔤 A-Z','nombre-desc':'🔤 Z-A','stock-desc':'📦 Mayor stock'};
 
 function renderFiltrosActivos(){
@@ -4109,17 +4109,18 @@ function irACombos(){
 // Mapa de afinidad: para cada categoría en el carrito, qué complementos tirar
 // (en orden de prioridad). Basado en cómo se combinan los productos.
 var _AFINIDAD_CAT = {
-  proteina:   ['creatina','barra','hidratacion','colageno'],
-  creatina:   ['proteina','preworkout','hidratacion','aminoacido'],
-  gainer:     ['creatina','proteina','aminoacido','hidratacion'],
-  preworkout: ['hidratacion','creatina','aminoacido'],
-  aminoacido: ['proteina','creatina','hidratacion'],
+  proteina:   ['creatina','shaker','barra','hidratacion','colageno'],
+  creatina:   ['proteina','shaker','preworkout','hidratacion','aminoacido'],
+  gainer:     ['creatina','shaker','proteina','aminoacido','hidratacion'],
+  preworkout: ['shaker','hidratacion','creatina','aminoacido'],
+  aminoacido: ['proteina','creatina','hidratacion','shaker'],
   vitamin:    ['magnesio','colageno','proteina'],
   magnesio:   ['vitamin','colageno','aminoacido'],
   colageno:   ['proteina','vitamin','magnesio'],
   quemador:   ['proteina','hidratacion','preworkout'],
   hidratacion:['barra','preworkout','creatina'],
   barra:      ['proteina','hidratacion','creatina'],
+  shaker:     ['proteina','creatina','preworkout'],
   accesorio:  ['proteina','hidratacion','barra']
 };
 
@@ -4273,7 +4274,7 @@ function selPay(m,el){
 // ── ENVÍO AUTOGESTIONADO ──
 // Peso aproximado por categoría (kg por unidad) para estimar el paquete
 var _PESO_CAT = { proteina:1.4, gainer:3, creatina:0.35, aminoacido:0.4, preworkout:0.45,
-  quemador:0.15, vitamin:0.15, magnesio:0.2, colageno:0.4, hidratacion:0.6, barra:0.06, accesorio:0.4 };
+  quemador:0.15, vitamin:0.15, magnesio:0.2, colageno:0.4, hidratacion:0.6, barra:0.06, shaker:0.25, accesorio:0.4 };
 function calcularPesoEstimado(){
   var kg = 0.3; // embalaje base
   (cart||[]).forEach(function(i){
@@ -5017,9 +5018,12 @@ function _inferirCategoria(nombre) {
   if (/whey.{0,5}bar|low.{0,5}carb.{0,10}bar|protein.{0,5}bar/.test(n)) return 'barra';
   if (/gelatina.{0,15}colag|colag.{0,15}gelatina/.test(n)) return 'barra';
 
+  // SHAKERS, VASOS, BOTELLAS, LICUADORAS Y BIDONES — antes que accesorios
+  if (/shaker|licuadora|vaso.{0,10}mezcl|vaso.{0,10}deport|everlast|bidon|mamushka|botella|mini.{0,8}batidora|batidora.{0,8}pila/.test(n)) return 'shaker';
+
   // ACCESORIOS — antes de barras para evitar "tope barra olimpica"
-  if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|munequera|hand.{0,8}grip|ejercitador.{0,10}dedo|mini.{0,8}batidora|batidora.{0,8}pila|bolso|scoop|bidon|llavero|vincha|tope.{0,8}barra|latex|banda.{0,30}elastic|tobillera/.test(n)) return 'accesorio';
-  if (/botella|shaker|new.{0,3}protein/.test(n)) return 'accesorio';
+  if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|munequera|hand.{0,8}grip|ejercitador.{0,10}dedo|bolso|scoop|llavero|vincha|tope.{0,8}barra|latex|banda.{0,30}elastic|tobillera/.test(n)) return 'accesorio';
+  if (/new.{0,3}protein/.test(n)) return 'accesorio';
 
   // CREATINA
   if (/creatin/.test(n)) return 'creatina';
@@ -5073,6 +5077,7 @@ function _mapCategoria(cat) {
     'hidratacion':'hidratacion','hidratación':'hidratacion','hidratante':'hidratacion','isotonica':'hidratacion',
     'barra':'barra','barras':'barra','snack':'barra','snacks':'barra',
     'accesorio':'accesorio','accesorios':'accesorio','accesories':'accesorio',
+    'shaker':'shaker','shakers':'shaker','vaso':'shaker','vasos':'shaker','botella':'shaker','botellas':'shaker','bidon':'shaker','bidón':'shaker','licuadora':'shaker',
     'indumentaria':'indumentaria','ropa':'indumentaria',
     'gainer':'gainer','gainers':'gainer','hipercalorico':'gainer','hipercalórico':'gainer',
     'otros':'otros','other':'otros'
@@ -5085,7 +5090,7 @@ function _catEmoji(cat) {
   const m = {
     'proteina':'🥛','creatina':'⚡','aminoacido':'🧬','vitaminas':'💊','magnesio':'🧲',
     'preworkout':'🔥','quemador':'🌡️','colageno':'🦴','hidratacion':'💧',
-    'barra':'🍫','accesorio':'🏋️','indumentaria':'👕','gainer':'💪','otros':'📦'
+    'barra':'🍫','accesorio':'🏋️','shaker':'🥤','indumentaria':'👕','gainer':'💪','otros':'📦'
   };
   return m[cat.toLowerCase()] || '📦';
 }
@@ -5589,7 +5594,7 @@ var catLabels = {
   proteina:'Proteina', creatina:'Creatina', aminoacido:'Aminoacidos',
   preworkout:'Pre-entreno', quemador:'Quemador/Termogenico', gainer:'Gainer',
   colageno:'Colageno', vitamin:'Vitaminas y Minerales', hidratacion:'Hidratacion',
-  barra:'Alimentos', accesorio:'Accesorio'
+  barra:'Alimentos', shaker:'Shakers y vasos', accesorio:'Accesorio'
 };
 
 
