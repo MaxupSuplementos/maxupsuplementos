@@ -403,7 +403,7 @@ function setGenero(g){
   document.querySelectorAll('.gtab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-g')===g);});
   var mfG=document.getElementById('mfGenero');if(mfG)mfG.value=g;
   buildFiltros();
-  render();syncURL();
+  render();renderNuevosI();syncURL();
 }
 
 function getFil(){
@@ -916,11 +916,15 @@ function renderNuevosI(){
         return (p.marca||'').toUpperCase()===marca && p.nombre===it.nombre &&
                (it.codigo ? String(p.codigo||'')===String(it.codigo) : true);
       });
-      if(prod && prod.stock>0) _add(prod);
+      // Solo ingresos del género de la solapa activa → nunca mezclar hombre/mujer
+      if(prod && prod.stock>0 && prod.genero===generoA) _add(prod);
     });
-  } else {
-    // ── Fallback SOLO si el servidor no responde (igual para todos: orden de planilla) ──
-    PRODS_ALL.filter(function(p){return p.stock>0;}).slice(-10).reverse().forEach(_add);
+  }
+  // Fallback / completar: si el servidor no trajo suficientes de este género,
+  // mostrar los últimos cargados del género activo (orden de planilla).
+  if(nuevos.length<3){
+    PRODS_ALL.filter(function(p){return p.stock>0 && p.genero===generoA;})
+      .slice(-12).reverse().forEach(_add);
   }
 
   nuevos=nuevos.slice(0,NUEVOS_MAX_I);
