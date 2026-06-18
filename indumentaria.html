@@ -920,9 +920,10 @@ function renderNuevosI(){
       if(prod && prod.stock>0 && prod.genero===generoA) _add(prod);
     });
   }
-  // Fallback / completar: si el servidor no trajo suficientes de este género,
-  // mostrar los últimos cargados del género activo (orden de planilla).
-  if(nuevos.length<3){
+  // Respaldo SOLO si el servidor no trajo NINGÚN ingreso de este género
+  // (servidor caído / sin novedades). En operación normal el carrusel = lo que
+  // el servidor detecta como nuevo o repuesto (no depende del orden de planilla).
+  if(nuevos.length===0){
     PRODS_ALL.filter(function(p){return p.stock>0 && p.genero===generoA;})
       .slice(-12).reverse().forEach(_add);
   }
