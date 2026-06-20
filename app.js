@@ -8062,33 +8062,32 @@ var _nuevosServer = null;       // lista de {marca,nombre} calculada en el servi
 var NUEVOS_MAX_SUP = 15;        // máximo de productos en el carrusel de suplementos
 
 function renderNuevosIngresos(){
+  var sec = document.getElementById('nuevosSection');
+  var track = document.getElementById('nuevosTrack');
+  if(!sec || !track) return;
+
+  // Esperar SIEMPRE la lista del servidor. Si todavía no llegó (entrada inicial
+  // o carga desde cache), NO mostrar relleno con los últimos de la planilla:
+  // dejar la sección oculta hasta tener los ingresos correctos (evita el parpadeo).
+  if(!_nuevosServer || !_nuevosServer.length){ sec.style.display = 'none'; return; }
+
   var nuevos = [], vistos = {};
   function _add(p){ if(!p) return; var k=(p.brand||'')+'||'+p.name; if(vistos[k]) return; vistos[k]=1; nuevos.push(p); }
 
-  if(_nuevosServer && _nuevosServer.length){
-    // ── ÚNICA FUENTE: el servidor → TODOS los dispositivos ven EXACTAMENTE lo mismo ──
-    // (no se mezcla detección del navegador, así PC = móvil = todos los visitantes)
-    _nuevosServer.forEach(function(it){
-      var base = (typeof _extraerSabor==='function') ? _extraerSabor(it.nombre||'').base : (it.nombre||'');
-      var marca = (it.marca||'').toUpperCase();
-      var prod = PRODUCTS.find(function(p){
-        return (p.brand||'').toUpperCase()===marca &&
-               ((p.name||'')===base || (p.name||'')===(it.nombre||''));
-      });
-      if(prod && prod.flavors && prod.flavors.reduce(function(s,f){return s+f.stock},0)>0) _add(prod);
+  // ── ÚNICA FUENTE: el servidor → TODOS los dispositivos ven EXACTAMENTE lo mismo ──
+  _nuevosServer.forEach(function(it){
+    var base = (typeof _extraerSabor==='function') ? _extraerSabor(it.nombre||'').base : (it.nombre||'');
+    var marca = (it.marca||'').toUpperCase();
+    var prod = PRODUCTS.find(function(p){
+      return (p.brand||'').toUpperCase()===marca &&
+             ((p.name||'')===base || (p.name||'')===(it.nombre||''));
     });
-  } else {
-    // ── Fallback SOLO si el servidor no responde (igual para todos: orden de planilla) ──
-    PRODUCTS.filter(function(p){
-      return p.flavors && p.flavors.reduce(function(s,f){return s+f.stock},0) > 0 && p.price > 0;
-    }).slice(-15).reverse().forEach(_add);
-  }
+    if(prod && prod.flavors && prod.flavors.reduce(function(s,f){return s+f.stock},0)>0) _add(prod);
+  });
 
   nuevos = nuevos.slice(0, NUEVOS_MAX_SUP);
 
-  var sec = document.getElementById('nuevosSection');
-  var track = document.getElementById('nuevosTrack');
-  if(!sec || !track || nuevos.length < 3) return;
+  if(nuevos.length < 3){ sec.style.display = 'none'; return; }
   sec.style.display = 'block';
   track.innerHTML = nuevos.map(function(p){
     var imgSrc = (p.imgs && p.imgs[0]) || p.img || '';
