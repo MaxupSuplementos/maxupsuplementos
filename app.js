@@ -8112,6 +8112,10 @@ function _initAutoCarousel(track){
   // Duplicar el contenido para un loop SIN saltos. renderNuevosIngresos reescribe
   // innerHTML antes de llamar aca, asi que no se acumula en cada render.
   track.innerHTML = track.innerHTML + track.innerHTML;
+  // Clave: scroll INSTANTANEO (la CSS tiene scroll-behavior:smooth, que al mover
+  // 60x/seg amontona animaciones y se traba) y SIN scroll-snap (que imanta y pelea).
+  track.style.scrollBehavior = 'auto';
+  track.style.scrollSnapType = 'none';
   track._paused = false; track._dragging = false; track._moved = false;
   track._pos = 0;
   if(!track._autoHover){

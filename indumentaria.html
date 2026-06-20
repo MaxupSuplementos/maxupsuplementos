@@ -948,6 +948,10 @@ function renderNuevosI(){
 function _initAutoCarousel(track){
   if(!track || track.children.length < 3) return;
   track.innerHTML = track.innerHTML + track.innerHTML;
+  // Clave: scroll INSTANTANEO y SIN scroll-snap (la CSS tiene scroll-snap-type
+  // mandatory, que imanta a cada tarjeta y pelea con el auto-scroll).
+  track.style.scrollBehavior = 'auto';
+  track.style.scrollSnapType = 'none';
   track._paused = false; track._dragging = false; track._moved = false;
   track._pos = 0;
   if(!track._autoHover){
