@@ -897,6 +897,33 @@ function adminCambiarEstado(clave, codigo, nuevoEstado) {
   throw new Error('Pedido no encontrado: ' + codigo);
 }
 
+// Busca la fila de un producto: primero por nombre EXACTO (normalizado),
+// y SOLO si no hay coincidencia exacta, por similitud (>=0.6) como respaldo.
+// Asi una venta de "Creatina X 300 - Doypack" no descuenta de otra variante.
+function _matchFilaProducto(data, colNombre, nombreItem, startRow) {
+  var exacto = _normNombreSD(nombreItem);
+  if (exacto) {
+    for (var r = startRow; r < data.length; r++) {
+      var nf = data[r][colNombre];
+      if (nf && _normNombreSD(nf) === exacto) return r;
+    }
+  }
+  // Respaldo: similitud por palabras (>=0.6) solo si no hubo match exacto
+  var nb = String(nombreItem || '').toLowerCase().trim();
+  var palabras = nb.split(/\s+/).filter(function(p){ return p.length > 2; });
+  if (!palabras.length) return -1;
+  var mejorFila = -1, mejorScore = 0;
+  for (var r2 = startRow; r2 < data.length; r2++) {
+    var nf2 = String(data[r2][colNombre] || '').toLowerCase().trim();
+    if (!nf2) continue;
+    var hits = 0;
+    palabras.forEach(function(p){ if (nf2.indexOf(p) >= 0) hits++; });
+    var pct = hits / palabras.length;
+    if (pct > mejorScore && pct >= 0.6) { mejorScore = pct; mejorFila = r2; }
+  }
+  return mejorFila;
+}
+
 // Descuenta stock cuando el pedido se marca como finalizado
 function _descontarStockPedido(items) {
   if (!items || items.length === 0) return;
@@ -916,18 +943,8 @@ function _descontarStockPedido(items) {
     var colStock  = headers.indexOf('stock');
     if (colNombre >= 0 && colStock >= 0) {
       items.forEach(function(item) {
-        var nombreBuscado = String(item.nombre || '').toLowerCase().trim();
         var cantItem = Number(item.cantidad) || 1;
-        var mejorFila = -1, mejorScore = 0;
-        for (var r = 1; r < catData.length; r++) {
-          var nombreFila = String(catData[r][colNombre] || '').toLowerCase().trim();
-          if (!nombreFila) continue;
-          var palabras = nombreBuscado.split(/\s+/);
-          var score = 0;
-          palabras.forEach(function(p) { if (p.length > 2 && nombreFila.indexOf(p) >= 0) score++; });
-          var pct = score / palabras.length;
-          if (pct > mejorScore && pct >= 0.6) { mejorScore = pct; mejorFila = r; }
-        }
+        var mejorFila = _matchFilaProducto(catData, colNombre, item.nombre, 1);
         if (mejorFila >= 0) {
           var stockActual = Number(catData[mejorFila][colStock]) || 0;
           hojaCat.getRange(mejorFila + 1, colStock + 1).setValue(Math.max(0, stockActual - cantItem));
@@ -944,18 +961,8 @@ function _descontarStockPedido(items) {
   if (!hojaSup) return;
   var supData = hojaSup.getDataRange().getValues();
   items.forEach(function(item) {
-    var nombreBuscado = String(item.nombre || '').toLowerCase().trim();
     var cantItem = Number(item.cantidad) || 1;
-    var mejorFila = -1, mejorScore = 0;
-    for (var r = 2; r < supData.length; r++) {
-      var nombreFila = String(supData[r][0] || '').toLowerCase().trim();
-      if (!nombreFila) continue;
-      var palabras = nombreBuscado.split(/\s+/);
-      var score = 0;
-      palabras.forEach(function(p) { if (p.length > 2 && nombreFila.indexOf(p) >= 0) score++; });
-      var pct = score / palabras.length;
-      if (pct > mejorScore && pct >= 0.6) { mejorScore = pct; mejorFila = r; }
-    }
+    var mejorFila = _matchFilaProducto(supData, 0, item.nombre, 2);
     if (mejorFila >= 0) {
       var stockActual = Number(supData[mejorFila][3]) || 0;
       hojaSup.getRange(mejorFila + 1, 4).setValue(Math.max(0, stockActual - cantItem));
@@ -1104,25 +1111,40 @@ function adminGetClientesDescuento(clave) {
 // ════════════════════════════════════════════════════════════
 
 function _leerOfertasHoja(diasLimite) {
-  var hoja = _getSS().getSheetByName('ANALISIS_OFERTAS');
-  if (!hoja || hoja.getLastRow() < 2) return [];
+  // Lee el stock EN VIVO desde STOCK_DETALLADO (que se actualiza en cada venta),
+  // no de la "foto" diaria de ANALISIS_OFERTAS. Asi no aparecen vencidos fantasma
+  // de productos que ya se vendieron durante el dia.
+  var ss = _getSS();
+  var hojaSD = ss.getSheetByName('STOCK_DETALLADO');
+  if (!hojaSD || hojaSD.getLastRow() < 2) return [];
 
-  var rows = hoja.getDataRange().getValues();
+  // Precios actuales desde SUPLEMENTOS (por nombre normalizado)
+  var precios = {};
+  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+  if (hojaSup) {
+    var rs = hojaSup.getDataRange().getValues();
+    for (var s = 2; s < rs.length; s++) {
+      var nom = String(rs[s][0] || '').trim();
+      var pr  = Number(rs[s][1]) || 0;
+      if (nom && pr > 0) precios[_normNombreSD(nom)] = pr;
+    }
+  }
+
+  var rows = hojaSD.getDataRange().getValues();
   var productos = [];
   var hoy = new Date(); hoy.setHours(0,0,0,0);
 
   for (var i = 1; i < rows.length; i++) {
     var nombre = String(rows[i][0] || '').trim();
     var marca  = String(rows[i][1] || '').trim();
-    var stock  = Number(rows[i][2]) || 0;
-    var vence  = rows[i][3];
-    var ventas = Number(rows[i][5]) || 0;
-    var precio = Number(rows[i][6]) || 0;
+    var vence  = rows[i][2];
+    var stock  = Number(rows[i][4]) || 0; // col E = Stock Actual (EN VIVO)
 
     if (!nombre || !vence) continue;
-    if (stock <= 0) continue; // Ignorar productos sin stock
+    if (stock <= 0) continue; // Ignorar lotes sin stock
 
     var fechaVence = new Date(vence); fechaVence.setHours(0,0,0,0);
+    if (isNaN(fechaVence.getTime())) continue;
     var diasReales = Math.round((fechaVence - hoy) / (1000*60*60*24));
 
     if (diasReales <= diasLimite) {
@@ -1137,7 +1159,7 @@ function _leerOfertasHoja(diasLimite) {
         nombre: nombre, marca: marca, stock: stock,
         diasRestantes: diasReales,
         fechaVence: Utilities.formatDate(fechaVence, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy'),
-        ventas30d: ventas, precio: precio, urgencia: urgencia
+        ventas30d: 0, precio: precios[_normNombreSD(nombre)] || 0, urgencia: urgencia
       });
     }
   }
