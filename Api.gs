@@ -572,7 +572,7 @@ function _calcularNuevosIngresos(clave, items) {
         return { it: it, ts: Number(filas[i + 1][2]) || 0 };
       }).filter(function(x) { return x.it.stock > 0; })
         .sort(function(a, b) { return b.ts - a.ts; })
-        .slice(0, 30)
+        .slice(0, 80)  // antes 30: con 80 entran ingresos de ambos generos (mujer + hombre SOUR) sin taparse
         .map(function(x) { return { marca: x.it.marca || '', nombre: x.it.nombre || '', codigo: x.it.codigo || '' }; });
 
       props.setProperty(DATA_PROP, JSON.stringify(ordenados));
@@ -698,8 +698,12 @@ function getCatalogoDesdeSuplemetos(hoja) {
     var descripcion = String(row[9] || '').trim();
     // Soportar múltiples imágenes separadas por salto de línea o ;
     var imagenes = imagenRaw.split(/[\r\n;]+/).map(function(u){ return u.trim(); }).filter(Boolean);
+    // Si la fila cae bajo la sección SHAKERS o LICUADORAS de la planilla,
+    // forzar "shaker" (cubre "Star Simple", "Gold Doble", etc. que por nombre no se detectan)
+    var _marcaUp = marcaActual.toUpperCase();
+    var _cat = (_marcaUp === 'SHAKERS' || _marcaUp === 'LICUADORAS') ? 'shaker' : inferirCat(col0);
     productos.push({
-      id: id++, nombre: col0, marca: marcaActual, categoria: inferirCat(col0),
+      id: id++, nombre: col0, marca: marcaActual, categoria: _cat,
       precio_venta: precio_unit, precio_lista: precio_lista || precio_unit,
       stock: stock, imagen_url: imagenes[0] || '', imagenes: imagenes,
       descripcion: descripcion,
@@ -717,16 +721,19 @@ function inferirCat(nombre) {
     .replace(/[úùü]/g,'u').replace(/ñ/g,'n');
   if (/whey.{0,5}bar|low.{0,5}carb.{0,10}bar|protein.{0,5}bar/.test(n)) return 'barra';
   if (/gelatina.{0,15}colag|colag.{0,15}gelatina/.test(n)) return 'barra';
-  if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|munequera|hand.{0,8}grip|ejercitador|mini.{0,8}batidora|bolso|scoop|bidon|llavero|vincha|tope.{0,8}barra|latex|banda.{0,30}elastic|tobillera/.test(n)) return 'accesorio';
-  if (/botella|shaker/.test(n)) return 'accesorio';
+  // Shakers, vasos, botellas, bidones y licuadoras/batidoras mini → categoría "shaker"
+  if (/shaker|licuadora|\bvaso\b|botella|bidon|mini.{0,8}batidora|batidora.{0,8}pila|everlast|mamushka|maxup.{0,4}simple/.test(n)) return 'shaker';
+  if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|munequera|hand.{0,8}grip|ejercitador|bolso|scoop|llavero|vincha|tope.{0,8}barra|latex|banda.{0,30}elastic|tobillera|pelota|pilates|faja|neoprene|venda|boxeo|\bcono\b|soga|colchoneta/.test(n)) return 'accesorio';
+  // QUIMICOS (hormonales / anabolicos)
+  if (/testo|testosterona|stanozol|\bstano\b|winstrol|primobolan|cipionato|enantato|propionato|sustanon|trembolona|trenbolona|boldenona|nandrolona|deca.{0,3}durabolin|dianabol|metandro|oxandrolona|anavar|oximetolona|anadrol|masteron|clembuterol|clenbuterol|somatropina|\bhgh\b|oxandro/.test(n)) return 'quimicos';
   if (/creatin/.test(n)) return 'creatina';
-  if (/gainer|ultra.{0,5}mass|mutant.{0,5}mass|nitro.{0,5}gain|mass.{0,5}fusion|extreme.{0,5}mass/.test(n)) return 'gainer';
-  if (/whey|proteina|protein|caseina|isolate|pea.{0,5}prot|bio.{0,5}prot/.test(n)) return 'proteina';
+  if (/gainer|ultra.{0,5}mass|mutant.{0,5}mass|nitro.{0,5}gain|mass.{0,5}fusion|extreme.{0,5}mass|mass.{0,5}builder/.test(n)) return 'gainer';
+  if (/whey|wh3y|proteina|protein|\bprote\b|caseina|isolate|pea.{0,5}prot|bio.{0,5}prot/.test(n)) return 'proteina';
   if (/bcaa|glutamin|aminoacid|taurina|arginina|leucina|eaa|hmb|carnitin/.test(n)) return 'aminoacido';
-  if (/pre.{0,5}work|pump|tnt|dynamite|beta.{0,5}alan/.test(n)) return 'preworkout';
-  if (/colag|collagen/.test(n) && !/gelatina/.test(n)) return 'colageno';
-  if (/thermo|fat.{0,5}burn|cla |quemad|lipo|termogen/.test(n)) return 'quemador';
-  if (/omega|vitam|magnesio|zinc|calcio|resveratrol|ashwagandha|zma|cafeina|nad |multivit|citrato|bisglicinato/.test(n)) return 'vitamin';
+  if (/pre.{0,5}work|pre.{0,5}entren|pump|tnt|dynamite|beta.{0,5}alan|oxido.{0,4}nitric|nitrico|\bn\.o\b/.test(n)) return 'preworkout';
+  if ((/colag|collagen|flexo|glucosamin|condroitin/.test(n)) && !/gelatina/.test(n)) return 'colageno';
+  if (/thermo|fat.{0,5}burn|cla |quemad|lipo|termogen|black.{0,4}cuts/.test(n)) return 'quemador';
+  if (/omega|vitam|magnesio|zinc|calcio|resveratrol|ashwagandha|astaxantina|zma|cafeina|nad |multivit|citrato|bisglicinato/.test(n)) return 'vitamin';
   if (/hidrat|iso.{0,5}sport|electro|recovery.{0,5}drink|sport.{0,5}drink|just.{0,5}carb|hydromax|hydroplus|energy.{0,5}gel|maltodextri|isotonic/.test(n)) return 'hidratacion';
   if (/beauty.{0,5}bar|iron.{0,5}bar|barra.{0,10}proteic|barra.{0,10}cereal|cereal.{0,5}bar|grows.{0,5}bar|brava.{0,5}bar|snack|granola|pancake|cupcake|omelette.{0,10}proteic|quelopaleo|bros.{0,5}bar|gelatina|mani.{0,5}king|vitalgy/.test(n)) return 'barra';
   if (/short|remera|camiseta|calza|top |buzo|campera|catsuit/.test(n)) return 'indumentaria';
@@ -1672,61 +1679,52 @@ function descontarStockDetallado(nombreProducto, cantidadVendida) {
   try {
     var hoja = _getSS().getSheetByName('STOCK_DETALLADO');
     if (!hoja) return;
-
     var datos = hoja.getDataRange().getValues();
-    var hoy   = new Date(); hoy.setHours(0,0,0,0);
 
-    var nombreNorm = nombreProducto.toString().toLowerCase()
-      .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e')
-      .replace(/[íìï]/g,'i').replace(/[óòö]/g,'o')
-      .replace(/[úùü]/g,'u').replace(/ñ/g,'n')
-      .replace(/\s+/g,' ').trim();
+    var buscar = _normNombreSD(nombreProducto);
+    if (!buscar || cantidadVendida <= 0) return;
 
-    var filasProducto = [];
+    // Solo lotes con el nombre EXACTO (ya normalizado) — nada de "parecidos".
+    // Así una venta de "Creatina X 300 Grs - Doypack" no descuenta de
+    // "...Doypack - Frutos Rojos" ni de "...Pote" (que comparten palabras).
+    var lotes = [];
     for (var i = 1; i < datos.length; i++) {
-      var nombreFila = datos[i][0] ? datos[i][0].toString() : '';
-      if (!nombreFila) continue;
-
-      var nombreFilaNorm = nombreFila.toLowerCase()
-        .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e')
-        .replace(/[íìï]/g,'i').replace(/[óòö]/g,'o')
-        .replace(/[úùü]/g,'u').replace(/ñ/g,'n')
-        .replace(/\s+/g,' ').trim();
-
-      var palabras = nombreNorm.split(' ').filter(function(w){ return w.length > 2; });
-      var hits = 0;
-      palabras.forEach(function(w){ if (nombreFilaNorm.indexOf(w) >= 0) hits++; });
-      var score = palabras.length > 0 ? hits / palabras.length : 0;
-      if (score < 0.5) continue;
-
-      var stockActual = parseFloat(datos[i][4]) || 0;
-      if (stockActual <= 0) continue;
-
-      var fechaVence = datos[i][2] ? new Date(datos[i][2]) : null;
-      var diasRestantes = fechaVence ? Math.round((fechaVence - hoy) / (1000*60*60*24)) : 9999;
-
-      filasProducto.push({
-        fila: i + 1,
-        stockActual: stockActual,
-        diasRestantes: diasRestantes,
-        score: score
-      });
+      if (_normNombreSD(datos[i][0]) !== buscar) continue;
+      var stock = parseFloat(datos[i][4]) || 0;
+      if (stock <= 0) continue;
+      lotes.push({ fila: i + 1, stock: stock, venc: datos[i][2] });
     }
+    if (lotes.length === 0) return;
 
-    if (filasProducto.length === 0) return;
-
-    filasProducto.sort(function(a, b) { return a.diasRestantes - b.diasRestantes; });
+    // FIFO: descontar primero del lote que vence antes.
+    lotes.sort(function(a, b) {
+      var da = a.venc instanceof Date ? a.venc : new Date(a.venc);
+      var db = b.venc instanceof Date ? b.venc : new Date(b.venc);
+      return da - db;
+    });
 
     var pendiente = cantidadVendida;
-    filasProducto.forEach(function(item) {
-      if (pendiente <= 0) return;
-      var descontar = Math.min(item.stockActual, pendiente);
-      hoja.getRange(item.fila, 5).setValue(item.stockActual - descontar);
+    for (var j = 0; j < lotes.length && pendiente > 0; j++) {
+      var descontar = Math.min(lotes[j].stock, pendiente);
+      hoja.getRange(lotes[j].fila, 5).setValue(lotes[j].stock - descontar);
       pendiente -= descontar;
-    });
+    }
   } catch(e) {
     Logger.log('Error en descontarStockDetallado: ' + e.message);
   }
+}
+
+// Normaliza nombres para comparar de forma EXACTA pero tolerante:
+// ignora acentos, mayúsculas, puntuación, espacios de más y "x 300" vs "x300".
+function _normNombreSD(n) {
+  return String(n || '').trim().toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
+    .replace(/[.,;:!¡¿?'"()\[\]{}]/g,'')
+    .replace(/\s+/g,' ')
+    .replace(/x\s*(\d)/g,'x$1')
+    .replace(/(\d)\s*,\s*(\d)/g,'$1.$2')
+    .trim();
 }
 
 // ════════════════════════════════════════════════════════════

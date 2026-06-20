@@ -3573,7 +3573,7 @@ function onOrdenFilter(val){
 }
 
 // ── #3 CHIPS FILTROS ACTIVOS ──
-var _tipoLabels = {favoritos:'❤️ Favoritos',proteina:'🥛 Proteinas',gainer:'💪 Gainers',creatina:'⚡ Creatinas',aminoacido:'🧬 Aminoacidos',vitamin:'💊 Vitaminas',magnesio:'🧲 Magnesio/Omega',preworkout:'🔥 Pre-Entreno',quemador:'🌡️ Quemadores',colageno:'🦴 Colageno',hidratacion:'💧 Hidratacion',barra:'🍴 Alimentos',shaker:'🥤 Shakers',accesorio:'🏋️ Accesorios',combo:'🎁 Combos'};
+var _tipoLabels = {favoritos:'❤️ Favoritos',proteina:'🥛 Proteinas',gainer:'💪 Gainers',creatina:'⚡ Creatinas',aminoacido:'🧬 Aminoacidos',vitamin:'💊 Vitaminas',magnesio:'🧲 Magnesio/Omega',preworkout:'🔥 Pre-Entreno',quemador:'🌡️ Quemadores',colageno:'🦴 Colageno',hidratacion:'💧 Hidratacion',barra:'🍴 Alimentos',shaker:'🥤 Shakers',quimicos:'🧪 Quimicos',accesorio:'🏋️ Accesorios',combo:'🎁 Combos'};
 var _ordenLabels = {'precio-asc':'💲 Menor precio','precio-desc':'💲 Mayor precio','nombre-asc':'🔤 A-Z','nombre-desc':'🔤 Z-A','stock-desc':'📦 Mayor stock'};
 
 function renderFiltrosActivos(){
@@ -5079,6 +5079,7 @@ function _mapCategoria(cat) {
     'accesorio':'accesorio','accesorios':'accesorio','accesories':'accesorio',
     'shaker':'shaker','shakers':'shaker','vaso':'shaker','vasos':'shaker','botella':'shaker','botellas':'shaker','bidon':'shaker','bidón':'shaker','licuadora':'shaker',
     'indumentaria':'indumentaria','ropa':'indumentaria',
+    'quimicos':'quimicos','quimico':'quimicos','químicos':'quimicos','químico':'quimicos','hormonal':'quimicos','anabolico':'quimicos','anabólico':'quimicos',
     'gainer':'gainer','gainers':'gainer','hipercalorico':'gainer','hipercalórico':'gainer',
     'otros':'otros','other':'otros'
   };
@@ -5090,7 +5091,7 @@ function _catEmoji(cat) {
   const m = {
     'proteina':'🥛','creatina':'⚡','aminoacido':'🧬','vitaminas':'💊','magnesio':'🧲',
     'preworkout':'🔥','quemador':'🌡️','colageno':'🦴','hidratacion':'💧',
-    'barra':'🍫','accesorio':'🏋️','shaker':'🥤','indumentaria':'👕','gainer':'💪','otros':'📦'
+    'barra':'🍫','accesorio':'🏋️','shaker':'🥤','quimicos':'🧪','indumentaria':'👕','gainer':'💪','otros':'📦'
   };
   return m[cat.toLowerCase()] || '📦';
 }
