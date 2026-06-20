@@ -8099,6 +8099,39 @@ function renderNuevosIngresos(){
       + '<div class="nuevos-card-price">'+fmt(p.price)+'</div>'
       + '</div></div>';
   }).join('');
+  _initAutoCarousel(track);
+}
+
+// ── CARRUSEL AUTOMATICO ───────────────────────────────────────
+// Desplaza el carrusel solo, despacio y en loop infinito. Se pausa cuando el
+// mouse esta encima (o al tocar en mobile) y sigue solo al salir. Reemplaza el
+// scroll manual con rueda (que vibraba).
+function _initAutoCarousel(track){
+  if(!track || track.children.length < 3) return;
+  // Duplicar el contenido para un loop SIN saltos (dos copias seguidas).
+  // renderNuevosIngresos reescribe innerHTML antes de llamar aca, no se acumula.
+  track.innerHTML = track.innerHTML + track.innerHTML;
+  track._paused = false;
+  track._pos = 0;
+  if(!track._autoHover){
+    track._autoHover = true;
+    track.addEventListener('mouseenter', function(){ track._paused = true; });
+    track.addEventListener('mouseleave', function(){ track._paused = false; });
+    track.addEventListener('touchstart', function(){ track._paused = true; }, {passive:true});
+    track.addEventListener('touchend', function(){ setTimeout(function(){ track._paused = false; }, 1500); }, {passive:true});
+  }
+  if(track._autoRaf) cancelAnimationFrame(track._autoRaf);
+  var SPEED = 0.5; // px por frame (~30px/s) — lento para apreciar el efecto
+  function step(){
+    if(!track._paused){
+      var half = track.scrollWidth / 2;
+      track._pos += SPEED;
+      if(half > 0 && track._pos >= half) track._pos -= half;
+      track.scrollLeft = track._pos;
+    }
+    track._autoRaf = requestAnimationFrame(step);
+  }
+  track._autoRaf = requestAnimationFrame(step);
 }
 
 // ── #4: AVISAR CUANDO HAYA STOCK ──
@@ -8393,37 +8426,6 @@ renderAll = function(){
   _guardarHistorialPrecios();
   _mostrarBadgesPrecios();
   renderNuevosIngresos();
-  // Drag-to-scroll para el carrusel (touch + mouse)
-  var track = document.getElementById('nuevosTrack');
-  if(track && !track._dragInit){
-    track._dragInit = true;
-    var isDown=false, startX=0, scrollL=0;
-    track.addEventListener('mousedown',function(e){isDown=true;startX=e.pageX-track.offsetLeft;scrollL=track.scrollLeft;track.style.cursor='grabbing'});
-    track.addEventListener('mouseleave',function(){isDown=false;track.style.cursor='grab'});
-    track.addEventListener('mouseup',function(){isDown=false;track.style.cursor='grab'});
-    track.addEventListener('mousemove',function(e){if(!isDown)return;e.preventDefault();track.scrollLeft=scrollL-(e.pageX-track.offsetLeft-startX)});
-    // Scroll horizontal con la rueda — suave y SIN vibracion: acumula en un
-    // objetivo y anima con un solo requestAnimationFrame, en vez de lanzar un
-    // scroll-smooth por cada evento (al girar rapido se pisaban y temblaba).
-    var _wTarget = track.scrollLeft, _wRaf = null;
-    track.addEventListener('wheel',function(e){
-      var unit = e.deltaMode===1 ? 16 : (e.deltaMode===2 ? track.clientWidth : 1);
-      var d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit;
-      if(!d) return;
-      e.preventDefault();
-      if(!_wRaf) _wTarget = track.scrollLeft;
-      _wTarget = Math.max(0, Math.min(track.scrollWidth - track.clientWidth, _wTarget + d));
-      if(!_wRaf){
-        var step = function(){
-          var diff = _wTarget - track.scrollLeft;
-          if(Math.abs(diff) < 0.5){ track.scrollLeft = _wTarget; _wRaf = null; return; }
-          track.scrollLeft += diff * 0.22;
-          _wRaf = requestAnimationFrame(step);
-        };
-        _wRaf = requestAnimationFrame(step);
-      }
-    },{passive:false});
-  }
 };
 
 // ── #6 AVISAR STOCK — Modal ──
