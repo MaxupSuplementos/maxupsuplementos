@@ -8103,27 +8103,45 @@ function renderNuevosIngresos(){
 }
 
 // ── CARRUSEL AUTOMATICO ───────────────────────────────────────
-// Desplaza el carrusel solo, despacio y en loop infinito. Se pausa cuando el
-// mouse esta encima (o al tocar en mobile) y sigue solo al salir. Reemplaza el
-// scroll manual con rueda (que vibraba).
+// Se desliza solo, despacio y en loop infinito. Se PAUSA al pasar el mouse (o al
+// tocar) y ahi mismo se puede mover con la rueda o arrastrando para volver a un
+// producto que ya paso. Al salir, sigue solo desde donde quedo. El scroll manual
+// es DIRECTO (sin animacion), por eso no vibra.
 function _initAutoCarousel(track){
   if(!track || track.children.length < 3) return;
-  // Duplicar el contenido para un loop SIN saltos (dos copias seguidas).
-  // renderNuevosIngresos reescribe innerHTML antes de llamar aca, no se acumula.
+  // Duplicar el contenido para un loop SIN saltos. renderNuevosIngresos reescribe
+  // innerHTML antes de llamar aca, asi que no se acumula en cada render.
   track.innerHTML = track.innerHTML + track.innerHTML;
-  track._paused = false;
+  track._paused = false; track._dragging = false; track._moved = false;
   track._pos = 0;
   if(!track._autoHover){
     track._autoHover = true;
+    track.style.cursor = 'grab';
+    var resync = function(){ track._pos = track.scrollLeft; };
     track.addEventListener('mouseenter', function(){ track._paused = true; });
-    track.addEventListener('mouseleave', function(){ track._paused = false; });
+    track.addEventListener('mouseleave', function(){ track._dragging = false; track.style.cursor = 'grab'; resync(); track._paused = false; });
     track.addEventListener('touchstart', function(){ track._paused = true; }, {passive:true});
-    track.addEventListener('touchend', function(){ setTimeout(function(){ track._paused = false; }, 1500); }, {passive:true});
+    track.addEventListener('touchend', function(){ resync(); setTimeout(function(){ track._paused = false; }, 1500); }, {passive:true});
+    // Con el mouse encima (pausado): mover con la rueda — DIRECTO, sin animacion (no vibra)
+    track.addEventListener('wheel', function(e){
+      if(!track._paused) return;
+      var unit = e.deltaMode===1 ? 16 : (e.deltaMode===2 ? track.clientWidth : 1);
+      var d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit;
+      if(!d) return;
+      e.preventDefault();
+      track.scrollLeft += d; resync();
+    }, {passive:false});
+    // ...o arrastrar (agarrar y tirar) para volver a un producto que ya paso
+    track.addEventListener('mousedown', function(e){ track._dragging = true; track._moved = false; track._startX = e.pageX; track._startScroll = track.scrollLeft; track.style.cursor = 'grabbing'; e.preventDefault(); });
+    window.addEventListener('mousemove', function(e){ if(!track._dragging) return; var dx = e.pageX - track._startX; if(Math.abs(dx) > 4) track._moved = true; track.scrollLeft = track._startScroll - dx; resync(); });
+    window.addEventListener('mouseup', function(){ if(track._dragging){ track._dragging = false; track.style.cursor = 'grab'; resync(); } });
+    // Si fue un arrastre, no abrir el producto al soltar
+    track.addEventListener('click', function(e){ if(track._moved){ e.stopPropagation(); e.preventDefault(); track._moved = false; } }, true);
   }
   if(track._autoRaf) cancelAnimationFrame(track._autoRaf);
   var SPEED = 0.5; // px por frame (~30px/s) — lento para apreciar el efecto
   function step(){
-    if(!track._paused){
+    if(!track._paused && !track._dragging){
       var half = track.scrollWidth / 2;
       track._pos += SPEED;
       if(half > 0 && track._pos >= half) track._pos -= half;
