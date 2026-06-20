@@ -8450,20 +8450,12 @@ function enviarStockAlert(){
 
 // ── #7 HISTORIAL DE PRECIOS (localStorage) ──
 function _mostrarBadgesPrecios(){
-  document.querySelectorAll('.prod-card').forEach(function(card){
-    var pid = card.dataset.id;
-    var change = _getPriceChange(pid);
-    if(change && change.type === 'down'){
-      var existing = card.querySelector('.price-change-badge');
-      if(existing) return;
-      var badge = document.createElement('div');
-      badge.className = 'price-change-badge';
-      badge.style.cssText = 'font-size:.65rem;color:#00E676;font-weight:700;margin-top:2px';
-      badge.textContent = '⬇️ Bajó ' + change.pct + '% (era $' + change.prev.toLocaleString('es-AR') + ')';
-      var priceEl = card.querySelector('.prod-price-val');
-      if(priceEl && priceEl.parentNode) priceEl.parentNode.appendChild(badge);
-    }
-  });
+  // DESACTIVADO: el historial se guardaba por ID posicional (que cambia al
+  // agregar/quitar productos) y en localStorage por navegador, así que el
+  // cartel "Bajó X%" comparaba precios de productos DISTINTOS y daba datos
+  // erróneos (ej: mostraba "bajó" aunque el precio hubiera subido).
+  // Para destacar una baja real de precio, usar el campo priceAnterior del producto.
+  document.querySelectorAll('.price-change-badge').forEach(function(b){ b.remove(); });
 }
 
 function _guardarHistorialPrecios(){
