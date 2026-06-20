@@ -8403,11 +8403,25 @@ renderAll = function(){
     track.addEventListener('mouseleave',function(){isDown=false;track.style.cursor='grab'});
     track.addEventListener('mouseup',function(){isDown=false;track.style.cursor='grab'});
     track.addEventListener('mousemove',function(e){if(!isDown)return;e.preventDefault();track.scrollLeft=scrollL-(e.pageX-track.offsetLeft-startX)});
-    // Scroll con ruedita del mouse
+    // Scroll horizontal con la rueda — suave y SIN vibracion: acumula en un
+    // objetivo y anima con un solo requestAnimationFrame, en vez de lanzar un
+    // scroll-smooth por cada evento (al girar rapido se pisaban y temblaba).
+    var _wTarget = track.scrollLeft, _wRaf = null;
     track.addEventListener('wheel',function(e){
-      if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){
-        e.preventDefault();
-        track.scrollBy({left:e.deltaY>0?200:-200,behavior:'smooth'});
+      var unit = e.deltaMode===1 ? 16 : (e.deltaMode===2 ? track.clientWidth : 1);
+      var d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit;
+      if(!d) return;
+      e.preventDefault();
+      if(!_wRaf) _wTarget = track.scrollLeft;
+      _wTarget = Math.max(0, Math.min(track.scrollWidth - track.clientWidth, _wTarget + d));
+      if(!_wRaf){
+        var step = function(){
+          var diff = _wTarget - track.scrollLeft;
+          if(Math.abs(diff) < 0.5){ track.scrollLeft = _wTarget; _wRaf = null; return; }
+          track.scrollLeft += diff * 0.22;
+          _wRaf = requestAnimationFrame(step);
+        };
+        _wRaf = requestAnimationFrame(step);
       }
     },{passive:false});
   }
