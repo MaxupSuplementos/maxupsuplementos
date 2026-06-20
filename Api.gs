@@ -1743,6 +1743,7 @@ function _normNombreSD(n) {
     .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
     .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
     .replace(/[.,;:!¡¿?'"()\[\]{}]/g,'')
+    .replace(/[-_]+/g,' ')
     .replace(/\s+/g,' ')
     .replace(/x\s*(\d)/g,'x$1')
     .replace(/(\d)\s*,\s*(\d)/g,'$1.$2')
