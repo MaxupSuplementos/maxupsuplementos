@@ -5183,7 +5183,27 @@ function openProdModal(pid) {
   if (!p) return;
   modalPid = pid;
 
-  document.getElementById('modalImg').src = p.img || getFallbackImg(p.cat);
+  // Imagen / GALERÍA: si el producto tiene varias fotos, armar galería con
+  // flechas + puntos (igual que en la grilla). Si tiene una sola, imagen fija.
+  var _imgWrap = document.querySelector('.prod-modal-img');
+  var _imgList = p.imgs_gallery && p.imgs_gallery.length ? p.imgs_gallery
+               : (p.imgs && Array.isArray(p.imgs) && p.imgs.length ? p.imgs : (p.img ? [p.img] : []));
+  if (_imgWrap && _imgList.length > 1) {
+    var _gid = 'galmodal-' + pid;
+    var _slides = _imgList.map(function(src,i){
+      return '<div class="gallery-slide"><img src="'+src+'" alt="'+(p.name||'')+'" loading="'+(i===0?'eager':'lazy')+'" decoding="async" onerror="this.onerror=null;this.src=getFallbackImg(\''+p.cat+'\')" style="background:#1a1a2e"></div>';
+    }).join('');
+    var _dots = _imgList.map(function(_d,i){ return '<button class="gal-dot'+(i===0?' active':'')+'" onclick="galGo(\''+_gid+'\','+i+',event)"></button>'; }).join('');
+    _imgWrap.innerHTML =
+        '<div class="gallery-slides" id="'+_gid+'" data-index="0" data-total="'+_imgList.length+'">'+_slides+'</div>'
+      + '<button class="gal-btn gal-prev" onclick="galMove(\''+_gid+'\',-1,event)" title="Anterior">‹</button>'
+      + '<button class="gal-btn gal-next" onclick="galMove(\''+_gid+'\',1,event)" title="Siguiente">›</button>'
+      + '<div class="gal-dots" id="'+_gid+'-dots">'+_dots+'</div>'
+      + '<div class="gal-counter show" id="'+_gid+'-counter">1 / '+_imgList.length+'</div>';
+  } else if (_imgWrap) {
+    _imgWrap.innerHTML = '<img id="modalImg" src="" alt="">';
+    document.getElementById('modalImg').src = (_imgList[0] || p.img || getFallbackImg(p.cat));
+  }
   document.getElementById('modalMarca').textContent = p.brand || '';
   document.getElementById('modalNombre').textContent = p.name || '';
   document.getElementById('modalDesc').textContent = p.desc || 'Suplemento de alta calidad para deportistas y personas activas.';
@@ -5245,8 +5265,9 @@ function updateModalFlavor() {
   document.getElementById('modalStock').textContent = stock > 0 ? `✓ ${stock} unidades en stock` : '❌ Sin stock';
   // Update image if product has img per flavor
   const p = getProduct(modalPid);
-  if (p && p.imgs && p.imgs[sel.value]) {
-    document.getElementById('modalImg').src = p.imgs[sel.value];
+  var _mi = document.getElementById('modalImg');
+  if (p && p.imgs && p.imgs[sel.value] && _mi) {
+    _mi.src = p.imgs[sel.value];
   }
 }
 
