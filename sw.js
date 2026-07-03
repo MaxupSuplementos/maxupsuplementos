@@ -1,13 +1,14 @@
 // MAXUP Service Worker — Cache & Offline
-const CACHE_NAME = 'maxup-v4';
+const CACHE_NAME = 'maxup-v5';
+// OJO: si un asset de esta lista no existe (404), addAll falla y NO se cachea nada.
+// mantenimiento.png (6MB) NO va acá: solo se descarga si el mantenimiento se activa.
 const ASSETS = [
   './',
-  './index (3).html',
+  './index.html',
   './styles.css',
   './app.js',
   './logo.png',
   './favicon.png',
-  './mantenimiento.png',
   'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap'
 ];
 

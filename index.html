@@ -2,6 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+  <!-- Preconexiones: el navegador abre las conexiones ANTES de necesitarlas -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://script.google.com">
+  <link rel="preconnect" href="https://script.googleusercontent.com">
+  <link rel="preconnect" href="https://images.weserv.nl">
+  <link rel="preconnect" href="https://i.ibb.co">
   <link rel="preload" as="image" href="https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/whey-protein-star-bolsa-frente-1024x1024.jpg&w=400&output=webp&q=82">
   <link rel="preload" as="image" href="https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-2Lb-Chocolate.png?v=1718218508&width=1100&w=400&output=webp&q=82">
   <link rel="preload" as="image" href="https://images.weserv.nl/?url=starnutrition.com.ar/cdn/shop/files/PWP-3Kg-Chocolate.png?v=1718218522&width=1100&w=400&output=webp&q=82">
@@ -154,7 +161,8 @@
 <!-- ── PANTALLA MANTENIMIENTO ── -->
 <div id="mantScreen">
   <div class="mant-wrap">
-    <img class="mant-img" src="mantenimiento.png" alt="MAXUP — Página en mantenimiento, volveremos pronto">
+    <!-- La imagen solo se descarga si el mantenimiento se activa (app.js le pone el src) -->
+    <img class="mant-img" data-src="mantenimiento.png" alt="MAXUP — Página en mantenimiento, volveremos pronto">
     <div class="mant-contactos">
       <!-- WhatsApp -->
       <a href="https://wa.me/5491168461457" target="_blank" class="wa" title="WhatsApp">

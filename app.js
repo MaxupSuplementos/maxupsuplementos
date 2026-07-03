@@ -34,6 +34,10 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJ
     .then(function(data){
       if (data.ok && data.activo) {
         // Mantenimiento activo: ocultar página, mostrar pantalla mantenimiento
+        // La imagen (6MB) usa data-src para no descargarse en cada visita normal:
+        // recién acá se le pone el src real.
+        var mimg = document.querySelector('#mantScreen .mant-img');
+        if (mimg && !mimg.src && mimg.dataset.src) mimg.src = mimg.dataset.src;
         document.getElementById('appContent').style.display = 'none';
         document.getElementById('mantScreen').style.display = 'block';
         document.body.style.overflow = 'hidden';
@@ -3464,7 +3468,7 @@ function buildCard(p){
       </div>
       <div class="prod-stock-info">
         <div class="prod-stock-num ${stockClass}" id="stock-${p.id}">${stockTxt}</div>
-        <div class="prod-stock-lbl">en stock</div>
+        <div class="prod-stock-lbl" id="stocklbl-${p.id}"${initStock===0?' style="display:none"':''}>en stock</div>
       </div>
     </div>
     <div class="prod-actions">
@@ -3795,6 +3799,9 @@ function onFlavorChange(sel, pid){
     stockEl.textContent = stock===0?'Sin stock':`${stock} unid.`;
     stockEl.className = `prod-stock-num ${stockClass}`;
   }
+  // El "en stock" de abajo solo tiene sentido si HAY stock (evita "Sin stock / en stock")
+  const stockLbl = document.getElementById(`stocklbl-${pid}`);
+  if(stockLbl) stockLbl.style.display = stock===0 ? 'none' : '';
 
   // Actualizar precio si el sabor tiene precio diferente (futuro)
   // Por ahora mantener precio base
