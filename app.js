@@ -4878,12 +4878,28 @@ async function cargarDesdeSheets() {
   if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#aaa"><div style="width:40px;height:40px;border:3px solid rgba(0,200,255,.2);border-top-color:#00C8FF;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px"></div><p>Cargando catálogo...</p></div>';
   
   try {
-    const res = await fetch(API_URL + '?accion=catalogo', { method: 'GET' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    // Apps Script a veces falla de forma pasajera (404/timeout): reintentar hasta
+    // 3 veces antes de caer al cache o al catalogo local (que puede estar viejo).
+    let res = null, intentoErr = null;
+    for (let intento = 0; intento < 3; intento++) {
+      if (intento > 0) await new Promise(r => setTimeout(r, 2000 * intento));
+      try {
+        res = await fetch(API_URL + '?accion=catalogo', { method: 'GET' });
+        if (res.ok) { intentoErr = null; break; }
+        intentoErr = new Error('HTTP ' + res.status);
+      } catch(eNet) { intentoErr = eNet; }
+    }
+    if (intentoErr) throw intentoErr;
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     // Nuevos ingresos calculados en el servidor (iguales para todos los visitantes)
     _nuevosServer = Array.isArray(data.nuevos_ingresos) ? data.nuevos_ingresos : null;
+    // Recordar la lista para que el carrusel no desaparezca si la API falla en la próxima visita
+    if (_nuevosServer && _nuevosServer.length) {
+      try { localStorage.setItem('maxup_cache_nuevos', JSON.stringify(_nuevosServer)); } catch(e) {}
+    } else {
+      try { var nvCache = localStorage.getItem('maxup_cache_nuevos'); if (nvCache) _nuevosServer = JSON.parse(nvCache); } catch(e) {}
+    }
 
     const prods = data.productos || [];
     if (prods.length === 0) throw new Error('Sin productos');
@@ -4996,6 +5012,9 @@ async function cargarDesdeSheets() {
           console.log('📦 Catálogo cargado desde cache:', PRODUCTS.length, 'productos');
         }
       }
+      // También restaurar el carrusel de novedades desde el cache
+      const nvCache = localStorage.getItem('maxup_cache_nuevos');
+      if (nvCache && !_nuevosServer) _nuevosServer = JSON.parse(nvCache);
     }catch(e2){}
     renderAll();
     if(window.scrollY < 50 && !location.hash) window.scrollTo(0, 0);

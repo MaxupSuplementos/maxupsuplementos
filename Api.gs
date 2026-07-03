@@ -208,7 +208,8 @@ function registrarPedidoWeb(data) {
   var hoy      = new Date();
   var fechaStr = Utilities.formatDate(hoy, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
   var totalReal = 0;
-  var notaBase  = 'WEB' + (tieneDesc ? ' 🎁-10%' : (esNuevo ? ' 🎉-2% bienvenida' : ''))
+  // El código del pedido va en la nota para poder REVERTIR la venta si se cancela
+  var notaBase  = 'WEB ' + codigoPedido + (tieneDesc ? ' 🎁-10%' : (esNuevo ? ' 🎉-2% bienvenida' : ''))
                 + (entrega === 'envio' ? ' | Envío: ' + direccion : ' | Retiro') + ' | ' + pago;
 
   if (items.length > 0) {
@@ -885,6 +886,13 @@ function adminCambiarEstado(clave, codigo, nuevoEstado) {
         }
       }
 
+      // Al CANCELAR: revertir la venta (VentasDiarias + compra mensual del cliente)
+      if (nuevoEstado === 'Cancelado' && estadoAnterior !== 'Cancelado') {
+        try { _revertirVentaPedidoWeb(codigo, estadoAnterior); } catch(eRev) {
+          Logger.log('Error revirtiendo venta de ' + codigo + ': ' + eRev.message);
+        }
+      }
+
       try {
         var cliente = String(rows[i][2]);
         var emoji = nuevoEstado === 'Entregado' || nuevoEstado === 'Retirado' ? '✅' : '✏️';
@@ -970,6 +978,82 @@ function _descontarStockPedido(items) {
     }
   });
   try { actualizarHojaReposicion(); } catch(e) {}
+}
+
+// ── REVERTIR VENTA DE PEDIDO WEB CANCELADO ─────────────────
+// Al momento del pedido, la venta ya se anotó en VentasDiarias y se sumó
+// al mensual del cliente. Si el pedido se CANCELA, esto lo deshace:
+//   1. Borra las filas de VentasDiarias cuya nota contiene el código (WEB MXP-xxxx).
+//   2. Recalcula el TOTAL del día de cada fecha afectada.
+//   3. Le resta el monto al mes del cliente en CLIENTES.
+// Solo alcanza a pedidos posteriores a este cambio (los anteriores no llevan
+// el código en la nota; esos se corrigen a mano si hiciera falta).
+function _revertirVentaPedidoWeb(codigo, estadoAnterior) {
+  var ss = _getSS();
+  var hojaVD = ss.getSheetByName('VentasDiarias');
+  if (!hojaVD) return;
+
+  var rows = hojaVD.getDataRange().getValues();
+  var filasBorrar = [];          // índices 1-based, se borran de abajo hacia arriba
+  var fechasAfectadas = {};      // fechaStr -> true
+  var porClienteMes = [];        // {nombre, fecha(Date), monto}
+
+  for (var r = 0; r < rows.length; r++) {
+    var nota = String(rows[r][8] || '');
+    if (nota.indexOf(String(codigo)) < 0) continue;
+    filasBorrar.push(r + 1);
+    var fecha = rows[r][0];
+    var ingreso = Number(rows[r][5]) || 0;
+    var nombreCli = String(rows[r][6] || '').trim();
+    if (fecha && !(typeof fecha === 'string')) {
+      try {
+        var fStr = Utilities.formatDate(new Date(fecha), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
+        fechasAfectadas[fStr] = true;
+        if (nombreCli && ingreso > 0) porClienteMes.push({ nombre: nombreCli, fecha: new Date(fecha), monto: ingreso });
+      } catch(e) {}
+    }
+  }
+
+  if (filasBorrar.length === 0) {
+    _notificarTelegram('ℹ️ ' + codigo + ' cancelado. No encontré su venta en VentasDiarias ' +
+      '(pedido anterior al sistema de reversa): si corresponde, restá la venta a mano.');
+    return;
+  }
+
+  // 1) Borrar las filas de la venta (de abajo hacia arriba para no correr índices)
+  filasBorrar.sort(function(a, b){ return b - a; });
+  filasBorrar.forEach(function(f){ hojaVD.deleteRow(f); });
+
+  // 2) Recalcular el total de cada día afectado
+  for (var fStr2 in fechasAfectadas) {
+    try { _actualizarTotalDiaApi(hojaVD, fStr2); } catch(e) {}
+  }
+
+  // 3) Restar del mensual del cliente (busca por nombre en CLIENTES)
+  var hojaCli = ss.getSheetByName('CLIENTES');
+  if (hojaCli && porClienteMes.length) {
+    var datosCli = hojaCli.getDataRange().getValues();
+    var headersCli = datosCli[0];
+    porClienteMes.forEach(function(x) {
+      var filaCli = -1;
+      for (var c = 1; c < datosCli.length; c++) {
+        if (String(datosCli[c][1] || '').trim().toLowerCase() === x.nombre.toLowerCase()) { filaCli = c + 1; break; }
+      }
+      if (filaCli < 0) return;
+      var colIdx = _buscarColumnaMes(headersCli, x.fecha);   // helper de Ventas.gs (mismo proyecto)
+      if (colIdx < 0) return;
+      var celda = hojaCli.getRange(filaCli, colIdx + 1);
+      var actual = Number(celda.getValue()) || 0;
+      celda.setValue(Math.max(0, actual - x.monto));
+    });
+  }
+
+  // Aviso: si ya estaba Entregado/Retirado, el stock ya se había descontado
+  var avisoStock = (estadoAnterior === 'Entregado' || estadoAnterior === 'Retirado')
+    ? '\n⚠️ OJO: este pedido ya estaba ' + estadoAnterior + ' y su stock ya se descontó. Si te devuelven la mercadería, sumala de nuevo al lote.'
+    : '';
+  _notificarTelegram('↩️ ' + codigo + ' CANCELADO: venta revertida (' + filasBorrar.length +
+    ' renglón(es) borrados de VentasDiarias, total del día y cliente corregidos).' + avisoStock);
 }
 
 function _getMsgEstado(estado) {
@@ -2658,6 +2742,14 @@ function onEdit(e) {
         _notificarTelegram('✅ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')\n📦 Stock descontado automáticamente');
       } catch(eJSON) {
         _notificarTelegram('⚠️ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')\n❌ No se pudo descontar stock');
+      }
+    }
+
+    // Al CANCELAR desde la planilla: revertir la venta anotada al momento del pedido
+    if (nuevoEstado === 'Cancelado' && estadoAnterior !== 'Cancelado') {
+      var codigoCanc = String(hoja.getRange(fila, 1).getValue());
+      try { _revertirVentaPedidoWeb(codigoCanc, estadoAnterior); } catch(eRev) {
+        Logger.log('Error revirtiendo venta de ' + codigoCanc + ': ' + eRev.message);
       }
     }
 

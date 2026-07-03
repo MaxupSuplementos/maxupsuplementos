@@ -1,0 +1,6 @@
+# Material de diseño y borradores (no es parte de la web publicada)
+_material_diseno/
+# Config local de Claude Code
+.claude/
+# Servidor local de pruebas
+server.ps1

@@ -29,6 +29,14 @@ function onOpen() {
     .addItem('Ver clientes con descuento', 'verClientesConDescuento')
     .addItem('🔄 Recuperar compras clientes desde VentasDiarias', 'recuperarComprasClientes')
     .addItem('📅 Ordenar columnas de meses en CLIENTES', 'ordenarColumnasClientes')
+    .addItem('🔍 Chequear nombres SUPLEMENTOS vs STOCK_DETALLADO', 'chequearNombresStock')
+    .addItem('🔧 Unificar nombres (copia de SUPLEMENTOS a STOCK_DETALLADO)', 'unificarNombresStock')
+    .addItem('🔄 Actualizar stock principal desde lotes', 'actualizarStockPrincipalManual')
+    .addItem('🔎 Conciliar stock (qué falta cargar en STOCK_DETALLADO)', 'conciliarStock')
+    .addItem('✅ Aplicar stock real (desde CONCILIACION_STOCK)', 'aplicarStockReal')
+    .addItem('🆕 Crear en SUPLEMENTOS los productos nuevos de STOCK_DETALLADO', 'crearProductosFaltantes')
+    .addItem('🔁 Reiniciar Nuevos Ingresos (carrusel)', 'reiniciarNuevosIngresos')
+    .addItem('🔤 Detectar nombres repetidos entre marcas', 'detectarNombresDuplicados')
     .addToUi();
 }
 
@@ -88,16 +96,33 @@ function _descontarStockDetallado(nombreProducto, cantidad) {
 }
 
 // Helper: normalizar nombre para comparación flexible
+// IMPORTANTE: debe coincidir con _normNombreSD de Api.gs (saca tildes y guiones),
+// porque la web descuenta STOCK_DETALLADO con esa función. Si difieren, una venta
+// por el Sheets no descuenta el lote y la web sigue mostrando stock de más.
 function _normalizarNombre(n) {
   return String(n || '').trim().toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')  // sacar tildes/ñ
     .replace(/[.,;:!¡¿?'"()[\]{}]/g, '')  // quitar puntuación
+    .replace(/[-_]+/g, ' ')                // guiones/_ → espacio
     .replace(/\s+/g, ' ')                  // espacios múltiples → uno
     .replace(/x\s*(\d)/g, 'x$1')           // "x 300" → "x300"
     .replace(/(\d)\s*,\s*(\d)/g, '$1.$2')  // "1,5" → "1.5"
-    .replace(/\s*kilos?\b/gi, 'kg')        // "Kilos" → "kg"
-    .replace(/\s*gramos?\b/gi, 'g')        // "Gramos" → "g"
-    .replace(/\s*litros?\b/gi, 'l')        // "Litros" → "l"
+    .replace(/\s*(kilos?|kgs)\b/gi, 'kg')   // "Kilos"/"Kgs" → "kg"
+    .replace(/\s*(gramos?|grs?)\b/gi, 'g')  // "Gramos"/"Gr"/"Grs" → "g"
+    .replace(/\s*(litros?|lts?)\b/gi, 'l')  // "Litros"/"Lt"/"Lts" → "l"
+    .replace(/\s*(libras?|lbs?)\b/gi, 'lb') // "Libras"/"Lb"/"Lbs" → "lb"
     .trim();
+}
+
+// Detecta un encabezado de MARCA: la celda escrita TODA EN MAYÚSCULA.
+// Los productos siempre llevan alguna minúscula, así que nunca se confunden
+// (incluso un producto nuevo con precio 0). Debe tener al menos una letra.
+function _esEncabezadoMarca(valor) {
+  var s = String(valor || '').trim();
+  if (!s) return false;
+  if (!/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(s)) return false; // sin letras (solo números) no es marca
+  return s === s.toUpperCase();
 }
 
 // Versión batch: recibe hoja y datos ya leídos, evita re-leer
@@ -129,6 +154,772 @@ function _descontarStockDetalladoBatch(hoja, datos, nombreProducto, cantidad) {
     datos[lote.idx][4] = nuevoStock;
     restante -= descontar;
   }
+}
+
+// Separa una celda tipo "1;2" / "1 2" / "25;256" en una lista, para poder
+// vender el MISMO producto a VARIOS clientes en una sola fila.
+// Acepta como separador: punto y coma, coma, barra, pipe, + o espacios.
+// RECOMENDADO usar punto y coma (";") porque la planilla nunca lo confunde
+// con un número decimal. (Ojo: "1,2" sin espacio la planilla lo toma como
+// el decimal 1,2; por eso conviene ";" o un espacio.)
+function _parseListaVenta(val) {
+  if (val === null || val === undefined) return [];
+  var s = String(val).trim();
+  if (s === '') return [];
+  return s.split(/[\s,;/|+]+/).filter(function(x){ return x !== ''; });
+}
+
+// ══════════════════════════════════════════════════════════
+// CHEQUEAR NOMBRES: SUPLEMENTOS vs STOCK_DETALLADO
+// Recorre ambas hojas y reporta qué productos NO coinciden, para
+// detectar el stock fantasma (venta que no descuenta el lote).
+// Escribe el resultado en una hoja "CHEQUEO_NOMBRES".
+//   ❌ SIN LOTE     → el producto no existe en STOCK_DETALLADO ni
+//                     normalizado → una venta NO descuenta nada de ahí.
+//   ⚠️ TEXTO DISTINTO → coinciden normalizados (ya descuenta bien con el
+//                     fix) pero el texto exacto difiere por tilde/guion/
+//                     mayúscula → conviene unificarlos para evitar líos.
+// ══════════════════════════════════════════════════════════
+function chequearNombresStock() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+  var hojaSD  = ss.getSheetByName('STOCK_DETALLADO');
+
+  if (!hojaSup || !hojaSD) {
+    SpreadsheetApp.getUi().alert('❌ No se encontró SUPLEMENTOS o STOCK_DETALLADO.');
+    return;
+  }
+
+  var datosSup = hojaSup.getDataRange().getValues();
+  var datosSD  = hojaSD.getDataRange().getValues();
+
+  // Mapa de STOCK_DETALLADO: nombre normalizado → { nombres crudos vistos, stock total }
+  var mapaSD = {};
+  for (var i = 1; i < datosSD.length; i++) {
+    var crudoSD = String(datosSD[i][0] || '').trim();
+    if (!crudoSD) continue;
+    var normSD = _normalizarNombre(crudoSD);
+    if (!mapaSD[normSD]) mapaSD[normSD] = { nombres: {}, stock: 0 };
+    mapaSD[normSD].nombres[crudoSD] = true;
+    mapaSD[normSD].stock += Number(datosSD[i][4]) || 0;
+  }
+
+  // Recorrer SUPLEMENTOS (solo productos reales: con precio en col B)
+  var sinLote = [];      // ❌ no existe en STOCK_DETALLADO
+  var textoDistinto = []; // ⚠️ matchea normalizado pero texto difiere
+
+  for (var j = 0; j < datosSup.length; j++) {
+    var crudoSup = String(datosSup[j][0] || '').trim();
+    var precio   = Number(datosSup[j][1]) || 0;
+    if (!crudoSup || precio <= 0) continue; // saltar marcas y vacíos
+
+    var normSup = _normalizarNombre(crudoSup);
+    var entrada = mapaSD[normSup];
+
+    if (!entrada) {
+      sinLote.push(crudoSup);
+      continue;
+    }
+
+    // Existe el match normalizado. ¿El texto crudo es idéntico?
+    var nombresSD = Object.keys(entrada.nombres);
+    var hayIdentico = nombresSD.indexOf(crudoSup) >= 0;
+    if (!hayIdentico) {
+      textoDistinto.push({
+        sup: crudoSup,
+        sd: nombresSD.join('  |  '),
+        stock: entrada.stock
+      });
+    }
+  }
+
+  // ── Escribir resultado en hoja CHEQUEO_NOMBRES ──
+  var hojaR = ss.getSheetByName('CHEQUEO_NOMBRES');
+  if (!hojaR) hojaR = ss.insertSheet('CHEQUEO_NOMBRES');
+  hojaR.clear();
+
+  var filas = [];
+  filas.push(['TIPO', 'Nombre en SUPLEMENTOS', 'Nombre(s) en STOCK_DETALLADO', 'Stock en STOCK_DETALLADO', 'Qué hacer']);
+
+  textoDistinto.forEach(function(t) {
+    filas.push(['⚠️ TEXTO DISTINTO', t.sup, t.sd, t.stock,
+      'Unificar: escribir el MISMO texto en ambas hojas (misma tilde/guion/mayúscula)']);
+  });
+  sinLote.forEach(function(n) {
+    filas.push(['❌ SIN LOTE', n, '(no existe)', '-',
+      'No tiene lote en STOCK_DETALLADO: una venta no descuenta de ahí. Crear el lote o revisar el nombre.']);
+  });
+
+  if (filas.length === 1) {
+    filas.push(['✅ TODO OK', 'Todos los productos coinciden entre ambas hojas', '', '', '']);
+  }
+
+  hojaR.getRange(1, 1, filas.length, 5).setValues(filas);
+  hojaR.getRange(1, 1, 1, 5)
+    .setBackground('#1a1a2e').setFontColor('#00C8FF').setFontWeight('bold');
+  hojaR.setColumnWidth(1, 140);
+  hojaR.setColumnWidth(2, 280);
+  hojaR.setColumnWidth(3, 320);
+  hojaR.setColumnWidth(4, 90);
+  hojaR.setColumnWidth(5, 380);
+  hojaR.setFrozenRows(1);
+
+  SpreadsheetApp.flush();
+
+  SpreadsheetApp.getUi().alert(
+    '🔍 CHEQUEO DE NOMBRES COMPLETADO\n\n' +
+    '⚠️ Texto distinto (matchean pero conviene unificar): ' + textoDistinto.length + '\n' +
+    '❌ Sin lote en STOCK_DETALLADO: ' + sinLote.length + '\n\n' +
+    'Mirá la hoja "CHEQUEO_NOMBRES" para ver el detalle de cada uno.'
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// UNIFICAR NOMBRES: copia el nombre EXACTO de SUPLEMENTOS sobre
+// las filas que le corresponden en STOCK_DETALLADO (las que ya
+// coinciden ignorando tildes/guiones). Deja ambas hojas idénticas.
+// SUPLEMENTOS manda porque es el catálogo que ve el cliente y el
+// que el código usa para separar el sabor con " - ".
+// NO toca el stock (col E), solo el texto del nombre (col A).
+// ══════════════════════════════════════════════════════════
+function unificarNombresStock() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ui = SpreadsheetApp.getUi();
+  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+  var hojaSD  = ss.getSheetByName('STOCK_DETALLADO');
+
+  if (!hojaSup || !hojaSD) {
+    ui.alert('❌ No se encontró SUPLEMENTOS o STOCK_DETALLADO.');
+    return;
+  }
+
+  var resp = ui.alert('🔧 Unificar nombres',
+    'Voy a copiar el nombre EXACTO de cada producto de SUPLEMENTOS sobre ' +
+    'las filas que le corresponden en STOCK_DETALLADO (las que ya coinciden ' +
+    'ignorando tildes y guiones).\n\n' +
+    'NO toca el stock, solo el texto del nombre. ¿Seguimos?',
+    ui.ButtonSet.YES_NO);
+  if (resp !== ui.Button.YES) return;
+
+  var datosSup = hojaSup.getDataRange().getValues();
+  var datosSD  = hojaSD.getDataRange().getValues();
+
+  // Mapa: nombre normalizado → { nombre canónico exacto, ambiguo }
+  // ambiguo = dos productos DISTINTOS de SUPLEMENTOS normalizan igual → no tocar.
+  var canon = {};
+  for (var j = 0; j < datosSup.length; j++) {
+    var crudoSup = String(datosSup[j][0] || '').trim();
+    var precio   = Number(datosSup[j][1]) || 0;
+    if (!crudoSup || precio <= 0) continue; // saltar marcas y vacíos
+    var norm = _normalizarNombre(crudoSup);
+    if (!canon[norm]) {
+      canon[norm] = { nombre: crudoSup, ambiguo: false };
+    } else if (canon[norm].nombre !== crudoSup) {
+      canon[norm].ambiguo = true;
+    }
+  }
+
+  var cambios = 0, ambiguos = 0, sinMatch = 0;
+  var ejemplos = [];
+  for (var i = 1; i < datosSD.length; i++) {
+    var crudoSD = String(datosSD[i][0] || '').trim();
+    if (!crudoSD) continue;
+    var n = _normalizarNombre(crudoSD);
+    var c = canon[n];
+    if (!c) { sinMatch++; continue; }
+    if (c.ambiguo) { ambiguos++; continue; }
+    if (c.nombre !== crudoSD) {
+      hojaSD.getRange(i + 1, 1).setValue(c.nombre);
+      if (ejemplos.length < 10) ejemplos.push('• "' + crudoSD + '"  →  "' + c.nombre + '"');
+      cambios++;
+    }
+  }
+
+  SpreadsheetApp.flush();
+
+  ui.alert(
+    '✅ UNIFICACIÓN COMPLETADA\n\n' +
+    '🔧 Nombres corregidos en STOCK_DETALLADO: ' + cambios + '\n' +
+    (ambiguos ? '⚠️ Saltados por ambigüedad (2 productos casi iguales): ' + ambiguos + '\n' : '') +
+    (sinMatch ? '❓ Filas de STOCK_DETALLADO sin producto en SUPLEMENTOS: ' + sinMatch + '\n' : '') +
+    (ejemplos.length ? '\nEjemplos de lo corregido:\n' + ejemplos.join('\n') : '') +
+    '\n\nVolvé a correr el chequeo para confirmar que quedaron en 0.'
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// SINCRONIZAR STOCK PRINCIPAL (col D de SUPLEMENTOS) DESDE LOTES
+// Llena la columna D de SUPLEMENTOS sumando los lotes de cada
+// producto en STOCK_DETALLADO. Así cargás el stock UNA sola vez
+// (en STOCK_DETALLADO, con su vencimiento) y la hoja principal se
+// mantiene con 1 fila por producto, sin repetir vencimientos.
+//   • Productos CON lote → col D = suma de sus lotes (automático).
+//   • Productos SIN lote (accesorios, shakers, etc.) → NO se tocan,
+//     su stock se sigue cargando a mano en col D.
+// Devuelve cuántos productos actualizó. NO muestra cartel (se llama
+// sola después de cada venta). Para el cartel, usar la versión Manual.
+// ══════════════════════════════════════════════════════════
+function actualizarStockPrincipal() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+    var hojaSD  = ss.getSheetByName('STOCK_DETALLADO');
+    if (!hojaSup || !hojaSD) return 0;
+
+    // Sumar stock por nombre normalizado en STOCK_DETALLADO
+    var datosSD = hojaSD.getDataRange().getValues();
+    var sumas = {}; // norm -> total
+    for (var i = 1; i < datosSD.length; i++) {
+      var nom = String(datosSD[i][0] || '').trim();
+      if (!nom) continue;
+      var norm = _normalizarNombre(nom);
+      if (!(norm in sumas)) sumas[norm] = 0;
+      sumas[norm] += Number(datosSD[i][4]) || 0;
+    }
+
+    // Volcar la suma en la col D de los productos que tienen lote
+    var datosSup = hojaSup.getDataRange().getValues();
+    var cambios = 0;
+    for (var j = 0; j < datosSup.length; j++) {
+      var nombre = String(datosSup[j][0] || '').trim();
+      var precio = Number(datosSup[j][1]) || 0;
+      if (!nombre || precio <= 0) continue;   // saltar marcas/secciones
+      var n = _normalizarNombre(nombre);
+      if (!(n in sumas)) continue;            // sin lote → no tocar (accesorios)
+      var nuevo  = sumas[n];
+      var actual = Number(datosSup[j][3]) || 0;
+      if (actual !== nuevo) {
+        hojaSup.getRange(j + 1, 4).setValue(nuevo);
+        cambios++;
+      }
+    }
+    return cambios;
+  } catch(e) {
+    Logger.log('Error actualizarStockPrincipal: ' + e.message);
+    return 0;
+  }
+}
+
+// Versión con cartel, para el botón del menú (cargás mercadería nueva
+// en STOCK_DETALLADO y apretás esto para reflejarla en la hoja principal).
+function actualizarStockPrincipalManual() {
+  var cambios = actualizarStockPrincipal();
+  SpreadsheetApp.getUi().alert(
+    '🔄 STOCK PRINCIPAL ACTUALIZADO\n\n' +
+    'Productos actualizados en la columna D de SUPLEMENTOS: ' + cambios + '\n' +
+    '(sumando sus lotes de STOCK_DETALLADO).\n\n' +
+    'Los productos sin lote (accesorios, shakers, etc.) no se tocan: ' +
+    'su stock se sigue cargando a mano en la columna D.'
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// CONCILIAR STOCK: SUPLEMENTOS ↔ STOCK_DETALLADO
+// Compara, producto por producto, el stock de la col D de SUPLEMENTOS
+// contra la suma de sus lotes en STOCK_DETALLADO, y reporta qué hay
+// que cargar para que las dos hojas estén completas. Escribe la hoja
+// "CONCILIACION_STOCK".
+//   ⚠️ NO COINCIDE → está en las dos pero los números difieren.
+//   ❌ FALTA LOTE  → tiene stock en SUPLEMENTOS pero ningún lote en
+//                    STOCK_DETALLADO (buscar en el local y cargarlo
+//                    con su vencimiento). Los accesorios que no se
+//                    vencen también aparecen acá: esos se ignoran.
+// ══════════════════════════════════════════════════════════
+function conciliarStock() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ui = SpreadsheetApp.getUi();
+  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+  var hojaSD  = ss.getSheetByName('STOCK_DETALLADO');
+  if (!hojaSup || !hojaSD) {
+    ui.alert('❌ No se encontró SUPLEMENTOS o STOCK_DETALLADO.');
+    return;
+  }
+
+  // Sumar lotes por nombre normalizado (col E = Stock Actual)
+  var datosSD = hojaSD.getDataRange().getValues();
+  var sumas = {};
+  var infoSD = {}; // norm -> { nombre, marca } para detectar lo que falta en SUPLEMENTOS
+  for (var i = 1; i < datosSD.length; i++) {
+    var nomSD = String(datosSD[i][0] || '').trim();
+    if (!nomSD) continue;
+    var nrm = _normalizarNombre(nomSD);
+    if (!(nrm in sumas)) { sumas[nrm] = 0; infoSD[nrm] = { nombre: nomSD, marca: String(datosSD[i][1] || '').trim() }; }
+    sumas[nrm] += Number(datosSD[i][4]) || 0;
+  }
+
+  // Recorrer SUPLEMENTOS, llevando la marca de cada sección
+  var datosSup = hojaSup.getDataRange().getValues();
+  var marcaActual = '';
+  var faltan = [], noCoinc = [], okCount = 0;
+  var supNorms = {}; // nombres normalizados que SÍ existen en SUPLEMENTOS
+
+  for (var j = 0; j < datosSup.length; j++) {
+    var nombre = String(datosSup[j][0] || '').trim();
+    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
+    if (!nombre) continue;
+    var n = _normalizarNombre(nombre);
+    supNorms[n] = true;                          // existe en SUPLEMENTOS (con o sin precio)
+    var precio = Number(datosSup[j][1]) || 0;
+    if (precio <= 0) continue;                   // sin precio aún → no comparo stock
+    var stockD = Number(datosSup[j][3]) || 0;
+    if (!(n in sumas)) {
+      if (stockD > 0) faltan.push({ nombre: nombre, marca: marcaActual, d: stockD });
+    } else if (sumas[n] !== stockD) {
+      noCoinc.push({ nombre: nombre, marca: marcaActual, d: stockD, lotes: sumas[n] });
+    } else {
+      okCount++;
+    }
+  }
+
+  // Productos que están SOLO en STOCK_DETALLADO → faltan crear en SUPLEMENTOS
+  var faltanEnSup = [];
+  for (var key in sumas) {
+    if (sumas[key] <= 0) continue;
+    if (!supNorms[key]) faltanEnSup.push({ nombre: infoSD[key].nombre, marca: infoSD[key].marca, lotes: sumas[key] });
+  }
+  faltanEnSup.sort(function(a, b){ return (a.marca + a.nombre).localeCompare(b.marca + b.nombre); });
+
+  // Los más desajustados primero (mayor diferencia)
+  noCoinc.sort(function(a, b){ return Math.abs(b.lotes - b.d) - Math.abs(a.lotes - a.d); });
+  faltan.sort(function(a, b){ return (a.marca + a.nombre).localeCompare(b.marca + b.nombre); });
+
+  // Armar el reporte
+  // Columna C = "Stock REAL": la completa el usuario (queda al lado del Producto).
+  var filas = [['ESTADO', 'Producto', 'Stock REAL (poné el físico)', 'Marca', 'Stock en SUPLEMENTOS', 'Stock en lotes', 'Diferencia (lotes − princ.)', 'Qué hacer']];
+  faltanEnSup.forEach(function(x){
+    filas.push(['❗ FALTA EN SUPLEMENTOS', x.nombre, '', x.marca, 0, x.lotes, x.lotes,
+      'Está en STOCK_DETALLADO pero NO en SUPLEMENTOS. Creá la fila del producto en SUPLEMENTOS ' +
+      '(con su precio; si la marca es nueva, agregá también su encabezado de marca) y volvé a sincronizar.']);
+  });
+  noCoinc.forEach(function(x){
+    var dif = x.lotes - x.d;
+    var accion;
+    if (dif < 0) {
+      accion = 'En SUPLEMENTOS hay ' + (-dif) + ' MÁS que en los lotes. Si esas ' + (-dif) +
+        ' existen de verdad, cargá un lote por esa diferencia con su vencimiento. Si no existen, los lotes ya están bien.';
+    } else {
+      accion = 'En los lotes hay ' + dif + ' MÁS que en SUPLEMENTOS (puede ser del problema viejo: ventas que ' +
+        'bajaron SUPLEMENTOS pero no el lote). Contá el físico y ajustá el "Stock Actual" del lote.';
+    }
+    filas.push(['⚠️ NO COINCIDE', x.nombre, '', x.marca, x.d, x.lotes, dif, accion]);
+  });
+  faltan.forEach(function(x){
+    filas.push(['❌ FALTA LOTE', x.nombre, '', x.marca, x.d, 0, -x.d,
+      'Buscá las ' + x.d + ' unidades en el local y cargá el lote en STOCK_DETALLADO con su vencimiento. ' +
+      'Si es un accesorio que NO se vence, ignoralo.']);
+  });
+  if (filas.length === 1) {
+    filas.push(['✅ TODO OK', 'Todo el stock con lote coincide entre las dos hojas', '', '', '', '', '', '']);
+  }
+
+  var hojaR = ss.getSheetByName('CONCILIACION_STOCK');
+  if (!hojaR) hojaR = ss.insertSheet('CONCILIACION_STOCK');
+  hojaR.clear();
+  hojaR.getRange(1, 1, filas.length, 8).setValues(filas);
+  hojaR.getRange(1, 1, 1, 8).setBackground('#1a1a2e').setFontColor('#00C8FF').setFontWeight('bold');
+  // Resaltar la columna C (Stock REAL) en verde: encabezado + celdas a completar
+  hojaR.getRange(1, 3).setBackground('#0d3b0d').setFontColor('#7CFC7C').setFontWeight('bold');
+  if (filas.length > 1) hojaR.getRange(2, 3, filas.length - 1, 1).setBackground('#EAFBEA');
+  hojaR.setColumnWidth(1, 140);
+  hojaR.setColumnWidth(2, 300);
+  hojaR.setColumnWidth(3, 170);
+  hojaR.setColumnWidth(4, 150);
+  hojaR.setColumnWidth(5, 160);
+  hojaR.setColumnWidth(6, 110);
+  hojaR.setColumnWidth(7, 160);
+  hojaR.setColumnWidth(8, 430);
+  hojaR.setFrozenRows(1);
+  SpreadsheetApp.flush();
+
+  ui.alert(
+    '🔎 CONCILIACIÓN DE STOCK\n\n' +
+    '❗ Falta crear en SUPLEMENTOS (están solo en STOCK_DETALLADO): ' + faltanEnSup.length + '\n' +
+    '⚠️ No coinciden (lotes ≠ SUPLEMENTOS): ' + noCoinc.length + '\n' +
+    '❌ Falta lote (tienen stock pero no están en STOCK_DETALLADO): ' + faltan.length + '\n' +
+    '✅ Coinciden perfecto: ' + okCount + '\n\n' +
+    'Mirá la hoja "CONCILIACION_STOCK" para el detalle de cada uno.\n\n' +
+    'Ojo: los accesorios que no se vencen (bolsos, llaveros, etc.) aparecen ' +
+    'en "❌ Falta lote" — eso es normal, ignoralos.'
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// APLICAR STOCK REAL: corrige el stock desde la columna "Stock REAL"
+// que el usuario completa en la hoja CONCILIACION_STOCK.
+//   • real < suma de lotes → baja los lotes (el que vence ANTES primero).
+//   • real > suma de lotes → avisa cuánto falta cargar como lote nuevo
+//     (no lo inventa: necesita el vencimiento que solo sabe el usuario).
+//   • sin lote (accesorio) → ajusta la col D de SUPLEMENTOS directo.
+// Al final sincroniza la col D con los lotes ya corregidos.
+// ══════════════════════════════════════════════════════════
+function aplicarStockReal() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ui = SpreadsheetApp.getUi();
+  var hojaR   = ss.getSheetByName('CONCILIACION_STOCK');
+  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+  var hojaSD  = ss.getSheetByName('STOCK_DETALLADO');
+  if (!hojaR)   { ui.alert('❌ Primero corré "🔎 Conciliar stock" para generar la hoja CONCILIACION_STOCK.'); return; }
+  if (!hojaSup || !hojaSD) { ui.alert('❌ No se encontró SUPLEMENTOS o STOCK_DETALLADO.'); return; }
+
+  // Leer los objetivos: producto (col 2) + stock real escrito (col 8)
+  var datosR = hojaR.getDataRange().getValues();
+  // Ubicar las columnas por su ENCABEZADO (robusto: no importa en qué posición estén)
+  var header = (datosR[0] || []).map(function(h){ return String(h || '').toLowerCase(); });
+  var colProd = -1, colReal = -1;
+  for (var c = 0; c < header.length; c++) {
+    if (colProd < 0 && header[c].indexOf('producto') >= 0)   colProd = c;
+    if (colReal < 0 && header[c].indexOf('stock real') >= 0)  colReal = c;
+  }
+  if (colProd < 0 || colReal < 0) {
+    ui.alert('❌ No encuentro las columnas "Producto" y "Stock REAL" en CONCILIACION_STOCK.\n\n' +
+      'Corré primero "🔎 Conciliar stock" para regenerar la hoja con la columna verde.');
+    return;
+  }
+
+  var objetivos = [];
+  for (var r = 1; r < datosR.length; r++) {
+    var prod = String(datosR[r][colProd] || '').trim();
+    var celda = datosR[r][colReal];
+    if (!prod || celda === '' || celda === null || celda === undefined) continue;
+    var real = Number(celda);
+    if (isNaN(real) || real < 0) continue;
+    objetivos.push({ nombre: prod, real: real });
+  }
+
+  if (objetivos.length === 0) {
+    ui.alert('No escribiste ningún "Stock REAL".\n\n' +
+      'Poné el número físico en la columna verde "Stock REAL" (al lado del Producto) ' +
+      'y volvé a apretar el botón.');
+    return;
+  }
+
+  var resp = ui.alert('✅ Aplicar stock real',
+    'Voy a corregir ' + objetivos.length + ' producto(s) con el "Stock REAL" que pusiste.\n\n' +
+    '• Si el real es MENOR que los lotes → bajo los lotes (empezando por el que vence antes).\n' +
+    '• Si el real es MAYOR → te aviso cuánto falta cargar como lote nuevo (con su vencimiento).\n' +
+    '• Actualizo la columna D de SUPLEMENTOS.\n\n¿Seguimos?',
+    ui.ButtonSet.YES_NO);
+  if (resp !== ui.Button.YES) return;
+
+  var datosSD  = hojaSD.getDataRange().getValues();
+  var datosSup = hojaSup.getDataRange().getValues();
+  var ajustados = 0, sinLote = 0, sinCambio = 0, faltaCargar = [], noEncontrado = [];
+
+  objetivos.forEach(function(o) {
+    var norm = _normalizarNombre(o.nombre);
+
+    // Lotes del producto
+    var lotes = [];
+    for (var i = 1; i < datosSD.length; i++) {
+      if (_normalizarNombre(datosSD[i][0]) !== norm) continue;
+      lotes.push({ fila: i + 1, venc: datosSD[i][2], stock: Number(datosSD[i][4]) || 0 });
+    }
+    // Fila del producto en SUPLEMENTOS
+    var supFila = -1;
+    for (var j = 0; j < datosSup.length; j++) {
+      if (_esEncabezadoMarca(datosSup[j][0])) continue;
+      if (_normalizarNombre(datosSup[j][0]) === norm) { supFila = j + 1; break; }
+    }
+
+    if (lotes.length === 0) {
+      // Sin lote (accesorio o perecedero sin cargar) → ajusto la col D directo
+      if (supFila > 0) { hojaSup.getRange(supFila, 4).setValue(o.real); sinLote++; }
+      else noEncontrado.push(o.nombre);
+      return;
+    }
+
+    var totalLote = lotes.reduce(function(s, l){ return s + l.stock; }, 0);
+    if (o.real === totalLote) { sinCambio++; return; }
+    if (o.real > totalLote) { faltaCargar.push({ nombre: o.nombre, faltan: o.real - totalLote }); return; }
+
+    // real < totalLote → bajar lotes (vence antes primero)
+    lotes.sort(function(a, b) {
+      var da = a.venc instanceof Date ? a.venc : new Date(a.venc);
+      var db = b.venc instanceof Date ? b.venc : new Date(b.venc);
+      return da - db;
+    });
+    var quitar = totalLote - o.real;
+    for (var k = 0; k < lotes.length && quitar > 0; k++) {
+      var baja = Math.min(quitar, lotes[k].stock);
+      hojaSD.getRange(lotes[k].fila, 5).setValue(lotes[k].stock - baja);
+      quitar -= baja;
+    }
+    ajustados++;
+  });
+
+  SpreadsheetApp.flush();
+  actualizarStockPrincipal(); // sincroniza la col D con los lotes ya corregidos
+
+  var msg = '✅ STOCK REAL APLICADO\n\n' +
+    '🔧 Productos con lotes ajustados: ' + ajustados + '\n' +
+    (sinLote   ? '📦 Sin lote, ajusté la col D directo: ' + sinLote + '\n' : '') +
+    (sinCambio ? '✔️ Ya coincidían (sin cambios): ' + sinCambio + '\n' : '');
+  if (faltaCargar.length) {
+    msg += '\n⚠️ Faltan cargar como LOTE NUEVO (con su vencimiento):\n';
+    faltaCargar.slice(0, 15).forEach(function(f){ msg += '  • ' + f.nombre + ': +' + f.faltan + '\n'; });
+    if (faltaCargar.length > 15) msg += '  ... y ' + (faltaCargar.length - 15) + ' más\n';
+  }
+  if (noEncontrado.length) {
+    msg += '\n❓ No encontré (ni en SUPLEMENTOS ni en lotes): ' + noEncontrado.slice(0, 10).join(', ');
+  }
+  msg += '\n\nCorré "🔎 Conciliar stock" de nuevo para confirmar que quedó todo en ✅.';
+  ui.alert(msg);
+}
+
+// ══════════════════════════════════════════════════════════
+// CREAR EN SUPLEMENTOS LOS PRODUCTOS NUEVOS DE STOCK_DETALLADO
+// Para los productos que cargaste en STOCK_DETALLADO y todavía no
+// existen en SUPLEMENTOS: los crea bajo su marca (o crea la marca
+// nueva con su formato: fondo #1a1a2e, letra #00C8FF, MAYÚSCULAS),
+// con el stock cargado y el PRECIO en 0 resaltado en rojo para que
+// solo completes el precio. NO borra ni cambia nada existente.
+// ══════════════════════════════════════════════════════════
+function crearProductosFaltantes() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ui = SpreadsheetApp.getUi();
+  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+  var hojaSD  = ss.getSheetByName('STOCK_DETALLADO');
+  if (!hojaSup || !hojaSD) { ui.alert('❌ No se encontró SUPLEMENTOS o STOCK_DETALLADO.'); return; }
+
+  // 1) Productos de STOCK_DETALLADO: suma de stock + nombre + marca
+  var datosSD = hojaSD.getDataRange().getValues();
+  var sumas = {}, infoSD = {};
+  for (var i = 1; i < datosSD.length; i++) {
+    var nomSD = String(datosSD[i][0] || '').trim();
+    if (!nomSD) continue;
+    var nrm = _normalizarNombre(nomSD);
+    if (!(nrm in sumas)) { sumas[nrm] = 0; infoSD[nrm] = { nombre: nomSD, marca: String(datosSD[i][1] || '').trim() }; }
+    sumas[nrm] += Number(datosSD[i][4]) || 0;
+  }
+
+  // 2) Recorrer SUPLEMENTOS: productos existentes + estructura de marcas
+  var datosSup = hojaSup.getDataRange().getValues();
+  var supNorms = {};
+  var marcas = {};       // marcaNorm -> { headerRow, lastContentRow, raw }
+  var listaMarcas = [];
+  var curMarca = null;
+
+  for (var j = 0; j < datosSup.length; j++) {
+    var nm = String(datosSup[j][0] || '').trim();
+    var fila = j + 1;
+    if (_esEncabezadoMarca(nm)) {                     // encabezado de marca
+      var mk = _normalizarNombre(nm);
+      marcas[mk] = { headerRow: fila, lastContentRow: fila, raw: nm };
+      listaMarcas.push(mk);
+      curMarca = mk;
+      continue;
+    }
+    if (!nm) continue;
+    supNorms[_normalizarNombre(nm)] = true;            // producto ya existe (con o sin precio)
+    if (curMarca && marcas[curMarca]) marcas[curMarca].lastContentRow = fila;
+  }
+
+  // Buscar la marca destino: match exacto o por primera palabra ("Star" → "STAR NUTRITION")
+  function primeraPal(s){ return (_normalizarNombre(s).split(' ')[0]) || ''; }
+  function buscarMarca(marcaStock){
+    var mn = _normalizarNombre(marcaStock);
+    if (!mn) return null;
+    if (marcas[mn]) return mn;
+    var pw = primeraPal(marcaStock);
+    if (pw.length >= 3) {
+      for (var x = 0; x < listaMarcas.length; x++) {
+        if (primeraPal(marcas[listaMarcas[x]].raw) === pw) return listaMarcas[x];
+      }
+    }
+    return null;
+  }
+
+  // 3) Agrupar faltantes por destino
+  var enExistente = {}, enNueva = {}, sinMarca = [], totalNuevos = 0;
+  for (var key in sumas) {
+    if (sumas[key] <= 0 || supNorms[key]) continue;
+    var nombreP = infoSD[key].nombre, marcaP = infoSD[key].marca, st = sumas[key];
+    if (!marcaP) { sinMarca.push(nombreP); continue; }
+    var destino = buscarMarca(marcaP);
+    if (destino) {
+      if (!enExistente[destino]) enExistente[destino] = [];
+      enExistente[destino].push({ nombre: nombreP, stock: st });
+    } else {
+      var mu = marcaP.toUpperCase();
+      if (!enNueva[mu]) enNueva[mu] = [];
+      enNueva[mu].push({ nombre: nombreP, stock: st });
+    }
+    totalNuevos++;
+  }
+
+  if (totalNuevos === 0) {
+    ui.alert('✅ No hay productos nuevos para crear.\n\nTodo lo de STOCK_DETALLADO ya existe en SUPLEMENTOS.' +
+      (sinMarca.length ? '\n\n⚠️ ' + sinMarca.length + ' producto(s) sin marca en STOCK_DETALLADO: cargales la marca.' : ''));
+    return;
+  }
+
+  var resp = ui.alert('🆕 Crear productos nuevos',
+    'Voy a crear ' + totalNuevos + ' producto(s) en SUPLEMENTOS que están en STOCK_DETALLADO y todavía no existen.\n\n' +
+    '• Los pongo bajo su marca (o creo la marca nueva si hace falta).\n' +
+    '• Les cargo el stock y dejo el PRECIO en 0 resaltado en rojo para que lo completes vos.\n' +
+    '• No borro ni cambio nada de lo que ya tenés.\n\n' +
+    'Conviene tener una copia de la planilla por las dudas. ¿Seguimos?',
+    ui.ButtonSet.YES_NO);
+  if (resp !== ui.Button.YES) return;
+
+  var creados = 0, resumen = [];
+
+  // 4) Insertar en marcas EXISTENTES (de abajo hacia arriba para no correr las filas de arriba)
+  var destinos = Object.keys(enExistente).map(function(mk){ return { mk: mk, anchor: marcas[mk].lastContentRow }; });
+  destinos.sort(function(a, b){ return b.anchor - a.anchor; });
+  destinos.forEach(function(d){
+    var prods = enExistente[d.mk];
+    var anchor = marcas[d.mk].lastContentRow;
+    hojaSup.insertRowsAfter(anchor, prods.length);
+    for (var p = 0; p < prods.length; p++) {
+      _escribirProductoNuevo(hojaSup, anchor + 1 + p, prods[p].nombre, prods[p].stock);
+      creados++;
+    }
+    resumen.push('• ' + prods.length + ' en "' + marcas[d.mk].raw + '"');
+  });
+
+  // 5) Crear marcas NUEVAS al final (con el formato de marca)
+  Object.keys(enNueva).forEach(function(mu){
+    var prods = enNueva[mu];
+    var rh = hojaSup.getLastRow() + 1;
+    hojaSup.getRange(rh, 1).setValue(mu);                          // encabezado (col B queda vacía)
+    hojaSup.getRange(rh, 1, 1, 10).setBackground('#1a1a2e');
+    hojaSup.getRange(rh, 1).setFontColor('#00C8FF').setFontWeight('bold');
+    for (var p = 0; p < prods.length; p++) {
+      _escribirProductoNuevo(hojaSup, rh + 1 + p, prods[p].nombre, prods[p].stock);
+      creados++;
+    }
+    resumen.push('• ' + prods.length + ' en NUEVA marca "' + mu + '"');
+  });
+
+  SpreadsheetApp.flush();
+
+  ui.alert('✅ PRODUCTOS CREADOS\n\n' +
+    'Se crearon ' + creados + ' producto(s) en SUPLEMENTOS:\n' +
+    resumen.join('\n') + '\n\n' +
+    '👉 Andá a SUPLEMENTOS y completá el PRECIO (la celda roja) de cada uno. El stock ya quedó cargado.' +
+    (sinMarca.length ? '\n\n⚠️ ' + sinMarca.length + ' producto(s) sin marca en STOCK_DETALLADO, NO se crearon: ' + sinMarca.slice(0, 5).join(', ') : ''));
+}
+
+// Escribe una fila de producto nuevo: A=nombre, B=precio 0 (resaltado en rojo
+// para completar), C=precio lista vacío, D=stock. Formato normal (fondo blanco).
+function _escribirProductoNuevo(hoja, fila, nombre, stock) {
+  hoja.getRange(fila, 1, 1, 4).setValues([[nombre, 0, '', stock]]);
+  hoja.getRange(fila, 1, 1, 10).setBackground('#ffffff').setFontColor('#000000').setFontWeight('normal').setFontStyle('normal');
+  hoja.getRange(fila, 2).setBackground('#FFCDD2');     // precio en rojo claro = falta completar
+}
+
+// ══════════════════════════════════════════════════════════
+// REINICIAR "NUEVOS INGRESOS": borra la memoria del carrusel para que
+// arranque de cero con el stock ACTUAL. Correr UNA vez DESPUÉS de terminar
+// de corregir los stocks (los cambios masivos de stock se toman como
+// "reposición" y ensucian el carrusel). Después solo lo que agregues o
+// repongas de verdad aparece como nuevo.
+// ══════════════════════════════════════════════════════════
+function reiniciarNuevosIngresos() {
+  var ui = SpreadsheetApp.getUi();
+  var resp = ui.alert('🆕 Reiniciar "Nuevos Ingresos"',
+    'Borra la memoria del carrusel de novedades para que arranque de cero con el stock actual.\n\n' +
+    'Conviene usarlo DESPUÉS de terminar de corregir los stocks. A partir de ahí, solo los ' +
+    'productos que agregues o repongas de verdad van a aparecer como nuevos.\n\n¿Seguimos?',
+    ui.ButtonSet.YES_NO);
+  if (resp !== ui.Button.YES) return;
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ['_NUEVOS_SUP', '_NUEVOS_IND'].forEach(function(n){
+    var h = ss.getSheetByName(n);
+    if (h) ss.deleteSheet(h);           // se recrea solo (baseline) en la próxima carga
+  });
+  try {
+    var props = PropertiesService.getScriptProperties();
+    ['nv_data_SUP', 'nv_ts_SUP', 'nv_data_IND', 'nv_ts_IND'].forEach(function(k){ props.deleteProperty(k); });
+  } catch(e) {}
+
+  ui.alert('✅ Listo. El carrusel de "Nuevos Ingresos" se reconstruye con el stock actual.\n\n' +
+    'Puede tardar 1-2 minutos en verse en la web (refrescá con Ctrl+F5).\n\n' +
+    'Al arrancar de cero, los primeros que aparecen son los que están más abajo en la ' +
+    'hoja SUPLEMENTOS (los últimos que cargaste).');
+}
+
+// ══════════════════════════════════════════════════════════
+// REGISTRAR STOCK ENTRANTE — para el BOTÓN de la hoja STOCK_DETALLADO.
+// Después de cargar los lotes nuevos (filas con producto/marca/vencimiento/
+// stock), apretás el botón y hace todo de una:
+//   1. Crea en SUPLEMENTOS los productos que no existan (precio 0 en rojo).
+//   2. Sincroniza la columna D de SUPLEMENTOS con la suma de los lotes.
+//   3. Actualiza la hoja de reposición.
+// ══════════════════════════════════════════════════════════
+function registrarStockEntrante() {
+  // 1) Crear productos nuevos si los hay (la función avisa y pide confirmación)
+  crearProductosFaltantes();
+
+  // 2) Sincronizar el stock principal
+  var cambios = actualizarStockPrincipal();
+
+  // 3) Refrescar reposición
+  try { actualizarHojaReposicion(); } catch(e) {}
+
+  SpreadsheetApp.getUi().alert(
+    '📦 STOCK ENTRANTE REGISTRADO\n\n' +
+    '🔄 Productos con stock actualizado en SUPLEMENTOS: ' + cambios + '\n\n' +
+    'Si se crearon productos nuevos, acordate de ponerles el PRECIO ' +
+    '(celda roja en SUPLEMENTOS).'
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// DETECTAR NOMBRES REPETIDOS ENTRE MARCAS
+// El sistema de lotes identifica los productos por su NOMBRE. Si dos marcas
+// distintas tienen un producto con el MISMO nombre (ej. "Pancakes Proteicos -
+// Vainilla" de MOLÉ y de GRANGER), el sistema los mezcla: suma sus lotes juntos
+// y duplica el stock. Esta función los detecta para ponerles un nombre distinto
+// en cada marca. Escribe la hoja NOMBRES_DUPLICADOS.
+// ══════════════════════════════════════════════════════════
+function detectarNombresDuplicados() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ui = SpreadsheetApp.getUi();
+  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+  if (!hojaSup) { ui.alert('❌ No se encontró SUPLEMENTOS.'); return; }
+
+  var datos = hojaSup.getDataRange().getValues();
+  var marcaActual = '';
+  var porNombre = {};
+  for (var i = 0; i < datos.length; i++) {
+    var nombre = String(datos[i][0] || '').trim();
+    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
+    if (!nombre) continue;
+    var n = _normalizarNombre(nombre);
+    if (!porNombre[n]) porNombre[n] = { nombre: nombre, marcas: [] };
+    if (porNombre[n].marcas.indexOf(marcaActual) < 0) porNombre[n].marcas.push(marcaActual);
+  }
+
+  var dups = [];
+  for (var k in porNombre) if (porNombre[k].marcas.length > 1) dups.push(porNombre[k]);
+  dups.sort(function(a, b){ return a.nombre.localeCompare(b.nombre); });
+
+  var filas = [['Producto (nombre repetido)', 'Marcas donde aparece', 'Qué hacer']];
+  dups.forEach(function(d){
+    filas.push([d.nombre, d.marcas.join('   |   '),
+      'Este nombre está en varias marcas y el sistema mezcla su stock. Ponele un nombre ' +
+      'distinto en cada marca (en SUPLEMENTOS y en STOCK_DETALLADO), ej. agregando la marca al nombre.']);
+  });
+  if (filas.length === 1) filas.push(['✅ No hay nombres repetidos entre marcas', '', '']);
+
+  var hojaR = ss.getSheetByName('NOMBRES_DUPLICADOS');
+  if (!hojaR) hojaR = ss.insertSheet('NOMBRES_DUPLICADOS');
+  hojaR.clear();
+  hojaR.getRange(1, 1, filas.length, 3).setValues(filas);
+  hojaR.getRange(1, 1, 1, 3).setBackground('#1a1a2e').setFontColor('#00C8FF').setFontWeight('bold');
+  hojaR.setColumnWidth(1, 340);
+  hojaR.setColumnWidth(2, 300);
+  hojaR.setColumnWidth(3, 470);
+  hojaR.setFrozenRows(1);
+  SpreadsheetApp.flush();
+
+  ui.alert('🔤 NOMBRES REPETIDOS ENTRE MARCAS\n\n' +
+    'Encontré ' + dups.length + ' nombre(s) que se repiten en más de una marca.\n\n' +
+    'Mirá la hoja "NOMBRES_DUPLICADOS". A esos hay que ponerles un nombre distinto ' +
+    'en cada marca (en las dos hojas) para que el sistema no mezcle su stock.');
 }
 
 // ── ACTUALIZAR MONTO MENSUAL DEL CLIENTE ────────────────────
@@ -296,41 +1087,75 @@ function registrarVentasDesdeCeldas() {
 
     for (let i = 0; i < datos.length; i++) {
       const row = datos[i];
-      if (row[0] && !row[1]) { marcaActual = String(row[0]).trim(); continue; }
-
-      const cantVender  = Number(row[5]) || 0;
-      const stockActual = Number(row[3]) || 0;
-      if (cantVender <= 0) continue;
+      // Encabezado de marca = celda escrita TODA EN MAYÚSCULA (así las cargás vos).
+      // Los productos siempre tienen alguna minúscula, así nunca se confunden.
+      if (_esEncabezadoMarca(row[0])) { marcaActual = String(row[0]).trim(); continue; }
 
       const nombre      = String(row[0] || '').trim();
       const precioLista = Number(row[1]) || 0;
+      const stockActual = Number(row[3]) || 0;
       if (!nombre || precioLista <= 0) continue;
 
-      if (cantVender > stockActual) {
+      // Soporta vender el MISMO producto a VARIOS clientes en una sola fila:
+      //   Cantidad (col F): "1;2"   Cliente (col G): "25;256"
+      //   → el cliente 25 compra 1 y el cliente 256 compra 2.
+      const cantList  = _parseListaVenta(row[5]).map(function(x){ return Number(x) || 0; });
+      const cliList   = _parseListaVenta(row[6]);
+      const totalCant = cantList.reduce(function(s, n){ return s + n; }, 0);
+      if (totalCant <= 0) continue;
+
+      if (totalCant > stockActual) {
         SpreadsheetApp.getUi().alert(
           '⚠️ Stock insuficiente en SUPLEMENTOS para "' + nombre + '"\n' +
-          'Disponible: ' + stockActual + ' | Querés vender: ' + cantVender
+          'Disponible: ' + stockActual + ' | Querés vender (total): ' + totalCant
         );
         return;
       }
 
-      const codigoCli     = row[6];
-      const clienteNombre = getNombreCliente(codigoCli);
-      const ingreso       = precioLista * cantVender;
+      // Armar los pares (cantidad → cliente)
+      var pares = [];
+      if (cliList.length <= 1) {
+        // Un solo cliente (o ninguno): una venta con la suma de las cantidades
+        pares.push({ cant: totalCant, cli: cliList[0] || '' });
+      } else {
+        // Varios clientes: tiene que haber la MISMA cantidad de números que de clientes
+        if (cantList.length !== cliList.length) {
+          SpreadsheetApp.getUi().alert(
+            '⚠️ En "' + nombre + '" no coinciden cantidades y clientes.\n\n' +
+            'Cantidad (col F): ' + cantList.join(' ; ') + '  (' + cantList.length + ' números)\n' +
+            'Cliente (col G): ' + cliList.join(' ; ') + '  (' + cliList.length + ' clientes)\n\n' +
+            'Poné la misma cantidad de números que de clientes. Ej: "1;2" y "25;256".'
+          );
+          return;
+        }
+        for (var k = 0; k < cliList.length; k++) {
+          pares.push({ cant: cantList[k], cli: cliList[k] });
+        }
+      }
 
-      filasVenta.push([hoy, nombre, marcaActual, cantVender, precioLista, ingreso,
-        clienteNombre || String(codigoCli || ''), '', '']);
+      // Una fila de venta por cada (cliente, cantidad)
+      for (var p = 0; p < pares.length; p++) {
+        var cant = pares[p].cant;
+        if (cant <= 0) continue;
+        var codigoCli     = pares[p].cli;
+        var clienteNombre = getNombreCliente(codigoCli);
+        var ingreso       = precioLista * cant;
 
-      updatesSup.push({ fila: i + 1, col: 4, valor: stockActual - cantVender });
+        filasVenta.push([hoy, nombre, marcaActual, cant, precioLista, ingreso,
+          clienteNombre || String(codigoCli || ''), '', '']);
+
+        if (codigoCli) {
+          var key = String(parseInt(codigoCli));
+          totalesPorCliente[key] = (totalesPorCliente[key] || 0) + ingreso;
+        }
+      }
+
+      // El stock se descuenta UNA sola vez por el total de la fila
+      updatesSup.push({ fila: i + 1, col: 4, valor: stockActual - totalCant });
       updatesSup.push({ fila: i + 1, col: 6, valor: '' });
       updatesSup.push({ fila: i + 1, col: 7, valor: '' });
 
-      if (hojaSD && datosSD) _descontarStockDetalladoBatch(hojaSD, datosSD, nombre, cantVender);
-
-      if (codigoCli) {
-        const key = String(parseInt(codigoCli));
-        totalesPorCliente[key] = (totalesPorCliente[key] || 0) + ingreso;
-      }
+      if (hojaSD && datosSD) _descontarStockDetalladoBatch(hojaSD, datosSD, nombre, totalCant);
     }
   }
 
@@ -454,6 +1279,8 @@ function registrarVentasDesdeCeldas() {
     .map(([cod, monto]) => '  • ' + getNombreCliente(cod) + ': $' + monto.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'))
     .join('\n') || '  • Sin cliente asignado';
 
+  // Reflejar en la col D de SUPLEMENTOS el stock que quedó en los lotes
+  actualizarStockPrincipal();
   actualizarHojaReposicion();
 
   SpreadsheetApp.getUi().alert(
@@ -480,7 +1307,7 @@ function abrirFormularioVenta() {
   for (const row of datos) {
     if (!row[0]) continue;
     const nombre = String(row[0]).trim();
-    if (!row[1]) { marcaActual = nombre; continue; }
+    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
     const precio = Number(row[1]);
     const stock  = Number(row[3]) || 0;
     if (precio > 0) {
@@ -635,6 +1462,8 @@ function procesarVenta(datos) {
     _actualizarClienteMensual(datos.clienteCodigo, totalVenta);
   }
 
+  // Reflejar en la col D de SUPLEMENTOS el stock que quedó en los lotes
+  actualizarStockPrincipal();
   // Actualizar hoja de reposición
   actualizarHojaReposicion();
 
@@ -814,7 +1643,8 @@ function actualizarHojaReposicion() {
     const stock  = Number(row[3]) || 0;
 
     if (!nombre) continue;
-    if (!precio || isNaN(precio)) { marcaActual = nombre; continue; }
+    // Encabezado de marca = celda escrita TODA EN MAYÚSCULA
+    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
 
     if (stock <= STOCK_MINIMO) {
       productos.push([
