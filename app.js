@@ -8111,9 +8111,10 @@ function renderNuevosIngresos(){
   if(nuevos.length < 3){ sec.style.display = 'none'; return; }
   sec.style.display = 'block';
   track.innerHTML = nuevos.map(function(p){
-    var imgSrc = (p.imgs && p.imgs[0]) || p.img || '';
+    // p.imgs es un mapa sabor→imagen (objeto), no un array: usar p.img o la primera del mapa
+    var imgSrc = p.img || (p.imgs ? (Object.values(p.imgs)[0] || '') : '');
     return '<div class="nuevos-card" onclick="openProdModal(\''+p.id+'\')">'
-      + (imgSrc ? '<img src="'+imgSrc+'" alt="'+p.name+'" loading="lazy">' : '<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#111">'+p.emoji+'</div>')
+      + (imgSrc ? '<img src="'+imgSrc+'" alt="'+p.name+'" loading="lazy" onerror="this.onerror=null;this.src=getFallbackImg(\''+p.cat+'\')" style="background:#1a1a2e">' : '<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#111">'+p.emoji+'</div>')
       + '<div class="nuevos-card-body">'
       + '<div class="nuevos-card-brand">'+p.brand+'</div>'
       + '<div class="nuevos-card-name">'+p.name+'</div>'
@@ -8143,6 +8144,12 @@ function _initAutoCarousel(track){
     track._autoHover = true;
     track.style.cursor = 'grab';
     var resync = function(){ track._pos = track.scrollLeft; };
+    // Si el scroll real se aleja de la posicion interna (arrastre tactil con
+    // inercia, scroll nativo, etc.), adoptar la posicion real. Sin esto, al
+    // soltar el carrusel "volvia" al punto previo al movimiento manual.
+    track.addEventListener('scroll', function(){
+      if(Math.abs(track.scrollLeft - track._pos) > 2) track._pos = track.scrollLeft;
+    }, {passive:true});
     track.addEventListener('mouseenter', function(){ track._paused = true; });
     track.addEventListener('mouseleave', function(){ track._dragging = false; track.style.cursor = 'grab'; resync(); track._paused = false; });
     track.addEventListener('touchstart', function(){ track._paused = true; }, {passive:true});
