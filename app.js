@@ -4872,6 +4872,18 @@ function _generarSchemaProductos(){
   console.log('✅ Schema de productos generado:', schemas.length, 'items');
 }
 
+// Achica cualquier foto al vuelo vía images.weserv.nl (CDN gratuito de imágenes):
+// las fotos grandes de ibb (2-3MB de cámara) llegan como WebP de ~100-200KB.
+// No toca las originales ni requiere re-subir nada. Si weserv fallara, el
+// onerror de las tarjetas ya cae al placeholder de la categoría.
+function _optimizarImgUrl(u, w) {
+  u = String(u || '').trim();
+  if (!u) return '';
+  if (u.indexOf('http') !== 0) return u;                // locales / data: / svg → no tocar
+  if (u.indexOf('images.weserv.nl') >= 0) return u;     // ya está optimizada
+  return 'https://images.weserv.nl/?url=' + encodeURIComponent(u.replace(/^https?:\/\//, '')) + '&w=' + (w || 800) + '&output=webp&q=82';
+}
+
 async function cargarDesdeSheets() {
   // Mostrar loading
   const grid = document.getElementById('productsGrid');
@@ -4927,6 +4939,8 @@ async function cargarDesdeSheets() {
         // Soporte múltiples imágenes desde Sheets (separadas por \n o ;)
         var imgArr = p.imagenes || [];
         if(!imgArr.length && img) imgArr = img.split(/[\r\n;]+/).map(function(u){return u.trim()}).filter(Boolean);
+        // Achicar todas al vuelo (fotos de cámara de 2-3MB → WebP de ~150KB)
+        imgArr = imgArr.map(function(u){ return _optimizarImgUrl(u, 800); });
         const desc     = p.descripcion || p['descripcion'] || '';
         return {
           id: String(p.id || i+1),
@@ -4934,7 +4948,7 @@ async function cargarDesdeSheets() {
           brand: marca,
           cat: _mapCategoria(cat),
           emoji: _catEmoji(cat),
-          img: imgArr[0] || _buscarImagen(nombre, marca),
+          img: imgArr[0] || _optimizarImgUrl(_buscarImagen(nombre, marca), 800),
           imgs_sheet: imgArr.length > 1 ? imgArr : null,
           desc: desc,
           price: precio_efectivo,
@@ -4957,7 +4971,7 @@ async function cargarDesdeSheets() {
           flavors: [],
           imgs: {}, // mapa sabor → imagen
           _sheetImgs: [], // array de imágenes adicionales del Sheet
-          img: p.img || _buscarImagen(base, p.brand),
+          img: p.img || _optimizarImgUrl(_buscarImagen(base, p.brand), 800),
         };
       }
       // Acumular imágenes múltiples del Sheet

@@ -473,7 +473,7 @@ function render(){
   }
   grid.innerHTML=sl.map(function(p){
     var idx=PRODS.indexOf(p);
-    var imgs=p.imagenes&&p.imagenes.length?p.imagenes:(p.imgs&&p.imgs.length?p.imgs.map(proxyImg):(p.img?[proxyImg(p.img)]:[]));
+    var imgs=p.imagenes&&p.imagenes.length?p.imagenes.map(proxyImg):(p.imgs&&p.imgs.length?p.imgs.map(proxyImg):(p.img?[proxyImg(p.img)]:[]));
 
     var imgHtml='';
     if(!imgs.length){
@@ -587,7 +587,7 @@ function aModal(idx){
 
   // Imagen
   var imgWrap=document.getElementById('mImgWrap');
-  var imgs=p.imagenes&&p.imagenes.length?p.imagenes:(p.imgs&&p.imgs.length?p.imgs.map(proxyImg):(p.img?[proxyImg(p.img)]:[]));
+  var imgs=p.imagenes&&p.imagenes.length?p.imagenes.map(proxyImg):(p.imgs&&p.imgs.length?p.imgs.map(proxyImg):(p.img?[proxyImg(p.img)]:[]));
 
   if(!imgs.length){
     imgWrap.innerHTML='<span style="font-size:4rem">&#128085;</span>';
@@ -727,7 +727,7 @@ function addToCartI(){
   if(existing){
     existing.qty++;
   } else {
-    var imgs=mProd.imagenes&&mProd.imagenes.length?mProd.imagenes:(mProd.img?[mProd.img]:[]);
+    var imgs=mProd.imagenes&&mProd.imagenes.length?mProd.imagenes.map(proxyImg):(mProd.img?[proxyImg(mProd.img)]:[]);
     cartI.push({key:key,nombre:mProd.nombre,marca:mProd.marca||'',codigo:mProd.codigo||'',talle:t,color:color,precio:mProd.precio,precio_lista:mProd.precio_lista||0,img:imgs[0]||'',qty:1});
   }
   saveCartI();updateBadgeI();renderCartI();
@@ -930,7 +930,7 @@ function renderNuevosI(){
   sec.style.display='block';
   track.innerHTML=nuevos.map(function(p){
     var idx=PRODS_ALL.indexOf(p);
-    var imgUrl=p.imagenes&&p.imagenes.length?p.imagenes[0]:(p.img||'');
+    var imgUrl=proxyImg(p.imagenes&&p.imagenes.length?p.imagenes[0]:(p.img||''));
     return '<div class="nuevos-card" onclick="aModal('+idx+')">'
       +'<div class="nuevos-card-img">'+(imgUrl?'<img src="'+imgUrl+'" alt="'+p.nombre+'" loading="lazy">':'<span style="font-size:2.5rem;display:flex;align-items:center;justify-content:center;height:100%">👗</span>')+'</div>'
       +'<div class="nuevos-card-body">'
