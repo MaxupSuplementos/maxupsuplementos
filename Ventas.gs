@@ -699,6 +699,7 @@ function crearProductosFaltantes() {
   var listaMarcas = [];
   var curMarca = null;
 
+  var ultimaFilaConNombre = 0; // última fila REAL con producto/marca en col A
   for (var j = 0; j < datosSup.length; j++) {
     var nm = String(datosSup[j][0] || '').trim();
     var fila = j + 1;
@@ -707,11 +708,13 @@ function crearProductosFaltantes() {
       marcas[mk] = { headerRow: fila, lastContentRow: fila, raw: nm };
       listaMarcas.push(mk);
       curMarca = mk;
+      ultimaFilaConNombre = fila;
       continue;
     }
     if (!nm) continue;
     supNorms[_normalizarNombre(nm)] = true;            // producto ya existe (con o sin precio)
     if (curMarca && marcas[curMarca]) marcas[curMarca].lastContentRow = fila;
+    ultimaFilaConNombre = fila;
   }
 
   // Buscar la marca destino: match exacto o por primera palabra ("Star" → "STAR NUTRITION")
@@ -767,6 +770,7 @@ function crearProductosFaltantes() {
   // 4) Insertar en marcas EXISTENTES (de abajo hacia arriba para no correr las filas de arriba)
   var destinos = Object.keys(enExistente).map(function(mk){ return { mk: mk, anchor: marcas[mk].lastContentRow }; });
   destinos.sort(function(a, b){ return b.anchor - a.anchor; });
+  var insertadosArriba = 0; // cuántas filas se insertaron (corren hacia abajo la última fila)
   destinos.forEach(function(d){
     var prods = enExistente[d.mk];
     var anchor = marcas[d.mk].lastContentRow;
@@ -775,13 +779,18 @@ function crearProductosFaltantes() {
       _escribirProductoNuevo(hojaSup, anchor + 1 + p, prods[p].nombre, prods[p].stock);
       creados++;
     }
+    insertadosArriba += prods.length;
     resumen.push('• ' + prods.length + ' en "' + marcas[d.mk].raw + '"');
   });
 
-  // 5) Crear marcas NUEVAS al final (con el formato de marca)
+  // 5) Crear marcas NUEVAS justo DEBAJO de la última fila con productos
+  // (no al final absoluto de la hoja: si hay celdas sueltas más abajo,
+  // la marca quedaría lejos y perdida de vista).
+  var filaInsercion = ultimaFilaConNombre + insertadosArriba;
   Object.keys(enNueva).forEach(function(mu){
     var prods = enNueva[mu];
-    var rh = hojaSup.getLastRow() + 1;
+    hojaSup.insertRowsAfter(filaInsercion, prods.length + 1); // 1 para el encabezado
+    var rh = filaInsercion + 1;
     hojaSup.getRange(rh, 1).setValue(mu);                          // encabezado (col B queda vacía)
     hojaSup.getRange(rh, 1, 1, 10).setBackground('#1a1a2e');
     hojaSup.getRange(rh, 1).setFontColor('#00C8FF').setFontWeight('bold');
@@ -789,6 +798,7 @@ function crearProductosFaltantes() {
       _escribirProductoNuevo(hojaSup, rh + 1 + p, prods[p].nombre, prods[p].stock);
       creados++;
     }
+    filaInsercion = rh + prods.length; // la próxima marca nueva va debajo de esta
     resumen.push('• ' + prods.length + ' en NUEVA marca "' + mu + '"');
   });
 
