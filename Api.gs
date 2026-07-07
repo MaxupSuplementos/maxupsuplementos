@@ -1404,14 +1404,13 @@ function actualizarAnalisisOfertas() {
 
 // ── TRIGGER DIARIO: actualizar análisis + alerta Telegram ───
 function triggerDiarioMaxup() {
-  actualizarAnalisisOfertas();
+  avisoDeudoresDiario();
   actualizarHojaReposicion();
   alertaVencimientosDiaria();
   recordatoriosRecompra();
   alertaOfertasClientes();
   bienvenidaClientesNuevos();
   generarContenidoRedes();
-  avisoDeudoresDiario();
 }
 
 // ── AVISO DIARIO DE DEUDORES (Telegram) ─────────────────────
@@ -2084,7 +2083,9 @@ function actualizarHojaReposicion() {
     var stock  = Number(row[3]) || 0;
 
     if (!nombre) continue;
-    if (!precio || isNaN(precio)) { marcaActual = nombre; continue; }
+    // Marca = celda TODA EN MAYÚSCULA (igual que Ventas.gs; el precio 0 ya no
+    // significa "marca": es un producto nuevo al que falta cargar el precio)
+    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
 
     if (stock <= STOCK_MINIMO) {
       productos.push([
