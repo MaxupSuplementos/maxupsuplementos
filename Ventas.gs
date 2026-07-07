@@ -1628,6 +1628,8 @@ function _formatoPrecio(num) {
   return resultado;
 }
 
+// Ordenada por URGENCIA REAL: primero lo que MÁS se vendió en los últimos
+// 30 días (lo que más gente necesita), y a igual venta, lo de menos stock.
 function actualizarHojaReposicion() {
   const ss      = SpreadsheetApp.getActiveSpreadsheet();
   const hojaSup = ss.getSheetByName('SUPLEMENTOS');
@@ -1643,6 +1645,25 @@ function actualizarHojaReposicion() {
   const hoy   = new Date();
   const fechaStr = Utilities.formatDate(hoy, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
 
+  // Contar unidades vendidas por producto en los últimos 30 días (VentasDiarias)
+  var ventas30 = {};
+  try {
+    var hojaVD = ss.getSheetByName('VentasDiarias');
+    if (hojaVD) {
+      var vd = hojaVD.getDataRange().getValues();
+      var hace30 = new Date(); hace30.setDate(hace30.getDate() - 30);
+      for (var v = 0; v < vd.length; v++) {
+        var f = vd[v][0];
+        if (!f || typeof f === 'string') continue;   // saltar headers y TOTALes
+        var fechaV = new Date(f);
+        if (isNaN(fechaV.getTime()) || fechaV < hace30) continue;
+        var nomV = _normalizarNombre(vd[v][1]);
+        if (!nomV) continue;
+        ventas30[nomV] = (ventas30[nomV] || 0) + (Number(vd[v][3]) || 0);
+      }
+    }
+  } catch(eV) {}
+
   const productos = [];
   let marcaActual = '';
 
@@ -1657,11 +1678,13 @@ function actualizarHojaReposicion() {
     if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
 
     if (stock <= STOCK_MINIMO) {
+      const vendidos = ventas30[_normalizarNombre(nombre)] || 0;
       productos.push([
         nombre,
         marcaActual,
         stock,
         stock === 0 ? '🔴 SIN STOCK' : stock === 1 ? '🟠 CRÍTICO' : '🟡 BAJO',
+        vendidos,
         precio,
         fechaStr
       ]);
@@ -1671,35 +1694,37 @@ function actualizarHojaReposicion() {
   hojaRep.clearContents();
   hojaRep.clearFormats();
 
-  const headerRange = hojaRep.getRange(1, 1, 1, 6);
-  headerRange.setValues([['Producto', 'Marca', 'Stock actual', 'Estado', 'Precio', 'Última actualización']]);
+  const headerRange = hojaRep.getRange(1, 1, 1, 7);
+  headerRange.setValues([['Producto', 'Marca', 'Stock actual', 'Estado', 'Vendidos (30d)', 'Precio', 'Última actualización']]);
   headerRange.setBackground('#1a1a2e').setFontColor('#00C8FF').setFontWeight('bold');
 
   if (productos.length > 0) {
-    productos.sort(function(a, b) { return a[2] - b[2]; });
-    const dataRange = hojaRep.getRange(2, 1, productos.length, 6);
+    // Más vendidos primero; a igual venta, el de menos stock
+    productos.sort(function(a, b) { return (b[4] - a[4]) || (a[2] - b[2]); });
+    const dataRange = hojaRep.getRange(2, 1, productos.length, 7);
     dataRange.setValues(productos);
 
     for (let i = 0; i < productos.length; i++) {
       const stock = productos[i][2];
       const color = stock === 0 ? '#3a0000' : stock === 1 ? '#2a1500' : '#1a1a00';
       const fontColor = stock === 0 ? '#FF4444' : stock === 1 ? '#FF9900' : '#FFD700';
-      hojaRep.getRange(i + 2, 1, 1, 6).setBackground(color).setFontColor(fontColor);
+      hojaRep.getRange(i + 2, 1, 1, 7).setBackground(color).setFontColor(fontColor);
     }
 
     hojaRep.setColumnWidth(1, 280);
     hojaRep.setColumnWidth(2, 150);
     hojaRep.setColumnWidth(3, 90);
     hojaRep.setColumnWidth(4, 100);
-    hojaRep.setColumnWidth(5, 100);
-    hojaRep.setColumnWidth(6, 160);
+    hojaRep.setColumnWidth(5, 110);
+    hojaRep.setColumnWidth(6, 100);
+    hojaRep.setColumnWidth(7, 160);
   } else {
     hojaRep.getRange(2, 1).setValue('✅ Todos los productos tienen stock suficiente');
     hojaRep.getRange(2, 1).setFontColor('#00CC44');
   }
 
-  hojaRep.getRange(1, 7).setValue('Actualizado: ' + fechaStr);
-  hojaRep.getRange(1, 7).setFontColor('#888888').setFontStyle('italic');
+  hojaRep.getRange(1, 8).setValue('Actualizado: ' + fechaStr);
+  hojaRep.getRange(1, 8).setFontColor('#888888').setFontStyle('italic');
 }
 
 // ══════════════════════════════════════════════════════════

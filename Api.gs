@@ -2059,75 +2059,10 @@ function detectarCatIndum(nombre) {
 // ════════════════════════════════════════════════════════════
 //  HOJA REPOSICIÓN
 // ════════════════════════════════════════════════════════════
-
-function actualizarHojaReposicion() {
-  var ss      = _getSS();
-  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
-  if (!hojaSup) return;
-
-  var hojaRep = ss.getSheetByName('REPOSICION');
-  if (!hojaRep) hojaRep = ss.insertSheet('REPOSICION');
-
-  var STOCK_MINIMO = 3;
-  var datos = hojaSup.getDataRange().getValues();
-  var hoy   = new Date();
-  var fechaStr = Utilities.formatDate(hoy, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
-
-  var productos = [];
-  var marcaActual = '';
-
-  for (var i = 2; i < datos.length; i++) {
-    var row    = datos[i];
-    var nombre = String(row[0] || '').trim();
-    var precio = Number(row[1]);
-    var stock  = Number(row[3]) || 0;
-
-    if (!nombre) continue;
-    // Marca = celda TODA EN MAYÚSCULA (igual que Ventas.gs; el precio 0 ya no
-    // significa "marca": es un producto nuevo al que falta cargar el precio)
-    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
-
-    if (stock <= STOCK_MINIMO) {
-      productos.push([
-        nombre, marcaActual, stock,
-        stock === 0 ? '🔴 SIN STOCK' : stock === 1 ? '🟠 CRÍTICO' : '🟡 BAJO',
-        precio, fechaStr
-      ]);
-    }
-  }
-
-  hojaRep.clearContents();
-  hojaRep.clearFormats();
-
-  var headerRange = hojaRep.getRange(1, 1, 1, 6);
-  headerRange.setValues([['Producto', 'Marca', 'Stock actual', 'Estado', 'Precio', 'Última actualización']]);
-  headerRange.setBackground('#1a1a2e').setFontColor('#00C8FF').setFontWeight('bold');
-
-  if (productos.length > 0) {
-    productos.sort(function(a, b) { return a[2] - b[2]; });
-    hojaRep.getRange(2, 1, productos.length, 6).setValues(productos);
-
-    for (var p = 0; p < productos.length; p++) {
-      var st = productos[p][2];
-      var color = st === 0 ? '#3a0000' : st === 1 ? '#2a1500' : '#1a1a00';
-      var fontColor = st === 0 ? '#FF4444' : st === 1 ? '#FF9900' : '#FFD700';
-      hojaRep.getRange(p + 2, 1, 1, 6).setBackground(color).setFontColor(fontColor);
-    }
-
-    hojaRep.setColumnWidth(1, 280);
-    hojaRep.setColumnWidth(2, 150);
-    hojaRep.setColumnWidth(3, 90);
-    hojaRep.setColumnWidth(4, 100);
-    hojaRep.setColumnWidth(5, 100);
-    hojaRep.setColumnWidth(6, 160);
-  } else {
-    hojaRep.getRange(2, 1).setValue('✅ Todos los productos tienen stock suficiente');
-    hojaRep.getRange(2, 1).setFontColor('#00CC44');
-  }
-
-  hojaRep.getRange(1, 7).setValue('Actualizado: ' + fechaStr);
-  hojaRep.getRange(1, 7).setFontColor('#888888').setFontStyle('italic');
-}
+// La función actualizarHojaReposicion vive en Ventas.gs (mismo proyecto,
+// las funciones se comparten). Acá había una copia duplicada con otra
+// lógica: se eliminó para que exista UNA sola versión (la de Ventas.gs,
+// ordenada por más vendidos en 30 días).
 
 // ════════════════════════════════════════════════════════════
 //  HELPERS GENERALES
