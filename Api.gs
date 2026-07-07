@@ -1411,6 +1411,49 @@ function triggerDiarioMaxup() {
   alertaOfertasClientes();
   bienvenidaClientesNuevos();
   generarContenidoRedes();
+  avisoDeudoresDiario();
+}
+
+// ── AVISO DIARIO DE DEUDORES (Telegram) ─────────────────────
+// Lee la hoja DEUDORES (A=Nombre, C=Monto, D=Estado) y manda el total
+// pendiente + el detalle por persona. Si no hay deudas pendientes, no molesta.
+function avisoDeudoresDiario() {
+  try {
+    var hoja = _getSS().getSheetByName('DEUDORES');
+    if (!hoja || hoja.getLastRow() < 2) return;
+
+    var datos = hoja.getDataRange().getValues();
+    var total = 0;
+    var porPersona = {};
+    for (var i = 1; i < datos.length; i++) {
+      var estado = String(datos[i][3] || '').trim().toLowerCase();
+      if (estado !== 'pendiente') continue;
+      var monto = Number(datos[i][2]) || 0;
+      if (monto <= 0) continue;
+      var nombre = String(datos[i][0] || '').trim();
+      if (!nombre) nombre = '(sin nombre)';
+      // Agrupar sin importar mayúsculas ("Fer" y "fer" son la misma persona)
+      var key = nombre.toLowerCase();
+      if (!porPersona[key]) porPersona[key] = { nombre: nombre, monto: 0 };
+      porPersona[key].monto += monto;
+      total += monto;
+    }
+
+    if (total <= 0) return; // sin deudas pendientes → no mandar nada
+
+    var lista = Object.keys(porPersona).map(function(k){ return porPersona[k]; });
+    lista.sort(function(a, b){ return b.monto - a.monto; });
+
+    var msg = '💰 MAXUP — Te deben: $' + _formatoPrecio(total) + '\n';
+    msg += '(' + lista.length + ' deudor' + (lista.length === 1 ? '' : 'es') + ' pendiente' + (lista.length === 1 ? '' : 's') + ')\n\n';
+    lista.slice(0, 15).forEach(function(d){
+      msg += '  • ' + d.nombre + ': $' + _formatoPrecio(d.monto) + '\n';
+    });
+    if (lista.length > 15) msg += '  ... y ' + (lista.length - 15) + ' más\n';
+    _notificarTelegram(msg);
+  } catch(e) {
+    Logger.log('Error avisoDeudoresDiario: ' + e.message);
+  }
 }
 
 // Ejecutar UNA VEZ para instalar el trigger diario (8 AM Argentina)
