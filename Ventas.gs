@@ -1704,6 +1704,14 @@ function actualizarHojaReposicion() {
     const dataRange = hojaRep.getRange(2, 1, productos.length, 7);
     dataRange.setValues(productos);
 
+    // Forzar formatos: si estas celdas quedaron con formato de FECHA de una
+    // versión anterior de la hoja, los números se mostrarían como fechas
+    // (ej. $46.000 → "09/12/2025"). Esto lo corrige siempre.
+    hojaRep.getRange(2, 3, productos.length, 1).setNumberFormat('0');          // Stock
+    hojaRep.getRange(2, 5, productos.length, 1).setNumberFormat('0');          // Vendidos (30d)
+    hojaRep.getRange(2, 6, productos.length, 1).setNumberFormat('"$"#,##0');   // Precio
+    hojaRep.getRange(2, 7, productos.length, 1).setNumberFormat('@');          // Última actualización (texto)
+
     for (let i = 0; i < productos.length; i++) {
       const stock = productos[i][2];
       const color = stock === 0 ? '#3a0000' : stock === 1 ? '#2a1500' : '#1a1a00';
