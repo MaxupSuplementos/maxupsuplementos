@@ -1153,7 +1153,7 @@ function adminGetStockBajo(clave, limite) {
     var precio = Number(rows[i][1]);
     var stock  = Number(rows[i][3]);
     if (!nombre) continue;
-    if (!precio || isNaN(precio)) { marcaActual = nombre; continue; }
+    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
     if (stock <= limiteNum) {
       productos.push({ nombre: nombre, marca: marcaActual, stock: stock, precio: precio });
     }
@@ -1467,7 +1467,7 @@ function instalarTriggerDiario() {
   // Crear nuevo trigger diario a las 8 AM hora Argentina
   ScriptApp.newTrigger('triggerDiarioMaxup')
     .timeBased()
-    .atHour(8)
+    .atHour(9)
     .everyDays(1)
     .inTimezone('America/Argentina/Buenos_Aires')
     .create();
