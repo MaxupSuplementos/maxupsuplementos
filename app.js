@@ -4337,6 +4337,20 @@ function finalizarPedido(){
   if(!phone){showToast('⚠️ Ingresá tu WhatsApp');return;}
   if(delivery==='envio'&&!address){showToast('⚠️ Ingresá tu dirección');return;}
 
+  // ── CANDADO ANTI DOBLE-ENVÍO ──────────────────────────────
+  // Apps Script tarda unos segundos en responder; si el cliente toca el botón
+  // varias veces en ese rato, cada toque creaba OTRO pedido igual (quilombo de
+  // filas duplicadas en VentasDiarias). Un solo envío a la vez.
+  if (window._pedidoEnviando) { showToast('⏳ Ya estamos registrando tu pedido, un segundo...'); return; }
+  window._pedidoEnviando = true;
+  var _btnFin = document.getElementById('btnFinalizarPedido');
+  var _btnFinTxt = _btnFin ? _btnFin.innerHTML : '';
+  if (_btnFin) { _btnFin.disabled = true; _btnFin.style.opacity = '.6'; _btnFin.innerHTML = '⏳ Registrando tu pedido...'; }
+  function _liberarEnvio(){
+    window._pedidoEnviando = false;
+    if (_btnFin) { _btnFin.disabled = false; _btnFin.style.opacity = ''; _btnFin.innerHTML = _btnFinTxt; }
+  }
+
   let msg=`🏋️ *NUEVO PEDIDO — ${STORE_NAME}*\n\n`;
   msg+=`👤 *Cliente:* ${name}\n`;
   msg+=`📱 *WhatsApp:* ${phone}\n`;
@@ -4444,7 +4458,12 @@ function finalizarPedido(){
     if (_form) _form.style.display = 'none';
     if (_ok) _ok.style.display = 'block';
     setTimeout(function(){ cargarDesdeSheets(); }, 5000);
-  }).catch(function(){ showToast('⚠️ No pudimos registrar el pedido. Probá de nuevo o escribinos por WhatsApp.'); });
+    // Pedido registrado: liberar el candado (el formulario ya no está a la vista)
+    _liberarEnvio();
+  }).catch(function(){
+    _liberarEnvio(); // dejar reintentar solo si de verdad falló
+    showToast('⚠️ No pudimos registrar el pedido. Probá de nuevo o escribinos por WhatsApp.');
+  });
 }
 
 cargarLiquidaciones();

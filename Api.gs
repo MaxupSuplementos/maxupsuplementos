@@ -158,6 +158,32 @@ function registrarPedidoWeb(data) {
 
   if (!nombre || !telefono) throw new Error('Nombre y teléfono son requeridos');
 
+  // ── CANDADO + ANTI-DUPLICADOS ────────────────────────────
+  // Serializa pedidos simultáneos (evita códigos repetidos y filas mezcladas)
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch(eL) { throw new Error('Sistema ocupado, reintentá en unos segundos'); }
+  try {
+
+  // Si el MISMO teléfono mandó un pedido por el MISMO total hace menos de
+  // 3 minutos, es un reintento (doble clic / recarga): devolver el mismo
+  // código en vez de crear otro pedido.
+  var hojaPedPrev = ss.getSheetByName('PEDIDOS');
+  if (hojaPedPrev && hojaPedPrev.getLastRow() > 1) {
+    var prevRows = hojaPedPrev.getDataRange().getValues();
+    var ahoraMs = Date.now();
+    var telNorm = telefono.replace(/\D/g, '');
+    for (var pr = prevRows.length - 1; pr >= 1 && pr >= prevRows.length - 15; pr--) {
+      var fPrev = prevRows[pr][1];
+      if (!(fPrev instanceof Date)) continue;
+      if (ahoraMs - fPrev.getTime() > 3 * 60 * 1000) break; // más de 3 min: dejar de mirar
+      var telPrev = String(prevRows[pr][3] || '').replace(/\D/g, '');
+      if (telPrev === telNorm) {
+        return { ok: true, codigo: String(prevRows[pr][0]), duplicado: true,
+                 mensaje: 'Tu pedido ya estaba registrado' };
+      }
+    }
+  }
+
   var codigoPedido = _generarCodigoPedido();
 
   // ── Buscar o crear cliente ──────────────────────────────
@@ -204,46 +230,27 @@ function registrarPedidoWeb(data) {
   var factor   = tieneDesc ? (1 - PROMO_DESCUENTO_API) : (1 - descBienvenida);
   var tipoDesc = tieneDesc ? '10% fidelidad' : (esNuevo ? '2% bienvenida' : '');
 
-  // ── Registrar en VentasDiarias ──────────────────────────
+  // ── Calcular totales (la VENTA se anota recién al ENTREGAR) ──
+  // El pedido web ya NO escribe en VentasDiarias ni suma al cliente acá.
+  // Eso pasa cuando el pedido se marca Entregado/Retirado (junto con el
+  // stock), en _registrarVentaPedidoWeb. Así un pedido que nunca se
+  // concreta (o se cancela) no ensucia las ventas.
   var hoy      = new Date();
-  var fechaStr = Utilities.formatDate(hoy, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
   var totalReal = 0;
-  // El código del pedido va en la nota para poder REVERTIR la venta si se cancela
-  var notaBase  = 'WEB ' + codigoPedido + (tieneDesc ? ' 🎁-10%' : (esNuevo ? ' 🎉-2% bienvenida' : ''))
-                + (entrega === 'envio' ? ' | Envío: ' + direccion : ' | Retiro') + ' | ' + pago;
 
   if (items.length > 0) {
     for (var idx = 0; idx < items.length; idx++) {
       var item = items[idx];
       var precioFinal = Math.round(Number(item.precio || 0) * factor);
       var cantidad    = Number(item.cantidad || 1);
-      var ingreso     = precioFinal * cantidad;
-      totalReal      += ingreso;
-      hojaVD.appendRow([
-        hoy,
-        String(item.nombre || ''),
-        String(item.marca  || ''),
-        cantidad,
-        precioFinal,
-        ingreso,
-        nombre,
-        email,
-        notaBase
-      ]);
+      // Guardar el precio FINAL cobrado (con descuento) dentro del item:
+      // se usa al registrar la venta cuando el pedido se entrega.
+      item.precioFinal = precioFinal;
+      totalReal += precioFinal * cantidad;
     }
   } else {
     totalReal = Math.round(total * factor);
-    hojaVD.appendRow([
-      hoy, 'Pedido web', '', 1, totalReal, totalReal,
-      nombre, email, notaBase
-    ]);
   }
-
-  // ── Actualizar total del día ────────────────────────────
-  _actualizarTotalDiaApi(hojaVD, fechaStr);
-
-  // ── Actualizar monto mensual del cliente ────────────────
-  _actualizarClienteMensualApi(codigoCliente, totalReal);
 
   // ── Registrar en hoja PEDIDOS ───────────────────────────
   try {
@@ -333,6 +340,10 @@ function registrarPedidoWeb(data) {
     init_point: initPoint,
     mensaje: 'Cliente ' + nombre + ' registrado. Total: $' + _formatoPrecio(totalReal) + (tipoDesc ? ' (' + tipoDesc + ')' : '')
   };
+
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -884,6 +895,8 @@ function adminCambiarEstado(clave, codigo, nuevoEstado) {
         } catch(eStock) {
           Logger.log('Error descontando stock para ' + codigo + ': ' + eStock.message);
         }
+        // Recién acá la venta queda anotada en VentasDiarias (pedido concretado)
+        _registrarVentaPedidoWeb(codigo);
       }
 
       // Al CANCELAR: revertir la venta (VentasDiarias + compra mensual del cliente)
@@ -980,6 +993,88 @@ function _descontarStockPedido(items) {
   try { actualizarHojaReposicion(); } catch(e) {}
 }
 
+// ── REGISTRAR LA VENTA DE UN PEDIDO WEB AL ENTREGARLO ───────
+// El pedido web ya no escribe en VentasDiarias al momento del clic:
+// la venta se anota ACÁ, cuando el pedido pasa a Entregado/Retirado
+// (el mismo momento en que se descuenta el stock). Usa el precio FINAL
+// cobrado (precioFinal guardado en el JSON del pedido).
+// Es a prueba de repeticiones: si la venta ya está anotada, no la duplica.
+function _registrarVentaPedidoWeb(codigo) {
+  try {
+    var ss = _getSS();
+    var hojaVD = ss.getSheetByName('VentasDiarias');
+    var hojaPed = ss.getSheetByName('PEDIDOS');
+    if (!hojaVD || !hojaPed) return;
+
+    // ¿Ya está anotada? (idempotente: no duplicar jamás)
+    var vdRows = hojaVD.getDataRange().getValues();
+    for (var v = 0; v < vdRows.length; v++) {
+      if (String(vdRows[v][8] || '').indexOf(String(codigo)) >= 0) return;
+    }
+
+    // Buscar el pedido
+    var pRows = hojaPed.getDataRange().getValues();
+    var ped = null;
+    for (var p = 1; p < pRows.length; p++) {
+      if (String(pRows[p][0]).trim() === String(codigo).trim()) { ped = pRows[p]; break; }
+    }
+    if (!ped) return;
+
+    var cliente  = String(ped[2] || '');
+    var telefono = String(ped[3] || '');
+    var entregaC = String(ped[6] || '');
+    var pagoC    = String(ped[8] || '');
+    var items = [];
+    try { items = JSON.parse(String(ped[10] || '[]')); } catch(eJ) {}
+
+    var hoy = new Date();
+    var fechaStr = Utilities.formatDate(hoy, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
+    var nota = 'WEB ' + codigo + ' | ' + entregaC + ' | ' + pagoC;
+    var totalVenta = 0;
+
+    if (items.length > 0) {
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        var precioFila = Number(it.precioFinal || it.precio || 0);
+        var cant = Number(it.cantidad || 1);
+        var ingreso = precioFila * cant;
+        totalVenta += ingreso;
+        hojaVD.appendRow([hoy, String(it.nombre || ''), String(it.marca || ''),
+          cant, precioFila, ingreso, cliente, '', nota]);
+      }
+    } else {
+      // Sin detalle de items: usar el total del pedido ("$123.456" → 123456)
+      totalVenta = Number(String(ped[5] || '').replace(/[^\d]/g, '')) || 0;
+      if (totalVenta > 0) hojaVD.appendRow([hoy, 'Pedido web', '', 1, totalVenta, totalVenta, cliente, '', nota]);
+    }
+    if (totalVenta <= 0) return;
+
+    _actualizarTotalDiaApi(hojaVD, fechaStr);
+
+    // Sumar la compra al mes del cliente (buscarlo por teléfono, si no por nombre)
+    var hojaCli = ss.getSheetByName('CLIENTES');
+    if (hojaCli) {
+      var cRows = hojaCli.getDataRange().getValues();
+      var telNorm = telefono.replace(/\D/g, '');
+      var codigoCli = null;
+      for (var c = 1; c < cRows.length; c++) {
+        var telC = String(cRows[c][2] || '').replace(/\D/g, '');
+        if (telNorm && telC === telNorm) { codigoCli = cRows[c][0]; break; }
+      }
+      if (codigoCli === null) {
+        for (var c2 = 1; c2 < cRows.length; c2++) {
+          if (String(cRows[c2][1] || '').trim().toLowerCase() === cliente.trim().toLowerCase()) { codigoCli = cRows[c2][0]; break; }
+        }
+      }
+      if (codigoCli !== null) _actualizarClienteMensualApi(codigoCli, totalVenta);
+    }
+
+    Logger.log('💵 Venta anotada por entrega: ' + codigo + ' → $' + totalVenta);
+  } catch(e) {
+    Logger.log('Error _registrarVentaPedidoWeb ' + codigo + ': ' + e.message);
+  }
+}
+
 // ── REVERTIR VENTA DE PEDIDO WEB CANCELADO ─────────────────
 // Al momento del pedido, la venta ya se anotó en VentasDiarias y se sumó
 // al mensual del cliente. Si el pedido se CANCELA, esto lo deshace:
@@ -1015,8 +1110,9 @@ function _revertirVentaPedidoWeb(codigo, estadoAnterior) {
   }
 
   if (filasBorrar.length === 0) {
-    _notificarTelegram('ℹ️ ' + codigo + ' cancelado. No encontré su venta en VentasDiarias ' +
-      '(pedido anterior al sistema de reversa): si corresponde, restá la venta a mano.');
+    // Normal: el pedido se canceló ANTES de entregarse, así que su venta
+    // nunca se anotó. No hay nada que revertir.
+    _notificarTelegram('🚫 ' + codigo + ' cancelado (no estaba entregado: no había venta que revertir).');
     return;
   }
 
@@ -2718,10 +2814,12 @@ function onEdit(e) {
       try {
         var items = JSON.parse(itemsJSON);
         _descontarStockPedido(items);
-        _notificarTelegram('✅ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')\n📦 Stock descontado automáticamente');
+        _notificarTelegram('✅ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')\n📦 Stock descontado y venta anotada');
       } catch(eJSON) {
         _notificarTelegram('⚠️ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')\n❌ No se pudo descontar stock');
       }
+      // Recién acá la venta queda anotada en VentasDiarias (pedido concretado)
+      _registrarVentaPedidoWeb(codigo);
     }
 
     // Al CANCELAR desde la planilla: revertir la venta anotada al momento del pedido
