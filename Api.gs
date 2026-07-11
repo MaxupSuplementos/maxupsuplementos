@@ -239,11 +239,26 @@ function registrarPedidoWeb(data) {
   var totalReal = 0;
 
   if (items.length > 0) {
+    // La web manda "total" con TODOS sus descuentos aplicados (combo/5% por
+    // cantidad, descuento por monto, cupón, bienvenida). Antes se ignoraba y
+    // los items se anotaban a precio de lista (y el link de Mercado Pago se
+    // generaba sin el descuento). Ahora ese total manda: se reparte
+    // proporcionalmente entre los items para obtener el precio FINAL cobrado.
+    var sumItems = 0;
+    for (var s = 0; s < items.length; s++) {
+      sumItems += (Number(items[s].precio || 0)) * (Number(items[s].cantidad || 1));
+    }
+    var totalFront = Number(total) || 0;
+    var usarTotalWeb = (totalFront > 0 && sumItems > 0 && totalFront <= sumItems);
+    // La fidelidad 10% es un beneficio que la web no conoce: se aplica aparte.
+    var factorServer = usarTotalWeb ? (tieneDesc ? (1 - PROMO_DESCUENTO_API) : 1) : factor;
+    var ratio = usarTotalWeb ? (totalFront / sumItems) : 1;
+
     for (var idx = 0; idx < items.length; idx++) {
       var item = items[idx];
-      var precioFinal = Math.round(Number(item.precio || 0) * factor);
+      var precioFinal = Math.round(Number(item.precio || 0) * ratio * factorServer);
       var cantidad    = Number(item.cantidad || 1);
-      // Guardar el precio FINAL cobrado (con descuento) dentro del item:
+      // Guardar el precio FINAL cobrado (con descuentos) dentro del item:
       // se usa al registrar la venta cuando el pedido se entrega.
       item.precioFinal = precioFinal;
       totalReal += precioFinal * cantidad;
