@@ -3380,10 +3380,34 @@ function getFallbackImg(cat){
     magnesio:   'https://images.weserv.nl/?url=goldnutrition.com.ar/images/2024/04/08/magnesio_citrato_gold_nutrition_gold_prime.png',
     accesorio:  'https://images.weserv.nl/?url=m.media-amazon.com/images/I/51WKLQqEUKL._AC_SX679_.jpg',
   };
-  return SVG_PLACEHOLDERS[cat] || SVG_PLACEHOLDERS['proteina'];
+  // Nunca sustituir una foto faltante o rota por la de otro producto.
+  return 'logo.png';
 }
 
-function buildCard(p){
+// Si el optimizador de imágenes falla en una red móvil, reintentar una vez
+// contra la URL original del Sheets. Solo después usar el logo de MAXUP.
+function recuperarImagenProducto(img){
+  if (!img) return;
+  var actual = img.currentSrc || img.src || '';
+  if (img.dataset.originalIntentado !== '1') {
+    try {
+      var url = new URL(actual, location.href);
+      if (url.hostname === 'images.weserv.nl') {
+        var original = url.searchParams.get('url') || '';
+        if (original) {
+          if (!/^https?:\/\//i.test(original)) original = 'https://' + original;
+          img.dataset.originalIntentado = '1';
+          img.src = original;
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+  img.onerror = null;
+  img.src = getFallbackImg();
+}
+
+function buildCard(p, cardIndex){
   const totalStock = p.flavors.reduce((s,f)=>s+f.stock,0);
   const multiFlav = p.flavors.length > 1;
   const badgeHtml = p.badge ? `<div class="prod-badge badge-${p.badge}">${p.badgeText||''}</div>` : '';
@@ -3399,7 +3423,7 @@ function buildCard(p){
   const slidesHtml = imgList.length
     ? imgList.map((src,i) => `
       <div class="gallery-slide">
-        <img src="${src}" alt="${p.name}" loading="${i===0?'eager':'lazy'}" decoding="async" onerror="this.onerror=null;this.src=getFallbackImg('${p.cat}')" style="background:#1a1a2e">
+        <img src="${src}" alt="${p.name}" data-product-img="1" loading="${i===0 && cardIndex<6?'eager':'lazy'}" fetchpriority="${i===0 && cardIndex<6?'high':'low'}" decoding="async" onerror="recuperarImagenProducto(this)" style="background:#1a1a2e">
       </div>`).join('')
     : `<div class="gallery-slide"><span class="prod-emoji">${p.emoji}</span></div>`;
 
@@ -3487,7 +3511,7 @@ function buildCard(p){
 
 function renderAll(){
   const grid = document.getElementById('productsGrid');
-  grid.innerHTML = PRODUCTS.map(p => buildCard(p)).join('');
+  grid.innerHTML = PRODUCTS.map((p, i) => buildCard(p, i)).join('');
   poblarFiltroBrands();
   poblarComparador();
   setTimeout(makeCardsClickable, 100);
@@ -3539,6 +3563,14 @@ function applyFilters(){
   visibles.slice(inicio, fin).forEach(function(card, i){
     card.style.display = 'flex';
     card.style.opacity = '0';
+    // Las tarjetas nacen ocultas por la paginación. Al hacerlas visibles,
+    // forzar la descarga de su foto principal corrige navegadores móviles que
+    // no reactivan correctamente una imagen lazy creada con display:none.
+    var imgPrincipal = card.querySelector('img[data-product-img]');
+    if (imgPrincipal) {
+      imgPrincipal.loading = 'eager';
+      imgPrincipal.setAttribute('fetchpriority', i < 6 ? 'high' : 'auto');
+    }
     setTimeout(function(){ card.classList.add('filter-anim'); }, i * 30);
   });
   // Info búsqueda
@@ -4604,23 +4636,15 @@ function initScrollReveal(){
 
 /* ── INIT ── */
 loadCart();
-// Precarga instantánea desde cache (muestra productos de inmediato mientras la API responde)
-(function(){
-  try{
-    const cached = localStorage.getItem('maxup_cache_prods');
-    const ts = parseInt(localStorage.getItem('maxup_cache_ts')||'0');
-    // Usar cache si tiene menos de 2 horas
-    if(cached && (Date.now()-ts) < 7200000){
-      const parsed = JSON.parse(cached);
-      if(parsed.length > 0){
-        PRODUCTS.length = 0;
-        parsed.forEach(p => PRODUCTS.push(p));
-        renderAll();
-        console.log('⚡ Cache cargado:', PRODUCTS.length, 'productos (se actualizará con la API)');
-      }
-    }
-  }catch(e){}
-})();
+// El catálogo visible debe salir únicamente del Sheets actual.
+// Vaciar el catálogo local y los caches antiguos evita que aparezcan productos
+// o fotos viejas mientras responde la API.
+PRODUCTS.length = 0;
+try {
+  localStorage.removeItem('maxup_cache_prods');
+  localStorage.removeItem('maxup_cache_ts');
+  localStorage.removeItem('maxup_cache_nuevos');
+} catch(e) {}
 cargarDesdeSheets();
 cargarLiquidaciones();
 
@@ -4903,6 +4927,8 @@ function _optimizarImgUrl(u, w) {
   return 'https://images.weserv.nl/?url=' + encodeURIComponent(u.replace(/^https?:\/\//, '')) + '&w=' + (w || 800) + '&output=webp&q=82';
 }
 
+var _catalogoSheetsCargado = false;
+
 async function cargarDesdeSheets() {
   // Mostrar loading
   const grid = document.getElementById('productsGrid');
@@ -4923,14 +4949,9 @@ async function cargarDesdeSheets() {
     if (intentoErr) throw intentoErr;
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    // Nuevos ingresos calculados en el servidor (iguales para todos los visitantes)
-    _nuevosServer = Array.isArray(data.nuevos_ingresos) ? data.nuevos_ingresos : null;
-    // Recordar la lista para que el carrusel no desaparezca si la API falla en la próxima visita
-    if (_nuevosServer && _nuevosServer.length) {
-      try { localStorage.setItem('maxup_cache_nuevos', JSON.stringify(_nuevosServer)); } catch(e) {}
-    } else {
-      try { var nvCache = localStorage.getItem('maxup_cache_nuevos'); if (nvCache) _nuevosServer = JSON.parse(nvCache); } catch(e) {}
-    }
+    // Incluso una lista vacía es válida: nunca recuperar novedades viejas
+    // guardadas en el navegador.
+    _nuevosServer = Array.isArray(data.nuevos_ingresos) ? data.nuevos_ingresos : [];
 
     const prods = data.productos || [];
     if (prods.length === 0) throw new Error('Sin productos');
@@ -4967,7 +4988,8 @@ async function cargarDesdeSheets() {
           brand: marca,
           cat: _mapCategoria(cat),
           emoji: _catEmoji(cat),
-          img: imgArr[0] || _optimizarImgUrl(_buscarImagen(nombre, marca), 800),
+          // Única fuente de fotos: la URL cargada en el Sheets.
+          img: imgArr[0] || '',
           imgs_sheet: imgArr.length > 1 ? imgArr : null,
           desc: desc,
           price: precio_efectivo,
@@ -4990,7 +5012,7 @@ async function cargarDesdeSheets() {
           flavors: [],
           imgs: {}, // mapa sabor → imagen
           _sheetImgs: [], // array de imágenes adicionales del Sheet
-          img: p.img || _optimizarImgUrl(_buscarImagen(base, p.brand), 800),
+          img: p.img || '',
         };
       }
       // Acumular imágenes múltiples del Sheet
@@ -5019,12 +5041,7 @@ async function cargarDesdeSheets() {
       PRODUCTS.push(p);
     });
 
-    // Cache en localStorage para carga instantánea la próxima vez
-    try{
-      localStorage.setItem('maxup_cache_prods', JSON.stringify(PRODUCTS));
-      localStorage.setItem('maxup_cache_ts', Date.now().toString());
-    }catch(e){}
-
+    _catalogoSheetsCargado = true;
     renderAll();
     // Solo subir al inicio si el usuario NO scrolleó mientras cargaba
     // (respeta la posición donde dejó la vista) y si no hay anclas (#seccion)
@@ -5033,24 +5050,15 @@ async function cargarDesdeSheets() {
     console.log('✅ Catálogo cargado desde Sheets:', PRODUCTS.length, 'productos agrupados');
 
   } catch(err) {
-    console.warn('⚠️ Sheets no disponible, usando catálogo local:', err.message);
-    // Intentar cargar desde cache
-    try{
-      const cached = localStorage.getItem('maxup_cache_prods');
-      if(cached){
-        const parsed = JSON.parse(cached);
-        if(parsed.length > 0){
-          PRODUCTS.length = 0;
-          parsed.forEach(p => PRODUCTS.push(p));
-          console.log('📦 Catálogo cargado desde cache:', PRODUCTS.length, 'productos');
-        }
-      }
-      // También restaurar el carrusel de novedades desde el cache
-      const nvCache = localStorage.getItem('maxup_cache_nuevos');
-      if (nvCache && !_nuevosServer) _nuevosServer = JSON.parse(nvCache);
-    }catch(e2){}
-    renderAll();
-    if(window.scrollY < 50 && !location.hash) window.scrollTo(0, 0);
+    console.warn('⚠️ No se pudo actualizar el catálogo desde Sheets:', err.message);
+    // En la carga inicial no mostrar datos locales ni guardados: es preferible
+    // informar la falla antes que ofrecer productos, precios o fotos anteriores.
+    if (!_catalogoSheetsCargado) {
+      PRODUCTS.length = 0;
+      _nuevosServer = [];
+      if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#aaa"><p style="font-size:1.05rem;color:#fff;margin-bottom:8px">No pudimos actualizar el catálogo.</p><p>Revisá tu conexión y recargá la página para ver precios, stock y fotos actuales.</p><button type="button" onclick="location.reload()" style="margin-top:18px;padding:10px 18px;border:0;border-radius:8px;background:#00C8FF;color:#000;font-weight:700;cursor:pointer">RECARGAR</button></div>';
+      if (typeof renderNuevosIngresos === 'function') renderNuevosIngresos();
+    }
   }
 }
 
@@ -5177,6 +5185,12 @@ function galApply(galId, idx){
   const rail = document.getElementById(galId);
   if(!rail) return;
   const total = parseInt(rail.dataset.total)||1;
+  // Priorizar la foto elegida por el usuario, especialmente en móviles.
+  var fotos = rail.querySelectorAll('img');
+  if (fotos[idx]) {
+    fotos[idx].loading = 'eager';
+    fotos[idx].setAttribute('fetchpriority', 'high');
+  }
   rail.style.transform = `translateX(-${idx * 100}%)`;
   rail.dataset.index = idx;
   // dots
@@ -5193,7 +5207,7 @@ function openImgModal(src, name){
   const ov = document.createElement('div');
   ov.id = 'imgModalOv';
   ov.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:20px';
-  ov.innerHTML = `<img src="${src}" alt="${name}" style="max-width:92%;max-height:92vh;object-fit:contain;border-radius:10px;box-shadow:0 0 60px rgba(0,200,255,.2)">
+  ov.innerHTML = `<img src="${src}" alt="${name}" onerror="recuperarImagenProducto(this)" style="max-width:92%;max-height:92vh;object-fit:contain;border-radius:10px;box-shadow:0 0 60px rgba(0,200,255,.2)">
     <button onclick="document.getElementById('imgModalOv').remove()" style="position:absolute;top:16px;right:16px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);color:#fff;width:38px;height:38px;border-radius:50%;font-size:1.1rem;cursor:pointer">✕</button>`;
   ov.onclick = e => { if(e.target===ov) ov.remove(); };
   document.body.appendChild(ov);
@@ -5250,7 +5264,7 @@ function openProdModal(pid) {
   if (_imgWrap && _imgList.length > 1) {
     var _gid = 'galmodal-' + pid;
     var _slides = _imgList.map(function(src,i){
-      return '<div class="gallery-slide"><img src="'+src+'" alt="'+(p.name||'')+'" loading="'+(i===0?'eager':'lazy')+'" decoding="async" onerror="this.onerror=null;this.src=getFallbackImg(\''+p.cat+'\')" style="background:#1a1a2e"></div>';
+      return '<div class="gallery-slide"><img src="'+src+'" alt="'+(p.name||'')+'" loading="'+(i===0?'eager':'lazy')+'" decoding="async" onerror="recuperarImagenProducto(this)" style="background:#1a1a2e"></div>';
     }).join('');
     var _dots = _imgList.map(function(_d,i){ return '<button class="gal-dot'+(i===0?' active':'')+'" onclick="galGo(\''+_gid+'\','+i+',event)"></button>'; }).join('');
     _imgWrap.innerHTML =
@@ -5260,7 +5274,7 @@ function openProdModal(pid) {
       + '<div class="gal-dots" id="'+_gid+'-dots">'+_dots+'</div>'
       + '<div class="gal-counter show" id="'+_gid+'-counter">1 / '+_imgList.length+'</div>';
   } else if (_imgWrap) {
-    _imgWrap.innerHTML = '<img id="modalImg" src="" alt="">';
+    _imgWrap.innerHTML = '<img id="modalImg" src="" alt="" onerror="recuperarImagenProducto(this)">';
     document.getElementById('modalImg').src = (_imgList[0] || p.img || getFallbackImg(p.cat));
   }
   document.getElementById('modalMarca').textContent = p.brand || '';
@@ -7353,12 +7367,11 @@ function aplicarFiltroPrecio() {
 // ══════════════════════════════════════════════════════════
 // Llamada inicial garantizada
 window.addEventListener('load', function() {
-  if (typeof PRODUCTS !== 'undefined' && PRODUCTS.length > 0) {
-    renderAll();
-    readURLIndex();
-    applyFilters();
-    if(typeof precioMax!=='undefined'&&precioMax<200000)setTimeout(aplicarFiltroPrecio,50);
-  }
+  // No dibujar el catálogo local durante la espera. cargarDesdeSheets() es la
+  // única función autorizada a mostrar productos al iniciar la página.
+  readURLIndex();
+  if (_catalogoSheetsCargado) applyFilters();
+  if(_catalogoSheetsCargado&&typeof precioMax!=='undefined'&&precioMax<200000)setTimeout(aplicarFiltroPrecio,50);
 });
 
 
@@ -8173,7 +8186,7 @@ function renderNuevosIngresos(){
     // p.imgs es un mapa sabor→imagen (objeto), no un array: usar p.img o la primera del mapa
     var imgSrc = p.img || (p.imgs ? (Object.values(p.imgs)[0] || '') : '');
     return '<div class="nuevos-card" onclick="openProdModal(\''+p.id+'\')">'
-      + (imgSrc ? '<img src="'+imgSrc+'" alt="'+p.name+'" loading="lazy" onerror="this.onerror=null;this.src=getFallbackImg(\''+p.cat+'\')" style="background:#1a1a2e">' : '<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#111">'+p.emoji+'</div>')
+      + (imgSrc ? '<img src="'+imgSrc+'" alt="'+p.name+'" loading="lazy" onerror="recuperarImagenProducto(this)" style="background:#1a1a2e">' : '<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#111">'+p.emoji+'</div>')
       + '<div class="nuevos-card-body">'
       + '<div class="nuevos-card-brand">'+p.brand+'</div>'
       + '<div class="nuevos-card-name">'+p.name+'</div>'
