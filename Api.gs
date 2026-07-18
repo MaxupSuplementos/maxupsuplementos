@@ -816,16 +816,28 @@ function getStats() {
 // ── NOTIFICACIÓN TELEGRAM (única función) ───────────────────
 function _notificarTelegram(mensaje) {
   var cfg = _getConfig();
-  if (!cfg.TELEGRAM_TOKEN || !cfg.TELEGRAM_CHAT_ID) return;
+  if (!cfg.TELEGRAM_TOKEN || !cfg.TELEGRAM_CHAT_ID) {
+    Logger.log('Telegram no configurado');
+    return false;
+  }
   var url = 'https://api.telegram.org/bot' + cfg.TELEGRAM_TOKEN + '/sendMessage';
   try {
-    UrlFetchApp.fetch(url, {
+    var respuesta = UrlFetchApp.fetch(url, {
       method: 'post',
       contentType: 'application/json',
-      payload: JSON.stringify({ chat_id: cfg.TELEGRAM_CHAT_ID, text: mensaje })
+      payload: JSON.stringify({ chat_id: cfg.TELEGRAM_CHAT_ID, text: mensaje }),
+      muteHttpExceptions: true
     });
+    var codigo = respuesta.getResponseCode();
+    if (codigo < 200 || codigo >= 300) {
+      Logger.log('Error Telegram HTTP ' + codigo);
+      return false;
+    }
+    Logger.log('Telegram enviado OK (HTTP ' + codigo + ')');
+    return true;
   } catch(e) {
     Logger.log('Error Telegram: ' + e.message);
+    return false;
   }
 }
 
@@ -2908,11 +2920,23 @@ function generarContenidoRedes() {
 // ============================================================
 function onEdit(e) {
   try {
-    var hoja = e.source.getActiveSheet();
+    var hoja = e.range.getSheet();
     if (hoja.getName() === 'SUPLEMENTOS') {
       _actualizarPrecioListaTresCuotasEdit(e);
       return;
     }
+    if (hoja.getName() === 'PEDIDOS') _colorearEstadoPedido(e);
+  } catch(err) {
+    Logger.log('onEdit error: ' + err.message);
+  }
+}
+
+// Los activadores simples no pueden usar UrlFetchApp ni abrir la planilla por ID.
+// Este handler se instala una sola vez y ejecuta los cambios de stock/ventas/Telegram
+// con los permisos de la cuenta propietaria.
+function onEditPedidosAutorizado(e) {
+  try {
+    var hoja = e.range.getSheet();
     if (hoja.getName() !== 'PEDIDOS') return;
 
     var rango = e.range;
@@ -2932,15 +2956,13 @@ function onEdit(e) {
       try {
         var items = JSON.parse(itemsJSON);
         _descontarStockPedido(items);
-        _notificarTelegram('✅ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')\n📦 Stock descontado y venta anotada');
+        _notificarTelegram('✅ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')' + String.fromCharCode(10) + '📦 Stock descontado y venta anotada');
       } catch(eJSON) {
-        _notificarTelegram('⚠️ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')\n❌ No se pudo descontar stock');
+        _notificarTelegram('⚠️ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')' + String.fromCharCode(10) + '❌ No se pudo descontar stock');
       }
-      // Recién acá la venta queda anotada en VentasDiarias (pedido concretado)
       _registrarVentaPedidoWeb(codigo);
     }
 
-    // Al CANCELAR desde la planilla: revertir la venta anotada al momento del pedido
     if (nuevoEstado === 'Cancelado' && estadoAnterior !== 'Cancelado') {
       var codigoCanc = String(hoja.getRange(fila, 1).getValue());
       try { _revertirVentaPedidoWeb(codigoCanc, estadoAnterior); } catch(eRev) {
@@ -2948,21 +2970,38 @@ function onEdit(e) {
       }
     }
 
-    var colores = {
-      'Recibido': '#FFF3CD',
-      'En preparación': '#CCE5FF',
-      'Listo para retirar': '#D4EDDA',
-      'Enviado': '#D1ECF1',
-      'Entregado': '#C3E6CB',
-      'Retirado': '#C3E6CB',
-      'Cancelado': '#F5C6CB'
-    };
-    if (colores[nuevoEstado]) {
-      rango.setBackground(colores[nuevoEstado]).setFontColor('#000');
-    }
+    _colorearEstadoPedido(e);
   } catch(err) {
-    Logger.log('onEdit error: ' + err.message);
+    Logger.log('onEditPedidosAutorizado error: ' + err.message);
   }
+}
+
+function _colorearEstadoPedido(e) {
+  var rango = e.range;
+  if (rango.getColumn() !== 10 || rango.getRow() < 2) return;
+  var nuevoEstado = String(e.value || '').trim();
+  var colores = {
+    'Recibido': '#FFF3CD',
+    'En preparación': '#CCE5FF',
+    'Listo para retirar': '#D4EDDA',
+    'Enviado': '#D1ECF1',
+    'Entregado': '#C3E6CB',
+    'Retirado': '#C3E6CB',
+    'Cancelado': '#F5C6CB'
+  };
+  if (colores[nuevoEstado]) rango.setBackground(colores[nuevoEstado]).setFontColor('#000');
+}
+
+function instalarTriggerEdicionPedidos() {
+  var ss = _getSS();
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'onEditPedidosAutorizado') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger('onEditPedidosAutorizado').forSpreadsheet(ss).onEdit().create();
+  Logger.log('Trigger autorizado de PEDIDOS instalado correctamente');
 }
 
 // ============================================================
