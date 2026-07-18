@@ -89,7 +89,10 @@ function _configPublicaMaxup() {
   var c = _leerConfiguracionMaxup();
   var descuentos = [], cupones = {};
   try { descuentos = JSON.parse(c.DESCUENTOS_MONTO_JSON || '[]'); } catch(e) {}
-  try { cupones = JSON.parse(c.CUPONES_JSON || '{}'); } catch(e2) {}
+  try { cupones = _listarCuponesPublicos(); }
+  catch(e2) {
+    try { cupones = JSON.parse(c.CUPONES_JSON || '{}'); } catch(e3) {}
+  }
   return {
     recargoLista: _configNumeroMaxup('RECARGO_LISTA_3_CUOTAS', 0.13),
     redondeoLista: _configNumeroMaxup('REDONDEO_PRECIO_LISTA', 500),
@@ -98,6 +101,218 @@ function _configPublicaMaxup() {
     descuentosMonto: descuentos,
     cupones: cupones
   };
+}
+
+var CUPONES_HEADERS = [
+  'Codigo','Descripcion','Descuento %','Activo','Inicio','Vencimiento',
+  'Duracion horas','Max usos totales','Max usos por cliente','Usos actuales','Estado actual'
+];
+
+function _asegurarHojaCupones() {
+  var ss = _getSS();
+  var hoja = ss.getSheetByName('CUPONES');
+  if (!hoja) {
+    hoja = ss.insertSheet('CUPONES');
+    hoja.getRange(1, 1, 1, CUPONES_HEADERS.length).setValues([CUPONES_HEADERS]);
+    hoja.getRange(2, 4, Math.max(hoja.getMaxRows() - 1, 1), 1).insertCheckboxes();
+    hoja.getRange(2, 1, 3, CUPONES_HEADERS.length).setValues([
+      ['MAXUP5','Cupon general para redes sociales',5,true,'','','','',1,0,''],
+      ['MAXUP10','Cupon para clientes VIP o campanas puntuales',10,true,'','','','',1,0,''],
+      ['PRIMERA15','Primera compra para nuevos clientes',15,true,'','','','',1,0,'']
+    ]);
+    hoja.getRange(1, 1, 1, CUPONES_HEADERS.length)
+      .setFontWeight('bold').setBackground('#111827').setFontColor('#00C8FF');
+    hoja.setFrozenRows(1);
+    hoja.getRange(2, 3, Math.max(hoja.getMaxRows() - 1, 1), 1).setNumberFormat('0.##"%"');
+    hoja.getRange(2, 5, Math.max(hoja.getMaxRows() - 1, 1), 2).setNumberFormat('dd/MM/yyyy HH:mm');
+    [120,300,110,80,150,150,110,120,150,110,150].forEach(function(w, i) { hoja.setColumnWidth(i + 1, w); });
+  }
+  _asegurarHojaUsosCupones();
+  return hoja;
+}
+
+function _asegurarHojaUsosCupones() {
+  var ss = _getSS();
+  var hoja = ss.getSheetByName('USOS_CUPONES');
+  if (!hoja) {
+    hoja = ss.insertSheet('USOS_CUPONES');
+    hoja.appendRow(['Fecha','Codigo','Cliente','Pedido','Estado','Descuento %','Total antes','Descuento aplicado']);
+    hoja.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#111827').setFontColor('#ffffff');
+    hoja.setFrozenRows(1);
+  }
+  return hoja;
+}
+
+function _cuponBooleano(v) {
+  var s = String(v == null ? '' : v).trim().toUpperCase();
+  return v === true || s === 'TRUE' || s === 'VERDADERO' || s === 'SI' || s === 'ACTIVO';
+}
+
+function _cuponFecha(v) {
+  if (v instanceof Date && !isNaN(v.getTime())) return v;
+  if (!v) return null;
+  var d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function _normalizarClienteCupon(v) {
+  return String(v || '').replace(/\D/g, '').trim() || _normalizarHeaderV3(v || 'sin_cliente');
+}
+
+function _datosCupones() {
+  var hoja = _asegurarHojaCupones();
+  if (hoja.getLastRow() < 2) return [];
+  return hoja.getRange(2, 1, hoja.getLastRow() - 1, CUPONES_HEADERS.length).getValues().map(function(r, i) {
+    var pctRaw = Number(r[2]) || 0;
+    return {
+      fila: i + 2,
+      codigo: String(r[0] || '').trim().toUpperCase(),
+      descripcion: String(r[1] || '').trim(),
+      pct: pctRaw > 1 ? pctRaw / 100 : pctRaw,
+      activo: _cuponBooleano(r[3]),
+      inicio: _cuponFecha(r[4]),
+      vencimiento: _cuponFecha(r[5]),
+      duracionHoras: Math.max(0, Number(r[6]) || 0),
+      maxTotal: Math.max(0, Math.floor(Number(r[7]) || 0)),
+      maxCliente: Math.max(0, Math.floor(Number(r[8]) || 0))
+    };
+  }).filter(function(c) { return c.codigo; });
+}
+
+function _contarUsosCupon(codigo, cliente) {
+  var hoja = _asegurarHojaUsosCupones();
+  if (hoja.getLastRow() < 2) return { total: 0, cliente: 0 };
+  var key = _normalizarClienteCupon(cliente);
+  var total = 0, delCliente = 0;
+  hoja.getRange(2, 1, hoja.getLastRow() - 1, 8).getValues().forEach(function(r) {
+    if (String(r[1] || '').trim().toUpperCase() !== codigo) return;
+    if (String(r[4] || '').trim().toUpperCase() === 'CANCELADO') return;
+    total++;
+    if (_normalizarClienteCupon(r[2]) === key) delCliente++;
+  });
+  return { total: total, cliente: delCliente };
+}
+
+function _estadoCupon(cupon, cliente) {
+  var ahora = new Date();
+  if (!cupon.activo) return { ok: false, estado: 'Inactivo', error: 'Cupon inactivo' };
+  if (!(cupon.pct > 0 && cupon.pct <= 1)) return { ok: false, estado: 'Porcentaje invalido', error: 'Porcentaje de cupon invalido' };
+  if (cupon.inicio && ahora.getTime() < cupon.inicio.getTime()) return { ok: false, estado: 'Programado', error: 'Cupon todavia no disponible' };
+  if (cupon.vencimiento && ahora.getTime() >= cupon.vencimiento.getTime()) return { ok: false, estado: 'Vencido', error: 'Cupon vencido' };
+  var usos = _contarUsosCupon(cupon.codigo, cliente);
+  if (cupon.maxTotal > 0 && usos.total >= cupon.maxTotal) return { ok: false, estado: 'Agotado', error: 'Cupon agotado' };
+  if (cliente && cupon.maxCliente > 0 && usos.cliente >= cupon.maxCliente) {
+    return { ok: false, estado: 'Ya utilizado', error: 'Este cupon ya fue utilizado por este cliente' };
+  }
+  return { ok: true, estado: 'Activo', usos: usos };
+}
+
+function _buscarCupon(codigo) {
+  var key = String(codigo || '').trim().toUpperCase();
+  if (!key) return null;
+  var cupones = _datosCupones();
+  for (var i = 0; i < cupones.length; i++) if (cupones[i].codigo === key) return cupones[i];
+  return null;
+}
+
+function _validarCuponVigente(codigo, cliente) {
+  var cupon = _buscarCupon(codigo);
+  if (!cupon) throw new Error('Cupon invalido');
+  var estado = _estadoCupon(cupon, cliente);
+  if (!estado.ok) throw new Error(estado.error);
+  cupon.usos = estado.usos;
+  cupon.label = Math.round(cupon.pct * 10000) / 100 + '% off - ' + (cupon.descripcion || cupon.codigo);
+  return cupon;
+}
+
+function _listarCuponesPublicos() {
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('CUPONES_PUBLICOS_V1');
+  if (cached) { try { return JSON.parse(cached); } catch(e) {} }
+  var salida = {};
+  _datosCupones().forEach(function(c) {
+    var estado = _estadoCupon(c, '');
+    if (estado.ok) salida[c.codigo] = {
+      pct: c.pct,
+      label: Math.round(c.pct * 10000) / 100 + '% off - ' + (c.descripcion || c.codigo),
+      vence: c.vencimiento ? c.vencimiento.toISOString() : '',
+      maxPorCliente: c.maxCliente
+    };
+  });
+  cache.put('CUPONES_PUBLICOS_V1', JSON.stringify(salida), 60);
+  return salida;
+}
+
+function _refrescarResumenCupones() {
+  var hoja = _asegurarHojaCupones();
+  var cupones = _datosCupones();
+  cupones.forEach(function(c) {
+    var estado = _estadoCupon(c, '');
+    var usos = _contarUsosCupon(c.codigo, '');
+    hoja.getRange(c.fila, 10, 1, 2).setValues([[usos.total, estado.estado]]);
+    hoja.getRange(c.fila, 1, 1, CUPONES_HEADERS.length)
+      .setBackground(estado.ok ? '#E8F5E9' : '#F3F4F6').setFontColor('#111827');
+  });
+  CacheService.getScriptCache().remove('CUPONES_PUBLICOS_V1');
+  return { ok: true, cupones: cupones.length };
+}
+
+function _actualizarCuponEdit(e, soloLocal) {
+  if (!e || !e.range || e.range.getSheet().getName() !== 'CUPONES' || e.range.getRow() < 2) return;
+  var hoja = e.range.getSheet();
+  var fila = e.range.getRow();
+  var codigo = String(hoja.getRange(fila, 1).getValue() || '').trim().toUpperCase().replace(/\s+/g, '');
+  hoja.getRange(fila, 1).setValue(codigo);
+  var pct = Number(hoja.getRange(fila, 3).getValue()) || 0;
+  if (pct > 0 && pct <= 1) hoja.getRange(fila, 3).setValue(pct * 100);
+  var activo = _cuponBooleano(hoja.getRange(fila, 4).getValue());
+  var duracion = Math.max(0, Number(hoja.getRange(fila, 7).getValue()) || 0);
+  if (e.range.getColumn() === 4 && activo) {
+    var inicio = new Date();
+    hoja.getRange(fila, 5).setValue(inicio);
+    if (duracion > 0) hoja.getRange(fila, 6).setValue(new Date(inicio.getTime() + duracion * 60 * 60 * 1000));
+  } else if (e.range.getColumn() === 7 && activo && duracion > 0) {
+    var inicioActual = _cuponFecha(hoja.getRange(fila, 5).getValue()) || new Date();
+    hoja.getRange(fila, 5).setValue(inicioActual);
+    hoja.getRange(fila, 6).setValue(new Date(inicioActual.getTime() + duracion * 60 * 60 * 1000));
+  }
+  CacheService.getScriptCache().remove('CUPONES_PUBLICOS_V1');
+  if (!soloLocal) _refrescarResumenCupones();
+}
+
+function _registrarUsoCupon(cupon, cliente, pedido, totalAntes, descuento) {
+  if (!cupon || !cupon.codigo) return;
+  var hoja = _asegurarHojaUsosCupones();
+  var rows = hoja.getLastRow() > 1 ? hoja.getRange(2, 1, hoja.getLastRow() - 1, 8).getValues() : [];
+  for (var i = 0; i < rows.length; i++) if (String(rows[i][3]) === String(pedido)) return;
+  hoja.appendRow([new Date(), cupon.codigo, _normalizarClienteCupon(cliente), pedido, 'Activo', cupon.pct * 100, totalAntes, descuento]);
+  _refrescarResumenCupones();
+  _registrarAuditoria('CUPON UTILIZADO', cupon.codigo + ' en ' + pedido, 'sistema');
+}
+
+function _actualizarEstadoUsoCupon(pedido, estado) {
+  var hoja = _asegurarHojaUsosCupones();
+  if (hoja.getLastRow() < 2) return;
+  var rows = hoja.getRange(2, 1, hoja.getLastRow() - 1, 8).getValues();
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i][3]) === String(pedido)) hoja.getRange(i + 2, 5).setValue(estado);
+  }
+  _refrescarResumenCupones();
+}
+
+function adminGetCupones(sesion) {
+  _validarSesionAdmin(sesion);
+  _refrescarResumenCupones();
+  return { ok: true, cupones: _datosCupones().map(function(c) {
+    var estado = _estadoCupon(c, '');
+    var usos = _contarUsosCupon(c.codigo, '');
+    return {
+      codigo: c.codigo, descripcion: c.descripcion, pct: c.pct * 100,
+      activo: c.activo, inicio: c.inicio, vencimiento: c.vencimiento,
+      duracionHoras: c.duracionHoras, maxTotal: c.maxTotal,
+      maxCliente: c.maxCliente, usos: usos.total, estado: estado.estado
+    };
+  }) };
 }
 
 function adminConfiguracion(sesion, valores) {
@@ -224,7 +439,7 @@ function _validarItemsPedidoWeb(items) {
   });
 }
 
-function _calcularTotalPedidoSeguro(items, cuponCodigo, esNuevo, tieneFidelidad) {
+function _calcularPedidoSeguroDetalle(items, cuponCodigo, esNuevo, tieneFidelidad, clienteCupon) {
   var cfg = _configPublicaMaxup();
   var base = 0, descuentoCantidad = 0;
   items.forEach(function(item) {
@@ -241,13 +456,23 @@ function _calcularTotalPedidoSeguro(items, cuponCodigo, esNuevo, tieneFidelidad)
     if (!descuentoMonto && trasCantidad >= Number(d.minimo || 0)) descuentoMonto = d;
   });
   var total = descuentoMonto ? Math.round(trasCantidad * (1 - Number(descuentoMonto.pct || 0))) : trasCantidad;
+  var totalAntesCupon = total;
   var codigo = String(cuponCodigo || '').trim().toUpperCase();
-  var cupon = codigo && cfg.cupones ? cfg.cupones[codigo] : null;
-  if (codigo && !cupon) throw new Error('Cupon invalido');
+  var cupon = codigo ? _validarCuponVigente(codigo, clienteCupon) : null;
   if (cupon) total = Math.round(total * (1 - Number(cupon.pct || 0)));
   if (esNuevo && !descuentoMonto && !cupon) total = Math.round(trasCantidad * (1 - cfg.descuentoBienvenida));
   if (tieneFidelidad) total = Math.round(total * (1 - _configNumeroMaxup('PROMO_DESCUENTO', 0.10)));
-  return Math.max(0, total);
+  return {
+    total: Math.max(0, total),
+    totalAntesCupon: Math.max(0, totalAntesCupon),
+    descuentoCupon: cupon ? Math.max(0, totalAntesCupon - Math.round(totalAntesCupon * (1 - cupon.pct))) : 0,
+    cupon: cupon,
+    descuentoMonto: descuentoMonto
+  };
+}
+
+function _calcularTotalPedidoSeguro(items, cuponCodigo, esNuevo, tieneFidelidad, clienteCupon) {
+  return _calcularPedidoSeguroDetalle(items, cuponCodigo, esNuevo, tieneFidelidad, clienteCupon).total;
 }
 
 function _asegurarColumnasPagoPedidos() {
@@ -321,7 +546,7 @@ function backupDiarioMaxup() {
 
 function pruebaSaludSistema() {
   var errores = [], avisos = [], ss = _getSS();
-  ['SUPLEMENTOS','STOCK_DETALLADO','VentasDiarias','CLIENTES','PEDIDOS'].forEach(function(n) {
+  ['SUPLEMENTOS','STOCK_DETALLADO','VentasDiarias','CLIENTES','PEDIDOS','CUPONES','USOS_CUPONES'].forEach(function(n) {
     if (!ss.getSheetByName(n)) errores.push('Falta hoja ' + n);
   });
   var cfg = _getConfig();
@@ -349,6 +574,46 @@ function pruebaTelegramSistema() {
   return { ok: true, fecha: new Date() };
 }
 
+function pruebaCuponesSistema() {
+  var codigo = 'PRUEBA-CODEX-24H';
+  var cliente = '5490000000000';
+  var pedido = 'TEST-CUPON-' + new Date().getTime();
+  var hoja = _asegurarHojaCupones();
+  var fila = hoja.getLastRow() + 1;
+  var ahora = new Date();
+  hoja.getRange(fila, 1, 1, CUPONES_HEADERS.length).setValues([[
+    codigo,'Prueba automatica temporal',7,true,ahora,new Date(ahora.getTime() + 24 * 60 * 60 * 1000),24,2,1,0,''
+  ]]);
+  CacheService.getScriptCache().remove('CUPONES_PUBLICOS_V1');
+  var resultado = { activo: false, usoUnico: false, vencimiento: false };
+  try {
+    var cupon = _validarCuponVigente(codigo, cliente);
+    resultado.activo = cupon && cupon.pct === 0.07;
+    _registrarUsoCupon(cupon, cliente, pedido, 100000, 7000);
+    try { _validarCuponVigente(codigo, cliente); }
+    catch(eUso) { resultado.usoUnico = String(eUso.message).indexOf('ya fue utilizado') >= 0; }
+    hoja.getRange(fila, 6).setValue(new Date(Date.now() - 60 * 1000));
+    try { _validarCuponVigente(codigo, '5491111111111'); }
+    catch(eVence) { resultado.vencimiento = String(eVence.message).indexOf('vencido') >= 0; }
+    if (!resultado.activo || !resultado.usoUnico || !resultado.vencimiento) {
+      throw new Error('Fallo prueba de cupones: ' + JSON.stringify(resultado));
+    }
+    _registrarAuditoria('PRUEBA CUPONES', 'OK: activo, 24h y uso unico', 'sistema');
+    return { ok: true, pruebas: resultado };
+  } finally {
+    var usos = _asegurarHojaUsosCupones();
+    if (usos.getLastRow() > 1) {
+      var datos = usos.getRange(2, 1, usos.getLastRow() - 1, 8).getValues();
+      for (var i = datos.length - 1; i >= 0; i--) {
+        if (String(datos[i][1]) === codigo || String(datos[i][3]) === pedido) usos.deleteRow(i + 2);
+      }
+    }
+    if (fila <= hoja.getLastRow() && String(hoja.getRange(fila, 1).getValue()) === codigo) hoja.deleteRow(fila);
+    CacheService.getScriptCache().remove('CUPONES_PUBLICOS_V1');
+    _refrescarResumenCupones();
+  }
+}
+
 function instalarAutomatizacionesSistema() {
   var ss = _getSS();
   var handlers = ['onEditPedidosAutorizado','backupDiarioMaxup','pruebaSaludSistema'];
@@ -365,6 +630,8 @@ function instalarAutomatizacionesSistema() {
 function migrarSistemaMaxupV3() {
   configurarBaseSegura();
   _asegurarHojaConfiguracion();
+  _asegurarHojaCupones();
+  _refrescarResumenCupones();
   _asegurarHojaMovimientosStock();
   _asegurarColumnasPagoPedidos();
   var sku = asegurarSkuProductos();

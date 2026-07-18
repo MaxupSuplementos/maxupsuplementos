@@ -4000,11 +4000,9 @@ function cartTotalConDescuento(){
 }
 
 // ── CUPÓN DE DESCUENTO ──────────────────────────────────────
-let CUPONES = {
-  'MAXUP5':    { pct: 0.05, label: '5% off con cupón MAXUP5' },
-  'MAXUP10':   { pct: 0.10, label: '10% off con cupón MAXUP10' },
-  'PRIMERA15': { pct: 0.15, label: '15% off primera compra' },
-};
+// Se cargan desde la hoja CUPONES. Si la API no responde, no se aceptan
+// códigos locales que podrían estar vencidos o desactivados.
+let CUPONES = {};
 let _cuponActivo = null;
 
 function aplicarCupon(){

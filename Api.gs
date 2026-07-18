@@ -178,6 +178,7 @@ function doPost(e) {
     if (data.accion === 'admin_mayoristas')    return adminMayoristas({ sesion: data.sesion });
     if (data.accion === 'admin_auditoria')     return _jsonOut(adminGetAuditoria(data.sesion, data.limite));
     if (data.accion === 'admin_configuracion') return _jsonOut(adminConfiguracion(data.sesion, data.valores));
+    if (data.accion === 'admin_cupones')       return _jsonOut(adminGetCupones(data.sesion));
 
     if (data.accion === 'registro_mayorista') return registroMayorista(data);
     if (data.accion === 'login_mayorista')    return loginMayorista(data);
@@ -313,6 +314,7 @@ function registrarPedidoWeb(data) {
   // concreta (o se cancela) no ensucia las ventas.
   var hoy      = new Date();
   var totalReal = 0;
+  var detalleTotalSeguro = null;
 
   if (items.length > 0) {
     items = _validarItemsPedidoWeb(items);
@@ -325,7 +327,9 @@ function registrarPedidoWeb(data) {
     for (var s = 0; s < items.length; s++) {
       sumItems += (Number(items[s].precio || 0)) * (Number(items[s].cantidad || 1));
     }
-    var totalFront = _calcularTotalPedidoSeguro(items, data.cupon, esNuevo, tieneDesc);
+    detalleTotalSeguro = _calcularPedidoSeguroDetalle(items, data.cupon, esNuevo, tieneDesc, telefono);
+    var totalFront = detalleTotalSeguro.total;
+    if (detalleTotalSeguro.cupon) tipoDesc = 'Cupon ' + detalleTotalSeguro.cupon.codigo;
     var usarTotalWeb = (totalFront > 0 && sumItems > 0 && totalFront <= sumItems);
     // Todos los descuentos se validaron del lado del servidor.
     var factorServer = usarTotalWeb ? 1 : factor;
@@ -345,6 +349,7 @@ function registrarPedidoWeb(data) {
   }
 
   // ── Registrar en hoja PEDIDOS ───────────────────────────
+  var filaPedidoNueva = 0;
   try {
     var hojaPed = ss.getSheetByName('PEDIDOS');
     if (!hojaPed) {
@@ -356,13 +361,32 @@ function registrarPedidoWeb(data) {
       ? items.map(function(i){ return (i.marca ? '[' + i.marca + '] ' : '') + i.nombre + ' x' + i.cantidad; }).join(' | ')
       : 'Pedido web';
     var itemsJSON = items.length > 0 ? JSON.stringify(items) : '[]';
+    filaPedidoNueva = hojaPed.getLastRow() + 1;
     hojaPed.appendRow([
       codigoPedido, hoy, nombre, telefono, itemsResumen,
       '$' + _formatoPrecio(totalReal),
       entrega === 'envio' ? 'Envío' : 'Retiro en local',
       direccion || '-', pago, 'Recibido', itemsJSON
     ]);
-  } catch(ePed) {}
+  } catch(ePed) {
+    throw new Error('No se pudo registrar el pedido: ' + ePed.message);
+  }
+
+  if (detalleTotalSeguro && detalleTotalSeguro.cupon) {
+    try {
+      _registrarUsoCupon(
+        detalleTotalSeguro.cupon, telefono, codigoPedido,
+        detalleTotalSeguro.totalAntesCupon, detalleTotalSeguro.descuentoCupon
+      );
+    } catch(eUsoCupon) {
+      try {
+        if (filaPedidoNueva > 1 && String(hojaPed.getRange(filaPedidoNueva, 1).getValue()) === codigoPedido) {
+          hojaPed.deleteRow(filaPedidoNueva);
+        }
+      } catch(eLimpieza) {}
+      throw new Error('No se pudo reservar el cupon: ' + eUsoCupon.message);
+    }
+  }
 
   // ── Notificar por Telegram ──────────────────────────────
   try {
@@ -376,7 +400,7 @@ function registrarPedidoWeb(data) {
       + (email ? '📧 ' + email + '\n' : '')
       + '\n📦 Productos:\n' + itemsTexto + '\n\n'
       + '💰 Total: $' + _formatoPrecio(totalReal)
-      + (tieneDesc ? ' 🎁 10% fidelidad' : (esNuevo ? ' 🎉 2% bienvenida' : '')) + '\n'
+      + (tipoDesc ? ' 🎁 ' + tipoDesc : '') + '\n'
       + '🚚 ' + (entrega === 'envio' ? 'Envío a: ' + direccion : 'Retiro en local') + '\n'
       + '💳 Pago: ' + pago + '\n\n'
       + '✅ Registrado en Sheets\n'
@@ -1057,6 +1081,9 @@ function adminCambiarEstado(clave, codigo, nuevoEstado) {
       if (nuevoEstado === 'Cancelado' && estadoAnterior !== 'Cancelado') {
         try { _revertirVentaPedidoWeb(codigo, estadoAnterior); } catch(eRev) {
           Logger.log('Error revirtiendo venta de ' + codigo + ': ' + eRev.message);
+        }
+        try { _actualizarEstadoUsoCupon(codigo, 'Cancelado'); } catch(eCup) {
+          Logger.log('Error liberando cupon de ' + codigo + ': ' + eCup.message);
         }
       }
 
@@ -3089,6 +3116,10 @@ function onEdit(e) {
       _actualizarSkuEdit(e);
       return;
     }
+    if (hoja.getName() === 'CUPONES') {
+      _actualizarCuponEdit(e, true);
+      return;
+    }
     if (hoja.getName() === 'PEDIDOS') _colorearEstadoPedido(e);
   } catch(err) {
     Logger.log('onEdit error: ' + err.message);
@@ -3101,6 +3132,10 @@ function onEdit(e) {
 function onEditPedidosAutorizado(e) {
   try {
     var hoja = e.range.getSheet();
+    if (hoja.getName() === 'CUPONES') {
+      _actualizarCuponEdit(e, false);
+      return;
+    }
     if (hoja.getName() !== 'PEDIDOS') return;
 
     var rango = e.range;
@@ -3138,6 +3173,9 @@ function onEditPedidosAutorizado(e) {
       var codigoCanc = String(hoja.getRange(fila, 1).getValue());
       try { _revertirVentaPedidoWeb(codigoCanc, estadoAnterior); } catch(eRev) {
         Logger.log('Error revirtiendo venta de ' + codigoCanc + ': ' + eRev.message);
+      }
+      try { _actualizarEstadoUsoCupon(codigoCanc, 'Cancelado'); } catch(eCup) {
+        Logger.log('Error liberando cupon de ' + codigoCanc + ': ' + eCup.message);
       }
     }
 
