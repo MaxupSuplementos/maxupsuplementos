@@ -14,6 +14,12 @@ const PROMO_MINIMO    = 40000;
 const PROMO_MESES     = 3;
 const PROMO_DESCUENTO = 0.10;
 
+// Precio de lista para cubrir una venta en 3 cuotas con Getnet usando
+// acreditacion estandar. Incluye un pequeno margen sobre los costos actuales.
+// Ejemplo: $100.000 contado -> $113.000 precio de lista.
+const RECARGO_LISTA_3_CUOTAS = 0.13;
+const REDONDEO_PRECIO_LISTA  = 500;
+
 const NOMBRES_MESES = [
   'Ene','Feb','Mar','Abr','May','Jun',
   'Jul','Ago','Sep','Oct','Nov','Dic'
@@ -28,6 +34,7 @@ function onOpen() {
     .addItem('Resumen del Día', 'mostrarResumenDia')
     .addItem('Ver clientes con descuento', 'verClientesConDescuento')
     .addItem('🔄 Recuperar compras clientes desde VentasDiarias', 'recuperarComprasClientes')
+    .addItem('🎨 Unificar formato de VentasDiarias', 'normalizarFormatoVentasDiarias')
     .addItem('📅 Ordenar columnas de meses en CLIENTES', 'ordenarColumnasClientes')
     .addItem('🔍 Chequear nombres SUPLEMENTOS vs STOCK_DETALLADO', 'chequearNombresStock')
     .addItem('🔧 Unificar nombres (copia de SUPLEMENTOS a STOCK_DETALLADO)', 'unificarNombresStock')
@@ -36,14 +43,173 @@ function onOpen() {
     .addItem('✅ Aplicar stock real (desde CONCILIACION_STOCK)', 'aplicarStockReal')
     .addItem('🆕 Crear en SUPLEMENTOS los productos nuevos de STOCK_DETALLADO', 'crearProductosFaltantes')
     .addItem('🔁 Reiniciar Nuevos Ingresos (carrusel)', 'reiniciarNuevosIngresos')
-    .addItem('🔤 Detectar nombres repetidos entre marcas', 'detectarNombresDuplicados')
+    .addItem('🔤 Ver nombres repetidos entre marcas (permitidos)', 'detectarNombresDuplicados')
+    .addItem('💳 Actualizar precio de lista para 3 cuotas', 'actualizarPreciosListaTresCuotas')
     .addToUi();
+}
+
+// Busca las columnas por el texto de sus encabezados. De esta forma el sistema
+// funciona aunque "Precio De Lista" se mueva, por ejemplo, a la columna E.
+function _columnasPrecioSuplementos(hoja) {
+  var filas = Math.min(Math.max(hoja.getLastRow(), 1), 10);
+  var cols = Math.max(hoja.getLastColumn(), 5);
+  var valores = hoja.getRange(1, 1, filas, cols).getDisplayValues();
+
+  function normalizar(v) {
+    return String(v || '').trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ');
+  }
+
+  for (var f = 0; f < valores.length; f++) {
+    var headers = valores[f].map(normalizar);
+    var colProducto = headers.indexOf('producto');
+    if (colProducto < 0) continue;
+
+    var colContado = -1;
+    var colLista = -1;
+    for (var c = 0; c < headers.length; c++) {
+      var h = headers[c];
+      if (colContado < 0 && (h === 'precio unitario' || h === 'precio contado' || h === 'precio efectivo')) colContado = c;
+      if (colLista < 0 && (h === 'precio de lista' || h === 'precio lista' || h === 'precio financiado')) colLista = c;
+    }
+    if (colContado >= 0 && colLista >= 0) {
+      return { filaHeader: f + 1, producto: colProducto + 1, contado: colContado + 1, lista: colLista + 1 };
+    }
+  }
+
+  // Compatibilidad con la hoja actual si algun encabezado fue borrado.
+  return { filaHeader: 2, producto: 1, contado: 2, lista: 5 };
+}
+
+function _calcularPrecioListaTresCuotas(precioContado) {
+  var precio = Number(precioContado) || 0;
+  if (precio <= 0) return '';
+  return Math.ceil((precio * (1 + RECARGO_LISTA_3_CUOTAS)) / REDONDEO_PRECIO_LISTA) * REDONDEO_PRECIO_LISTA;
+}
+
+// Se llama desde onEdit (Api.gs). Cada vez que cambia el precio contado,
+// completa automaticamente el precio de lista de esa misma fila.
+function _actualizarPrecioListaTresCuotasEdit(e) {
+  if (!e || !e.range) return;
+  var hoja = e.range.getSheet();
+  if (hoja.getName() !== 'SUPLEMENTOS') return;
+
+  var cfg = _columnasPrecioSuplementos(hoja);
+  var primeraCol = e.range.getColumn();
+  var ultimaCol = e.range.getLastColumn();
+  if (cfg.contado < primeraCol || cfg.contado > ultimaCol) return;
+
+  var filaInicio = Math.max(e.range.getRow(), cfg.filaHeader + 1);
+  var filaFin = e.range.getLastRow();
+  if (filaInicio > filaFin) return;
+
+  var cantidad = filaFin - filaInicio + 1;
+  var nombres = hoja.getRange(filaInicio, cfg.producto, cantidad, 1).getValues();
+  var contados = hoja.getRange(filaInicio, cfg.contado, cantidad, 1).getValues();
+  var actuales = hoja.getRange(filaInicio, cfg.lista, cantidad, 1).getValues();
+  var salida = actuales.map(function(row, i) {
+    var nombre = String(nombres[i][0] || '').trim();
+    var contado = Number(contados[i][0]) || 0;
+    return [nombre && contado > 0 ? _calcularPrecioListaTresCuotas(contado) : row[0]];
+  });
+  hoja.getRange(filaInicio, cfg.lista, cantidad, 1)
+    .setValues(salida)
+    .setNumberFormat('$#,##0');
+}
+
+// Ejecutar desde el menu MAXUP para calcular tambien todos los productos que
+// ya existen. Las filas futuras quedan cubiertas por el onEdit automatico.
+function actualizarPreciosListaTresCuotas() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName('SUPLEMENTOS');
+  if (!hoja) {
+    ss.toast('No se encontro la hoja SUPLEMENTOS.', 'MAXUP', 5);
+    return;
+  }
+
+  var cfg = _columnasPrecioSuplementos(hoja);
+  var ultimaFila = hoja.getLastRow();
+  var filaInicio = cfg.filaHeader + 1;
+  var cantidad = Math.max(ultimaFila - cfg.filaHeader, 0);
+  var actualizados = 0;
+  if (cantidad > 0) {
+    var nombres = hoja.getRange(filaInicio, cfg.producto, cantidad, 1).getValues();
+    var contados = hoja.getRange(filaInicio, cfg.contado, cantidad, 1).getValues();
+    var actuales = hoja.getRange(filaInicio, cfg.lista, cantidad, 1).getValues();
+    var salida = actuales.map(function(row, i) {
+      var nombre = String(nombres[i][0] || '').trim();
+      var contado = Number(contados[i][0]) || 0;
+      if (!nombre || contado <= 0) return [row[0]];
+      actualizados++;
+      return [_calcularPrecioListaTresCuotas(contado)];
+    });
+    hoja.getRange(filaInicio, cfg.lista, cantidad, 1)
+      .setValues(salida)
+      .setNumberFormat('$#,##0');
+  }
+  SpreadsheetApp.flush();
+  ss.toast(
+    'Se actualizaron ' + actualizados + ' precios. Precio de lista = contado + 13%, redondeado hacia arriba a $500.',
+    '3 cuotas Getnet',
+    8
+  );
 }
 
 // ── HELPER: header del mes actual ───────────────────────────
 function _getMesHeader(fecha) {
   const d = fecha || new Date();
   return NOMBRES_MESES[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+// Formato unico para todas las filas de venta, sin importar si fueron
+// creadas desde la planilla, el formulario o la pagina web.
+function _aplicarFormatoFilaVenta(hojaVD, numeroFila) {
+  var rangoVenta = hojaVD.getRange(numeroFila, 1, 1, 9);
+
+  rangoVenta
+    .setBackground('#ffffff')
+    .setFontColor('#000000')
+    .setFontWeight('normal')
+    .setFontStyle('normal')
+    .setFontFamily('Arial')
+    .setFontSize(10)
+    .setVerticalAlignment('middle')
+    .setWrap(false)
+    .setBorder(false, false, false, false, false, false);
+
+  // Mantener el mismo formato y alineacion por tipo de columna.
+  hojaVD.getRange(numeroFila, 1)
+    .setNumberFormat('dd/MM/yyyy HH:mm:ss')
+    .setHorizontalAlignment('right');
+  hojaVD.getRange(numeroFila, 2, 1, 2)
+    .setNumberFormat('@')
+    .setHorizontalAlignment('left');
+  hojaVD.getRange(numeroFila, 4, 1, 3)
+    .setNumberFormat('0')
+    .setHorizontalAlignment('right');
+  hojaVD.getRange(numeroFila, 7, 1, 3)
+    .setNumberFormat('@')
+    .setHorizontalAlignment('left');
+}
+
+// Formato especial reservado unicamente para las filas TOTAL.
+function _aplicarFormatoFilaTotal(hojaVD, numeroFila) {
+  hojaVD.getRange(numeroFila, 1, 1, 9)
+    .setBackground('#1a1a00')
+    .setFontColor('#FFD700')
+    .setFontWeight('bold')
+    .setFontStyle('normal')
+    .setFontFamily('Arial')
+    .setFontSize(10)
+    .setVerticalAlignment('middle')
+    .setWrap(false)
+    .setBorder(false, false, false, false, false, false);
+
+  hojaVD.getRange(numeroFila, 1).setHorizontalAlignment('left');
+  hojaVD.getRange(numeroFila, 6)
+    .setNumberFormat('0')
+    .setHorizontalAlignment('right');
 }
 
 // ── HELPER: insertar fila ANTES del TOTAL del día ────────────
@@ -62,34 +228,97 @@ function _insertarFilaVenta(hojaVD, fila, fechaStr) {
     // Escribir la venta en la fila recién insertada
     var rangoVenta = hojaVD.getRange(filaTotal, 1, 1, 9);
     rangoVenta.setValues([fila]);
-    rangoVenta.setBackground('#ffffff')
-      .setFontColor('#000000')
-      .setFontWeight('normal')
-      .setFontStyle('normal')
-      .setFontSize(10)
-      .setBorder(false, false, false, false, false, false);
+    _aplicarFormatoFilaVenta(hojaVD, filaTotal);
   } else {
     // No existe TOTAL aún — simplemente agregar al final
     hojaVD.appendRow(fila);
     var filaNueva = hojaVD.getLastRow();
-    hojaVD.getRange(filaNueva, 1, 1, 9)
-      .setBackground('#ffffff')
-      .setFontColor('#000000')
-      .setFontWeight('normal')
-      .setFontStyle('normal')
-      .setFontSize(10);
+    _aplicarFormatoFilaVenta(hojaVD, filaNueva);
   }
+}
+
+// Ejecutar una vez desde el menu MAXUP para corregir tambien las filas
+// que ya existian. Las filas futuras se formatean automaticamente.
+function normalizarFormatoVentasDiarias() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hojaVD = ss.getSheetByName('VentasDiarias');
+  if (!hojaVD) {
+    ss.toast('No se encontro la hoja VentasDiarias.', 'MAXUP', 5);
+    return;
+  }
+
+  var ultimaFila = hojaVD.getLastRow();
+  if (ultimaFila < 2) {
+    ss.toast('No hay ventas para formatear.', 'MAXUP', 5);
+    return;
+  }
+
+  var cantidadFilas = ultimaFila - 1;
+  var valores = hojaVD.getRange(2, 1, cantidadFilas, 9).getValues();
+  var ventasCorregidas = 0;
+  var totalesCorregidos = 0;
+
+  // Aplicar el formato base a toda la tabla en bloque. Esto es mucho mas
+  // rapido que formatear celda por celda y deja intacto el encabezado.
+  hojaVD.getRange(2, 1, cantidadFilas, 9)
+    .setBackground('#ffffff')
+    .setFontColor('#000000')
+    .setFontWeight('normal')
+    .setFontStyle('normal')
+    .setFontFamily('Arial')
+    .setFontSize(10)
+    .setVerticalAlignment('middle')
+    .setWrap(false)
+    .setBorder(false, false, false, false, false, false);
+
+  hojaVD.getRange(2, 1, cantidadFilas, 1)
+    .setNumberFormat('dd/MM/yyyy HH:mm:ss')
+    .setHorizontalAlignment('right');
+  hojaVD.getRange(2, 2, cantidadFilas, 2)
+    .setNumberFormat('@')
+    .setHorizontalAlignment('left');
+  hojaVD.getRange(2, 4, cantidadFilas, 3)
+    .setNumberFormat('0')
+    .setHorizontalAlignment('right');
+  hojaVD.getRange(2, 7, cantidadFilas, 3)
+    .setNumberFormat('@')
+    .setHorizontalAlignment('left');
+
+  // Restaurar el formato especial solo en las filas TOTAL.
+  for (var i = 0; i < valores.length; i++) {
+    var primeraCelda = String(valores[i][0] || '').trim();
+    var tieneDatos = valores[i].some(function(valor) {
+      return valor !== '' && valor !== null;
+    });
+    if (!tieneDatos) continue;
+
+    if (primeraCelda.indexOf('TOTAL ') === 0) {
+      _aplicarFormatoFilaTotal(hojaVD, i + 2);
+      totalesCorregidos++;
+    } else {
+      ventasCorregidas++;
+    }
+  }
+
+  SpreadsheetApp.flush();
+  ss.toast(
+    'Ventas corregidas: ' + ventasCorregidas +
+    ' | Filas TOTAL: ' + totalesCorregidos +
+    '. Las ventas nuevas mantendran este formato.',
+    'Formato unificado',
+    8
+  );
 }
 
 // ── Descontar stock de STOCK_DETALLADO por FIFO ─────
 // Versión individual (usada por procesarVenta del formulario)
-function _descontarStockDetallado(nombreProducto, cantidad) {
+function _descontarStockDetallado(nombreProducto, cantidad, marcaProducto) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var hoja = ss.getSheetByName('STOCK_DETALLADO');
     if (!hoja) return;
     var datos = hoja.getDataRange().getValues();
-    _descontarStockDetalladoBatch(hoja, datos, nombreProducto, cantidad);
+    _descontarStockDetalladoBatch(hoja, datos, nombreProducto, cantidad, marcaProducto);
   } catch(e) {
     Logger.log('Error _descontarStockDetallado: ' + e.message);
   }
@@ -126,14 +355,40 @@ function _esEncabezadoMarca(valor) {
 }
 
 // Versión batch: recibe hoja y datos ya leídos, evita re-leer
-function _descontarStockDetalladoBatch(hoja, datos, nombreProducto, cantidad) {
+// Identidad estable de un suplemento. La marca es parte obligatoria de la
+// clave para que productos con el mismo nombre no compartan stock.
+function _claveProductoStock(marca, nombre) {
+  return _normalizarNombre(marca) + '||' + _normalizarNombre(nombre);
+}
+
+// Busca una fila de producto dentro de SUPLEMENTOS respetando la marca de la
+// seccion. Devuelve el indice base 0 o -1 si no existe.
+function _buscarFilaProductoSuplementos(datos, nombreProducto, marcaProducto) {
+  var claveBuscar = _claveProductoStock(marcaProducto, nombreProducto);
+  if (!marcaProducto || !nombreProducto) return -1;
+  var marcaActual = '';
+  for (var i = 0; i < datos.length; i++) {
+    var nombre = String(datos[i][0] || '').trim();
+    if (_esEncabezadoMarca(nombre)) {
+      marcaActual = nombre;
+      continue;
+    }
+    if (!nombre) continue;
+    if (_claveProductoStock(marcaActual, nombre) === claveBuscar) return i;
+  }
+  return -1;
+}
+
+function _descontarStockDetalladoBatch(hoja, datos, nombreProducto, cantidad, marcaProducto) {
   var nombreBuscar = _normalizarNombre(nombreProducto);
-  if (!nombreBuscar || cantidad <= 0) return;
+  var marcaBuscar = _normalizarNombre(marcaProducto);
+  if (!nombreBuscar || !marcaBuscar || cantidad <= 0) return;
 
   var lotes = [];
   for (var i = 1; i < datos.length; i++) {
     var nombreFila = _normalizarNombre(datos[i][0]);
-    if (nombreFila !== nombreBuscar) continue;
+    var marcaFila = _normalizarNombre(datos[i][1]);
+    if (nombreFila !== nombreBuscar || marcaFila !== marcaBuscar) continue;
     var stockActual = Number(datos[i][4]) || 0;
     if (stockActual <= 0) continue;
     lotes.push({ fila: i + 1, idx: i, stock: stockActual, venc: datos[i][2] });
@@ -197,27 +452,29 @@ function chequearNombresStock() {
   var mapaSD = {};
   for (var i = 1; i < datosSD.length; i++) {
     var crudoSD = String(datosSD[i][0] || '').trim();
-    if (!crudoSD) continue;
-    var normSD = _normalizarNombre(crudoSD);
-    if (!mapaSD[normSD]) mapaSD[normSD] = { nombres: {}, stock: 0 };
-    mapaSD[normSD].nombres[crudoSD] = true;
-    mapaSD[normSD].stock += Number(datosSD[i][4]) || 0;
+    var marcaSD = String(datosSD[i][1] || '').trim();
+    if (!crudoSD || !marcaSD) continue;
+    var claveSD = _claveProductoStock(marcaSD, crudoSD);
+    if (!mapaSD[claveSD]) mapaSD[claveSD] = { nombres: {}, stock: 0 };
+    mapaSD[claveSD].nombres[crudoSD] = true;
+    mapaSD[claveSD].stock += Number(datosSD[i][4]) || 0;
   }
 
   // Recorrer SUPLEMENTOS (solo productos reales: con precio en col B)
   var sinLote = [];      // ❌ no existe en STOCK_DETALLADO
   var textoDistinto = []; // ⚠️ matchea normalizado pero texto difiere
 
+  var marcaActual = '';
   for (var j = 0; j < datosSup.length; j++) {
     var crudoSup = String(datosSup[j][0] || '').trim();
+    if (_esEncabezadoMarca(crudoSup)) { marcaActual = crudoSup; continue; }
     var precio   = Number(datosSup[j][1]) || 0;
     if (!crudoSup || precio <= 0) continue; // saltar marcas y vacíos
 
-    var normSup = _normalizarNombre(crudoSup);
-    var entrada = mapaSD[normSup];
+    var entrada = mapaSD[_claveProductoStock(marcaActual, crudoSup)];
 
     if (!entrada) {
-      sinLote.push(crudoSup);
+      sinLote.push({ nombre: crudoSup, marca: marcaActual });
       continue;
     }
 
@@ -226,7 +483,7 @@ function chequearNombresStock() {
     var hayIdentico = nombresSD.indexOf(crudoSup) >= 0;
     if (!hayIdentico) {
       textoDistinto.push({
-        sup: crudoSup,
+        sup: crudoSup, marca: marcaActual,
         sd: nombresSD.join('  |  '),
         stock: entrada.stock
       });
@@ -242,11 +499,11 @@ function chequearNombresStock() {
   filas.push(['TIPO', 'Nombre en SUPLEMENTOS', 'Nombre(s) en STOCK_DETALLADO', 'Stock en STOCK_DETALLADO', 'Qué hacer']);
 
   textoDistinto.forEach(function(t) {
-    filas.push(['⚠️ TEXTO DISTINTO', t.sup, t.sd, t.stock,
+    filas.push(['⚠️ TEXTO DISTINTO', t.marca + ' — ' + t.sup, t.sd, t.stock,
       'Unificar: escribir el MISMO texto en ambas hojas (misma tilde/guion/mayúscula)']);
   });
   sinLote.forEach(function(n) {
-    filas.push(['❌ SIN LOTE', n, '(no existe)', '-',
+    filas.push(['❌ SIN LOTE', n.marca + ' — ' + n.nombre, '(no existe)', '-',
       'No tiene lote en STOCK_DETALLADO: una venta no descuenta de ahí. Crear el lote o revisar el nombre.']);
   });
 
@@ -307,15 +564,17 @@ function unificarNombresStock() {
   // Mapa: nombre normalizado → { nombre canónico exacto, ambiguo }
   // ambiguo = dos productos DISTINTOS de SUPLEMENTOS normalizan igual → no tocar.
   var canon = {};
+  var marcaActual = '';
   for (var j = 0; j < datosSup.length; j++) {
     var crudoSup = String(datosSup[j][0] || '').trim();
+    if (_esEncabezadoMarca(crudoSup)) { marcaActual = crudoSup; continue; }
     var precio   = Number(datosSup[j][1]) || 0;
     if (!crudoSup || precio <= 0) continue; // saltar marcas y vacíos
-    var norm = _normalizarNombre(crudoSup);
-    if (!canon[norm]) {
-      canon[norm] = { nombre: crudoSup, ambiguo: false };
-    } else if (canon[norm].nombre !== crudoSup) {
-      canon[norm].ambiguo = true;
+    var claveSup = _claveProductoStock(marcaActual, crudoSup);
+    if (!canon[claveSup]) {
+      canon[claveSup] = { nombre: crudoSup, ambiguo: false };
+    } else if (canon[claveSup].nombre !== crudoSup) {
+      canon[claveSup].ambiguo = true;
     }
   }
 
@@ -323,9 +582,9 @@ function unificarNombresStock() {
   var ejemplos = [];
   for (var i = 1; i < datosSD.length; i++) {
     var crudoSD = String(datosSD[i][0] || '').trim();
-    if (!crudoSD) continue;
-    var n = _normalizarNombre(crudoSD);
-    var c = canon[n];
+    var marcaSD = String(datosSD[i][1] || '').trim();
+    if (!crudoSD || !marcaSD) continue;
+    var c = canon[_claveProductoStock(marcaSD, crudoSD)];
     if (!c) { sinMatch++; continue; }
     if (c.ambiguo) { ambiguos++; continue; }
     if (c.nombre !== crudoSD) {
@@ -366,27 +625,31 @@ function actualizarStockPrincipal() {
     var hojaSD  = ss.getSheetByName('STOCK_DETALLADO');
     if (!hojaSup || !hojaSD) return 0;
 
-    // Sumar stock por nombre normalizado en STOCK_DETALLADO
+    // Sumar stock por marca + nombre en STOCK_DETALLADO
     var datosSD = hojaSD.getDataRange().getValues();
-    var sumas = {}; // norm -> total
+    var sumas = {}; // marca||nombre -> total
     for (var i = 1; i < datosSD.length; i++) {
       var nom = String(datosSD[i][0] || '').trim();
       if (!nom) continue;
-      var norm = _normalizarNombre(nom);
-      if (!(norm in sumas)) sumas[norm] = 0;
-      sumas[norm] += Number(datosSD[i][4]) || 0;
+      var marcaSD = String(datosSD[i][1] || '').trim();
+      if (!marcaSD) continue;
+      var clave = _claveProductoStock(marcaSD, nom);
+      if (!(clave in sumas)) sumas[clave] = 0;
+      sumas[clave] += Number(datosSD[i][4]) || 0;
     }
 
     // Volcar la suma en la col D de los productos que tienen lote
     var datosSup = hojaSup.getDataRange().getValues();
     var cambios = 0;
+    var marcaActual = '';
     for (var j = 0; j < datosSup.length; j++) {
       var nombre = String(datosSup[j][0] || '').trim();
+      if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
       var precio = Number(datosSup[j][1]) || 0;
       if (!nombre || precio <= 0) continue;   // saltar marcas/secciones
-      var n = _normalizarNombre(nombre);
-      if (!(n in sumas)) continue;            // sin lote → no tocar (accesorios)
-      var nuevo  = sumas[n];
+      var claveSup = _claveProductoStock(marcaActual, nombre);
+      if (!(claveSup in sumas)) continue;     // sin lote → no tocar (accesorios)
+      var nuevo  = sumas[claveSup];
       var actual = Number(datosSup[j][3]) || 0;
       if (actual !== nuevo) {
         hojaSup.getRange(j + 1, 4).setValue(nuevo);
@@ -435,16 +698,17 @@ function conciliarStock() {
     return;
   }
 
-  // Sumar lotes por nombre normalizado (col E = Stock Actual)
+  // Sumar lotes por marca + nombre (col E = Stock Actual)
   var datosSD = hojaSD.getDataRange().getValues();
   var sumas = {};
   var infoSD = {}; // norm -> { nombre, marca } para detectar lo que falta en SUPLEMENTOS
   for (var i = 1; i < datosSD.length; i++) {
     var nomSD = String(datosSD[i][0] || '').trim();
-    if (!nomSD) continue;
-    var nrm = _normalizarNombre(nomSD);
-    if (!(nrm in sumas)) { sumas[nrm] = 0; infoSD[nrm] = { nombre: nomSD, marca: String(datosSD[i][1] || '').trim() }; }
-    sumas[nrm] += Number(datosSD[i][4]) || 0;
+    var marcaSD = String(datosSD[i][1] || '').trim();
+    if (!nomSD || !marcaSD) continue;
+    var claveSD = _claveProductoStock(marcaSD, nomSD);
+    if (!(claveSD in sumas)) { sumas[claveSD] = 0; infoSD[claveSD] = { nombre: nomSD, marca: marcaSD }; }
+    sumas[claveSD] += Number(datosSD[i][4]) || 0;
   }
 
   // Recorrer SUPLEMENTOS, llevando la marca de cada sección
@@ -457,15 +721,15 @@ function conciliarStock() {
     var nombre = String(datosSup[j][0] || '').trim();
     if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
     if (!nombre) continue;
-    var n = _normalizarNombre(nombre);
-    supNorms[n] = true;                          // existe en SUPLEMENTOS (con o sin precio)
+    var claveSup = _claveProductoStock(marcaActual, nombre);
+    supNorms[claveSup] = true;                   // existe en SUPLEMENTOS (con o sin precio)
     var precio = Number(datosSup[j][1]) || 0;
     if (precio <= 0) continue;                   // sin precio aún → no comparo stock
     var stockD = Number(datosSup[j][3]) || 0;
-    if (!(n in sumas)) {
+    if (!(claveSup in sumas)) {
       if (stockD > 0) faltan.push({ nombre: nombre, marca: marcaActual, d: stockD });
-    } else if (sumas[n] !== stockD) {
-      noCoinc.push({ nombre: nombre, marca: marcaActual, d: stockD, lotes: sumas[n] });
+    } else if (sumas[claveSup] !== stockD) {
+      noCoinc.push({ nombre: nombre, marca: marcaActual, d: stockD, lotes: sumas[claveSup] });
     } else {
       okCount++;
     }
@@ -565,13 +829,14 @@ function aplicarStockReal() {
   var datosR = hojaR.getDataRange().getValues();
   // Ubicar las columnas por su ENCABEZADO (robusto: no importa en qué posición estén)
   var header = (datosR[0] || []).map(function(h){ return String(h || '').toLowerCase(); });
-  var colProd = -1, colReal = -1;
+  var colProd = -1, colReal = -1, colMarca = -1;
   for (var c = 0; c < header.length; c++) {
     if (colProd < 0 && header[c].indexOf('producto') >= 0)   colProd = c;
     if (colReal < 0 && header[c].indexOf('stock real') >= 0)  colReal = c;
+    if (colMarca < 0 && header[c].indexOf('marca') >= 0) colMarca = c;
   }
-  if (colProd < 0 || colReal < 0) {
-    ui.alert('❌ No encuentro las columnas "Producto" y "Stock REAL" en CONCILIACION_STOCK.\n\n' +
+  if (colProd < 0 || colReal < 0 || colMarca < 0) {
+    ui.alert('❌ No encuentro las columnas "Producto", "Marca" y "Stock REAL" en CONCILIACION_STOCK.\n\n' +
       'Corré primero "🔎 Conciliar stock" para regenerar la hoja con la columna verde.');
     return;
   }
@@ -583,7 +848,9 @@ function aplicarStockReal() {
     if (!prod || celda === '' || celda === null || celda === undefined) continue;
     var real = Number(celda);
     if (isNaN(real) || real < 0) continue;
-    objetivos.push({ nombre: prod, real: real });
+    var marca = String(datosR[r][colMarca] || '').trim();
+    if (!marca) continue;
+    objetivos.push({ nombre: prod, marca: marca, real: real });
   }
 
   if (objetivos.length === 0) {
@@ -607,30 +874,28 @@ function aplicarStockReal() {
 
   objetivos.forEach(function(o) {
     var norm = _normalizarNombre(o.nombre);
+    var marcaNorm = _normalizarNombre(o.marca);
 
     // Lotes del producto
     var lotes = [];
     for (var i = 1; i < datosSD.length; i++) {
-      if (_normalizarNombre(datosSD[i][0]) !== norm) continue;
+      if (_normalizarNombre(datosSD[i][0]) !== norm || _normalizarNombre(datosSD[i][1]) !== marcaNorm) continue;
       lotes.push({ fila: i + 1, venc: datosSD[i][2], stock: Number(datosSD[i][4]) || 0 });
     }
     // Fila del producto en SUPLEMENTOS
-    var supFila = -1;
-    for (var j = 0; j < datosSup.length; j++) {
-      if (_esEncabezadoMarca(datosSup[j][0])) continue;
-      if (_normalizarNombre(datosSup[j][0]) === norm) { supFila = j + 1; break; }
-    }
+    var supIdx = _buscarFilaProductoSuplementos(datosSup, o.nombre, o.marca);
+    var supFila = supIdx >= 0 ? supIdx + 1 : -1;
 
     if (lotes.length === 0) {
       // Sin lote (accesorio o perecedero sin cargar) → ajusto la col D directo
       if (supFila > 0) { hojaSup.getRange(supFila, 4).setValue(o.real); sinLote++; }
-      else noEncontrado.push(o.nombre);
+      else noEncontrado.push(o.marca + ' — ' + o.nombre);
       return;
     }
 
     var totalLote = lotes.reduce(function(s, l){ return s + l.stock; }, 0);
     if (o.real === totalLote) { sinCambio++; return; }
-    if (o.real > totalLote) { faltaCargar.push({ nombre: o.nombre, faltan: o.real - totalLote }); return; }
+    if (o.real > totalLote) { faltaCargar.push({ nombre: o.nombre, marca: o.marca, faltan: o.real - totalLote }); return; }
 
     // real < totalLote → bajar lotes (vence antes primero)
     lotes.sort(function(a, b) {
@@ -656,7 +921,7 @@ function aplicarStockReal() {
     (sinCambio ? '✔️ Ya coincidían (sin cambios): ' + sinCambio + '\n' : '');
   if (faltaCargar.length) {
     msg += '\n⚠️ Faltan cargar como LOTE NUEVO (con su vencimiento):\n';
-    faltaCargar.slice(0, 15).forEach(function(f){ msg += '  • ' + f.nombre + ': +' + f.faltan + '\n'; });
+    faltaCargar.slice(0, 15).forEach(function(f){ msg += '  • ' + f.marca + ' — ' + f.nombre + ': +' + f.faltan + '\n'; });
     if (faltaCargar.length > 15) msg += '  ... y ' + (faltaCargar.length - 15) + ' más\n';
   }
   if (noEncontrado.length) {
@@ -686,17 +951,17 @@ function crearProductosFaltantes() {
   var sumas = {}, infoSD = {};
   for (var i = 1; i < datosSD.length; i++) {
     var nomSD = String(datosSD[i][0] || '').trim();
-    if (!nomSD) continue;
-    var nrm = _normalizarNombre(nomSD);
-    if (!(nrm in sumas)) { sumas[nrm] = 0; infoSD[nrm] = { nombre: nomSD, marca: String(datosSD[i][1] || '').trim() }; }
-    sumas[nrm] += Number(datosSD[i][4]) || 0;
+    var marcaSD = String(datosSD[i][1] || '').trim();
+    if (!nomSD || !marcaSD) continue;
+    var claveSD = _claveProductoStock(marcaSD, nomSD);
+    if (!(claveSD in sumas)) { sumas[claveSD] = 0; infoSD[claveSD] = { nombre: nomSD, marca: marcaSD }; }
+    sumas[claveSD] += Number(datosSD[i][4]) || 0;
   }
 
   // 2) Recorrer SUPLEMENTOS: productos existentes + estructura de marcas
   var datosSup = hojaSup.getDataRange().getValues();
   var supNorms = {};
   var marcas = {};       // marcaNorm -> { headerRow, lastContentRow, raw }
-  var listaMarcas = [];
   var curMarca = null;
 
   var ultimaFilaConNombre = 0; // última fila REAL con producto/marca en col A
@@ -706,29 +971,23 @@ function crearProductosFaltantes() {
     if (_esEncabezadoMarca(nm)) {                     // encabezado de marca
       var mk = _normalizarNombre(nm);
       marcas[mk] = { headerRow: fila, lastContentRow: fila, raw: nm };
-      listaMarcas.push(mk);
       curMarca = mk;
       ultimaFilaConNombre = fila;
       continue;
     }
     if (!nm) continue;
-    supNorms[_normalizarNombre(nm)] = true;            // producto ya existe (con o sin precio)
+    if (curMarca && marcas[curMarca]) {
+      supNorms[_claveProductoStock(marcas[curMarca].raw, nm)] = true;
+    }
     if (curMarca && marcas[curMarca]) marcas[curMarca].lastContentRow = fila;
     ultimaFilaConNombre = fila;
   }
 
-  // Buscar la marca destino: match exacto o por primera palabra ("Star" → "STAR NUTRITION")
-  function primeraPal(s){ return (_normalizarNombre(s).split(' ')[0]) || ''; }
+  // La marca debe coincidir completa. Si no existe, se crea una nueva.
   function buscarMarca(marcaStock){
     var mn = _normalizarNombre(marcaStock);
     if (!mn) return null;
     if (marcas[mn]) return mn;
-    var pw = primeraPal(marcaStock);
-    if (pw.length >= 3) {
-      for (var x = 0; x < listaMarcas.length; x++) {
-        if (primeraPal(marcas[listaMarcas[x]].raw) === pw) return listaMarcas[x];
-      }
-    }
     return null;
   }
 
@@ -879,11 +1138,8 @@ function registrarStockEntrante() {
 
 // ══════════════════════════════════════════════════════════
 // DETECTAR NOMBRES REPETIDOS ENTRE MARCAS
-// El sistema de lotes identifica los productos por su NOMBRE. Si dos marcas
-// distintas tienen un producto con el MISMO nombre (ej. "Pancakes Proteicos -
-// Vainilla" de MOLÉ y de GRANGER), el sistema los mezcla: suma sus lotes juntos
-// y duplica el stock. Esta función los detecta para ponerles un nombre distinto
-// en cada marca. Escribe la hoja NOMBRES_DUPLICADOS.
+// El sistema identifica cada producto por MARCA + NOMBRE. Esta auditoria solo
+// informa los nombres que se repiten entre marcas; ya no es necesario cambiarlos.
 // ══════════════════════════════════════════════════════════
 function detectarNombresDuplicados() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -907,11 +1163,10 @@ function detectarNombresDuplicados() {
   for (var k in porNombre) if (porNombre[k].marcas.length > 1) dups.push(porNombre[k]);
   dups.sort(function(a, b){ return a.nombre.localeCompare(b.nombre); });
 
-  var filas = [['Producto (nombre repetido)', 'Marcas donde aparece', 'Qué hacer']];
+  var filas = [['Producto (nombre repetido)', 'Marcas donde aparece', 'Estado']];
   dups.forEach(function(d){
     filas.push([d.nombre, d.marcas.join('   |   '),
-      'Este nombre está en varias marcas y el sistema mezcla su stock. Ponele un nombre ' +
-      'distinto en cada marca (en SUPLEMENTOS y en STOCK_DETALLADO), ej. agregando la marca al nombre.']);
+      '✅ Permitido: el stock se separa por marca + producto.']);
   });
   if (filas.length === 1) filas.push(['✅ No hay nombres repetidos entre marcas', '', '']);
 
@@ -928,8 +1183,7 @@ function detectarNombresDuplicados() {
 
   ui.alert('🔤 NOMBRES REPETIDOS ENTRE MARCAS\n\n' +
     'Encontré ' + dups.length + ' nombre(s) que se repiten en más de una marca.\n\n' +
-    'Mirá la hoja "NOMBRES_DUPLICADOS". A esos hay que ponerles un nombre distinto ' +
-    'en cada marca (en las dos hojas) para que el sistema no mezcle su stock.');
+    'Esto ahora está permitido: el stock se mantiene separado por marca + producto.');
 }
 
 // ── ACTUALIZAR MONTO MENSUAL DEL CLIENTE ────────────────────
@@ -1051,10 +1305,7 @@ function _actualizarTotalDia(hojaVD, fechaStr) {
     var filaTotal = [totalLabel, '', '', '', '', totalDia, '', '', ''];
     hojaVD.appendRow(filaTotal);
     var lastRow = hojaVD.getLastRow();
-    hojaVD.getRange(lastRow, 1, 1, 9)
-      .setBackground('#1a1a00')
-      .setFontColor('#FFD700')
-      .setFontWeight('bold');
+    _aplicarFormatoFilaTotal(hojaVD, lastRow);
   }
 }
 
@@ -1165,7 +1416,7 @@ function registrarVentasDesdeCeldas() {
       updatesSup.push({ fila: i + 1, col: 6, valor: '' });
       updatesSup.push({ fila: i + 1, col: 7, valor: '' });
 
-      if (hojaSD && datosSD) _descontarStockDetalladoBatch(hojaSD, datosSD, nombre, totalCant);
+      if (hojaSD && datosSD) _descontarStockDetalladoBatch(hojaSD, datosSD, nombre, totalCant, marcaActual);
     }
   }
 
@@ -1431,9 +1682,7 @@ function procesarVenta(datos) {
   var supRows = hojaSup.getDataRange().getValues();
 
   for (const item of datos.items) {
-    const prodIdx = supRows.findIndex(r =>
-      String(r[0]).trim().toLowerCase() === String(item.nombre).trim().toLowerCase()
-    );
+    const prodIdx = _buscarFilaProductoSuplementos(supRows, item.nombre, item.marca);
 
     const stockActual = prodIdx >= 0 ? (Number(supRows[prodIdx][3]) || 0) : item.stock;
     if (item.cantidad > stockActual) {
@@ -1462,7 +1711,7 @@ function procesarVenta(datos) {
     }
 
     // ★ Descontar de STOCK_DETALLADO por FIFO
-    _descontarStockDetallado(item.nombre, item.cantidad);
+    _descontarStockDetallado(item.nombre, item.cantidad, item.marca);
   }
 
   // ✅ CORREGIDO: recalcula el total real sin duplicar
@@ -1657,9 +1906,11 @@ function actualizarHojaReposicion() {
         if (!f || typeof f === 'string') continue;   // saltar headers y TOTALes
         var fechaV = new Date(f);
         if (isNaN(fechaV.getTime()) || fechaV < hace30) continue;
-        var nomV = _normalizarNombre(vd[v][1]);
-        if (!nomV) continue;
-        ventas30[nomV] = (ventas30[nomV] || 0) + (Number(vd[v][3]) || 0);
+        var marcaV = String(vd[v][2] || '').trim();
+        var nomV = String(vd[v][1] || '').trim();
+        if (!nomV || !marcaV) continue;
+        var claveV = _claveProductoStock(marcaV, nomV);
+        ventas30[claveV] = (ventas30[claveV] || 0) + (Number(vd[v][3]) || 0);
       }
     }
   } catch(eV) {}
@@ -1678,7 +1929,7 @@ function actualizarHojaReposicion() {
     if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
 
     if (stock <= STOCK_MINIMO) {
-      const vendidos = ventas30[_normalizarNombre(nombre)] || 0;
+      const vendidos = ventas30[_claveProductoStock(marcaActual, nombre)] || 0;
       productos.push([
         nombre,
         marcaActual,

@@ -514,8 +514,7 @@ function _actualizarTotalDiaApi(hojaVD, fechaStr) {
   var filaTotal = [totalLabel, '', '', '', '', totalDia, '', '', ''];
   hojaVD.appendRow(filaTotal);
   var lastRow = hojaVD.getLastRow();
-  hojaVD.getRange(lastRow, 1, 1, 9)
-    .setBackground('#1a1a00').setFontColor('#FFD700').setFontWeight('bold');
+  _aplicarFormatoFilaTotal(hojaVD, lastRow);
 }
 
 // ── CATÁLOGO ────────────────────────────────────────────────
@@ -703,26 +702,62 @@ function getCatalogoDesdeHojaCatalogo(hoja) {
   return { productos: productos, total: productos.length, fuente: 'CATALOGO', timestamp: new Date().toISOString(), nuevos_ingresos: _calcularNuevosIngresos('SUP', _itemsSup) };
 }
 
+function _columnasCatalogoSuplementos(datos) {
+  function normalizar(v) {
+    return String(v || '').trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ');
+  }
+
+  var limite = Math.min(datos.length, 10);
+  for (var f = 0; f < limite; f++) {
+    var headers = datos[f].map(normalizar);
+    var producto = headers.indexOf('producto');
+    if (producto < 0) continue;
+
+    var contado = -1, lista = -1, stock = -1, imagen = -1, descripcion = -1;
+    for (var c = 0; c < headers.length; c++) {
+      var h = headers[c];
+      if (contado < 0 && (h === 'precio unitario' || h === 'precio contado' || h === 'precio efectivo')) contado = c;
+      if (lista < 0 && (h === 'precio de lista' || h === 'precio lista' || h === 'precio financiado')) lista = c;
+      if (stock < 0 && (h === 'cantidad en stock' || h === 'stock' || h === 'stock actual')) stock = c;
+      if (imagen < 0 && (h === 'imagen url' || h === 'imagen_url' || h === 'imagen')) imagen = c;
+      if (descripcion < 0 && h === 'descripcion') descripcion = c;
+    }
+    return {
+      filaHeader: f,
+      producto: producto,
+      contado: contado >= 0 ? contado : 1,
+      lista: lista >= 0 ? lista : 4,
+      stock: stock >= 0 ? stock : 3,
+      imagen: imagen >= 0 ? imagen : 8,
+      descripcion: descripcion >= 0 ? descripcion : 9
+    };
+  }
+  return { filaHeader: 1, producto: 0, contado: 1, lista: 4, stock: 3, imagen: 8, descripcion: 9 };
+}
+
 function getCatalogoDesdeSuplemetos(hoja) {
   var datos = hoja.getDataRange().getValues();
   if (datos.length <= 1) return { productos: [], total: 0 };
 
+  var columnas = _columnasCatalogoSuplementos(datos);
   var productos = [];
   var marcaActual = '';
   var id = 1;
 
-  datos.forEach(function(row) {
-    var col0 = String(row[0] || '').trim();
-    var col1 = row[1], col2 = row[2], col3 = row[3];
+  datos.forEach(function(row, filaIndex) {
+    var col0 = String(row[columnas.producto] || '').trim();
+    var col1 = row[columnas.contado], col2 = row[columnas.lista], col3 = row[columnas.stock];
     if (!col0) return;
-    if (col0 && (col1 === null || col1 === '') && col0 !== 'Producto') { marcaActual = col0; return; }
-    if (col0 === 'Producto') return;
+    if (filaIndex === columnas.filaHeader || col0.toLowerCase() === 'producto') return;
+    if (col0 && (col1 === null || col1 === '')) { marcaActual = col0; return; }
     var precio_unit  = Number(col1) || 0;
     var precio_lista = Number(col2) || 0;
     var stock        = Number(col3) || 0;
     if (precio_unit <= 0 && precio_lista <= 0) return;
-    var imagenRaw   = String(row[8] || '').trim();
-    var descripcion = String(row[9] || '').trim();
+    var imagenRaw   = String(row[columnas.imagen] || '').trim();
+    var descripcion = String(row[columnas.descripcion] || '').trim();
     // Soportar múltiples imágenes separadas por salto de línea o ;
     var imagenes = imagenRaw.split(/[\r\n;]+/).map(function(u){ return u.trim(); }).filter(Boolean);
     // Si la fila cae bajo la sección SHAKERS o LICUADORAS de la planilla,
@@ -936,10 +971,12 @@ function adminCambiarEstado(clave, codigo, nuevoEstado) {
 // Busca la fila de un producto: primero por nombre EXACTO (normalizado),
 // y SOLO si no hay coincidencia exacta, por similitud (>=0.6) como respaldo.
 // Asi una venta de "Creatina X 300 - Doypack" no descuenta de otra variante.
-function _matchFilaProducto(data, colNombre, nombreItem, startRow) {
+function _matchFilaProducto(data, colNombre, nombreItem, startRow, colMarca, marcaItem) {
   var exacto = _normNombreSD(nombreItem);
+  var marcaExacta = _normNombreSD(marcaItem);
   if (exacto) {
     for (var r = startRow; r < data.length; r++) {
+      if (colMarca >= 0 && _normNombreSD(data[r][colMarca]) !== marcaExacta) continue;
       var nf = data[r][colNombre];
       if (nf && _normNombreSD(nf) === exacto) return r;
     }
@@ -950,6 +987,7 @@ function _matchFilaProducto(data, colNombre, nombreItem, startRow) {
   if (!palabras.length) return -1;
   var mejorFila = -1, mejorScore = 0;
   for (var r2 = startRow; r2 < data.length; r2++) {
+    if (colMarca >= 0 && _normNombreSD(data[r2][colMarca]) !== marcaExacta) continue;
     var nf2 = String(data[r2][colNombre] || '').toLowerCase().trim();
     if (!nf2) continue;
     var hits = 0;
@@ -958,6 +996,21 @@ function _matchFilaProducto(data, colNombre, nombreItem, startRow) {
     if (pct > mejorScore && pct >= 0.6) { mejorScore = pct; mejorFila = r2; }
   }
   return mejorFila;
+}
+
+// SUPLEMENTOS organiza las marcas como encabezados en la columna A. Esta
+// busqueda respeta primero la marca y despues el nombre del producto.
+function _buscarFilaSuplementoMarcaNombreApi(data, nombreItem, marcaItem, startRow) {
+  var claveBuscar = _claveProductoStock(marcaItem, nombreItem);
+  if (!nombreItem || !marcaItem) return -1;
+  var marcaActual = '';
+  for (var r = startRow || 0; r < data.length; r++) {
+    var nombre = String(data[r][0] || '').trim();
+    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
+    if (!nombre) continue;
+    if (_claveProductoStock(marcaActual, nombre) === claveBuscar) return r;
+  }
+  return -1;
 }
 
 // Descuenta stock cuando el pedido se marca como finalizado
@@ -977,14 +1030,16 @@ function _descontarStockPedido(items) {
     });
     var colNombre = headers.indexOf('nombre');
     var colStock  = headers.indexOf('stock');
-    if (colNombre >= 0 && colStock >= 0) {
+    var colMarca  = headers.indexOf('marca');
+    if (colNombre >= 0 && colStock >= 0 && colMarca >= 0) {
       items.forEach(function(item) {
         var cantItem = Number(item.cantidad) || 1;
-        var mejorFila = _matchFilaProducto(catData, colNombre, item.nombre, 1);
+        var marcaItem = String(item.marca || item.brand || '');
+        var mejorFila = _matchFilaProducto(catData, colNombre, item.nombre, 1, colMarca, marcaItem);
         if (mejorFila >= 0) {
           var stockActual = Number(catData[mejorFila][colStock]) || 0;
           hojaCat.getRange(mejorFila + 1, colStock + 1).setValue(Math.max(0, stockActual - cantItem));
-          descontarStockDetallado(String(item.nombre || ''), cantItem);
+          descontarStockDetallado(String(item.nombre || ''), cantItem, marcaItem);
         }
       });
       try { actualizarHojaReposicion(); } catch(e) {}
@@ -998,11 +1053,12 @@ function _descontarStockPedido(items) {
   var supData = hojaSup.getDataRange().getValues();
   items.forEach(function(item) {
     var cantItem = Number(item.cantidad) || 1;
-    var mejorFila = _matchFilaProducto(supData, 0, item.nombre, 2);
+    var marcaItem = String(item.marca || item.brand || '');
+    var mejorFila = _buscarFilaSuplementoMarcaNombreApi(supData, item.nombre, marcaItem, 0);
     if (mejorFila >= 0) {
       var stockActual = Number(supData[mejorFila][3]) || 0;
       hojaSup.getRange(mejorFila + 1, 4).setValue(Math.max(0, stockActual - cantItem));
-      descontarStockDetallado(String(item.nombre || ''), cantItem);
+      descontarStockDetallado(String(item.nombre || ''), cantItem, marcaItem);
     }
   });
   try { actualizarHojaReposicion(); } catch(e) {}
@@ -1054,13 +1110,19 @@ function _registrarVentaPedidoWeb(codigo) {
         var cant = Number(it.cantidad || 1);
         var ingreso = precioFila * cant;
         totalVenta += ingreso;
-        hojaVD.appendRow([hoy, String(it.nombre || ''), String(it.marca || ''),
-          cant, precioFila, ingreso, cliente, '', nota]);
+        _insertarFilaVenta(hojaVD, [hoy, String(it.nombre || ''), String(it.marca || ''),
+          cant, precioFila, ingreso, cliente, '', nota], fechaStr);
       }
     } else {
       // Sin detalle de items: usar el total del pedido ("$123.456" → 123456)
       totalVenta = Number(String(ped[5] || '').replace(/[^\d]/g, '')) || 0;
-      if (totalVenta > 0) hojaVD.appendRow([hoy, 'Pedido web', '', 1, totalVenta, totalVenta, cliente, '', nota]);
+      if (totalVenta > 0) {
+        _insertarFilaVenta(
+          hojaVD,
+          [hoy, 'Pedido web', '', 1, totalVenta, totalVenta, cliente, '', nota],
+          fechaStr
+        );
+      }
     }
     if (totalVenta <= 0) return;
 
@@ -1313,15 +1375,17 @@ function _leerOfertasHoja(diasLimite) {
   var hojaSD = ss.getSheetByName('STOCK_DETALLADO');
   if (!hojaSD || hojaSD.getLastRow() < 2) return [];
 
-  // Precios actuales desde SUPLEMENTOS (por nombre normalizado)
+  // Precios actuales desde SUPLEMENTOS (por marca + nombre)
   var precios = {};
   var hojaSup = ss.getSheetByName('SUPLEMENTOS');
   if (hojaSup) {
     var rs = hojaSup.getDataRange().getValues();
+    var marcaSup = '';
     for (var s = 2; s < rs.length; s++) {
       var nom = String(rs[s][0] || '').trim();
+      if (_esEncabezadoMarca(nom)) { marcaSup = nom; continue; }
       var pr  = Number(rs[s][1]) || 0;
-      if (nom && pr > 0) precios[_normNombreSD(nom)] = pr;
+      if (nom && pr > 0) precios[_claveProductoStock(marcaSup, nom)] = pr;
     }
   }
 
@@ -1354,7 +1418,7 @@ function _leerOfertasHoja(diasLimite) {
         nombre: nombre, marca: marca, stock: stock,
         diasRestantes: diasReales,
         fechaVence: Utilities.formatDate(fechaVence, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy'),
-        ventas30d: 0, precio: precios[_normNombreSD(nombre)] || 0, urgencia: urgencia
+        ventas30d: 0, precio: precios[_claveProductoStock(marca, nombre)] || 0, urgencia: urgencia
       });
     }
   }
@@ -1396,10 +1460,12 @@ function actualizarAnalisisOfertas() {
       try {
         var fv = new Date(fechaVenta);
         if (fv >= hace30 && fv <= hoy) {
-          var prodNombre = String(rowsVD[v][1] || '').toLowerCase().trim();
+          var prodNombre = String(rowsVD[v][1] || '').trim();
+          var prodMarca = String(rowsVD[v][2] || '').trim();
           var cant = Number(rowsVD[v][3]) || 0;
-          if (prodNombre) {
-            ventas30d[prodNombre] = (ventas30d[prodNombre] || 0) + cant;
+          if (prodNombre && prodMarca) {
+            var claveVenta = _claveProductoStock(prodMarca, prodNombre);
+            ventas30d[claveVenta] = (ventas30d[claveVenta] || 0) + cant;
           }
         }
       } catch(e) {}
@@ -1410,11 +1476,13 @@ function actualizarAnalisisOfertas() {
   var precios = {};
   if (hojaSup) {
     var rowsSup = hojaSup.getDataRange().getValues();
+    var marcaSup = '';
     for (var s = 2; s < rowsSup.length; s++) {
       var nombreSup = String(rowsSup[s][0] || '').trim();
+      if (_esEncabezadoMarca(nombreSup)) { marcaSup = nombreSup; continue; }
       var precioSup = Number(rowsSup[s][1]) || 0;
       if (nombreSup && precioSup > 0) {
-        precios[nombreSup.toLowerCase()] = precioSup;
+        precios[_claveProductoStock(marcaSup, nombreSup)] = precioSup;
       }
     }
   }
@@ -1434,14 +1502,17 @@ function actualizarAnalisisOfertas() {
     var fechaVence = new Date(vencimiento); fechaVence.setHours(0,0,0,0);
     var diasRestantes = Math.round((fechaVence - hoy) / (1000 * 60 * 60 * 24));
 
-    var nombreLower = nombre.toLowerCase();
-    var ventasProd = ventas30d[nombreLower] || 0;
+    var claveProducto = _claveProductoStock(marca, nombre);
+    var ventasProd = ventas30d[claveProducto] || 0;
 
-    // Buscar precio — intentar match exacto, luego parcial
-    var precio = precios[nombreLower] || 0;
+    // Buscar precio dentro de la misma marca: exacto y luego parcial.
+    var precio = precios[claveProducto] || 0;
     if (!precio) {
+      var nombreLower = nombre.toLowerCase();
+      var marcaNorm = _normalizarNombre(marca) + '||';
       var palabras = nombreLower.split(/\s+/).filter(function(w) { return w.length > 3; });
       for (var key in precios) {
+        if (key.indexOf(marcaNorm) !== 0) continue;
         var hits = 0;
         palabras.forEach(function(p) { if (key.indexOf(p) >= 0) hits++; });
         if (palabras.length > 0 && hits / palabras.length >= 0.7) {
@@ -1902,7 +1973,7 @@ function pedidoMayorista(body) {
     if (body.items && body.items.length) {
       descontarStockMayorista(body.items);
       body.items.forEach(function(item) {
-        descontarStockDetallado(item.nombre, item.qty || 1);
+        descontarStockDetallado(item.nombre, item.qty || 1, item.marca || item.brand || '');
       });
     }
 
@@ -1917,12 +1988,11 @@ function descontarStockMayorista(items) {
     var hoja  = _getSS().getSheetByName('SUPLEMENTOS');
     var datos = hoja.getDataRange().getValues();
     items.forEach(function(item) {
-      for (var i = 2; i < datos.length; i++) {
-        if (datos[i][0].toString().trim() === item.nombre) {
-          var stockActual = parseFloat(datos[i][3]) || 0;
-          hoja.getRange(i + 1, 4).setValue(Math.max(0, stockActual - item.qty));
-          break;
-        }
+      var marcaItem = item.marca || item.brand || '';
+      var fila = _buscarFilaSuplementoMarcaNombreApi(datos, item.nombre, marcaItem, 0);
+      if (fila >= 0) {
+        var stockActual = parseFloat(datos[fila][3]) || 0;
+        hoja.getRange(fila + 1, 4).setValue(Math.max(0, stockActual - item.qty));
       }
     });
   } catch(e) {
@@ -1934,21 +2004,22 @@ function descontarStockMayorista(items) {
 //  STOCK_DETALLADO — FIFO por fecha de vencimiento
 // ════════════════════════════════════════════════════════════
 
-function descontarStockDetallado(nombreProducto, cantidadVendida) {
+function descontarStockDetallado(nombreProducto, cantidadVendida, marcaProducto) {
   try {
     var hoja = _getSS().getSheetByName('STOCK_DETALLADO');
     if (!hoja) return;
     var datos = hoja.getDataRange().getValues();
 
     var buscar = _normNombreSD(nombreProducto);
-    if (!buscar || cantidadVendida <= 0) return;
+    var marcaBuscar = _normNombreSD(marcaProducto);
+    if (!buscar || !marcaBuscar || cantidadVendida <= 0) return;
 
     // Solo lotes con el nombre EXACTO (ya normalizado) — nada de "parecidos".
     // Así una venta de "Creatina X 300 Grs - Doypack" no descuenta de
     // "...Doypack - Frutos Rojos" ni de "...Pote" (que comparten palabras).
     var lotes = [];
     for (var i = 1; i < datos.length; i++) {
-      if (_normNombreSD(datos[i][0]) !== buscar) continue;
+      if (_normNombreSD(datos[i][0]) !== buscar || _normNombreSD(datos[i][1]) !== marcaBuscar) continue;
       var stock = parseFloat(datos[i][4]) || 0;
       if (stock <= 0) continue;
       lotes.push({ fila: i + 1, stock: stock, venc: datos[i][2] });
@@ -2076,6 +2147,12 @@ function getIndumentaria() {
     var marcaActual = '';
     var lastBase  = '';
     var lastTalle = '';
+    // Por defecto, las marcas siguen siendo de mujer como hasta ahora.
+    // Las filas HOMBRE/MUJER permiten cambiar de seccion sin registrar
+    // cada marca nueva en el codigo.
+    var generoActual = 'M';
+    // Compatibilidad con la estructura anterior, donde SOUR ya era hombre
+    // aunque todavia no existiera la fila separadora HOMBRE.
     var MEN_BRANDS = ['SOUR'];
     var lastCodigo = '';
 
@@ -2092,6 +2169,27 @@ function getIndumentaria() {
       if (!nombre && !color && precioUnit === 0) continue;
 
       if (nombre && precioUnit === 0 && precioList === 0) {
+        var encabezado = nombre.toUpperCase().trim();
+
+        // Separadores de genero. Se escriben en la columna B igual que una
+        // marca, pero no se publican como marcas en la pagina.
+        if (encabezado === 'HOMBRE' || encabezado === 'HOMBRES' || encabezado === 'MASCULINO') {
+          generoActual = 'H';
+          marcaActual = '';
+          lastBase = '';
+          lastTalle = '';
+          lastCodigo = '';
+          continue;
+        }
+        if (encabezado === 'MUJER' || encabezado === 'MUJERES' || encabezado === 'FEMENINO') {
+          generoActual = 'M';
+          marcaActual = '';
+          lastBase = '';
+          lastTalle = '';
+          lastCodigo = '';
+          continue;
+        }
+
         marcaActual = nombre;
         lastBase = '';
         lastTalle = '';
@@ -2124,7 +2222,8 @@ function getIndumentaria() {
       var clave = marcaActual + '||' + (lastCodigo || '') + '||' + lastBase;
 
       if (!mapa[clave]) {
-        var genero = MEN_BRANDS.indexOf(marcaActual) >= 0 ? 'H' : 'M';
+        var genero = generoActual;
+        if (MEN_BRANDS.indexOf(marcaActual.toUpperCase()) >= 0) genero = 'H';
         mapa[clave] = {
           codigo: codigo, nombre: lastBase, precio: precioUnit,
           precio_lista: precioList || Math.round(precioUnit * 1.06),
@@ -2810,6 +2909,10 @@ function generarContenidoRedes() {
 function onEdit(e) {
   try {
     var hoja = e.source.getActiveSheet();
+    if (hoja.getName() === 'SUPLEMENTOS') {
+      _actualizarPrecioListaTresCuotasEdit(e);
+      return;
+    }
     if (hoja.getName() !== 'PEDIDOS') return;
 
     var rango = e.range;

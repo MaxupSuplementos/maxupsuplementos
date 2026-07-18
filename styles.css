@@ -179,6 +179,12 @@ body.light .footer{background:rgba(0,0,0,.03)}
 .prod-price-label{font-size:.6rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--gray)}
 .prod-price-val{font-family:Bebas Neue,sans-serif;font-size:1.6rem;
   background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.prod-price-methods{max-width:250px;margin-top:3px;color:var(--cyan);font-size:.59rem;
+  font-weight:700;letter-spacing:.04em;line-height:1.25}
+.prod-cuotas-box{display:flex;flex-direction:column;gap:1px;margin-top:7px;padding:6px 8px;
+  background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.22);border-radius:6px}
+.prod-cuotas-box strong{color:#FFD700;font-size:.7rem;letter-spacing:.04em}
+.prod-cuotas-box span{color:#aaa;font-size:.61rem}
 .prod-stock-info{text-align:right}
 .prod-stock-num{font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--white);line-height:1}
 .prod-stock-lbl{font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gray)}
@@ -530,7 +536,10 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 .prod-modal-marca{font-size:.72rem;color:var(--cyan);font-weight:700;letter-spacing:.15em;text-transform:uppercase}
 .prod-modal-nombre{font-family:Bebas Neue,sans-serif;font-size:1.8rem;line-height:1.1}
 .prod-modal-desc{color:#ccc;font-size:.9rem;line-height:1.7}
-.prod-modal-precio-tarjeta{text-decoration:line-through;color:rgba(255,255,255,.35);font-size:.8rem}
+.prod-modal-precio-tarjeta{display:flex;flex-direction:column;gap:2px;margin-top:9px;padding:9px 11px;
+  color:#FFD700;background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.22);border-radius:7px}
+.prod-modal-precio-tarjeta strong{font-size:.9rem;letter-spacing:.04em}
+.prod-modal-precio-tarjeta span{color:#aaa;font-size:.72rem}
 .prod-modal-precio-cash{font-family:Bebas Neue,sans-serif;font-size:2.5rem;
   background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .prod-modal-precio-label{font-size:.7rem;color:var(--cyan);font-weight:700;letter-spacing:.08em}

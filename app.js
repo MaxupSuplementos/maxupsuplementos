@@ -3358,6 +3358,9 @@ function readURLIndex(){
 }
 
 function fmt(n){ return '$' + n.toLocaleString('es-AR'); }
+function fmtCuota(n){
+  return '$' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 
 const SVG_PLACEHOLDERS = {
@@ -3455,6 +3458,8 @@ function buildCard(p, cardIndex){
       ${flavorOpts}
     </select>` : `<input type="hidden" class="flavor-select" data-pid="${p.id}" value="${firstFlavor.name}">`;
 
+  const precioLista = p.price_tarjeta || Math.ceil((p.price * 1.13) / 500) * 500;
+  const cuota3 = precioLista / 3;
   const addDisabled = initStock===0 ? 'disabled' : '';
   const addText = initStock===0 ? '❌ Agotado' : '🛒 Agregar';
 
@@ -3484,11 +3489,13 @@ function buildCard(p, cardIndex){
     <div class="prod-footer">
       <div>
         ${p.priceAnterior ? `<div style="font-size:.7rem;color:#888;text-decoration:line-through;margin-bottom:2px">Antes: ${fmt(p.priceAnterior)}</div>` : ''}
-        <div class="prod-price-label" style="text-decoration:line-through;color:rgba(255,255,255,.35);font-size:.7rem">
-          Tarjeta/QR/Débito: ${fmt(p.price_tarjeta || Math.round(p.price*1.08))}
-        </div>
+        <div class="prod-price-label">PRECIO CONTADO</div>
         <div class="prod-price-val${p.priceAnterior ? ' price-oferta' : ''}" id="price-${p.id}">${fmt(p.price)}</div>
-        <div style="font-size:.65rem;color:#00C8FF;font-weight:700;letter-spacing:.06em;margin-top:1px">💵 EFECTIVO / TRANSF.</div>
+        <div class="prod-price-methods">EFECTIVO · TRANSFERENCIA · DÉBITO · CRÉDITO 1 PAGO</div>
+        <div class="prod-cuotas-box">
+          <strong>3 CUOTAS FIJAS DE ${fmtCuota(cuota3)}</strong>
+          <span>Precio total financiado: ${fmt(precioLista)}</span>
+        </div>
       </div>
       <div class="prod-stock-info">
         <div class="prod-stock-num ${stockClass}" id="stock-${p.id}">${stockTxt}</div>
@@ -4968,10 +4975,10 @@ async function cargarDesdeSheets() {
       .map((p, i) => {
         const nombre   = p.nombre   || p['Producto']          || '';
         const marca    = p.marca    || p['Marca']              || '';
-        // Col B = Precio unitario = EFECTIVO/TRANSF
-        // Col C = Precio De Lista = TARJETA/QR/DÉBITO
+        // Precio unitario = contado. Precio De Lista puede estar en cualquier
+        // columna: la API lo encuentra por el encabezado de la hoja.
         const precio_efectivo = Number(p.precio_venta || p['Precio unitario'] || 0);
-        const precio_tarjeta  = Number(p.precio_lista  || p['Precio De Lista'] || precio_efectivo * 1.08 || 0);
+        const precio_tarjeta  = Number(p.precio_lista  || p['Precio De Lista'] || Math.ceil((precio_efectivo * 1.13) / 500) * 500 || 0);
         const stock    = Number(p.stock || p['Cantidad en stock'] || 0);
         // Inferir categoría con la función mejorada
         const cat = p.categoria || p.cat || _inferirCategoria(nombre);
@@ -5281,8 +5288,9 @@ function openProdModal(pid) {
   document.getElementById('modalNombre').textContent = p.name || '';
   document.getElementById('modalDesc').textContent = p.desc || 'Suplemento de alta calidad para deportistas y personas activas.';
 
-  const tarjeta = p.price_tarjeta || Math.round(p.price * 1.08);
-  document.getElementById('modalPrecioTarjeta').textContent = `Tarjeta/QR/Débito: $${tarjeta.toLocaleString('es-AR')}`;
+  const tarjeta = p.price_tarjeta || Math.ceil((p.price * 1.13) / 500) * 500;
+  document.getElementById('modalPrecioTarjeta').innerHTML =
+    `<strong>3 CUOTAS FIJAS DE ${fmtCuota(tarjeta / 3)}</strong><span>Precio total financiado: ${fmt(tarjeta)}</span>`;
   document.getElementById('modalPrecioCash').textContent = `$${p.price.toLocaleString('es-AR')}`;
 
   // Flavors
@@ -5636,9 +5644,10 @@ function actualizarComparador() {
     return '<td class="'+(mejor?'mejor':'')+'">$'+p.price.toLocaleString('es-AR')+(mejor?'<br><span style="font-size:.75rem">✓ Mejor precio</span>':'')+'</td>';
   }).join('') + '</tr>';
 
-  // Precio tarjeta
-  rows += '<tr><td>Precio tarjeta</td>' + prods.map(function(p){
-    return '<td>$'+(p.price_tarjeta||Math.round(p.price*1.08)).toLocaleString('es-AR')+'</td>';
+  // Precio financiado en 3 cuotas
+  rows += '<tr><td>3 cuotas / total</td>' + prods.map(function(p){
+    var lista = p.price_tarjeta || Math.ceil((p.price*1.13)/500)*500;
+    return '<td>3 de '+fmtCuota(lista/3)+'<br><small>Total '+fmt(lista)+'</small></td>';
   }).join('') + '</tr>';
 
   // Sabores
@@ -8033,7 +8042,7 @@ function agregarCombo(comboId){
   var faqs = [
     { q:'¿Hacen envíos a todo el país?', a:'Sí, enviamos por Correo Argentino a todo el país. El costo se cotiza por WhatsApp según peso y destino. También podés retirar en nuestro local en Calixto Gauna 1045, General Güemes, Salta.' },
     { q:'¿Cuánto tarda el envío?', a:'Envíos locales (Salta): 1-2 días hábiles. Interior del país: 3-7 días hábiles dependiendo de la zona. Te enviamos el código de seguimiento apenas despachamos.' },
-    { q:'¿Aceptan tarjeta de crédito?', a:'Sí, aceptamos transferencia bancaria, efectivo, Mercado Pago y tarjetas. Los precios publicados son para efectivo/transferencia. Tarjeta/QR/débito tiene un 8% adicional (precio tachado en cada producto).' },
+    { q:'¿Aceptan tarjeta de crédito?', a:'Sí. Cada producto muestra su precio contado para efectivo, transferencia, débito o crédito en 1 pago, y también el valor de 3 cuotas fijas con tarjeta de crédito.' },
     { q:'¿Los productos son originales?', a:'100% originales y sellados de fábrica. Trabajamos directamente con distribuidores oficiales de cada marca. Todos los productos tienen fecha de vencimiento visible.' },
     { q:'¿Tienen local físico?', a:'Sí, estamos en Calixto Gauna 1045, General Güemes, Salta. Podés venir a ver los productos, consultar y retirar tu pedido personalmente.' },
     { q:'¿Cómo funciona el sistema de puntos?', a:'Cada $1.000 en compras = 1 punto. Cuando juntás 250 puntos podés canjearlos por $5.000 de descuento en compras mayores a $50.000. Los puntos se acumulan automáticamente.' },
