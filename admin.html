@@ -252,13 +252,13 @@ function login() {
   if (!input) return;
   var btn = document.querySelector('.login-btn');
   btn.textContent = 'VERIFICANDO...'; btn.disabled = true;
-  // Intentar una consulta real a la API con la clave ingresada
-  fetch(API_URL + '?accion=admin_resumen&clave=' + encodeURIComponent(input))
+  fetch(API_URL, { method:'POST', body:JSON.stringify({ accion:'admin_login', clave:input }) })
     .then(function(r){ return r.json(); })
     .then(function(data){
       btn.textContent = 'INGRESAR'; btn.disabled = false;
       if (data.ok) {
-        clave = input;
+        clave = data.sesion;
+        document.getElementById('claveInput').value = '';
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         cargarResumen();
@@ -281,6 +281,7 @@ function login() {
     });
 }
 function logout() {
+  if (clave) fetch(API_URL, { method:'POST', body:JSON.stringify({ accion:'admin_logout', sesion:clave }) }).catch(function(){});
   clave = '';
   detenerAutoRefresh();
   document.getElementById('loginScreen').style.display = 'flex';
@@ -310,8 +311,7 @@ function iniciarAutoRefresh() {
   detenerAutoRefresh();
   _autoRefreshTimer = setInterval(function() {
     // Chequear pedidos nuevos silenciosamente
-    fetch(API_URL + '?accion=admin_pedidos&clave=' + encodeURIComponent(clave))
-      .then(function(r){ return r.json(); })
+    api('accion=admin_pedidos')
       .then(function(data) {
         if (!data.ok) return;
         var pedidos = data.pedidos || [];
@@ -376,10 +376,13 @@ function recargarTab() {
 
 // ── HELPERS ──────────────────────────────────────────────────
 function api(params) {
-  return fetch(API_URL + '?' + params + '&clave=' + encodeURIComponent(clave))
+  var body = { sesion: clave };
+  new URLSearchParams(params).forEach(function(v, k){ body[k] = v; });
+  return fetch(API_URL, { method:'POST', body:JSON.stringify(body) })
     .then(function(r){ return r.json(); });
 }
 function fmt(n) { return '$' + Number(n).toLocaleString('es-AR'); }
+function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function showToast(msg) {
   var t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -746,6 +749,9 @@ function cargarAjustes() {
     }
     html += '</div></div>';
 
+    html += '<div id="configCentral" style="background:var(--dark2);border:1px solid rgba(0,200,255,.18);border-radius:10px;padding:20px;margin-bottom:16px">'
+      + '<div class="loading-txt">Cargando configuración comercial...</div></div>';
+
     // Links útiles
     html += '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:20px">'
       + '<div style="font-weight:700;font-size:.95rem;margin-bottom:12px">🔗 Links rápidos</div>'
@@ -765,7 +771,49 @@ function cargarAjustes() {
       + '</div>';
 
     el.innerHTML = html;
+    cargarConfigCentral();
   }).catch(function(){ el.innerHTML = '<div class="empty-txt">⚠️ No se pudo conectar.</div>'; });
+}
+
+function cargarConfigCentral(){
+  var box=document.getElementById('configCentral'); if(!box) return;
+  api('accion=admin_configuracion').then(function(data){
+    if(!data.ok) throw new Error(data.error||'Error');
+    var v=data.valores||{};
+    function pct(k,d){ return Math.round((Number(v[k]||d))*10000)/100; }
+    box.innerHTML='<div style="font-weight:700;font-size:.95rem;margin-bottom:6px">💰 Configuración comercial</div>'
+      +'<div style="color:var(--gray);font-size:.82rem;margin-bottom:14px">Estos valores se aplican automáticamente en la hoja y en la tienda.</div>'
+      +'<div class="stats-grid">'
+      +campoCfg('cfgRecargo','Recargo precio lista (%)',pct('RECARGO_LISTA_3_CUOTAS',.13))
+      +campoCfg('cfgRedondeo','Redondeo precio lista ($)',Number(v.REDONDEO_PRECIO_LISTA||500))
+      +campoCfg('cfgBienvenida','Descuento bienvenida (%)',pct('DESCUENTO_BIENVENIDA',.02))
+      +campoCfg('cfgCombo','Descuento combos (%)',Number(v.COMBO_DESCUENTO||5))
+      +campoCfg('cfgPromoMin','Mínimo fidelidad ($)',Number(v.PROMO_MINIMO||40000))
+      +campoCfg('cfgPromoMeses','Meses para fidelidad',Number(v.PROMO_MESES||3))
+      +campoCfg('cfgPromoPct','Descuento fidelidad (%)',pct('PROMO_DESCUENTO',.10))
+      +campoCfg('cfgBackup','Días de backups',Number(v.BACKUP_RETENCION_DIAS||14))
+      +'</div><button class="btn-estado btn-listo" style="padding:10px 20px" onclick="guardarConfigCentral()">💾 GUARDAR CONFIGURACIÓN</button>';
+  }).catch(function(err){ box.innerHTML='<div class="empty-txt">No se pudo cargar: '+esc(err.message)+'</div>'; });
+}
+
+function campoCfg(id,label,value){
+  return '<label style="display:block;font-size:.75rem;color:var(--gray)">'+label
+    +'<input id="'+id+'" class="filtro-input" type="number" step="0.01" value="'+value+'" style="width:100%;margin-top:5px"></label>';
+}
+
+function guardarConfigCentral(){
+  function n(id){ return Number(document.getElementById(id).value); }
+  var valores={
+    RECARGO_LISTA_3_CUOTAS:String(n('cfgRecargo')/100), REDONDEO_PRECIO_LISTA:String(n('cfgRedondeo')),
+    DESCUENTO_BIENVENIDA:String(n('cfgBienvenida')/100), COMBO_DESCUENTO:String(n('cfgCombo')),
+    PROMO_MINIMO:String(n('cfgPromoMin')), PROMO_MESES:String(n('cfgPromoMeses')),
+    PROMO_DESCUENTO:String(n('cfgPromoPct')/100), BACKUP_RETENCION_DIAS:String(n('cfgBackup'))
+  };
+  fetch(API_URL,{method:'POST',body:JSON.stringify({accion:'admin_configuracion',sesion:clave,valores:valores})})
+    .then(function(r){return r.json();}).then(function(data){
+      if(!data.ok) throw new Error(data.error||'Error');
+      showToast('✅ Configuración guardada'); cargarConfigCentral();
+    }).catch(function(err){showToast('❌ '+err.message);});
 }
 
 function setMantMsg(msg) {
@@ -923,40 +971,28 @@ function logActivity(accion, detalle) {
 }
 
 function cargarLog() {
-  // Cargar desde localStorage
-  try{
-    var saved = localStorage.getItem('maxup_admin_log');
-    if(saved) _activityLog = JSON.parse(saved);
-  }catch(e){}
-
   var el = document.getElementById('tabLog');
-  if(_activityLog.length === 0){
-    el.innerHTML = '<div class="empty-txt">No hay actividad registrada todavía.<br>Las acciones (cambios de estado, mantenimiento, etc.) se registrarán aquí.</div>';
-    return;
-  }
-
-  var html = '<div class="section-title">📋 <span>Registro de actividad</span></div>'
-    + '<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="filtro-btn" onclick="limpiarLog()">🗑️ Limpiar log</button></div>';
-
-  _activityLog.forEach(function(entry){
-    var icon = entry.accion.indexOf('estado')>=0 ? '📦' : entry.accion.indexOf('mant')>=0 ? '🔧' : entry.accion.indexOf('login')>=0 ? '🔑' : '📝';
-    html += '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.04);border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;gap:10px;align-items:center">'
-      + '<span style="font-size:1.2rem">' + icon + '</span>'
-      + '<div style="flex:1"><div style="font-size:.88rem;font-weight:600">' + entry.accion + '</div>'
-      + '<div style="font-size:.78rem;color:var(--gray)">' + entry.detalle + '</div></div>'
-      + '<div style="font-size:.72rem;color:var(--gray);white-space:nowrap">' + entry.fecha + '</div>'
-      + '</div>';
-  });
-
-  el.innerHTML = html;
+  el.innerHTML = '<div class="loading-txt">Cargando registro del sistema...</div>';
+  api('accion=admin_auditoria&limite=200').then(function(data){
+    var registros = data.registros || [];
+    if(!registros.length){ el.innerHTML = '<div class="empty-txt">No hay actividad registrada todavía.</div>'; return; }
+    var html = '<div class="section-title">📋 <span>Registro de actividad del sistema</span></div>';
+    registros.forEach(function(entry){
+      var accion = String(entry.accion||'');
+      var icon = accion.indexOf('ESTADO')>=0 ? '📦' : accion.indexOf('MANT')>=0 ? '🔧' : accion.indexOf('LOGIN')>=0 ? '🔑' : '📝';
+      html += '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.04);border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;gap:10px;align-items:center">'
+        + '<span style="font-size:1.2rem">' + icon + '</span>'
+        + '<div style="flex:1"><div style="font-size:.88rem;font-weight:600">' + esc(entry.accion) + '</div>'
+        + '<div style="font-size:.78rem;color:var(--gray)">' + esc(entry.detalle) + '</div></div>'
+        + '<div style="font-size:.72rem;color:var(--gray);white-space:nowrap">' + esc(entry.fecha) + '</div>'
+        + '</div>';
+    });
+    el.innerHTML = html;
+  }).catch(function(){ el.innerHTML='<div class="empty-txt">No se pudo cargar el registro.</div>'; });
 }
 
 function limpiarLog(){
-  if(!confirm('¿Limpiar todo el registro de actividad?')) return;
-  _activityLog = [];
-  try{ localStorage.removeItem('maxup_admin_log'); }catch(e){}
   cargarLog();
-  showToast('🗑️ Log limpiado');
 }
 </script>
 </body>

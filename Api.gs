@@ -18,7 +18,8 @@ function _getConfig() {
       TELEGRAM_TOKEN:   props.getProperty('TELEGRAM_TOKEN')   || '',
       TELEGRAM_CHAT_ID: props.getProperty('TELEGRAM_CHAT_ID') || '',
       ADMIN_CLAVE:      props.getProperty('ADMIN_CLAVE')      || '',
-      API_URL_SELF:     props.getProperty('API_URL_SELF')      || ''
+      API_URL_SELF:     props.getProperty('API_URL_SELF')      || '',
+      LINK_SECRET:      props.getProperty('LINK_SECRET')       || ''
     };
   } catch(e) {
     _CONFIG = {
@@ -26,21 +27,21 @@ function _getConfig() {
       TELEGRAM_TOKEN:   '',
       TELEGRAM_CHAT_ID: '',
       ADMIN_CLAVE:      '',
-      API_URL_SELF:     ''
+      API_URL_SELF:     '',
+      LINK_SECRET:      ''
     };
   }
   return _CONFIG;
 }
 
-function configurarCredenciales() {
-  PropertiesService.getScriptProperties().setProperties({
-    'SS_ID':            '17rFBpuvjam54M3NGE8Pmtc9YwBBRhVYI8bgGpckiAXo',
-    'TELEGRAM_TOKEN':   '8994380053:AAEVOeWGL6CkFWJxoOVGc876yntzCzdNf_4',
-    'TELEGRAM_CHAT_ID': '6865398054',
-    'ADMIN_CLAVE':      'darioruben',
-    'API_URL_SELF':     'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec'
-  });
-  Logger.log('✅ Credenciales guardadas en Script Properties. Ahora borrá los valores por defecto de _getConfig().');
+function configurarBaseSegura() {
+  var props = PropertiesService.getScriptProperties();
+  if (!props.getProperty('SS_ID')) props.setProperty('SS_ID', '17rFBpuvjam54M3NGE8Pmtc9YwBBRhVYI8bgGpckiAXo');
+  if (!props.getProperty('API_URL_SELF')) props.setProperty('API_URL_SELF', 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec');
+  if (!props.getProperty('LINK_SECRET')) {
+    props.setProperty('LINK_SECRET', Utilities.getUuid() + Utilities.getUuid());
+  }
+  Logger.log('Configuración base segura verificada. Las credenciales sensibles permanecen únicamente en Script Properties.');
 }
 
 // ── CACHE DE SPREADSHEET ────────────────────────────────────
@@ -59,13 +60,75 @@ var HOJA_MAYORISTAS     = 'MAYORISTAS';
 var HOJA_PEDIDOS_MAYO   = 'PEDIDOS_MAYORISTA';
 var COL_DESC_MAYORISTA  = 11;
 
+var ADMIN_SESSION_TTL = 21600; // 6 horas, máximo permitido por CacheService
+var ADMIN_MAX_INTENTOS = 6;
+
+function _jsonOut(data) {
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function _hashSeguro(value) {
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(value || ''), Utilities.Charset.UTF_8);
+  return digest.map(function(b) {
+    var n = b < 0 ? b + 256 : b;
+    return ('0' + n.toString(16)).slice(-2);
+  }).join('');
+}
+
+function _registrarAuditoria(accion, detalle, usuario) {
+  try {
+    var ss = _getSS();
+    var hoja = ss.getSheetByName('AUDITORIA');
+    if (!hoja) {
+      hoja = ss.insertSheet('AUDITORIA');
+      hoja.appendRow(['Fecha', 'Acción', 'Detalle', 'Usuario']);
+      hoja.getRange(1, 1, 1, 4).setFontWeight('bold').setBackground('#111827').setFontColor('#ffffff');
+      hoja.setFrozenRows(1);
+    }
+    hoja.appendRow([new Date(), String(accion || ''), String(detalle || ''), String(usuario || 'sistema')]);
+  } catch(e) {
+    Logger.log('Error auditoría: ' + e.message);
+  }
+}
+
+function adminLogin(clave) {
+  var cache = CacheService.getScriptCache();
+  var intentos = Number(cache.get('ADMIN_LOGIN_FALLOS') || 0);
+  if (intentos >= ADMIN_MAX_INTENTOS) {
+    _registrarAuditoria('LOGIN BLOQUEADO', 'Demasiados intentos fallidos', 'administración');
+    return { ok: false, error: 'Demasiados intentos. Esperá 10 minutos.' };
+  }
+  if (!clave || clave !== _getConfig().ADMIN_CLAVE) {
+    cache.put('ADMIN_LOGIN_FALLOS', String(intentos + 1), 600);
+    _registrarAuditoria('LOGIN FALLIDO', 'Clave incorrecta', 'administración');
+    return { ok: false, error: 'Clave incorrecta' };
+  }
+  cache.remove('ADMIN_LOGIN_FALLOS');
+  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  cache.put('ADMIN_SESSION_' + _hashSeguro(token), '1', ADMIN_SESSION_TTL);
+  _registrarAuditoria('LOGIN EXITOSO', 'Sesión administrativa iniciada', 'administración');
+  return { ok: true, sesion: token, expiraEn: ADMIN_SESSION_TTL };
+}
+
+function adminLogout(sesion) {
+  if (sesion) CacheService.getScriptCache().remove('ADMIN_SESSION_' + _hashSeguro(sesion));
+  _registrarAuditoria('LOGOUT', 'Sesión administrativa cerrada', 'administración');
+  return { ok: true };
+}
+
+function _validarSesionAdmin(sesion) {
+  if (!sesion) throw new Error('Sesión requerida');
+  var key = 'ADMIN_SESSION_' + _hashSeguro(sesion);
+  var cache = CacheService.getScriptCache();
+  if (cache.get(key) !== '1') throw new Error('Sesión vencida o inválida');
+  cache.put(key, '1', ADMIN_SESSION_TTL);
+  return true;
+}
+
 // ── GET ─────────────────────────────────────────────────────
 function doGet(e) {
   var accion = (e && e.parameter && e.parameter.accion) ? e.parameter.accion : 'catalogo';
 
-  if (accion === 'login_mayorista')    return loginMayorista(e.parameter);
-  if (accion === 'catalogo_mayorista') return catalogoMayorista(e.parameter);
-  if (accion === 'admin_mayoristas')   return adminMayoristas(e.parameter);
   if (accion === 'aprobar_mayorista')  return aprobarMayorista(e.parameter);
   if (accion === 'rechazar_mayorista') return rechazarMayorista(e.parameter);
 
@@ -75,14 +138,6 @@ function doGet(e) {
       case 'catalogo':         resultado = getCatalogo();  break;
       case 'stats':            resultado = getStats();     break;
       case 'estado':           resultado = getEstadoPedido(e.parameter.pedido); break;
-      case 'admin_pedidos':    resultado = adminGetPedidos(e.parameter.clave); break;
-      case 'admin_resumen':    resultado = adminGetResumen(e.parameter.clave); break;
-      case 'admin_stock':      resultado = adminGetStockBajo(e.parameter.clave, e.parameter.limite); break;
-      case 'admin_descuentos': resultado = adminGetClientesDescuento(e.parameter.clave); break;
-      case 'admin_estado':     resultado = adminCambiarEstado(e.parameter.clave, e.parameter.pedido, e.parameter.estado); break;
-      case 'admin_vencer':     resultado = adminGetPorVencer(e.parameter.clave, e.parameter.dias); break;
-      case 'admin_dashboard':     resultado = adminGetDashboard(e.parameter.clave); break;
-      case 'admin_mantenimiento': resultado = adminMantenimiento(e.parameter.clave, e.parameter.activo, e.parameter.mensaje); break;
       case 'mantenimiento':    resultado = getMantenimiento(); break;
       case 'ofertas':          resultado = getOfertas(); break;
       case 'indumentaria':     resultado = getIndumentaria(); break;
@@ -106,7 +161,27 @@ function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
 
+    if ((data.type === 'payment' || String(data.action || '').indexOf('payment.') === 0) && data.data && data.data.id) {
+      return _jsonOut(procesarWebhookMercadoPago(data));
+    }
+
+    if (data.accion === 'admin_login')         return _jsonOut(adminLogin(data.clave));
+    if (data.accion === 'admin_logout')        return _jsonOut(adminLogout(data.sesion));
+    if (data.accion === 'admin_pedidos')       return _jsonOut(adminGetPedidos(data.sesion));
+    if (data.accion === 'admin_resumen')       return _jsonOut(adminGetResumen(data.sesion));
+    if (data.accion === 'admin_stock')         return _jsonOut(adminGetStockBajo(data.sesion, data.limite));
+    if (data.accion === 'admin_descuentos')    return _jsonOut(adminGetClientesDescuento(data.sesion));
+    if (data.accion === 'admin_estado')        return _jsonOut(adminCambiarEstado(data.sesion, data.pedido, data.estado));
+    if (data.accion === 'admin_vencer')        return _jsonOut(adminGetPorVencer(data.sesion, data.dias));
+    if (data.accion === 'admin_dashboard')     return _jsonOut(adminGetDashboard(data.sesion));
+    if (data.accion === 'admin_mantenimiento') return _jsonOut(adminMantenimiento(data.sesion, data.activo, data.mensaje));
+    if (data.accion === 'admin_mayoristas')    return adminMayoristas({ sesion: data.sesion });
+    if (data.accion === 'admin_auditoria')     return _jsonOut(adminGetAuditoria(data.sesion, data.limite));
+    if (data.accion === 'admin_configuracion') return _jsonOut(adminConfiguracion(data.sesion, data.valores));
+
     if (data.accion === 'registro_mayorista') return registroMayorista(data);
+    if (data.accion === 'login_mayorista')    return loginMayorista(data);
+    if (data.accion === 'catalogo_mayorista') return catalogoMayorista(data);
     if (data.accion === 'pedido_mayorista')   return pedidoMayorista(data);
     if (data.accion === 'nueva_resena')       return ContentService.createTextOutput(JSON.stringify(guardarResena(data))).setMimeType(ContentService.MimeType.JSON);
 
@@ -226,8 +301,9 @@ function registrarPedidoWeb(data) {
       esNuevo = true;
     }
   }
-  var descBienvenida = esNuevo ? 0.02 : 0;
-  var factor   = tieneDesc ? (1 - PROMO_DESCUENTO_API) : (1 - descBienvenida);
+  var descuentoFidelidad = _configNumeroMaxup('PROMO_DESCUENTO', PROMO_DESCUENTO_API);
+  var descBienvenida = esNuevo ? _configNumeroMaxup('DESCUENTO_BIENVENIDA', 0.02) : 0;
+  var factor   = tieneDesc ? (1 - descuentoFidelidad) : (1 - descBienvenida);
   var tipoDesc = tieneDesc ? '10% fidelidad' : (esNuevo ? '2% bienvenida' : '');
 
   // ── Calcular totales (la VENTA se anota recién al ENTREGAR) ──
@@ -239,6 +315,7 @@ function registrarPedidoWeb(data) {
   var totalReal = 0;
 
   if (items.length > 0) {
+    items = _validarItemsPedidoWeb(items);
     // La web manda "total" con TODOS sus descuentos aplicados (combo/5% por
     // cantidad, descuento por monto, cupón, bienvenida). Antes se ignoraba y
     // los items se anotaban a precio de lista (y el link de Mercado Pago se
@@ -248,10 +325,10 @@ function registrarPedidoWeb(data) {
     for (var s = 0; s < items.length; s++) {
       sumItems += (Number(items[s].precio || 0)) * (Number(items[s].cantidad || 1));
     }
-    var totalFront = Number(total) || 0;
+    var totalFront = _calcularTotalPedidoSeguro(items, data.cupon, esNuevo, tieneDesc);
     var usarTotalWeb = (totalFront > 0 && sumItems > 0 && totalFront <= sumItems);
-    // La fidelidad 10% es un beneficio que la web no conoce: se aplica aparte.
-    var factorServer = usarTotalWeb ? (tieneDesc ? (1 - PROMO_DESCUENTO_API) : 1) : factor;
+    // Todos los descuentos se validaron del lado del servidor.
+    var factorServer = usarTotalWeb ? 1 : factor;
     var ratio = usarTotalWeb ? (totalFront / sumItems) : 1;
 
     for (var idx = 0; idx < items.length; idx++) {
@@ -385,6 +462,8 @@ function crearPreferenciaMP(data) {
     var pref = {
       items: [{ title: titulo.slice(0, 250), quantity: 1, unit_price: total, currency_id: 'ARS' }],
       external_reference: String(data.codigo || ''),
+      metadata: { pedido: String(data.codigo || '') },
+      notification_url: _getConfig().API_URL_SELF,
       back_urls: { success: urlEstado, pending: urlEstado, failure: base },
       auto_return: 'approved',
       statement_descriptor: 'MAXUP'
@@ -420,15 +499,17 @@ function _tieneDescuentoApi(codigo, rowsCli, headersCli) {
   var ahora  = new Date();
   var streak = 0;
 
-  for (var m = 0; m < PROMO_MESES_API; m++) {
+  var promoMeses = _configNumeroMaxup('PROMO_MESES', PROMO_MESES_API);
+  var promoMinimo = _configNumeroMaxup('PROMO_MINIMO', PROMO_MINIMO_API);
+  for (var m = 0; m < promoMeses; m++) {
     var fecha  = new Date(ahora.getFullYear(), ahora.getMonth() - m, 1);
     var colIdx = _buscarColumnaMes(headersCli, fecha);
     if (colIdx === -1) break;
     var monto = Number(clienteFila[colIdx]) || 0;
-    if (monto >= PROMO_MINIMO_API) { streak++; } else { break; }
+    if (monto >= promoMinimo) { streak++; } else { break; }
   }
 
-  return streak >= PROMO_MESES_API;
+  return streak >= promoMeses;
 }
 
 // Busca la columna del mes en CLIENTES, soportando ambos formatos:
@@ -665,10 +746,13 @@ function guardarResena(data) {
 function getCatalogo() {
   var ss   = _getSS();
   var hoja = ss.getSheetByName('CATALOGO');
-  if (hoja && hoja.getLastRow() > 1) return getCatalogoDesdeHojaCatalogo(hoja);
+  var resultado;
+  if (hoja && hoja.getLastRow() > 1) resultado = getCatalogoDesdeHojaCatalogo(hoja);
   hoja = ss.getSheetByName('SUPLEMENTOS');
-  if (hoja) return getCatalogoDesdeSuplemetos(hoja);
-  return { productos: [], total: 0, error: 'No se encontró hoja CATALOGO ni SUPLEMENTOS' };
+  if (!resultado && hoja) resultado = getCatalogoDesdeSuplemetos(hoja);
+  if (!resultado) resultado = { productos: [], total: 0, error: 'No se encontró hoja CATALOGO ni SUPLEMENTOS' };
+  resultado.configuracion = _configPublicaMaxup();
+  return resultado;
 }
 
 function getCatalogoDesdeHojaCatalogo(hoja) {
@@ -691,7 +775,7 @@ function getCatalogoDesdeHojaCatalogo(hoja) {
     var imagenRaw = String(p.imagen_url || '').trim();
     var imagenes = imagenRaw.split(/[\r\n;]+/).map(function(u){ return u.trim(); }).filter(Boolean);
     productos.push({
-      id: p.id || (i + 1), nombre: nombre, marca: String(p.marca || '').trim(),
+      id: p.sku || p.id || (i + 1), sku: String(p.sku || p.id || '').trim(), nombre: nombre, marca: String(p.marca || '').trim(),
       categoria: String(p.categoria || 'otros').trim(),
       precio_venta: precio, precio_lista: Number(p.precio_lista || precio),
       stock: Number(p.stock || 0), imagen_url: imagenes[0] || '', imagenes: imagenes,
@@ -715,7 +799,7 @@ function _columnasCatalogoSuplementos(datos) {
     var producto = headers.indexOf('producto');
     if (producto < 0) continue;
 
-    var contado = -1, lista = -1, stock = -1, imagen = -1, descripcion = -1;
+    var contado = -1, lista = -1, stock = -1, imagen = -1, descripcion = -1, sku = -1;
     for (var c = 0; c < headers.length; c++) {
       var h = headers[c];
       if (contado < 0 && (h === 'precio unitario' || h === 'precio contado' || h === 'precio efectivo')) contado = c;
@@ -723,6 +807,7 @@ function _columnasCatalogoSuplementos(datos) {
       if (stock < 0 && (h === 'cantidad en stock' || h === 'stock' || h === 'stock actual')) stock = c;
       if (imagen < 0 && (h === 'imagen url' || h === 'imagen_url' || h === 'imagen')) imagen = c;
       if (descripcion < 0 && h === 'descripcion') descripcion = c;
+      if (sku < 0 && (h === 'sku' || h === 'codigo sku' || h === 'codigo_sku')) sku = c;
     }
     return {
       filaHeader: f,
@@ -731,10 +816,11 @@ function _columnasCatalogoSuplementos(datos) {
       lista: lista >= 0 ? lista : 4,
       stock: stock >= 0 ? stock : 3,
       imagen: imagen >= 0 ? imagen : 8,
-      descripcion: descripcion >= 0 ? descripcion : 9
+      descripcion: descripcion >= 0 ? descripcion : 9,
+      sku: sku
     };
   }
-  return { filaHeader: 1, producto: 0, contado: 1, lista: 4, stock: 3, imagen: 8, descripcion: 9 };
+  return { filaHeader: 1, producto: 0, contado: 1, lista: 4, stock: 3, imagen: 8, descripcion: 9, sku: -1 };
 }
 
 function getCatalogoDesdeSuplemetos(hoja) {
@@ -765,7 +851,9 @@ function getCatalogoDesdeSuplemetos(hoja) {
     var _marcaUp = marcaActual.toUpperCase();
     var _cat = (_marcaUp === 'SHAKERS' || _marcaUp === 'LICUADORAS') ? 'shaker' : inferirCat(col0);
     productos.push({
-      id: id++, nombre: col0, marca: marcaActual, categoria: _cat,
+      id: (columnas.sku >= 0 && row[columnas.sku]) ? String(row[columnas.sku]) : _skuDeterministico(marcaActual, col0, 'SUP'),
+      sku: (columnas.sku >= 0 && row[columnas.sku]) ? String(row[columnas.sku]) : _skuDeterministico(marcaActual, col0, 'SUP'),
+      nombre: col0, marca: marcaActual, categoria: _cat,
       precio_venta: precio_unit, precio_lista: precio_lista || precio_unit,
       stock: stock, imagen_url: imagenes[0] || '', imagenes: imagenes,
       descripcion: descripcion,
@@ -890,7 +978,9 @@ function getEstadoPedido(codigo) {
         entrega:   rows[i][6],
         direccion: rows[i][7],
         pago:      rows[i][8],
-        estado:    rows[i][9]
+        estado:    rows[i][9],
+        estadoPago: String(rows[i][11] || ''),
+        idPago: String(rows[i][12] || '')
       };
     }
   }
@@ -901,8 +991,8 @@ function getEstadoPedido(codigo) {
 //  ENDPOINTS DE ADMINISTRACIÓN
 // ════════════════════════════════════════════════════════════
 
-function _validarClave(clave) {
-  if (clave !== _getConfig().ADMIN_CLAVE) throw new Error('Acceso no autorizado');
+function _validarClave(sesion) {
+  return _validarSesionAdmin(sesion);
 }
 
 function adminGetPedidos(clave) {
@@ -926,6 +1016,7 @@ function adminGetPedidos(clave) {
       entrega:   String(rows[i][6]),
       pago:      String(rows[i][8]),
       estado:    String(rows[i][9]),
+      estadoPago:String(rows[i][11] || ''),
       fila:      i + 1
     });
     if (pedidos.length >= 50) break;
@@ -950,12 +1041,13 @@ function adminCambiarEstado(clave, codigo, nuevoEstado) {
       // Descontar stock SOLO al marcar como Entregado o Retirado
       var estadosFinales = ['Entregado', 'Retirado'];
       if (estadosFinales.indexOf(nuevoEstado) >= 0 && estadosFinales.indexOf(estadoAnterior) < 0) {
-        try {
-          var itemsJSON = String(rows[i][10] || '[]');
-          var items = JSON.parse(itemsJSON);
-          _descontarStockPedido(items);
-        } catch(eStock) {
-          Logger.log('Error descontando stock para ' + codigo + ': ' + eStock.message);
+        var itemsJSON = String(rows[i][10] || '[]');
+        var items = JSON.parse(itemsJSON);
+        var resultadoStock = _descontarStockPedido(items, codigo);
+        if (!resultadoStock.ok) {
+          hoja.getRange(i + 1, 10).setValue(estadoAnterior);
+          _registrarAuditoria('STOCK BLOQUEADO', codigo + ': ' + (resultadoStock.errores || []).join('; '), 'administracion');
+          throw new Error('No se cambio el estado: ' + (resultadoStock.errores || ['error de stock']).join('; '));
         }
         // Recién acá la venta queda anotada en VentasDiarias (pedido concretado)
         _registrarVentaPedidoWeb(codigo);
@@ -974,15 +1066,15 @@ function adminCambiarEstado(clave, codigo, nuevoEstado) {
         _notificarTelegram(emoji + ' ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')'
           + (estadosFinales.indexOf(nuevoEstado) >= 0 ? '\n📦 Stock descontado automáticamente' : ''));
       } catch(e) {}
+      _registrarAuditoria('ESTADO PEDIDO', codigo + ': ' + estadoAnterior + ' -> ' + nuevoEstado, 'administracion');
       return { ok: true, mensaje: 'Estado actualizado a ' + nuevoEstado };
     }
   }
   throw new Error('Pedido no encontrado: ' + codigo);
 }
 
-// Busca la fila de un producto: primero por nombre EXACTO (normalizado),
-// y SOLO si no hay coincidencia exacta, por similitud (>=0.6) como respaldo.
-// Asi una venta de "Creatina X 300 - Doypack" no descuenta de otra variante.
+// Busca solamente una coincidencia exacta de marca + producto.
+// Nunca se descuenta stock por similitud: dos marcas pueden vender el mismo nombre.
 function _matchFilaProducto(data, colNombre, nombreItem, startRow, colMarca, marcaItem) {
   var exacto = _normNombreSD(nombreItem);
   var marcaExacta = _normNombreSD(marcaItem);
@@ -993,21 +1085,7 @@ function _matchFilaProducto(data, colNombre, nombreItem, startRow, colMarca, mar
       if (nf && _normNombreSD(nf) === exacto) return r;
     }
   }
-  // Respaldo: similitud por palabras (>=0.6) solo si no hubo match exacto
-  var nb = String(nombreItem || '').toLowerCase().trim();
-  var palabras = nb.split(/\s+/).filter(function(p){ return p.length > 2; });
-  if (!palabras.length) return -1;
-  var mejorFila = -1, mejorScore = 0;
-  for (var r2 = startRow; r2 < data.length; r2++) {
-    if (colMarca >= 0 && _normNombreSD(data[r2][colMarca]) !== marcaExacta) continue;
-    var nf2 = String(data[r2][colNombre] || '').toLowerCase().trim();
-    if (!nf2) continue;
-    var hits = 0;
-    palabras.forEach(function(p){ if (nf2.indexOf(p) >= 0) hits++; });
-    var pct = hits / palabras.length;
-    if (pct > mejorScore && pct >= 0.6) { mejorScore = pct; mejorFila = r2; }
-  }
-  return mejorFila;
+  return -1;
 }
 
 // SUPLEMENTOS organiza las marcas como encabezados en la columna A. Esta
@@ -1026,54 +1104,81 @@ function _buscarFilaSuplementoMarcaNombreApi(data, nombreItem, marcaItem, startR
 }
 
 // Descuenta stock cuando el pedido se marca como finalizado
-function _descontarStockPedido(items) {
-  if (!items || items.length === 0) return;
-  var ss = _getSS();
-
-  // ── Intentar descontar de CATALOGO (hoja principal si existe) ──
-  var hojaCat = ss.getSheetByName('CATALOGO');
-  if (hojaCat && hojaCat.getLastRow() > 1) {
-    var catData = hojaCat.getDataRange().getValues();
-    var headers = catData[0].map(function(h) {
-      return String(h).toLowerCase().trim()
-        .replace(/\s+/g,'_').replace(/[()%áéíóú]/g, function(c) {
-          return {á:'a',é:'e',í:'i',ó:'o',ú:'u'}[c] || c;
+function _descontarStockPedido(items, referencia) {
+  if (!items || items.length === 0) return { ok: true, movimientos: 0 };
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch(eLock) { return { ok: false, errores: ['Sistema ocupado; reintenta'] }; }
+  try {
+    var ss = _getSS();
+    var hojaCat = ss.getSheetByName('CATALOGO');
+    if (hojaCat && hojaCat.getLastRow() > 1) {
+      var catData = hojaCat.getDataRange().getValues();
+      var headers = catData[0].map(_normalizarHeaderV3);
+      var colNombre = headers.indexOf('nombre');
+      var colStock = headers.indexOf('stock');
+      var colMarca = headers.indexOf('marca');
+      var colSku = headers.indexOf('sku');
+      if (colNombre >= 0 && colStock >= 0 && colMarca >= 0) {
+        var cambiosCat = [], erroresCat = [];
+        items.forEach(function(item) {
+          var cantidad = Math.max(1, Number(item.cantidad) || 1);
+          var marca = String(item.marca || item.brand || '');
+          var fila = -1;
+          if (colSku >= 0 && item.sku) {
+            for (var r = 1; r < catData.length; r++) {
+              if (String(catData[r][colSku]).trim() === String(item.sku).trim()) { fila = r; break; }
+            }
+          }
+          if (fila < 0) fila = _matchFilaProducto(catData, colNombre, item.nombre, 1, colMarca, marca);
+          if (fila < 0) { erroresCat.push('No se encontro [' + marca + '] ' + item.nombre); return; }
+          var antes = Number(catData[fila][colStock]) || 0;
+          if (antes < cantidad) { erroresCat.push('Stock insuficiente [' + marca + '] ' + item.nombre + ' (' + antes + ')'); return; }
+          cambiosCat.push({ fila: fila, cantidad: cantidad, antes: antes, despues: antes - cantidad, marca: marca,
+            nombre: String(item.nombre || ''), sku: String(item.sku || (colSku >= 0 ? catData[fila][colSku] : '')) });
         });
-    });
-    var colNombre = headers.indexOf('nombre');
-    var colStock  = headers.indexOf('stock');
-    var colMarca  = headers.indexOf('marca');
-    if (colNombre >= 0 && colStock >= 0 && colMarca >= 0) {
-      items.forEach(function(item) {
-        var cantItem = Number(item.cantidad) || 1;
-        var marcaItem = String(item.marca || item.brand || '');
-        var mejorFila = _matchFilaProducto(catData, colNombre, item.nombre, 1, colMarca, marcaItem);
-        if (mejorFila >= 0) {
-          var stockActual = Number(catData[mejorFila][colStock]) || 0;
-          hojaCat.getRange(mejorFila + 1, colStock + 1).setValue(Math.max(0, stockActual - cantItem));
-          descontarStockDetallado(String(item.nombre || ''), cantItem, marcaItem);
-        }
-      });
-      try { actualizarHojaReposicion(); } catch(e) {}
-      return;
+        if (erroresCat.length) return { ok: false, errores: erroresCat };
+        cambiosCat.forEach(function(c) {
+          hojaCat.getRange(c.fila + 1, colStock + 1).setValue(c.despues);
+          descontarStockDetallado(c.nombre, c.cantidad, c.marca);
+          _registrarMovimientoStock('SALIDA', c.sku, c.marca, c.nombre, c.cantidad, c.antes, c.despues, referencia || '', 'pedido web');
+        });
+        try { actualizarHojaReposicion(); } catch(eRepo) {}
+        return { ok: true, movimientos: cambiosCat.length };
+      }
     }
-  }
 
-  // ── Fallback: descontar de SUPLEMENTOS ──
-  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
-  if (!hojaSup) return;
-  var supData = hojaSup.getDataRange().getValues();
-  items.forEach(function(item) {
-    var cantItem = Number(item.cantidad) || 1;
-    var marcaItem = String(item.marca || item.brand || '');
-    var mejorFila = _buscarFilaSuplementoMarcaNombreApi(supData, item.nombre, marcaItem, 0);
-    if (mejorFila >= 0) {
-      var stockActual = Number(supData[mejorFila][3]) || 0;
-      hojaSup.getRange(mejorFila + 1, 4).setValue(Math.max(0, stockActual - cantItem));
-      descontarStockDetallado(String(item.nombre || ''), cantItem, marcaItem);
-    }
-  });
-  try { actualizarHojaReposicion(); } catch(e) {}
+    var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+    if (!hojaSup) return { ok: false, errores: ['Falta hoja SUPLEMENTOS'] };
+    var supData = hojaSup.getDataRange().getValues();
+    var cols = _columnasCatalogoSuplementos(supData);
+    var cambios = [], errores = [];
+    items.forEach(function(item) {
+      var cantidad = Math.max(1, Number(item.cantidad) || 1);
+      var marca = String(item.marca || item.brand || '');
+      var fila = -1;
+      if (cols.sku >= 0 && item.sku) {
+        for (var r = cols.filaHeader + 1; r < supData.length; r++) {
+          if (String(supData[r][cols.sku]).trim() === String(item.sku).trim()) { fila = r; break; }
+        }
+      }
+      if (fila < 0) fila = _buscarFilaSuplementoMarcaNombreApi(supData, item.nombre, marca, 0);
+      if (fila < 0) { errores.push('No se encontro [' + marca + '] ' + item.nombre); return; }
+      var antes = Number(supData[fila][cols.stock]) || 0;
+      if (antes < cantidad) { errores.push('Stock insuficiente [' + marca + '] ' + item.nombre + ' (' + antes + ')'); return; }
+      cambios.push({ fila: fila, cantidad: cantidad, antes: antes, despues: antes - cantidad, marca: marca,
+        nombre: String(item.nombre || ''), sku: String(item.sku || (cols.sku >= 0 ? supData[fila][cols.sku] : '')) });
+    });
+    if (errores.length) return { ok: false, errores: errores };
+    cambios.forEach(function(c) {
+      hojaSup.getRange(c.fila + 1, cols.stock + 1).setValue(c.despues);
+      descontarStockDetallado(c.nombre, c.cantidad, c.marca);
+      _registrarMovimientoStock('SALIDA', c.sku, c.marca, c.nombre, c.cantidad, c.antes, c.despues, referencia || '', 'pedido web');
+    });
+    try { actualizarHojaReposicion(); } catch(eRepo2) {}
+    return { ok: true, movimientos: cambios.length };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ── REGISTRAR LA VENTA DE UN PEDIDO WEB AL ENTREGARLO ───────
@@ -1797,6 +1902,29 @@ function esClienteNuevo(telefono) {
 //  SISTEMA MAYORISTA
 // ════════════════════════════════════════════════════════════
 
+function _crearTokenAccion(tipo, email, horas) {
+  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  var payload = {
+    tipo: String(tipo || ''),
+    email: String(email || '').toLowerCase().trim(),
+    vence: Date.now() + (Number(horas || 48) * 3600000)
+  };
+  PropertiesService.getScriptProperties().setProperty('ACTION_' + _hashSeguro(token), JSON.stringify(payload));
+  return token;
+}
+
+function _consumirTokenAccion(token, tipoEsperado) {
+  if (!token) throw new Error('Enlace inválido o incompleto');
+  var props = PropertiesService.getScriptProperties();
+  var key = 'ACTION_' + _hashSeguro(token);
+  var raw = props.getProperty(key);
+  if (!raw) throw new Error('Este enlace ya fue usado o venció');
+  props.deleteProperty(key); // un solo uso, incluso si se vuelve a abrir
+  var data = JSON.parse(raw);
+  if (data.tipo !== tipoEsperado || Number(data.vence || 0) < Date.now()) throw new Error('Enlace inválido o vencido');
+  return data;
+}
+
 function registroMayorista(body) {
   try {
     var ss   = _getSS();
@@ -1819,6 +1947,8 @@ function registroMayorista(body) {
     ]);
 
     var cfg = _getConfig();
+    var tokenAprobar = _crearTokenAccion('aprobar_mayorista', body.email, 48);
+    var tokenRechazar = _crearTokenAccion('rechazar_mayorista', body.email, 48);
     var msg = '🏭 *NUEVA SOLICITUD MAYORISTA*\n\n'
       + '👤 Nombre: ' + body.nombre + '\n'
       + '🏪 Negocio: ' + body.negocio + '\n'
@@ -1827,9 +1957,9 @@ function registroMayorista(body) {
       + '📧 Email: ' + body.email + '\n'
       + '💼 Rubro: ' + (body.rubro || '-') + '\n\n'
       + 'Para aprobar:\n'
-      + cfg.API_URL_SELF + '?accion=aprobar_mayorista&email=' + encodeURIComponent(body.email) + '&clave=' + cfg.ADMIN_CLAVE + '\n\n'
+      + cfg.API_URL_SELF + '?accion=aprobar_mayorista&token=' + encodeURIComponent(tokenAprobar) + '\n\n'
       + 'Para rechazar:\n'
-      + cfg.API_URL_SELF + '?accion=rechazar_mayorista&email=' + encodeURIComponent(body.email) + '&clave=' + cfg.ADMIN_CLAVE;
+      + cfg.API_URL_SELF + '?accion=rechazar_mayorista&token=' + encodeURIComponent(tokenRechazar);
 
     _notificarTelegram(msg);
 
@@ -1879,9 +2009,11 @@ function loginMayorista(params) {
         if (estado === 'pendiente') return jsonResp({ ok: true, estado: 'pendiente' });
         if (estado === 'rechazado') return jsonResp({ ok: false, error: 'Tu solicitud fue rechazada. Contactanos por WhatsApp.' });
         if (estado === 'aprobado') {
+          var sesion = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+          CacheService.getScriptCache().put('MAYO_SESSION_' + _hashSeguro(sesion), email, ADMIN_SESSION_TTL);
           return jsonResp({
             ok: true, estado: 'aprobado',
-            usuario: { nombre: row[1], negocio: row[2], telefono: row[3], email: email },
+            usuario: { nombre: row[1], negocio: row[2], telefono: row[3], email: email, sesion: sesion },
             productos: obtenerCatalogoMayorista()
           });
         }
@@ -1895,7 +2027,10 @@ function loginMayorista(params) {
 
 function catalogoMayorista(params) {
   try {
-    var email = (params.email || '').toLowerCase();
+    var sesion = String(params.sesion || '');
+    var email = String(CacheService.getScriptCache().get('MAYO_SESSION_' + _hashSeguro(sesion)) || '').toLowerCase();
+    if (!email) return jsonResp({ ok: false, error: 'Sesion vencida.' });
+    CacheService.getScriptCache().put('MAYO_SESSION_' + _hashSeguro(sesion), email, ADMIN_SESSION_TTL);
     var hoja  = _getSS().getSheetByName(HOJA_MAYORISTAS);
     if (!hoja) return jsonResp({ ok: false });
 
@@ -1922,6 +2057,7 @@ function obtenerCatalogoMayorista() {
   var datos  = hoja.getDataRange().getValues();
   var prods  = [];
   var catAct = '';
+  var colsMayo = _columnasCatalogoSuplementos(datos);
 
   for (var i = 2; i < datos.length; i++) {
     var row = datos[i];
@@ -1939,13 +2075,15 @@ function obtenerCatalogoMayorista() {
     var stock      = parseFloat(row[3]) || 0;
     var img        = row[8] ? row[8].toString() : '';
     var desc       = row[9] ? row[9].toString() : '';
+    var skuMayo    = colsMayo.sku >= 0 ? String(row[colsMayo.sku] || '') : _skuDeterministico(catAct, nombre, 'SUP');
 
     prods.push({
-      id: nombre.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 30) + '_' + i,
+      id: skuMayo || (nombre.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 30) + '_' + i),
+      sku: skuMayo,
       name: nombre, brand: catAct,
       cat: categoriaNormalizada(catAct),
       precio: precio,
-      precio_lista: Math.round(precio * 1.06),
+      precio_lista: _calcularPrecioListaTresCuotas(precio),
       precio_mayorista: precioMayo,
       desc_mayorista: descMayo,
       stock: stock, img: img, desc: desc
@@ -1956,6 +2094,36 @@ function obtenerCatalogoMayorista() {
 
 function pedidoMayorista(body) {
   try {
+    var emailSesion = String(CacheService.getScriptCache().get('MAYO_SESSION_' + _hashSeguro(body.sesion || '')) || '').toLowerCase();
+    if (!emailSesion || !body.cliente || emailSesion !== String(body.cliente.email || '').toLowerCase()) {
+      return jsonResp({ ok: false, error: 'Sesion mayorista vencida o invalida.' });
+    }
+    if (body.items && body.items.length) {
+      var catalogoMayo = obtenerCatalogoMayorista();
+      var totalMayoSeguro = 0, totalListaSeguro = 0;
+      body.items = body.items.map(function(i) {
+        var prod = null;
+        for (var pm = 0; pm < catalogoMayo.length; pm++) {
+          if ((i.sku && String(catalogoMayo[pm].sku) === String(i.sku)) ||
+              (!i.sku && _claveProductoStock(catalogoMayo[pm].brand, catalogoMayo[pm].name) === _claveProductoStock(i.marca || i.brand, i.nombre))) {
+            prod = catalogoMayo[pm]; break;
+          }
+        }
+        if (!prod) throw new Error('Producto mayorista no encontrado: ' + i.nombre);
+        var qty = Math.max(1, Math.floor(Number(i.qty) || 1));
+        if (Number(prod.stock) < qty) throw new Error('Stock insuficiente: ' + prod.name);
+        totalMayoSeguro += Number(prod.precio_mayorista) * qty;
+        totalListaSeguro += Number(prod.precio) * qty;
+        return { id: prod.id, sku: prod.sku, nombre: prod.name, marca: prod.brand, qty: qty,
+          precio_mayo: Number(prod.precio_mayorista), precio_orig: Number(prod.precio) };
+      });
+      body.total_mayorista = totalMayoSeguro;
+      body.total_lista = totalListaSeguro;
+      body.ahorro = totalListaSeguro - totalMayoSeguro;
+      var itemsStock = body.items.map(function(i) { return { sku: i.sku || '', nombre: i.nombre, marca: i.marca || i.brand || '', cantidad: i.qty || 1 }; });
+      var stockRes = _descontarStockPedido(itemsStock, body.codigo);
+      if (!stockRes.ok) return jsonResp({ ok: false, error: (stockRes.errores || ['Error de stock']).join('; ') });
+    }
     var ss   = _getSS();
     var hoja = ss.getSheetByName(HOJA_PEDIDOS_MAYO);
     if (!hoja) hoja = ss.insertSheet(HOJA_PEDIDOS_MAYO);
@@ -1981,13 +2149,6 @@ function pedidoMayorista(body) {
       + '📦 Entrega: ' + body.direccion + '\n'
       + '💳 Pago: ' + body.pago;
     _notificarTelegram(msg);
-
-    if (body.items && body.items.length) {
-      descontarStockMayorista(body.items);
-      body.items.forEach(function(item) {
-        descontarStockDetallado(item.nombre, item.qty || 1, item.marca || item.brand || '');
-      });
-    }
 
     return jsonResp({ ok: true, codigo: body.codigo });
   } catch(e) {
@@ -2075,14 +2236,15 @@ function _normNombreSD(n) {
 // ════════════════════════════════════════════════════════════
 
 function aprobarMayorista(params) {
-  _validarClave(params.clave);
   try {
-    var email = decodeURIComponent(params.email || '');
+    var accion = _consumirTokenAccion(params.token, 'aprobar_mayorista');
+    var email = accion.email;
     var hoja  = _getSS().getSheetByName(HOJA_MAYORISTAS);
     var datos = hoja.getDataRange().getValues();
     for (var i = 1; i < datos.length; i++) {
       if (datos[i][0].toString().toLowerCase() === email.toLowerCase()) {
         hoja.getRange(i + 1, 8).setValue('aprobado');
+        _registrarAuditoria('MAYORISTA APROBADO', email, 'enlace seguro');
         _notificarTelegram('✅ Mayorista APROBADO: ' + datos[i][1] + ' (' + datos[i][2] + ')\n📱 ' + datos[i][3]);
         return ContentService.createTextOutput('✅ Mayorista ' + datos[i][1] + ' APROBADO. Ya puede ingresar.').setMimeType(ContentService.MimeType.TEXT);
       }
@@ -2094,14 +2256,15 @@ function aprobarMayorista(params) {
 }
 
 function rechazarMayorista(params) {
-  _validarClave(params.clave);
   try {
-    var email = decodeURIComponent(params.email || '');
+    var accion = _consumirTokenAccion(params.token, 'rechazar_mayorista');
+    var email = accion.email;
     var hoja  = _getSS().getSheetByName(HOJA_MAYORISTAS);
     var datos = hoja.getDataRange().getValues();
     for (var i = 1; i < datos.length; i++) {
       if (datos[i][0].toString().toLowerCase() === email.toLowerCase()) {
         hoja.getRange(i + 1, 8).setValue('rechazado');
+        _registrarAuditoria('MAYORISTA RECHAZADO', email, 'enlace seguro');
         return ContentService.createTextOutput('❌ Mayorista ' + datos[i][1] + ' RECHAZADO.').setMimeType(ContentService.MimeType.TEXT);
       }
     }
@@ -2112,7 +2275,7 @@ function rechazarMayorista(params) {
 }
 
 function adminMayoristas(params) {
-  _validarClave(params.clave);
+  _validarClave(params.sesion);
   try {
     var hoja = _getSS().getSheetByName(HOJA_MAYORISTAS);
     if (!hoja) return jsonResp({ ok: true, mayoristas: [] });
@@ -2923,6 +3086,7 @@ function onEdit(e) {
     var hoja = e.range.getSheet();
     if (hoja.getName() === 'SUPLEMENTOS') {
       _actualizarPrecioListaTresCuotasEdit(e);
+      _actualizarSkuEdit(e);
       return;
     }
     if (hoja.getName() === 'PEDIDOS') _colorearEstadoPedido(e);
@@ -2955,12 +3119,19 @@ function onEditPedidosAutorizado(e) {
       var itemsJSON = String(rowData[10] || '[]');
       try {
         var items = JSON.parse(itemsJSON);
-        _descontarStockPedido(items);
+        var resultadoStock = _descontarStockPedido(items, codigo);
+        if (!resultadoStock.ok) {
+          hoja.getRange(fila, 10).setValue(estadoAnterior || 'Recibido');
+          _registrarAuditoria('STOCK BLOQUEADO', codigo + ': ' + (resultadoStock.errores || []).join('; '), 'edicion Sheets');
+          _notificarTelegram('⚠️ ' + codigo + ': no se cambio el estado. ' + (resultadoStock.errores || []).join('; '));
+          return;
+        }
         _notificarTelegram('✅ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')' + String.fromCharCode(10) + '📦 Stock descontado y venta anotada');
       } catch(eJSON) {
         _notificarTelegram('⚠️ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')' + String.fromCharCode(10) + '❌ No se pudo descontar stock');
       }
       _registrarVentaPedidoWeb(codigo);
+      _registrarAuditoria('ESTADO PEDIDO', codigo + ': ' + estadoAnterior + ' -> ' + nuevoEstado, 'edicion Sheets');
     }
 
     if (nuevoEstado === 'Cancelado' && estadoAnterior !== 'Cancelado') {
@@ -3142,14 +3313,14 @@ function getMantenimiento() {
 }
 
 function adminMantenimiento(claveIn, activoIn, mensajeIn) {
-  var config = _getConfig();
-  if (claveIn !== config.ADMIN_CLAVE) return { ok: false, error: 'Clave incorrecta' };
+  _validarSesionAdmin(claveIn);
   var props = PropertiesService.getScriptProperties();
   if (typeof activoIn !== 'undefined' && activoIn !== null) {
     var activo = (activoIn === 'true' || activoIn === '1');
     props.setProperty('MANT_ACTIVO', activo ? 'true' : 'false');
     if (mensajeIn) props.setProperty('MANT_MENSAJE', mensajeIn);
     if (!activo) props.setProperty('MANT_MENSAJE', '');
+    _registrarAuditoria('MANTENIMIENTO', activo ? 'Activado' : 'Desactivado', 'administracion');
     return { ok: true, activo: activo, mensaje: activo ? (mensajeIn || props.getProperty('MANT_MENSAJE') || '') : '' };
   }
   // Solo consultar estado

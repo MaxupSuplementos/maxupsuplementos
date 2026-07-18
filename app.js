@@ -3458,7 +3458,7 @@ function buildCard(p, cardIndex){
       ${flavorOpts}
     </select>` : `<input type="hidden" class="flavor-select" data-pid="${p.id}" value="${firstFlavor.name}">`;
 
-  const precioLista = p.price_tarjeta || Math.ceil((p.price * 1.13) / 500) * 500;
+  const precioLista = p.price_tarjeta || _precioListaDesdeContado(p.price);
   const cuota3 = precioLista / 3;
   const addDisabled = initStock===0 ? 'disabled' : '';
   const addText = initStock===0 ? '❌ Agotado' : '🛒 Agregar';
@@ -3952,7 +3952,7 @@ function addToCartById(pid){
     existing.qty = Math.min(existing.qty+qty, flav.stock);
   } else {
     const imgList = p.imgs_gallery && p.imgs_gallery.length ? p.imgs_gallery : (p.imgs && Array.isArray(p.imgs) && p.imgs.length ? p.imgs : (p.img ? [p.img] : []));
-    cart.push({key, pid, name:p.name, brand:p.brand, flavor:flav.name, price:p.price, emoji:p.emoji, img:imgList[0]||'', maxStock:flav.stock, qty});
+    cart.push({key, pid, sku:flav.sku||p.sku||'', sheetName:flav.nombreOriginal||p.name, name:p.name, brand:p.brand, flavor:flav.name, price:p.price, emoji:p.emoji, img:imgList[0]||'', maxStock:flav.stock, qty});
   }
   saveCart(); renderCart(); updateBadge();
   const btn = document.getElementById(`addbtn-${pid}`);
@@ -3984,7 +3984,7 @@ function cartTotal(){
 function cartCount(){ return cart.reduce((s,i)=>s+i.qty,0); }
 
 // ── DESCUENTO POR MONTO ──────────────────────────────────────
-const DESCUENTOS_MONTO = [
+let DESCUENTOS_MONTO = [
   { minimo: 270000, pct: 0.15, label: '15% off por compra +$270.000' },
   { minimo: 220000, pct: 0.10, label: '10% off por compra +$220.000' },
   { minimo: 100000, pct: 0.05, label: '5% off por compra +$100.000'  },
@@ -4000,7 +4000,7 @@ function cartTotalConDescuento(){
 }
 
 // ── CUPÓN DE DESCUENTO ──────────────────────────────────────
-const CUPONES = {
+let CUPONES = {
   'MAXUP5':    { pct: 0.05, label: '5% off con cupón MAXUP5' },
   'MAXUP10':   { pct: 0.10, label: '10% off con cupón MAXUP10' },
   'PRIMERA15': { pct: 0.15, label: '15% off primera compra' },
@@ -4441,10 +4441,12 @@ function finalizarPedido(){
     descuento: _desc ? _desc.label : '',
     cupon: _cuponActivo ? _cuponActivo.code : '',
     items: cart.map(i=>({
-      nombre:   i.name,
+      sku:      i.sku || '',
+      nombre:   i.sheetName || i.name,
       marca:    i.brand||'',
       precio:   i.price,
-      cantidad: i.qty
+      cantidad: i.qty,
+      combo:    !!i.combo
     }))
   };
   // Registrar en Sheets — mostrar código cuando responde
@@ -4935,6 +4937,11 @@ function _optimizarImgUrl(u, w) {
 }
 
 var _catalogoSheetsCargado = false;
+var _RECARGO_LISTA = 0.13;
+var _REDONDEO_LISTA = 500;
+function _precioListaDesdeContado(precio) {
+  return Math.ceil((Number(precio || 0) * (1 + _RECARGO_LISTA)) / _REDONDEO_LISTA) * _REDONDEO_LISTA;
+}
 
 async function cargarDesdeSheets() {
   // Mostrar loading
@@ -4956,6 +4963,16 @@ async function cargarDesdeSheets() {
     if (intentoErr) throw intentoErr;
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    if (data.configuracion) {
+      var cfgWeb = data.configuracion;
+      _RECARGO_LISTA = Number(cfgWeb.recargoLista) || 0.13;
+      _REDONDEO_LISTA = Number(cfgWeb.redondeoLista) || 500;
+      DESCUENTO_BIENVENIDA = Number(cfgWeb.descuentoBienvenida);
+      if (!isFinite(DESCUENTO_BIENVENIDA)) DESCUENTO_BIENVENIDA = 0.02;
+      if (Array.isArray(cfgWeb.descuentosMonto) && cfgWeb.descuentosMonto.length) DESCUENTOS_MONTO = cfgWeb.descuentosMonto;
+      if (cfgWeb.cupones && typeof cfgWeb.cupones === 'object') CUPONES = cfgWeb.cupones;
+      if (isFinite(Number(cfgWeb.comboDescuento))) COMBO_DESCUENTO = Number(cfgWeb.comboDescuento);
+    }
     // Incluso una lista vacía es válida: nunca recuperar novedades viejas
     // guardadas en el navegador.
     _nuevosServer = Array.isArray(data.nuevos_ingresos) ? data.nuevos_ingresos : [];
@@ -4978,7 +4995,7 @@ async function cargarDesdeSheets() {
         // Precio unitario = contado. Precio De Lista puede estar en cualquier
         // columna: la API lo encuentra por el encabezado de la hoja.
         const precio_efectivo = Number(p.precio_venta || p['Precio unitario'] || 0);
-        const precio_tarjeta  = Number(p.precio_lista  || p['Precio De Lista'] || Math.ceil((precio_efectivo * 1.13) / 500) * 500 || 0);
+        const precio_tarjeta  = Number(p.precio_lista  || p['Precio De Lista'] || _precioListaDesdeContado(precio_efectivo) || 0);
         const stock    = Number(p.stock || p['Cantidad en stock'] || 0);
         // Inferir categoría con la función mejorada
         const cat = p.categoria || p.cat || _inferirCategoria(nombre);
@@ -4991,6 +5008,7 @@ async function cargarDesdeSheets() {
         const desc     = p.descripcion || p['descripcion'] || '';
         return {
           id: String(p.id || i+1),
+          sku: String(p.sku || p.id || ''),
           name: nombre,
           brand: marca,
           cat: _mapCategoria(cat),
@@ -5028,7 +5046,7 @@ async function cargarDesdeSheets() {
       }
       const saborNombre = sabor || 'Unidad';
       const stockVal = p.flavors[0].stock;
-      grouped[groupKey].flavors.push({ name: saborNombre, stock: stockVal });
+      grouped[groupKey].flavors.push({ name: saborNombre, stock: stockVal, sku: p.sku || '', nombreOriginal: p.name });
       // Guardar imagen específica de este sabor
       if (p.img) {
         grouped[groupKey].imgs[saborNombre] = p.img;
@@ -5288,7 +5306,7 @@ function openProdModal(pid) {
   document.getElementById('modalNombre').textContent = p.name || '';
   document.getElementById('modalDesc').textContent = p.desc || 'Suplemento de alta calidad para deportistas y personas activas.';
 
-  const tarjeta = p.price_tarjeta || Math.ceil((p.price * 1.13) / 500) * 500;
+  const tarjeta = p.price_tarjeta || _precioListaDesdeContado(p.price);
   document.getElementById('modalPrecioTarjeta').innerHTML =
     `<strong>3 CUOTAS FIJAS DE ${fmtCuota(tarjeta / 3)}</strong><span>Precio total financiado: ${fmt(tarjeta)}</span>`;
   document.getElementById('modalPrecioCash').textContent = `$${p.price.toLocaleString('es-AR')}`;
@@ -5646,7 +5664,7 @@ function actualizarComparador() {
 
   // Precio financiado en 3 cuotas
   rows += '<tr><td>3 cuotas / total</td>' + prods.map(function(p){
-    var lista = p.price_tarjeta || Math.ceil((p.price*1.13)/500)*500;
+    var lista = p.price_tarjeta || _precioListaDesdeContado(p.price);
     return '<td>3 de '+fmtCuota(lista/3)+'<br><small>Total '+fmt(lista)+'</small></td>';
   }).join('') + '</tr>';
 
@@ -7757,7 +7775,7 @@ function getAvgRating(pid){
 loadReviews();
 
 // ── COMBOS DINÁMICOS ──
-const COMBO_DESCUENTO = 5; // % de descuento en combos
+var COMBO_DESCUENTO = 5; // % de descuento en combos
 
 const COMBOS = [
   {
@@ -8030,7 +8048,7 @@ function agregarCombo(comboId){
       existing.combo = true;
     } else {
       var imgList = p.imgs && Object.values(p.imgs).length ? Object.values(p.imgs) : (p.img ? [p.img] : []);
-      cart.push({key:key, pid:p.id, name:p.name, brand:p.brand||'', flavor:flav.name, price:p.price||0, emoji:p.emoji||'📦', img:imgList[0]||'', maxStock:flav.stock, qty:1, combo:true});
+      cart.push({key:key, pid:p.id, sku:flav.sku||p.sku||'', sheetName:flav.nombreOriginal||p.name, name:p.name, brand:p.brand||'', flavor:flav.name, price:p.price||0, emoji:p.emoji||'📦', img:imgList[0]||'', maxStock:flav.stock, qty:1, combo:true});
     }
   });
   saveCart(); renderCart(); updateBadge();

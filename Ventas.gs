@@ -45,6 +45,10 @@ function onOpen() {
     .addItem('🔁 Reiniciar Nuevos Ingresos (carrusel)', 'reiniciarNuevosIngresos')
     .addItem('🔤 Ver nombres repetidos entre marcas (permitidos)', 'detectarNombresDuplicados')
     .addItem('💳 Actualizar precio de lista para 3 cuotas', 'actualizarPreciosListaTresCuotas')
+    .addSeparator()
+    .addItem('🛡️ Verificar y actualizar sistema', 'migrarSistemaMaxupV3')
+    .addItem('🧪 Probar salud del sistema', 'pruebaSaludSistema')
+    .addItem('💾 Crear backup ahora', 'backupDiarioMaxup')
     .addToUi();
 }
 
@@ -85,7 +89,9 @@ function _columnasPrecioSuplementos(hoja) {
 function _calcularPrecioListaTresCuotas(precioContado) {
   var precio = Number(precioContado) || 0;
   if (precio <= 0) return '';
-  return Math.ceil((precio * (1 + RECARGO_LISTA_3_CUOTAS)) / REDONDEO_PRECIO_LISTA) * REDONDEO_PRECIO_LISTA;
+  var recargo = (typeof _configNumeroMaxup === 'function') ? _configNumeroMaxup('RECARGO_LISTA_3_CUOTAS', RECARGO_LISTA_3_CUOTAS) : RECARGO_LISTA_3_CUOTAS;
+  var redondeo = (typeof _configNumeroMaxup === 'function') ? _configNumeroMaxup('REDONDEO_PRECIO_LISTA', REDONDEO_PRECIO_LISTA) : REDONDEO_PRECIO_LISTA;
+  return Math.ceil((precio * (1 + recargo)) / redondeo) * redondeo;
 }
 
 // Se llama desde onEdit (Api.gs). Cada vez que cambia el precio contado,

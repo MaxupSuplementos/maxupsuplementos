@@ -571,7 +571,7 @@ function loginMayorista() {
   btn.disabled = true;
   btn.textContent = 'Verificando...';
 
-  fetch(API_URL + '?accion=login_mayorista&email=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(pass))
+  fetch(API_URL, { method:'POST', body:JSON.stringify({ accion:'login_mayorista', email:email, password:pass }) })
   .then(function(r){ return r.json(); })
   .then(function(data) {
     btn.disabled = false;
@@ -829,15 +829,17 @@ function confirmarPedidoMayorista() {
     + 'Pago: ' + pago + '\n'
     + (notas ? 'Notas: ' + notas : '');
 
-  // Registrar en Sheets
+  // Registrar en Sheets y confirmar solo si el servidor valido stock y precios.
+  var waWindow = window.open('about:blank', '_blank');
   fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       accion: 'pedido_mayorista',
+      sesion: sesionActual.sesion,
       codigo: codigo,
       cliente: sesionActual,
-      items: carrito.map(function(i){ return { id:i.id, nombre:i.prod.name, marca:i.prod.brand, qty:i.qty, precio_mayo:i.precioMayo, precio_orig:i.precioOrig }; }),
+      items: carrito.map(function(i){ return { id:i.id, sku:i.prod.sku||'', nombre:i.prod.name, marca:i.prod.brand, qty:i.qty, precio_mayo:i.precioMayo, precio_orig:i.precioOrig }; }),
       total_mayorista: totalMayo,
       total_lista: totalLista,
       ahorro: ahorro,
@@ -845,18 +847,19 @@ function confirmarPedidoMayorista() {
       pago: pago,
       notas: notas
     })
-  }).catch(function(){});
-
-  // Abrir WhatsApp
-  window.open('https://wa.me/' + WA_NUM + '?text=' + encodeURIComponent(wa), '_blank');
-
-  // Mostrar éxito
-  document.getElementById('checkoutForm').style.display = 'none';
-  var sb = document.getElementById('successBox');
-  sb.style.display = 'block';
-  document.getElementById('successCodigo').textContent = codigo;
-  carrito = [];
-  actualizarCarrito();
+  }).then(function(r){ return r.json(); }).then(function(data){
+    if (!data.ok) throw new Error(data.error || 'No se pudo registrar el pedido');
+    if (waWindow) waWindow.location.href = 'https://wa.me/' + WA_NUM + '?text=' + encodeURIComponent(wa);
+    document.getElementById('checkoutForm').style.display = 'none';
+    var sb = document.getElementById('successBox');
+    sb.style.display = 'block';
+    document.getElementById('successCodigo').textContent = data.codigo || codigo;
+    carrito = [];
+    actualizarCarrito();
+  }).catch(function(err){
+    if (waWindow) waWindow.close();
+    mostrarMsg(msg, 'err', err.message || 'No se pudo registrar el pedido.');
+  });
 }
 
 // ══════════════════════════════════════
@@ -880,7 +883,7 @@ var productosayo = productosmayo;
     try {
       sesionActual = JSON.parse(saved);
       // Recargar productos frescos desde Sheets
-      fetch(API_URL + '?accion=catalogo_mayorista&email=' + encodeURIComponent(sesionActual.email))
+      fetch(API_URL, { method:'POST', body:JSON.stringify({ accion:'catalogo_mayorista', sesion:sesionActual.sesion }) })
       .then(function(r){ return r.json(); })
       .then(function(data) {
         if (data.ok && data.productos) {
