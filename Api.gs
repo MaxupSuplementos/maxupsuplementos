@@ -19,7 +19,11 @@ function _getConfig() {
       TELEGRAM_CHAT_ID: props.getProperty('TELEGRAM_CHAT_ID') || '',
       ADMIN_CLAVE:      props.getProperty('ADMIN_CLAVE')      || '',
       API_URL_SELF:     props.getProperty('API_URL_SELF')      || '',
-      LINK_SECRET:      props.getProperty('LINK_SECRET')       || ''
+      LINK_SECRET:      props.getProperty('LINK_SECRET')       || '',
+      WA_VERIFY_TOKEN:  props.getProperty('WA_VERIFY_TOKEN')   || '',
+      WA_ACCESS_TOKEN:  props.getProperty('WA_ACCESS_TOKEN')   || '',
+      WA_PHONE_ID:      props.getProperty('WA_PHONE_ID')       || '',
+      WA_GRAPH_VERSION: props.getProperty('WA_GRAPH_VERSION')  || 'v26.0'
     };
   } catch(e) {
     _CONFIG = {
@@ -28,7 +32,11 @@ function _getConfig() {
       TELEGRAM_CHAT_ID: '',
       ADMIN_CLAVE:      '',
       API_URL_SELF:     '',
-      LINK_SECRET:      ''
+      LINK_SECRET:      '',
+      WA_VERIFY_TOKEN:  '',
+      WA_ACCESS_TOKEN:  '',
+      WA_PHONE_ID:      '',
+      WA_GRAPH_VERSION: 'v26.0'
     };
   }
   return _CONFIG;
@@ -127,6 +135,9 @@ function _validarSesionAdmin(sesion) {
 
 // ── GET ─────────────────────────────────────────────────────
 function doGet(e) {
+  if (e && e.parameter && e.parameter['hub.mode']) {
+    return _verificarWebhookWhatsApp(e);
+  }
   var accion = (e && e.parameter && e.parameter.accion) ? e.parameter.accion : 'catalogo';
 
   if (accion === 'aprobar_mayorista')  return aprobarMayorista(e.parameter);
@@ -160,6 +171,10 @@ function doGet(e) {
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
+
+    if (data && data.object === 'whatsapp_business_account') {
+      return _jsonOut(_procesarWebhookWhatsApp(data));
+    }
 
     if ((data.type === 'payment' || String(data.action || '').indexOf('payment.') === 0) && data.data && data.data.id) {
       return _jsonOut(procesarWebhookMercadoPago(data));
@@ -3426,4 +3441,319 @@ function getPuntosCliente(telefono) {
   } catch(err) {
     return { ok: false, puntos: 0 };
   }
+}
+
+// ============================================================
+//  ASISTENTE DE WHATSAPP (PRUEBA GRATUITA POR REGLAS)
+// ============================================================
+// Usa el numero temporal de WhatsApp Cloud API de Meta. No consume
+// servicios de IA pagos y no modifica los pedidos ni el stock.
+var WA_TTL_ESTADO = 21600; // 6 horas, maximo de CacheService
+var WA_TELEFONO_HUMANO = '5491168461457';
+
+function _verificarWebhookWhatsApp(e) {
+  var p = (e && e.parameter) || {};
+  var tokenEsperado = String(_getConfig().WA_VERIFY_TOKEN || '');
+  var tokenRecibido = String(p['hub.verify_token'] || '');
+  var modo = String(p['hub.mode'] || '');
+  if (tokenEsperado && modo === 'subscribe' && tokenRecibido === tokenEsperado) {
+    return ContentService.createTextOutput(String(p['hub.challenge'] || ''));
+  }
+  return ContentService.createTextOutput('Verificacion rechazada');
+}
+
+function _procesarWebhookWhatsApp(payload) {
+  var cfg = _getConfig();
+  var cache = CacheService.getScriptCache();
+  var recibidos = 0;
+  var entry = (payload && payload.entry) || [];
+
+  for (var i = 0; i < entry.length; i++) {
+    var changes = entry[i].changes || [];
+    for (var j = 0; j < changes.length; j++) {
+      var value = changes[j].value || {};
+      var phoneId = String((value.metadata && value.metadata.phone_number_id) || '');
+      if (cfg.WA_PHONE_ID && phoneId && phoneId !== String(cfg.WA_PHONE_ID)) continue;
+
+      var messages = value.messages || [];
+      for (var m = 0; m < messages.length; m++) {
+        var mensaje = messages[m] || {};
+        var messageId = String(mensaje.id || '');
+        if (messageId && cache.get('WA_MSG_' + _hashSeguro(messageId))) continue;
+        if (messageId) cache.put('WA_MSG_' + _hashSeguro(messageId), '1', WA_TTL_ESTADO);
+
+        var telefono = String(mensaje.from || '').replace(/\D/g, '');
+        if (!telefono) continue;
+        recibidos++;
+
+        try {
+          if (!_waPermitirMensaje(telefono)) continue;
+          var texto = _waTextoEntrante(mensaje);
+          if (!texto) {
+            _enviarWhatsAppTexto(telefono, 'Por ahora puedo leer mensajes de texto. Escribi *menu* para ver las opciones.');
+            continue;
+          }
+          var respuesta = _resolverAsistenteWhatsApp(telefono, texto);
+          if (respuesta) _enviarWhatsAppTexto(telefono, respuesta);
+        } catch (errMensaje) {
+          Logger.log('WhatsApp: no se pudo procesar un mensaje (' + errMensaje.message + ')');
+        }
+      }
+    }
+  }
+  return { ok: true, recibidos: recibidos };
+}
+
+function _waTextoEntrante(mensaje) {
+  if (mensaje.type === 'text' && mensaje.text) return String(mensaje.text.body || '').trim();
+  if (mensaje.type === 'button' && mensaje.button) return String(mensaje.button.text || '').trim();
+  if (mensaje.type === 'interactive' && mensaje.interactive) {
+    var inter = mensaje.interactive;
+    if (inter.button_reply) return String(inter.button_reply.title || inter.button_reply.id || '').trim();
+    if (inter.list_reply) return String(inter.list_reply.title || inter.list_reply.id || '').trim();
+  }
+  return '';
+}
+
+function _waPermitirMensaje(telefono) {
+  var cache = CacheService.getScriptCache();
+  var key = 'WA_RATE_' + _hashSeguro(telefono);
+  var cantidad = Number(cache.get(key) || 0) + 1;
+  cache.put(key, String(cantidad), 600);
+  if (cantidad === 21) {
+    try { _enviarWhatsAppTexto(telefono, 'Recibi muchos mensajes seguidos. Espera unos minutos o pedi hablar con una persona.'); } catch (e) {}
+  }
+  return cantidad <= 20;
+}
+
+function _waNormalizar(texto) {
+  return String(texto || '').toLowerCase()
+    .replace(/[áàäâ]/g, 'a').replace(/[éèëê]/g, 'e')
+    .replace(/[íìïî]/g, 'i').replace(/[óòöô]/g, 'o')
+    .replace(/[úùüû]/g, 'u').replace(/ñ/g, 'n')
+    .replace(/[^a-z0-9\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function _waMenu() {
+  return 'Hola! Soy el *asistente automatico de MAXUP*.\n\n'
+    + 'Puedo ayudarte con:\n'
+    + '*1* - Buscar producto, stock y precio\n'
+    + '*2* - Consultar el estado de un pedido\n'
+    + '*3* - Medios de pago y 3 cuotas\n'
+    + '*4* - Envios y retiro\n'
+    + '*5* - Hablar con una persona\n\n'
+    + 'Responde con un numero. En cualquier momento escribi *menu*.';
+}
+
+function _waClaveEstado(telefono) {
+  return 'WA_STATE_' + _hashSeguro(telefono);
+}
+
+function _waLeerEstado(telefono) {
+  try {
+    var raw = CacheService.getScriptCache().get(_waClaveEstado(telefono));
+    return raw ? JSON.parse(raw) : { paso: 'MENU' };
+  } catch (e) {
+    return { paso: 'MENU' };
+  }
+}
+
+function _waGuardarEstado(telefono, paso) {
+  CacheService.getScriptCache().put(
+    _waClaveEstado(telefono),
+    JSON.stringify({ paso: paso, fecha: new Date().toISOString() }),
+    WA_TTL_ESTADO
+  );
+}
+
+function _waLimpiarEstado(telefono) {
+  CacheService.getScriptCache().remove(_waClaveEstado(telefono));
+}
+
+function _resolverAsistenteWhatsApp(telefono, texto) {
+  var normal = _waNormalizar(texto);
+  var estado = _waLeerEstado(telefono);
+
+  if (!normal) return _waMenu();
+  if (/^(menu|inicio|volver|atras|cancelar|hola|buenas|buen dia|buenas tardes|buenas noches)$/.test(normal)) {
+    _waLimpiarEstado(telefono);
+    return _waMenu();
+  }
+
+  var codigo = normal.toUpperCase().match(/MXP-?\d+/);
+  if (codigo) {
+    _waLimpiarEstado(telefono);
+    return _waRespuestaPedido(codigo[0].replace(/^MXP(?=\d)/, 'MXP-'));
+  }
+
+  if (_waEsConsultaSalud(normal)) {
+    return 'Para dosis, contraindicaciones o temas de salud no doy respuestas automaticas. '
+      + 'Te paso con una persona; si corresponde, consulta tambien a un profesional de salud.\n\n'
+      + _waDerivarHumano(telefono, 'consulta de salud o dosificacion');
+  }
+
+  if (estado.paso === 'HUMANO') return '';
+
+  if (estado.paso === 'PRODUCTO') {
+    _waGuardarEstado(telefono, 'PRODUCTO');
+    return _waBuscarProductos(texto);
+  }
+  if (estado.paso === 'PEDIDO') {
+    var codigoPedido = normal.toUpperCase().match(/(?:MXP-?)?\d{3,}/);
+    if (!codigoPedido) return 'No reconoci el codigo. Ejemplo: *MXP-8111*. Escribilo otra vez o envia *menu*.';
+    _waLimpiarEstado(telefono);
+    var limpio = codigoPedido[0].replace(/^MXP(?=\d)/, 'MXP-');
+    if (limpio.indexOf('MXP-') !== 0) limpio = 'MXP-' + limpio;
+    return _waRespuestaPedido(limpio);
+  }
+
+  if (normal === '1' || /buscar|producto|precio|stock|tenes|tienen/.test(normal)) {
+    _waGuardarEstado(telefono, 'PRODUCTO');
+    var consultaDirecta = normal.replace(/\b(buscar|busco|producto|precio|stock|tenes|tienen|hay|de|del|un|una|quiero|necesito)\b/g, ' ').replace(/\s+/g, ' ').trim();
+    if (normal === '1' || consultaDirecta.length < 2) {
+      return 'Que producto buscas? Podes escribir, por ejemplo: *creatina ENA* o *whey vainilla*.';
+    }
+    return _waBuscarProductos(consultaDirecta);
+  }
+  if (normal === '2' || /estado.*pedido|seguir.*pedido|donde.*pedido/.test(normal)) {
+    _waGuardarEstado(telefono, 'PEDIDO');
+    return 'Enviame el codigo de tu pedido. Ejemplo: *MXP-8111*.';
+  }
+  if (normal === '3' || /pago|cuota|tarjeta|transferencia|efectivo|debito|credito/.test(normal)) {
+    return _waRespuestaPagos();
+  }
+  if (normal === '4' || /envio|entrega|retir|direccion|ubicacion|correo/.test(normal)) {
+    return _waRespuestaEntregas();
+  }
+  if (normal === '5' || /persona|humano|asesor|vendedor|atencion/.test(normal)) {
+    return _waDerivarHumano(telefono, 'solicitud del cliente');
+  }
+
+  return 'No llegue a entender la consulta.\n\n' + _waMenu();
+}
+
+function _waEsConsultaSalud(normal) {
+  return /dosis|dosificacion|como tomar|cuanto tomar|embaraz|presion|diabetes|medicamento|contraindic|efecto secundario|enfermedad|lesion/.test(normal);
+}
+
+function _waBuscarProductos(consulta) {
+  var normal = _waNormalizar(consulta);
+  var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, precio:1, stock:1, quiero:1, busco:1, tenes:1 };
+  var tokens = normal.split(' ').filter(function(t) { return t.length > 1 && !stop[t]; });
+  if (!tokens.length) return 'Escribi el nombre o la marca del producto que buscas.';
+
+  var catalogo = getCatalogo();
+  var productos = catalogo.productos || [];
+  var coincidencias = [];
+  productos.forEach(function(p) {
+    var hay = Number(p.stock || 0);
+    if (hay <= 0) return;
+    var base = _waNormalizar(String(p.marca || '') + ' ' + String(p.nombre || ''));
+    var puntaje = 0;
+    tokens.forEach(function(t) {
+      if (base.indexOf(t) >= 0) puntaje += (base === t ? 4 : 1);
+    });
+    if (base.indexOf(normal) >= 0) puntaje += 3;
+    if (puntaje > 0) coincidencias.push({ p: p, puntaje: puntaje });
+  });
+
+  coincidencias.sort(function(a, b) {
+    if (b.puntaje !== a.puntaje) return b.puntaje - a.puntaje;
+    return Number(b.p.stock || 0) - Number(a.p.stock || 0);
+  });
+  coincidencias = coincidencias.slice(0, 5);
+
+  if (!coincidencias.length) {
+    return 'No encontre stock para *' + String(consulta).slice(0, 80) + '*. Proba con otra marca o escribi *5* para consultar a una persona.';
+  }
+
+  var salida = ['Encontre estas opciones con stock:'];
+  coincidencias.forEach(function(item, i) {
+    var p = item.p;
+    var contado = Number(p.precio_venta || 0);
+    var lista = Number(p.precio_lista || contado);
+    var linea = '\n*' + (i + 1) + '. ' + String(p.marca || '') + ' - ' + String(p.nombre || '') + '*'
+      + '\nContado/transferencia/debito: ' + _waMoneda(contado)
+      + '\nCredito 1 a 3 cuotas: ' + _waMoneda(lista);
+    if (lista > 0) linea += ' (3 x ' + _waMoneda(Math.ceil(lista / 3)) + ')';
+    linea += '\nStock: ' + Number(p.stock || 0);
+    salida.push(linea);
+  });
+  salida.push('\nPodes escribir otro producto o enviar *menu*. El stock se confirma al tomar el pedido.');
+  return salida.join('\n');
+}
+
+function _waMoneda(valor) {
+  var n = Math.round(Number(valor) || 0);
+  return '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function _waRespuestaPedido(codigo) {
+  var pedido = getEstadoPedido(codigo);
+  if (!pedido.ok) return 'No encontre *' + codigo + '*. Revisa el codigo o escribi *5* para hablar con una persona.';
+  var texto = '*Pedido ' + pedido.codigo + '*\n'
+    + 'Estado: ' + String(pedido.estado || 'Sin estado') + '\n'
+    + 'Pago: ' + String(pedido.estadoPago || pedido.pago || 'A confirmar') + '\n'
+    + 'Entrega: ' + String(pedido.entrega || 'A coordinar') + '\n'
+    + 'Total: ' + _waMoneda(pedido.total);
+  if (pedido.productos) texto += '\nProductos: ' + String(pedido.productos).slice(0, 400);
+  return texto + '\n\nEscribi *menu* para volver.';
+}
+
+function _waRespuestaPagos() {
+  return '*Medios de pago*\n\n'
+    + '- Efectivo, transferencia y debito: precio contado.\n'
+    + '- Tarjeta de credito de 1 a 3 cuotas: precio de lista.\n'
+    + '- En cada producto te muestro ambos valores y el estimado de 3 cuotas.\n\n'
+    + 'El pago y la disponibilidad se confirman al cerrar el pedido. Escribi *1* para consultar un producto.';
+}
+
+function _waRespuestaEntregas() {
+  return '*Entregas MAXUP*\n\n'
+    + '- Retiro: Calixto Gauna 1045, General Guemes, Salta.\n'
+    + '- Envios a todo el pais por Correo Argentino, Andreani, OCA o Via Cargo.\n'
+    + '- El costo exacto se confirma segun peso, localidad y modalidad.\n\n'
+    + 'Escribi *5* si queres coordinar una entrega con una persona.';
+}
+
+function _waDerivarHumano(telefono, motivo) {
+  _waGuardarEstado(telefono, 'HUMANO');
+  try {
+    _notificarTelegram('🙋 WhatsApp solicita atencion humana\nTelefono: +' + telefono + '\nMotivo: ' + String(motivo || 'consulta'));
+  } catch (e) {}
+  return 'Listo, deje avisado al equipo de MAXUP. Una persona va a continuar por este mismo chat. '
+    + 'Si es urgente, tambien podes escribir al +' + WA_TELEFONO_HUMANO + '.';
+}
+
+function _enviarWhatsAppTexto(telefono, texto) {
+  var cfg = _getConfig();
+  if (!cfg.WA_ACCESS_TOKEN || !cfg.WA_PHONE_ID) throw new Error('WhatsApp aun no esta configurado');
+  var version = String(cfg.WA_GRAPH_VERSION || 'v26.0').replace(/[^v0-9.]/g, '');
+  var url = 'https://graph.facebook.com/' + version + '/' + cfg.WA_PHONE_ID + '/messages';
+  var response = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + cfg.WA_ACCESS_TOKEN },
+    payload: JSON.stringify({
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: String(telefono).replace(/\D/g, ''),
+      type: 'text',
+      text: { preview_url: false, body: String(texto || '').slice(0, 3900) }
+    }),
+    muteHttpExceptions: true
+  });
+  var status = response.getResponseCode();
+  if (status < 200 || status >= 300) throw new Error('Meta respondio con estado ' + status);
+  return true;
+}
+
+// Prueba desde el editor sin enviar mensajes ni consumir la API de Meta.
+function pruebaAsistenteWhatsApp(texto) {
+  var telefonoPrueba = '5490000000000';
+  _waLimpiarEstado(telefonoPrueba);
+  return {
+    entrada: texto || 'menu',
+    respuesta: _resolverAsistenteWhatsApp(telefonoPrueba, texto || 'menu')
+  };
 }

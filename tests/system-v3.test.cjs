@@ -1,6 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
@@ -39,5 +40,21 @@ assert(app.includes('let CUPONES = {};'), 'La tienda no debe conservar cupones l
 assert(admin.includes('GOOGLE_REVIEW_URL'), 'El aviso de entrega debe incluir la ficha de Google para pedir resenas');
 assert(admin.includes('Visitas web'), 'El panel debe ofrecer acceso directo a Google Analytics');
 assert(app.includes("gtag('event', 'purchase'"), 'Los pedidos web deben medirse como compras en Google Analytics');
+assert(api.includes("data.object === 'whatsapp_business_account'"), 'WhatsApp debe tener un webhook separado de los pedidos web');
+assert(api.includes('_verificarWebhookWhatsApp'), 'Meta debe poder verificar el webhook de WhatsApp');
+assert(api.includes('_procesarWebhookWhatsApp'), 'Los mensajes entrantes de WhatsApp deben procesarse');
+assert(api.includes('_waDerivarHumano'), 'El asistente debe ofrecer derivacion a una persona');
+assert(api.includes('WA_RATE_'), 'El asistente debe limitar mensajes excesivos');
+assert(api.includes('WA_MSG_'), 'El webhook debe ignorar mensajes repetidos');
+assert(!/EA[A-Za-z0-9_-]{80,}/.test(api), 'No debe haber tokens de acceso de Meta en el codigo');
+
+const waSandbox = {};
+vm.runInNewContext(api, waSandbox);
+assert(waSandbox._waMenu().includes('asistente automatico de MAXUP'), 'El asistente debe identificarse claramente');
+assert.strictEqual(waSandbox._waNormalizar('¿Tenés CREATÍNA?'), 'tenes creatina', 'La busqueda debe tolerar tildes y signos');
+assert(waSandbox._waRespuestaPagos().includes('1 a 3 cuotas'), 'La respuesta debe explicar las cuotas');
+assert(waSandbox._waRespuestaEntregas().includes('Calixto Gauna 1045'), 'La respuesta debe informar el retiro');
+assert(waSandbox._waEsConsultaSalud('como tomar si tengo diabetes'), 'Las consultas de salud deben derivarse');
+assert.strictEqual(waSandbox._waMoneda(123456), '$123.456', 'Los precios deben tener formato argentino');
 
 console.log('OK - contratos principales del sistema v3 verificados');
