@@ -339,6 +339,16 @@ function pruebaSaludSistema() {
   return { ok: ok, errores: errores, avisos: avisos, fecha: new Date() };
 }
 
+function pruebaTelegramSistema() {
+  var mensaje = 'PRUEBA SISTEMA MAXUP\n' +
+    'Pedido MXP-8111 registrado y cancelado correctamente.\n' +
+    'Integracion Telegram verificada.';
+  var ok = _notificarTelegram(mensaje);
+  _registrarAuditoria('PRUEBA TELEGRAM', ok ? 'OK' : 'ERROR', 'sistema');
+  if (!ok) throw new Error('Telegram no respondio correctamente');
+  return { ok: true, fecha: new Date() };
+}
+
 function instalarAutomatizacionesSistema() {
   var ss = _getSS();
   var handlers = ['onEditPedidosAutorizado','backupDiarioMaxup','pruebaSaludSistema'];
