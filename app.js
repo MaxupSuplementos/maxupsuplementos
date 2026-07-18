@@ -4464,6 +4464,25 @@ function finalizarPedido(){
     }
     // ── Mostrar confirmación al cliente ──
     var codigo = (data && data.codigo) ? data.codigo : '';
+    // Medir pedidos web reales en Google Analytics. El código de pedido evita
+    // duplicados y el evento estándar "purchase" habilita los informes de ventas.
+    if (data && data.ok && codigo && typeof gtag === 'function') {
+      gtag('event', 'purchase', {
+        transaction_id: codigo,
+        value: _totalFinal,
+        currency: 'ARS',
+        items: payload.items.map(function(i, idx){
+          return {
+            item_id: i.sku || (i.marca + '-' + i.nombre),
+            item_name: i.nombre,
+            item_brand: i.marca,
+            index: idx,
+            price: i.precio,
+            quantity: i.cantidad
+          };
+        })
+      });
+    }
     var ct = document.getElementById('codigoPedidoTexto');
     if (ct && codigo) ct.textContent = codigo;
     var le = document.getElementById('linkEstadoPedido');

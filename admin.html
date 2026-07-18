@@ -200,7 +200,8 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <span class="header-badge">ADMIN</span>
     <button class="header-refresh" onclick="recargarTab()">⟳ Actualizar</button>
     <span id="autoRefreshStatus" style="font-size:.7rem;color:var(--green);letter-spacing:.04em" title="Se actualiza cada 30s">● LIVE</span>
-    <a href="index.html" style="margin-left:auto;color:var(--cyan);font-size:.8rem;text-decoration:none;padding:4px 12px;border:1px solid rgba(0,200,255,.3);border-radius:6px;font-weight:600;transition:all .2s" onmouseover="this.style.background='rgba(0,200,255,.1)'" onmouseout="this.style.background='none'">🏪 Ir a la tienda</a>
+    <a href="https://analytics.google.com/analytics/web/" target="_blank" rel="noopener" style="margin-left:auto;color:var(--green);font-size:.8rem;text-decoration:none;padding:4px 12px;border:1px solid rgba(0,230,118,.3);border-radius:6px;font-weight:600;transition:all .2s" onmouseover="this.style.background='rgba(0,230,118,.1)'" onmouseout="this.style.background='none'">📈 Visitas web</a>
+    <a href="index.html" style="color:var(--cyan);font-size:.8rem;text-decoration:none;padding:4px 12px;border:1px solid rgba(0,200,255,.3);border-radius:6px;font-weight:600;transition:all .2s" onmouseover="this.style.background='rgba(0,200,255,.1)'" onmouseout="this.style.background='none'">🏪 Ir a la tienda</a>
     <button class="header-logout" onclick="logout()">Salir</button>
   </header>
 
@@ -239,6 +240,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
+const GOOGLE_REVIEW_URL = 'https://maps.app.goo.gl/m1TBkzUwucFAFLYY7';
 let clave = '';
 let tabActual = 'resumen';
 let filtroEstado = 'todos';
@@ -583,8 +585,8 @@ function cambiarEstado(codigo, nuevoEstado) {
             'Preparando': '📦 Tu pedido *'+codigo+'* se está preparando. ¡Ya falta poco!',
             'Enviado': '🚚 ¡Tu pedido *'+codigo+'* fue enviado! Te mandamos el seguimiento a la brevedad.',
             'Listo para retirar': '🏪 Tu pedido *'+codigo+'* está listo para retirar en Calixto Gauna 1045, Gral. Güemes, Salta.',
-            'Entregado': '🎉 ¡Pedido *'+codigo+'* entregado! Gracias por elegir MAXUP. ⭐ Si te gustó, contanos tu experiencia.',
-            'Retirado': '🎉 ¡Pedido *'+codigo+'* retirado! Gracias por elegir MAXUP. ⭐ Si te gustó, contanos tu experiencia.',
+            'Entregado': '🎉 ¡Pedido *'+codigo+'* entregado! Gracias por elegir MAXUP.\n\n⭐ Si te gustó la atención, ¿nos ayudás dejando una reseña en Google? Abrí este enlace y tocá *Escribir una opinión*:\n' + GOOGLE_REVIEW_URL,
+            'Retirado': '🎉 ¡Pedido *'+codigo+'* retirado! Gracias por elegir MAXUP.\n\n⭐ Si te gustó la atención, ¿nos ayudás dejando una reseña en Google? Abrí este enlace y tocá *Escribir una opinión*:\n' + GOOGLE_REVIEW_URL,
             'Cancelado': '❌ Tu pedido *'+codigo+'* fue cancelado. Si tenés dudas, escribinos.'
           };
           var waMsg = mensajesEstado[nuevoEstado];

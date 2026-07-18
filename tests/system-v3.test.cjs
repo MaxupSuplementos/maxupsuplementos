@@ -13,6 +13,7 @@ const app = read('app.js');
 for (const file of ['Api.gs', 'SystemV3.gs', 'Ventas.gs', 'app.js']) {
   assert.doesNotThrow(() => new Function(read(file)), `${file} debe tener sintaxis JavaScript valida`);
 }
+assert.doesNotThrow(() => new Function(admin.match(/<script>([\s\S]*?)<\/script>/)[1]), 'admin.html debe tener sintaxis JavaScript valida');
 
 assert(!/bot\d{8,}:[A-Za-z0-9_-]{20,}/.test(api), 'No debe haber tokens de Telegram en el codigo');
 assert(!/accion=admin_[^'"\s]*clave=/.test(admin), 'La clave admin no debe viajar en la URL');
@@ -35,5 +36,8 @@ assert(api.includes("data.accion === 'admin_cupones'"), 'El panel debe leer cupo
 assert(api.includes('_registrarUsoCupon('), 'Los pedidos deben registrar el uso del cupon');
 assert(admin.includes('cargarCuponesSheets'), 'El panel debe mostrar los cupones dinamicos');
 assert(app.includes('let CUPONES = {};'), 'La tienda no debe conservar cupones locales vencidos');
+assert(admin.includes('GOOGLE_REVIEW_URL'), 'El aviso de entrega debe incluir la ficha de Google para pedir resenas');
+assert(admin.includes('Visitas web'), 'El panel debe ofrecer acceso directo a Google Analytics');
+assert(app.includes("gtag('event', 'purchase'"), 'Los pedidos web deben medirse como compras en Google Analytics');
 
 console.log('OK - contratos principales del sistema v3 verificados');
