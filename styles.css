@@ -765,14 +765,14 @@ body.light .filtro-select option{background:#f5f5f5;color:#333}
 .cart-fab svg{width:20px!important;height:20px!important}
 
 /* WA */
-.wa-float{background:#25D366;border-radius:50%;width:36px;height:36px;
+.wa-float{background:#25D366;border-radius:50%;width:46px;height:46px;
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 3px 14px rgba(37,211,102,.4);cursor:pointer;
   transition:transform .2s;text-decoration:none;font-size:1.1rem}
 .wa-float:hover{transform:scale(1.1)}
 
 /* Scroll top */
-.scroll-top-btn{width:30px;height:30px;border-radius:50%;background:rgba(0,200,255,.12);
+.scroll-top-btn{width:46px;height:46px;border-radius:50%;background:rgba(0,200,255,.12);
   border:1.5px solid rgba(0,200,255,.5);color:#00C8FF;font-size:.85rem;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:opacity .3s,transform .3s;font-weight:700;
@@ -785,8 +785,8 @@ body.light .filtro-select option{background:#f5f5f5;color:#333}
   .fab-group{bottom:14px;right:10px;gap:6px}
   .cart-fab{width:40px!important;height:40px!important}
   .cart-fab svg{width:18px!important;height:18px!important}
-  .wa-float{width:32px;height:32px;font-size:.95rem}
-  .scroll-top-btn{width:28px;height:28px;font-size:.8rem}
+  .wa-float{width:40px;height:40px;font-size:.95rem}
+  .scroll-top-btn{width:40px;height:40px;font-size:.8rem}
 }
 
 /* ── STOCK BADGE URGENTE ── */

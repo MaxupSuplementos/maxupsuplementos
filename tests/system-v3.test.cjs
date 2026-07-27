@@ -10,11 +10,17 @@ const system = read('SystemV3.gs');
 const admin = read('admin.html');
 const mayorista = read('mayorista.html');
 const app = read('app.js');
+const indumentaria = read('indumentaria.html');
+const styles = read('styles.css');
 
 for (const file of ['Api.gs', 'SystemV3.gs', 'Ventas.gs', 'app.js']) {
   assert.doesNotThrow(() => new Function(read(file)), `${file} debe tener sintaxis JavaScript valida`);
 }
 assert.doesNotThrow(() => new Function(admin.match(/<script>([\s\S]*?)<\/script>/)[1]), 'admin.html debe tener sintaxis JavaScript valida');
+for (const [i, match] of [...indumentaria.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].entries()) {
+  if (!match[1].trim()) continue;
+  assert.doesNotThrow(() => new Function(match[1]), `indumentaria.html script ${i + 1} debe tener sintaxis JavaScript valida`);
+}
 
 assert(!/bot\d{8,}:[A-Za-z0-9_-]{20,}/.test(api), 'No debe haber tokens de Telegram en el codigo');
 assert(!/accion=admin_[^'"\s]*clave=/.test(admin), 'La clave admin no debe viajar en la URL');
@@ -47,6 +53,29 @@ assert(api.includes('_waDerivarHumano'), 'El asistente debe ofrecer derivacion a
 assert(api.includes('WA_RATE_'), 'El asistente debe limitar mensajes excesivos');
 assert(api.includes('WA_MSG_'), 'El webhook debe ignorar mensajes repetidos');
 assert(!/EA[A-Za-z0-9_-]{80,}/.test(api), 'No debe haber tokens de acceso de Meta en el codigo');
+assert(app.includes('function getInitialFlavor(p)'), 'Las variantes deben elegir primero una opcion con stock');
+assert(app.includes('Number(f.stock) > 0'), 'Una tarjeta solo debe mostrarse agotada si todas sus variantes lo estan');
+assert(app.includes('resumeWhenSettled'), 'El carrusel debe esperar a que termine la inercia manual');
+assert(indumentaria.includes('resumeWhenSettled'), 'El carrusel de indumentaria debe esperar a que termine la inercia manual');
+assert(/\.wa-float\{[^}]*width:46px;height:46px/.test(styles), 'WhatsApp debe medir igual que el carrito en escritorio');
+assert(/\.scroll-top-btn\{[^}]*width:46px;height:46px/.test(styles), 'Subir al inicio debe medir igual que el carrito en escritorio');
+assert(styles.includes('.wa-float{width:40px;height:40px'), 'WhatsApp debe medir igual que el carrito en mobile');
+assert(styles.includes('.scroll-top-btn{width:40px;height:40px'), 'Subir al inicio debe medir igual que el carrito en mobile');
+
+const flavorHelper = app.match(/function getInitialFlavor\(p\)\{[\s\S]*?\n\}/);
+assert(flavorHelper, 'Debe existir la seleccion inicial de variantes');
+const flavorSandbox = {};
+vm.runInNewContext(`${flavorHelper[0]}; this.pick = getInitialFlavor;`, flavorSandbox);
+assert.strictEqual(
+  flavorSandbox.pick({flavors:[{name:'Chocolate',stock:0},{name:'Vainilla',stock:4}]}).name,
+  'Vainilla',
+  'Debe mostrar primero una variante que tenga stock'
+);
+assert.strictEqual(
+  flavorSandbox.pick({flavors:[{name:'Chocolate',stock:0},{name:'Vainilla',stock:0}]}).name,
+  'Chocolate',
+  'Si todas estan agotadas debe conservar la primera variante'
+);
 
 const waSandbox = {};
 vm.runInNewContext(api, waSandbox);

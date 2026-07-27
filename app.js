@@ -3410,16 +3410,35 @@ function recuperarImagenProducto(img){
   img.src = getFallbackImg();
 }
 
+// Para productos con varios sabores/presentaciones, la tarjeta debe abrir
+// mostrando una variante comprable. Solo usar la primera agotada cuando todas
+// las variantes estén realmente sin stock.
+function getInitialFlavor(p){
+  if(!p || !p.flavors || !p.flavors.length) return {name:'Unidad', stock:0};
+  return p.flavors.find(function(f){ return Number(f.stock) > 0; }) || p.flavors[0];
+}
+
+function getInitialFlavorImg(p, flavor){
+  if(!p || !flavor || !p.imgs || Array.isArray(p.imgs)) return '';
+  return p.imgs[flavor.name] || '';
+}
+
 function buildCard(p, cardIndex){
   const totalStock = p.flavors.reduce((s,f)=>s+f.stock,0);
   const multiFlav = p.flavors.length > 1;
   const badgeHtml = p.badge ? `<div class="prod-badge badge-${p.badge}">${p.badgeText||''}</div>` : '';
+  const firstFlavor = getInitialFlavor(p);
+  const initialFlavorImg = getInitialFlavorImg(p, firstFlavor);
 
   // ── GALLERY: support "imgs" array OR legacy single "img" ──
   // In the PRODUCTS data you can use:
   //   "img": "url"           → single photo (backwards compatible)
   //   "imgs": ["url1","url2","url3"]  → gallery of multiple photos
-  const imgList = p.imgs_gallery && p.imgs_gallery.length ? p.imgs_gallery : (p.imgs && Array.isArray(p.imgs) && p.imgs.length ? p.imgs : (p.img ? [p.img] : []));
+  let imgList = p.imgs_gallery && p.imgs_gallery.length ? p.imgs_gallery.slice() : (p.imgs && Array.isArray(p.imgs) && p.imgs.length ? p.imgs.slice() : (p.img ? [p.img] : []));
+  if(initialFlavorImg){
+    imgList = imgList.filter(function(src){ return src !== initialFlavorImg; });
+    imgList.unshift(initialFlavorImg);
+  }
   const hasMultiple = imgList.length > 1;
   const galleryId = `gal-${p.id}`;
 
@@ -3442,14 +3461,13 @@ function buildCard(p, cardIndex){
   const counterHtml = hasMultiple
     ? `<div class="gal-counter show" id="${galleryId}-counter">1 / ${imgList.length}</div>` : '';
 
-  const firstFlavor = p.flavors[0];
   const initStock = firstFlavor.stock;
   const stockClass = initStock===0?'stock-zero':initStock<=3?'stock-low':'';
   const stockTxt = initStock===0?'Sin stock':`${initStock} unid.`;
 
   const flavorOpts = p.flavors.map(f=>{
     const tag = f.stock===0?' (Agotado)':f.stock<=3&&f.stock>0?` (Últimas ${f.stock})`:'';
-    return `<option value="${f.name}" data-stock="${f.stock}" class="${f.stock===0?'agotado':''}">${f.name}${tag}</option>`;
+    return `<option value="${f.name}" data-stock="${f.stock}" class="${f.stock===0?'agotado':''}" ${f.name===firstFlavor.name?'selected':''}>${f.name}${tag}</option>`;
   }).join('\n');
 
   const flavorSel = multiFlav ? `
@@ -5297,12 +5315,18 @@ function openProdModal(pid) {
   const p = getProduct(pid);
   if (!p) return;
   modalPid = pid;
+  const initialFlavor = getInitialFlavor(p);
+  const initialFlavorImg = getInitialFlavorImg(p, initialFlavor);
 
   // Imagen / GALERÍA: si el producto tiene varias fotos, armar galería con
   // flechas + puntos (igual que en la grilla). Si tiene una sola, imagen fija.
   var _imgWrap = document.querySelector('.prod-modal-img');
-  var _imgList = p.imgs_gallery && p.imgs_gallery.length ? p.imgs_gallery
-               : (p.imgs && Array.isArray(p.imgs) && p.imgs.length ? p.imgs : (p.img ? [p.img] : []));
+  var _imgList = p.imgs_gallery && p.imgs_gallery.length ? p.imgs_gallery.slice()
+               : (p.imgs && Array.isArray(p.imgs) && p.imgs.length ? p.imgs.slice() : (p.img ? [p.img] : []));
+  if(initialFlavorImg){
+    _imgList = _imgList.filter(function(src){ return src !== initialFlavorImg; });
+    _imgList.unshift(initialFlavorImg);
+  }
   if (_imgWrap && _imgList.length > 1) {
     var _gid = 'galmodal-' + pid;
     var _slides = _imgList.map(function(src,i){
@@ -5333,7 +5357,7 @@ function openProdModal(pid) {
   if (p.flavors && p.flavors.length > 1) {
     flavorWrap.innerHTML = `<label style="font-size:.7rem;color:#aaa;text-transform:uppercase;letter-spacing:.1em">Sabor / Presentación</label>
       <select id="modalFlavor" style="width:100%;background:#1a1a1a;border:1px solid rgba(0,200,255,.2);border-radius:6px;padding:9px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:.95rem;margin-top:4px" onchange="updateModalFlavor()">
-        ${p.flavors.map(f => `<option value="${f.name}" ${f.stock===0?'disabled':''} data-stock="${f.stock}">${f.name}${f.stock===0?' (Sin stock)':f.stock<=3&&f.stock>0?` (Últimas ${f.stock})`:`  ✓ ${f.stock} ud.`}</option>`).join('')}
+        ${p.flavors.map(f => `<option value="${f.name}" ${f.stock===0?'disabled':''} ${f.name===initialFlavor.name?'selected':''} data-stock="${f.stock}">${f.name}${f.stock===0?' (Sin stock)':f.stock<=3&&f.stock>0?` (Últimas ${f.stock})`:`  ✓ ${f.stock} ud.`}</option>`).join('')}
       </select>`;
     updateModalFlavor();
   } else {
@@ -8260,16 +8284,39 @@ function _initAutoCarousel(track){
     track._autoHover = true;
     track.style.cursor = 'grab';
     var resync = function(){ track._pos = track.scrollLeft; };
-    // Si el scroll real se aleja de la posicion interna (arrastre tactil con
-    // inercia, scroll nativo, etc.), adoptar la posicion real. Sin esto, al
-    // soltar el carrusel "volvia" al punto previo al movimiento manual.
+    var pauseManual = function(){
+      track._paused = true;
+      if(track._resumeTimer) clearTimeout(track._resumeTimer);
+    };
+    var resumeWhenSettled = function(){
+      if(track._resumeTimer) clearTimeout(track._resumeTimer);
+      track._resumeTimer = setTimeout(function(){
+        if(track._touching || track._dragging || track._hovering) return;
+        resync();
+        track._paused = false;
+      }, 1800);
+    };
+    // Mientras exista interacción o inercia táctil, adoptar el scroll real y
+    // postergar el auto-scroll. Así nunca vuelve al punto donde se tocó.
     track.addEventListener('scroll', function(){
-      if(Math.abs(track.scrollLeft - track._pos) > 2) track._pos = track.scrollLeft;
+      if(track._paused || track._touching || track._dragging){
+        resync();
+        if(!track._touching && !track._dragging) resumeWhenSettled();
+      }
     }, {passive:true});
-    track.addEventListener('mouseenter', function(){ track._paused = true; });
-    track.addEventListener('mouseleave', function(){ track._dragging = false; track.style.cursor = 'grab'; resync(); track._paused = false; });
-    track.addEventListener('touchstart', function(){ track._paused = true; }, {passive:true});
-    track.addEventListener('touchend', function(){ resync(); setTimeout(function(){ track._paused = false; }, 1500); }, {passive:true});
+    track.addEventListener('mouseenter', function(){
+      if(window.matchMedia && !window.matchMedia('(hover:hover)').matches) return;
+      track._hovering = true; pauseManual();
+    });
+    track.addEventListener('mouseleave', function(){
+      if(window.matchMedia && !window.matchMedia('(hover:hover)').matches) return;
+      track._hovering = false; track._dragging = false; track.style.cursor = 'grab'; resync(); resumeWhenSettled();
+    });
+    track.addEventListener('touchstart', function(){ track._touching = true; pauseManual(); resync(); }, {passive:true});
+    track.addEventListener('touchmove', function(){ resync(); }, {passive:true});
+    var touchFinished = function(){ track._touching = false; resync(); resumeWhenSettled(); };
+    track.addEventListener('touchend', touchFinished, {passive:true});
+    track.addEventListener('touchcancel', touchFinished, {passive:true});
     // Con el mouse encima (pausado): mover con la rueda — DIRECTO, sin animacion (no vibra)
     track.addEventListener('wheel', function(e){
       if(!track._paused) return;
@@ -8277,12 +8324,12 @@ function _initAutoCarousel(track){
       var d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit;
       if(!d) return;
       e.preventDefault();
-      track.scrollLeft += d; resync();
+      pauseManual(); track.scrollLeft += d; resync(); resumeWhenSettled();
     }, {passive:false});
     // ...o arrastrar (agarrar y tirar) para volver a un producto que ya paso
     track.addEventListener('mousedown', function(e){ track._dragging = true; track._moved = false; track._startX = e.pageX; track._startScroll = track.scrollLeft; track.style.cursor = 'grabbing'; e.preventDefault(); });
     window.addEventListener('mousemove', function(e){ if(!track._dragging) return; var dx = e.pageX - track._startX; if(Math.abs(dx) > 4) track._moved = true; track.scrollLeft = track._startScroll - dx; resync(); });
-    window.addEventListener('mouseup', function(){ if(track._dragging){ track._dragging = false; track.style.cursor = 'grab'; resync(); } });
+    window.addEventListener('mouseup', function(){ if(track._dragging){ track._dragging = false; track.style.cursor = 'grab'; resync(); resumeWhenSettled(); } });
     // Si fue un arrastre, no abrir el producto al soltar
     track.addEventListener('click', function(e){ if(track._moved){ e.stopPropagation(); e.preventDefault(); track._moved = false; } }, true);
   }
