@@ -4555,23 +4555,6 @@ function mostrarLiquidaciones() {
   if (sec) sec.style.display = 'block';
 }
 
-// ── ACCESO SECRETO AL ADMIN (5 clicks en el logo) ────────────
-(function() {
-  var clicks = 0, timer;
-  var logo = document.getElementById('navLogoLink');
-  if (!logo) return;
-  logo.addEventListener('click', function(e) {
-    e.preventDefault();
-    clicks++;
-    clearTimeout(timer);
-    timer = setTimeout(function(){ clicks = 0; }, 2000);
-    if (clicks >= 5) {
-      clicks = 0;
-      window.location.href = 'admin.html';
-    }
-  });
-})();
-
 // ── CARGAR LIQUIDACIONES DESDE API ───────────────────────────
 async function cargarLiquidaciones() {
   try {
@@ -4637,24 +4620,6 @@ function resetAfterOrder(){
   cargarDesdeSheets();
 cargarLiquidaciones();
 
-// ── ACCESO SECRETO AL ADMIN (5 clicks en el logo) ────────────
-(function() {
-  var clicks = 0, timer;
-  var logo = document.getElementById('navLogoLink');
-  if (!logo) return;
-  logo.addEventListener('click', function(e) {
-    e.preventDefault();
-    clicks++;
-    clearTimeout(timer);
-    timer = setTimeout(function(){ clicks = 0; }, 2000);
-    if (clicks >= 5) {
-      clicks = 0;
-      window.location.href = 'admin.html';
-    }
-  });
-})();
-
-
 }
 
 /* ── TOAST ── */
@@ -4697,25 +4662,6 @@ try {
 } catch(e) {}
 cargarDesdeSheets();
 cargarLiquidaciones();
-
-// ── ACCESO SECRETO AL ADMIN (5 clicks en el logo) ────────────
-(function() {
-  var clicks = 0, timer;
-  var logo = document.getElementById('navLogoLink');
-  if (!logo) return;
-  logo.addEventListener('click', function(e) {
-    e.preventDefault();
-    clicks++;
-    clearTimeout(timer);
-    timer = setTimeout(function(){ clicks = 0; }, 2000);
-    if (clicks >= 5) {
-      clicks = 0;
-      window.location.href = 'admin.html';
-    }
-  });
-})();
-
-
 
 const PROD_IMG_MAP = {
   "whey protein doypack 2 lb": "https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/whey-protein-star-bolsa-frente-1024x1024.jpg",

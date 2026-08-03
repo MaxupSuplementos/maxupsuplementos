@@ -65,7 +65,8 @@ assert(styles.includes('.wa-float{width:40px;height:40px'), 'WhatsApp debe medir
 assert(styles.includes('.scroll-top-btn{width:40px;height:40px'), 'Subir al inicio debe medir igual que el carrito en mobile');
 assert(index.includes('logo-transparent.png?v=20260803'), 'El logo principal debe usar la version transparente');
 assert.strictEqual(transparentLogo[25], 6, 'El logo principal debe ser PNG con canal alfa RGBA');
-assert(index.includes('class="mobile-admin-link"'), 'La app mobile debe ofrecer acceso directo al panel admin');
+assert(!index.includes('href="admin.html"'), 'El acceso administrativo no debe estar enlazado desde la tienda pública');
+assert(!app.includes("window.location.href = 'admin.html'"), 'La tienda pública no debe revelar gestos ocultos de acceso administrativo');
 assert(admin.includes('function postAdmin(body)'), 'El acceso admin mobile debe usar el POST compatible');
 assert(admin.includes('credentials:\'omit\''), 'El login mobile no debe depender de cookies de terceros');
 assert(admin.includes('POLITICA_DESCUENTOS_20260803'), 'El panel debe sincronizar la politica comercial solicitada');
