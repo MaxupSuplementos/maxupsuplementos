@@ -10,7 +10,7 @@ var CONFIG_MAXUP_DEFAULTS = {
   PROMO_MESES: '3',
   PROMO_DESCUENTO: '0.10',
   COMBO_DESCUENTO: '5',
-  DESCUENTOS_MONTO_JSON: '[{"minimo":270000,"pct":0.15,"label":"15% off por compra +$270.000"},{"minimo":220000,"pct":0.10,"label":"10% off por compra +$220.000"},{"minimo":100000,"pct":0.05,"label":"5% off por compra +$100.000"}]',
+  DESCUENTOS_MONTO_JSON: '[{"minimo":500000,"pct":0.15,"label":"15% off por compra desde $500.000"},{"minimo":300000,"pct":0.08,"label":"8% off por compra desde $300.000"}]',
   CUPONES_JSON: '{"MAXUP5":{"pct":0.05,"label":"5% off con cupon MAXUP5"},"MAXUP10":{"pct":0.10,"label":"10% off con cupon MAXUP10"},"PRIMERA15":{"pct":0.15,"label":"15% off primera compra"}}',
   ALERTA_VENCIMIENTO_DIAS: '70',
   BACKUP_RETENCION_DIAS: '14'
@@ -441,26 +441,24 @@ function _validarItemsPedidoWeb(items) {
 
 function _calcularPedidoSeguroDetalle(items, cuponCodigo, esNuevo, tieneFidelidad, clienteCupon) {
   var cfg = _configPublicaMaxup();
-  var base = 0, descuentoCantidad = 0;
+  var base = 0;
   items.forEach(function(item) {
     var subtotal = item.precio * item.cantidad;
     if (item.combo) subtotal = Math.round(subtotal * (1 - cfg.comboDescuento / 100));
     base += subtotal;
-    if (item.cantidad >= 2) descuentoCantidad += Math.round(item.precio * item.cantidad * 0.05);
   });
-  var trasCantidad = Math.max(0, base - descuentoCantidad);
   var descuentoMonto = null;
   (cfg.descuentosMonto || []).slice().sort(function(a, b) {
     return Number(b.minimo || 0) - Number(a.minimo || 0);
   }).forEach(function(d) {
-    if (!descuentoMonto && trasCantidad >= Number(d.minimo || 0)) descuentoMonto = d;
+    if (!descuentoMonto && base >= Number(d.minimo || 0)) descuentoMonto = d;
   });
-  var total = descuentoMonto ? Math.round(trasCantidad * (1 - Number(descuentoMonto.pct || 0))) : trasCantidad;
+  var total = descuentoMonto ? Math.round(base * (1 - Number(descuentoMonto.pct || 0))) : base;
   var totalAntesCupon = total;
   var codigo = String(cuponCodigo || '').trim().toUpperCase();
   var cupon = codigo ? _validarCuponVigente(codigo, clienteCupon) : null;
   if (cupon) total = Math.round(total * (1 - Number(cupon.pct || 0)));
-  if (esNuevo && !descuentoMonto && !cupon) total = Math.round(trasCantidad * (1 - cfg.descuentoBienvenida));
+  if (esNuevo && !descuentoMonto && !cupon) total = Math.round(base * (1 - cfg.descuentoBienvenida));
   if (tieneFidelidad) total = Math.round(total * (1 - _configNumeroMaxup('PROMO_DESCUENTO', 0.10)));
   return {
     total: Math.max(0, total),

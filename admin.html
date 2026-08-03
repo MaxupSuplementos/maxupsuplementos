@@ -20,7 +20,7 @@ body::before{content:'';position:fixed;inset:0;
 
 /* LOGIN */
 #loginScreen{position:fixed;inset:0;background:var(--dark);z-index:1000;
-  display:flex;align-items:center;justify-content:center;padding:20px}
+  display:flex;align-items:center;justify-content:center;padding:20px;min-height:100dvh;overflow-y:auto}
 .login-card{background:var(--dark2);border:1px solid rgba(0,200,255,.15);border-radius:16px;
   padding:40px;width:100%;max-width:360px;text-align:center}
 .login-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.1em;
@@ -176,6 +176,14 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
   .stats-grid{grid-template-columns:1fr 1fr}
   .pedido-fecha{width:100%;margin-left:0}
   .tab{padding:10px 12px;font-size:.8rem}
+  #loginScreen{align-items:flex-start;padding:14vh 14px 24px}
+  .login-card{padding:28px 20px}
+  .login-input{font-size:16px;min-height:48px}
+  .login-btn{min-height:48px;touch-action:manipulation}
+  header{padding:10px 12px;gap:8px;flex-wrap:wrap}
+  .header-analytics{display:none!important}
+  .header-store{margin-left:auto!important}
+  .header-refresh{margin-left:0}
 }
 </style>
 </head>
@@ -187,6 +195,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <div class="login-logo">MAXUP</div>
     <div class="login-sub">Panel de Administración</div>
     <input type="password" class="login-input" id="claveInput" placeholder="Clave de acceso"
+      autocomplete="current-password" autocapitalize="none" spellcheck="false" enterkeyhint="go"
       onkeydown="if(event.key==='Enter')login()">
     <button class="login-btn" onclick="login()">INGRESAR</button>
     <div class="login-error" id="loginError">Clave incorrecta</div>
@@ -200,8 +209,8 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <span class="header-badge">ADMIN</span>
     <button class="header-refresh" onclick="recargarTab()">⟳ Actualizar</button>
     <span id="autoRefreshStatus" style="font-size:.7rem;color:var(--green);letter-spacing:.04em" title="Se actualiza cada 30s">● LIVE</span>
-    <a href="https://analytics.google.com/analytics/web/" target="_blank" rel="noopener" style="margin-left:auto;color:var(--green);font-size:.8rem;text-decoration:none;padding:4px 12px;border:1px solid rgba(0,230,118,.3);border-radius:6px;font-weight:600;transition:all .2s" onmouseover="this.style.background='rgba(0,230,118,.1)'" onmouseout="this.style.background='none'">📈 Visitas web</a>
-    <a href="index.html" style="color:var(--cyan);font-size:.8rem;text-decoration:none;padding:4px 12px;border:1px solid rgba(0,200,255,.3);border-radius:6px;font-weight:600;transition:all .2s" onmouseover="this.style.background='rgba(0,200,255,.1)'" onmouseout="this.style.background='none'">🏪 Ir a la tienda</a>
+    <a class="header-analytics" href="https://analytics.google.com/analytics/web/" target="_blank" rel="noopener" style="margin-left:auto;color:var(--green);font-size:.8rem;text-decoration:none;padding:4px 12px;border:1px solid rgba(0,230,118,.3);border-radius:6px;font-weight:600;transition:all .2s" onmouseover="this.style.background='rgba(0,230,118,.1)'" onmouseout="this.style.background='none'">📈 Visitas web</a>
+    <a class="header-store" href="index.html" style="color:var(--cyan);font-size:.8rem;text-decoration:none;padding:4px 12px;border:1px solid rgba(0,200,255,.3);border-radius:6px;font-weight:600;transition:all .2s" onmouseover="this.style.background='rgba(0,200,255,.1)'" onmouseout="this.style.background='none'">🏪 Ir a la tienda</a>
     <button class="header-logout" onclick="logout()">Salir</button>
   </header>
 
@@ -247,6 +256,40 @@ let filtroEstado = 'todos';
 let busquedaPedido = '';
 let _lastPedidoCount = -1;
 let _autoRefreshTimer = null;
+const POLITICA_DESCUENTOS_20260803 = '[{"minimo":500000,"pct":0.15,"label":"15% off por compra desde $500.000"},{"minimo":300000,"pct":0.08,"label":"8% off por compra desde $300.000"}]';
+
+// POST simple y sin credenciales de terceros: evita fallas de inicio de sesión
+// observadas en Safari/Chrome dentro de la app instalada en el celular.
+function postAdmin(body) {
+  return fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify(body),
+    cache:'no-store',
+    credentials:'omit',
+    referrerPolicy:'no-referrer'
+  }).then(function(r){
+    if(!r.ok) throw new Error('Conexión HTTP '+r.status);
+    return r.json();
+  });
+}
+
+// Una sola vez por dispositivo, deja la configuración central con la política
+// comercial solicitada. El servidor invalida su caché al guardar.
+function aplicarPoliticaComercial20260803() {
+  try { if(localStorage.getItem('maxup_politica_20260803')==='1') return; } catch(e) {}
+  postAdmin({
+    accion:'admin_configuracion', sesion:clave,
+    valores:{
+      DESCUENTO_BIENVENIDA:'0.02',
+      COMBO_DESCUENTO:'5',
+      DESCUENTOS_MONTO_JSON:POLITICA_DESCUENTOS_20260803
+    }
+  }).then(function(data){
+    if(!data.ok) return;
+    try { localStorage.setItem('maxup_politica_20260803','1'); } catch(e) {}
+  }).catch(function(){});
+}
 
 // ── LOGIN (valida contra la API, no hardcodeada) ─────────────
 function login() {
@@ -254,8 +297,7 @@ function login() {
   if (!input) return;
   var btn = document.querySelector('.login-btn');
   btn.textContent = 'VERIFICANDO...'; btn.disabled = true;
-  fetch(API_URL, { method:'POST', body:JSON.stringify({ accion:'admin_login', clave:input }) })
-    .then(function(r){ return r.json(); })
+  postAdmin({ accion:'admin_login', clave:input })
     .then(function(data){
       btn.textContent = 'INGRESAR'; btn.disabled = false;
       if (data.ok) {
@@ -266,6 +308,7 @@ function login() {
         cargarResumen();
         iniciarAutoRefresh();
         _chequearMant();
+        aplicarPoliticaComercial20260803();
         logActivity('Login exitoso', 'Acceso al panel de administración');
       } else {
         document.getElementById('loginError').style.display = 'block';
@@ -283,7 +326,7 @@ function login() {
     });
 }
 function logout() {
-  if (clave) fetch(API_URL, { method:'POST', body:JSON.stringify({ accion:'admin_logout', sesion:clave }) }).catch(function(){});
+  if (clave) postAdmin({ accion:'admin_logout', sesion:clave }).catch(function(){});
   clave = '';
   detenerAutoRefresh();
   document.getElementById('loginScreen').style.display = 'flex';
@@ -380,8 +423,7 @@ function recargarTab() {
 function api(params) {
   var body = { sesion: clave };
   new URLSearchParams(params).forEach(function(v, k){ body[k] = v; });
-  return fetch(API_URL, { method:'POST', body:JSON.stringify(body) })
-    .then(function(r){ return r.json(); });
+  return postAdmin(body);
 }
 function fmt(n) { return '$' + Number(n).toLocaleString('es-AR'); }
 function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -783,6 +825,10 @@ function cargarConfigCentral(){
     if(!data.ok) throw new Error(data.error||'Error');
     var v=data.valores||{};
     function pct(k,d){ return Math.round((Number(v[k]||d))*10000)/100; }
+    var niveles=[];
+    try{ niveles=JSON.parse(v.DESCUENTOS_MONTO_JSON||POLITICA_DESCUENTOS_20260803); }catch(e){ niveles=[]; }
+    var nivel8=niveles.find(function(x){return Number(x.pct)===0.08;})||{minimo:300000,pct:.08};
+    var nivel15=niveles.find(function(x){return Number(x.pct)===0.15;})||{minimo:500000,pct:.15};
     box.innerHTML='<div style="font-weight:700;font-size:.95rem;margin-bottom:6px">💰 Configuración comercial</div>'
       +'<div style="color:var(--gray);font-size:.82rem;margin-bottom:14px">Estos valores se aplican automáticamente en la hoja y en la tienda.</div>'
       +'<div class="stats-grid">'
@@ -790,6 +836,10 @@ function cargarConfigCentral(){
       +campoCfg('cfgRedondeo','Redondeo precio lista ($)',Number(v.REDONDEO_PRECIO_LISTA||500))
       +campoCfg('cfgBienvenida','Descuento bienvenida (%)',pct('DESCUENTO_BIENVENIDA',.02))
       +campoCfg('cfgCombo','Descuento combos (%)',Number(v.COMBO_DESCUENTO||5))
+      +campoCfg('cfgMonto1','Monto para primer descuento ($)',Number(nivel8.minimo||300000))
+      +campoCfg('cfgMontoPct1','Primer descuento (%)',Number(nivel8.pct||.08)*100)
+      +campoCfg('cfgMonto2','Monto para descuento máximo ($)',Number(nivel15.minimo||500000))
+      +campoCfg('cfgMontoPct2','Descuento máximo (%)',Number(nivel15.pct||.15)*100)
       +campoCfg('cfgPromoMin','Mínimo fidelidad ($)',Number(v.PROMO_MINIMO||40000))
       +campoCfg('cfgPromoMeses','Meses para fidelidad',Number(v.PROMO_MESES||3))
       +campoCfg('cfgPromoPct','Descuento fidelidad (%)',pct('PROMO_DESCUENTO',.10))
@@ -805,14 +855,18 @@ function campoCfg(id,label,value){
 
 function guardarConfigCentral(){
   function n(id){ return Number(document.getElementById(id).value); }
+  var descuentosMonto=[
+    {minimo:n('cfgMonto2'),pct:n('cfgMontoPct2')/100,label:n('cfgMontoPct2')+'% off por compra desde $'+n('cfgMonto2').toLocaleString('es-AR')},
+    {minimo:n('cfgMonto1'),pct:n('cfgMontoPct1')/100,label:n('cfgMontoPct1')+'% off por compra desde $'+n('cfgMonto1').toLocaleString('es-AR')}
+  ];
   var valores={
     RECARGO_LISTA_3_CUOTAS:String(n('cfgRecargo')/100), REDONDEO_PRECIO_LISTA:String(n('cfgRedondeo')),
     DESCUENTO_BIENVENIDA:String(n('cfgBienvenida')/100), COMBO_DESCUENTO:String(n('cfgCombo')),
+    DESCUENTOS_MONTO_JSON:JSON.stringify(descuentosMonto),
     PROMO_MINIMO:String(n('cfgPromoMin')), PROMO_MESES:String(n('cfgPromoMeses')),
     PROMO_DESCUENTO:String(n('cfgPromoPct')/100), BACKUP_RETENCION_DIAS:String(n('cfgBackup'))
   };
-  fetch(API_URL,{method:'POST',body:JSON.stringify({accion:'admin_configuracion',sesion:clave,valores:valores})})
-    .then(function(r){return r.json();}).then(function(data){
+  postAdmin({accion:'admin_configuracion',sesion:clave,valores:valores}).then(function(data){
       if(!data.ok) throw new Error(data.error||'Error');
       showToast('✅ Configuración guardada'); cargarConfigCentral();
     }).catch(function(err){showToast('❌ '+err.message);});

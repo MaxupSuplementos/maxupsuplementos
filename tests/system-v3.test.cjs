@@ -12,6 +12,8 @@ const mayorista = read('mayorista.html');
 const app = read('app.js');
 const indumentaria = read('indumentaria.html');
 const styles = read('styles.css');
+const index = read('index.html');
+const transparentLogo = fs.readFileSync(path.join(root, 'logo-transparent.png'));
 
 for (const file of ['Api.gs', 'SystemV3.gs', 'Ventas.gs', 'app.js']) {
   assert.doesNotThrow(() => new Function(read(file)), `${file} debe tener sintaxis JavaScript valida`);
@@ -61,6 +63,32 @@ assert(/\.wa-float\{[^}]*width:46px;height:46px/.test(styles), 'WhatsApp debe me
 assert(/\.scroll-top-btn\{[^}]*width:46px;height:46px/.test(styles), 'Subir al inicio debe medir igual que el carrito en escritorio');
 assert(styles.includes('.wa-float{width:40px;height:40px'), 'WhatsApp debe medir igual que el carrito en mobile');
 assert(styles.includes('.scroll-top-btn{width:40px;height:40px'), 'Subir al inicio debe medir igual que el carrito en mobile');
+assert(index.includes('logo-transparent.png?v=20260803'), 'El logo principal debe usar la version transparente');
+assert.strictEqual(transparentLogo[25], 6, 'El logo principal debe ser PNG con canal alfa RGBA');
+assert(index.includes('class="mobile-admin-link"'), 'La app mobile debe ofrecer acceso directo al panel admin');
+assert(admin.includes('function postAdmin(body)'), 'El acceso admin mobile debe usar el POST compatible');
+assert(admin.includes('credentials:\'omit\''), 'El login mobile no debe depender de cookies de terceros');
+assert(admin.includes('POLITICA_DESCUENTOS_20260803'), 'El panel debe sincronizar la politica comercial solicitada');
+assert(app.includes("if(e.key==='Enter')"), 'Enter debe confirmar la busqueda');
+assert(app.includes("this.blur(); // cierra también el teclado móvil"), 'Enter debe cerrar sugerencias y teclado mobile');
+assert(app.includes("{ minimo: 500000, pct: 0.15"), 'Debe aplicar 15% desde $500.000');
+assert(app.includes("{ minimo: 300000, pct: 0.08"), 'Debe aplicar 8% desde $300.000');
+assert(system.includes('"minimo":500000,"pct":0.15'), 'El servidor debe validar 15% desde $500.000');
+assert(system.includes('"minimo":300000,"pct":0.08'), 'El servidor debe validar 8% desde $300.000');
+assert(system.includes("DESCUENTO_BIENVENIDA: '0.02'"), 'Bienvenida debe permanecer en 2%');
+assert(system.includes("COMBO_DESCUENTO: '5'"), 'Combos deben permanecer en 5%');
+assert(!app.includes('function getDescuentoCantidad()'), 'No debe quedar el descuento viejo por llevar dos unidades');
+assert(!system.includes('if (item.cantidad >= 2) descuentoCantidad'), 'El servidor no debe aplicar descuentos fuera de la politica vigente');
+
+const amountRules = app.match(/let DESCUENTOS_MONTO = (\[[\s\S]*?\]);/);
+const amountHelper = app.match(/function getDescuentoMonto\(total\)\{[\s\S]*?\n\}/);
+assert(amountRules && amountHelper, 'Debe existir la politica de descuentos por monto');
+const amountSandbox = {};
+vm.runInNewContext(`${amountRules[0]} ${amountHelper[0]}; this.discount = getDescuentoMonto;`, amountSandbox);
+assert.strictEqual(amountSandbox.discount(299999), null, 'No debe descontar antes de $300.000');
+assert.strictEqual(amountSandbox.discount(300000).pct, 0.08, 'Debe descontar 8% desde $300.000');
+assert.strictEqual(amountSandbox.discount(499999).pct, 0.08, 'Debe mantener 8% antes de $500.000');
+assert.strictEqual(amountSandbox.discount(500000).pct, 0.15, 'Debe descontar 15% desde $500.000');
 
 const flavorHelper = app.match(/function getInitialFlavor\(p\)\{[\s\S]*?\n\}/);
 assert(flavorHelper, 'Debe existir la seleccion inicial de variantes');

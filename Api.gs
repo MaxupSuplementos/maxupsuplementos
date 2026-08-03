@@ -333,8 +333,8 @@ function registrarPedidoWeb(data) {
 
   if (items.length > 0) {
     items = _validarItemsPedidoWeb(items);
-    // La web manda "total" con TODOS sus descuentos aplicados (combo/5% por
-    // cantidad, descuento por monto, cupón, bienvenida). Antes se ignoraba y
+    // La web manda "total" con TODOS sus descuentos aplicados (combos,
+    // descuento por monto, cupón, bienvenida). Antes se ignoraba y
     // los items se anotaban a precio de lista (y el link de Mercado Pago se
     // generaba sin el descuento). Ahora ese total manda: se reparte
     // proporcionalmente entre los items para obtener el precio FINAL cobrado.
@@ -2838,7 +2838,7 @@ function bienvenidaClientesNuevos() {
     var cli = nuevos[n];
     var msgWA = 'Hola ' + cli.nombre.split(' ')[0] + '! 👋\n\n' +
       'Gracias por confiar en MAXUP para tu nutrición deportiva 💪\n\n' +
-      'Tenés un 5% de descuento en tu primera compra como bienvenida 🎁\n\n' +
+      'Tenés un 2% de descuento en tu primera compra como bienvenida 🎁\n\n' +
       'Cualquier duda sobre productos, dosis o combinaciones, escribinos sin compromiso.\n\n' +
       '🌐 Catálogo: ' + urlWeb;
     var linkWA = 'https://wa.me/54' + cli.telefono + '?text=' + encodeURIComponent(msgWA);
@@ -2850,11 +2850,11 @@ function bienvenidaClientesNuevos() {
       try {
         MailApp.sendEmail({
           to: cli.email,
-          subject: '¡Bienvenido/a a MAXUP! 💪 Tu 5% de descuento',
+          subject: '¡Bienvenido/a a MAXUP! 💪 Tu 2% de descuento',
           htmlBody: '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px">' +
             '<h2 style="color:#00C8FF">¡Bienvenido/a ' + cli.nombre.split(' ')[0] + '! 💪</h2>' +
             '<p>Gracias por confiar en MAXUP para tu nutrición deportiva.</p>' +
-            '<p style="background:linear-gradient(135deg,#00C8FF,#FF0099);color:white;padding:16px;border-radius:10px;text-align:center;font-size:18px;font-weight:bold">🎁 5% de descuento en tu próxima compra</p>' +
+            '<p style="background:linear-gradient(135deg,#00C8FF,#FF0099);color:white;padding:16px;border-radius:10px;text-align:center;font-size:18px;font-weight:bold">🎁 2% de descuento en tu próxima compra</p>' +
             '<p>Cualquier duda sobre productos, dosis o combinaciones, escribinos:</p>' +
             '<a href="' + linkWA + '" style="display:inline-block;background:#25D366;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0">📲 Escribinos por WhatsApp</a>' +
             '<p><a href="' + urlWeb + '" style="color:#00C8FF">🌐 Ver catálogo completo</a></p>' +

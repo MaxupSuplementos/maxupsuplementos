@@ -1,13 +1,14 @@
 // MAXUP Service Worker — Cache & Offline
-const CACHE_NAME = 'maxup-v12-mobile-stock-logo';
+const CACHE_NAME = 'maxup-v13-admin-search-discounts';
 // OJO: si un asset de esta lista no existe (404), addAll falla y NO se cachea nada.
 // mantenimiento.webp se descarga solo si el mantenimiento se activa.
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=20260726-mobile-stock-logo',
-  './app.js?v=20260726-mobile-stock-logo',
+  './styles.css?v=20260803-admin-search-discounts',
+  './app.js?v=20260803-admin-search-discounts',
   './logo.png',
+  './logo-transparent.png',
   './favicon.png',
   'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap'
 ];

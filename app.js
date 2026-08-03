@@ -1,7 +1,9 @@
 // MAXUP SUPLEMENTOS - app.js
 // ── LOGO ──────────────────────────────────────────────────
-const LOGO_B64 = 'logo.png';
-document.querySelectorAll('#navLogo,#heroLogo,#footerLogo').forEach(i => i.src = LOGO_B64);
+const LOGO_B64 = 'logo.png?v=20260803';
+document.querySelectorAll('#navLogo,#footerLogo').forEach(i => i.src = LOGO_B64);
+var heroLogoPrincipal = document.getElementById('heroLogo');
+if (heroLogoPrincipal) heroLogoPrincipal.src = 'logo-transparent.png?v=20260803';
 
 // Mostrar banner si está activado en CONFIG
 (function() {
@@ -52,9 +54,8 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJ
 // Formato: { desde: MONTO_MINIMO, porcentaje: DESCUENTO }
 // Podés agregar o quitar filas, o cambiar los montos y porcentajes
 const DESCUENTOS_CONFIG = [
-  { desde: 100000,  porcentaje: 5  },   // 5% desde $100.000
-  { desde: 220000,  porcentaje: 10 },   // 10% desde $220.000
-  { desde: 270000,  porcentaje: 15 },   // 15% desde $270.000
+  { desde: 300000,  porcentaje: 8  },   // 8% desde $300.000
+  { desde: 500000,  porcentaje: 15 },   // 15% desde $500.000
 ];
 
 // ── BANNERS Y CARTELES ────────────────────────────────────
@@ -3798,7 +3799,16 @@ document.getElementById('searchInput').addEventListener('input',e=>{
 });
 // Cerrar sugerencias al perder foco (con delay para que el click registre) y con Escape
 document.getElementById('searchInput').addEventListener('blur', function(){ setTimeout(cerrarSugerencias, 180); });
-document.getElementById('searchInput').addEventListener('keydown', function(e){ if(e.key==='Escape') cerrarSugerencias(); });
+document.getElementById('searchInput').addEventListener('keydown', function(e){
+  if(e.key==='Escape') cerrarSugerencias();
+  if(e.key==='Enter'){
+    e.preventDefault();
+    cerrarSugerencias();
+    this.blur(); // cierra también el teclado móvil
+    var catalogo = document.getElementById('catalogo');
+    if(catalogo) catalogo.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+});
 
 // ── SUGERENCIAS DE BÚSQUEDA (autocompletado) ──
 function renderSearchSuggest(q){
@@ -4003,9 +4013,8 @@ function cartCount(){ return cart.reduce((s,i)=>s+i.qty,0); }
 
 // ── DESCUENTO POR MONTO ──────────────────────────────────────
 let DESCUENTOS_MONTO = [
-  { minimo: 270000, pct: 0.15, label: '15% off por compra +$270.000' },
-  { minimo: 220000, pct: 0.10, label: '10% off por compra +$220.000' },
-  { minimo: 100000, pct: 0.05, label: '5% off por compra +$100.000'  },
+  { minimo: 500000, pct: 0.15, label: '15% off por compra desde $500.000' },
+  { minimo: 300000, pct: 0.08, label: '8% off por compra desde $300.000' },
 ];
 function getDescuentoMonto(total){
   for(const d of DESCUENTOS_MONTO){ if(total >= d.minimo) return d; }
@@ -4413,17 +4422,14 @@ function finalizarPedido(){
   msg+=`\n📦 *Detalle:*\n`;
   cart.forEach(i=>{ msg+=`  • ${i.emoji} ${i.brand ? '['+i.brand+'] ' : ''}${i.name} — ${i.flavor} × ${i.qty}  →  ${fmt(i.price*i.qty)}\n`; });
   const _baseTotal = cartTotal();
-  const _descQty = getDescuentoCantidad();
-  const _baseTrasQty = _baseTotal - _descQty;
-  const _desc = getDescuentoMonto(_baseTrasQty);
-  const _totalConMonto = _desc ? Math.round(_baseTrasQty*(1-_desc.pct)) : _baseTrasQty;
+  const _desc = getDescuentoMonto(_baseTotal);
+  const _totalConMonto = _desc ? Math.round(_baseTotal*(1-_desc.pct)) : _baseTotal;
   let _totalConCupon = _totalConMonto;
   if(_cuponActivo) _totalConCupon = Math.round(_totalConMonto * (1 - _cuponActivo.pct));
-  const _totalFinal = (_esClienteNuevo && !_desc && !_cuponActivo) ? Math.round(_baseTrasQty*(1-DESCUENTO_BIENVENIDA)) : _totalConCupon;
-  if(_descQty > 0) msg+='\n🏷️ *5% off por cantidad (2+ iguales):* -'+fmt(_descQty)+'\n';
-  if(_desc) msg+='\n🎉 *Descuento: '+_desc.label+'* (-'+fmt(_baseTrasQty-_totalConMonto)+')\n';
+  const _totalFinal = (_esClienteNuevo && !_desc && !_cuponActivo) ? Math.round(_baseTotal*(1-DESCUENTO_BIENVENIDA)) : _totalConCupon;
+  if(_desc) msg+='\n🎉 *Descuento: '+_desc.label+'* (-'+fmt(_baseTotal-_totalConMonto)+')\n';
   if(_cuponActivo) msg+='\n🏷️ *Cupón: '+_cuponActivo.code+' ('+_cuponActivo.label+')* (-'+fmt(_totalConMonto-_totalConCupon)+')\n';
-  if(_esClienteNuevo && !_desc && !_cuponActivo) msg+='\n🎉 *Descuento bienvenida: 2%* (-'+fmt(_baseTrasQty-_totalFinal)+')\n';
+  if(_esClienteNuevo && !_desc && !_cuponActivo) msg+='\n🎉 *Descuento bienvenida: 2%* (-'+fmt(_baseTotal-_totalFinal)+')\n';
   // Puntos que gana con esta compra
   var _puntosGanados = Math.floor(_totalFinal / 1000);
   if(_puntosGanados > 0) msg+='\n⭐ *Puntos ganados: +'+_puntosGanados+'*\n';
@@ -8105,7 +8111,7 @@ function agregarCombo(comboId){
     { q:'¿Los productos son originales?', a:'100% originales y sellados de fábrica. Trabajamos directamente con distribuidores oficiales de cada marca. Todos los productos tienen fecha de vencimiento visible.' },
     { q:'¿Tienen local físico?', a:'Sí, estamos en Calixto Gauna 1045, General Güemes, Salta. Podés venir a ver los productos, consultar y retirar tu pedido personalmente.' },
     { q:'¿Cómo funciona el sistema de puntos?', a:'Cada $1.000 en compras = 1 punto. Cuando juntás 250 puntos podés canjearlos por $5.000 de descuento en compras mayores a $50.000. Los puntos se acumulan automáticamente.' },
-    { q:'¿Tienen descuentos por cantidad?', a:'Sí, comprando 2 o más del mismo producto tenés un 5% off automático. Además hay descuentos por monto total: 5% desde $100.000, 10% desde $220.000 y 15% desde $270.000.' },
+    { q:'¿Tienen descuentos por cantidad?', a:'Sí. Los combos tienen 5% off. Además hay descuentos automáticos por monto total: 8% desde $300.000 y 15% desde $500.000. La primera compra tiene 2% de bienvenida cuando no se aplica otro descuento.' },
     { q:'¿Puedo usar cupón de descuento?', a:'Sí, ingresá tu código en el campo "Cupón" dentro del carrito antes de finalizar el pedido. Seguinos en Instagram y TikTok para enterarte de los cupones activos.' },
   ];
   var el = document.getElementById('faqList');
@@ -8124,7 +8130,7 @@ function agregarCombo(comboId){
   var msgs = [
     'ENVÍO A TODO EL PAÍS 📦 STOCK REAL ACTUALIZADO',
     '💰 DESCUENTOS EXCLUSIVOS EN NUESTRAS REDES SOCIALES',
-    '⚡ DESCUENTO AUTOMÁTICO EN COMPRAS +$100.000',
+    '⚡ 8% OFF DESDE $300.000 · 15% OFF DESDE $500.000',
     '🏪 RETIRÁ EN LOCAL — CALIXTO GAUNA 1045, GRAL. GÜEMES',
     '🏷️ ACUMULÁ PUNTOS Y CANJEÁ DESCUENTOS'
   ];
@@ -8363,17 +8369,6 @@ function avisarStock(pid, nombre, btn){
   showToast('🔔 Te vamos a avisar cuando '+nombre+' tenga stock');
 }
 
-// ── #5: DESCUENTO POR CANTIDAD (5% comprando 2+) ──
-function getDescuentoCantidad(){
-  var descTotal = 0;
-  cart.forEach(function(item){
-    if(item.qty >= 2){
-      descTotal += Math.round(item.price * item.qty * 0.05);
-    }
-  });
-  return descTotal;
-}
-
 // ── #7: HISTORIAL DE PEDIDOS ──
 function buscarHistorial(){
   var phone = document.getElementById('historialPhone').value.trim();
@@ -8583,42 +8578,6 @@ function mostrarPuntosEnCheckout(){
   if(!phone || phone.length < 8) return;
   cargarPuntos(phone);
 }
-
-// ── INTEGRAR DESCUENTO POR CANTIDAD EN renderCart ──
-// Parchear renderCart para incluir descuento por cantidad
-var _origRenderCart = renderCart;
-renderCart = function(){
-  _origRenderCart();
-  // Añadir info de descuento por cantidad en promoBar si aplica
-  var descQty = getDescuentoCantidad();
-  if(descQty > 0 && cart.length > 0){
-    var promoBar = document.getElementById('promoBar');
-    if(promoBar){
-      promoBar.innerHTML += '<br><span style="color:#00E676;font-size:.78rem">🏷️ 5% off por cantidad (2+ iguales): -'+fmt(descQty)+'</span>';
-    }
-  }
-};
-
-// ── INTEGRAR DESCUENTO POR CANTIDAD EN buildMiniList ──
-var _origBuildMiniList = buildMiniList;
-buildMiniList = function(){
-  _origBuildMiniList();
-  var descQty = getDescuentoCantidad();
-  if(descQty > 0){
-    var el = document.getElementById('orderMiniList');
-    if(el){
-      // Insertar antes del TOTAL row
-      var totalDiv = el.querySelector('div:last-child');
-      if(totalDiv){
-        var qtyDiv = document.createElement('div');
-        qtyDiv.className = 'omi';
-        qtyDiv.style.color = '#00E676';
-        qtyDiv.innerHTML = '<span>🏷️ 5% off por cantidad (2+ iguales)</span><span>-'+fmt(descQty)+'</span>';
-        el.insertBefore(qtyDiv, totalDiv);
-      }
-    }
-  }
-};
 
 // ── INTEGRAR META TAGS DINÁMICOS EN MODAL ──
 var _origOpenProdModal = typeof openProdModal === 'function' ? openProdModal : null;
