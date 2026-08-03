@@ -154,7 +154,7 @@
   └─────────────────────────────────────────────────────────────┘
 -->
 
-<link rel="stylesheet" href="styles.css?v=20260803-transparent-nav">
+<link rel="stylesheet" href="styles.css?v=20260803-club-maxup">
 </head>
 <body>
 
@@ -397,6 +397,26 @@
   </div>
 </section>
 
+<!-- ── CLUB MAXUP ── -->
+<section class="club-promo" id="clubMaxup" style="display:none">
+  <div class="club-promo-copy">
+    <span>🎁 BENEFICIOS Y SORTEOS</span>
+    <h2>CLUB MAXUP</h2>
+    <p>Recibí avisos de nuevos ingresos y reposiciones. Cada registro verificado participa con una chance en el sorteo mensual.</p>
+  </div>
+  <button type="button" onclick="abrirClubModal(true)">QUIERO PARTICIPAR</button>
+</section>
+
+<!-- ── CLUB MAXUP ── -->
+<section class="club-promo" id="clubMaxup">
+  <div class="club-promo-copy">
+    <span>🎁 BENEFICIOS Y SORTEOS</span>
+    <h2>CLUB MAXUP</h2>
+    <p>Recibí avisos de nuevos ingresos y reposiciones. Cada registro verificado participa con una chance en el sorteo mensual.</p>
+  </div>
+  <button type="button" onclick="abrirClubModal(true)">QUIERO PARTICIPAR</button>
+</section>
+
 <div class="grad-line"></div>
 
 <!-- ── COMPARADOR ── -->
@@ -555,6 +575,68 @@
   </div>
 </div>
 
+<!-- ── REGISTRO CLUB MAXUP ── -->
+<div class="club-overlay" id="clubOverlay" role="dialog" aria-modal="true" aria-labelledby="clubTitle">
+  <div class="club-modal">
+    <button class="club-close" type="button" onclick="cerrarClubModal(true)" aria-label="Cerrar">✕</button>
+    <div class="club-kicker">🎁 BENEFICIOS · NOVEDADES · SORTEOS</div>
+    <h2 id="clubTitle">CLUB MAXUP</h2>
+    <p class="club-intro">Registrate gratis. El catálogo siempre seguirá abierto para todos.</p>
+    <form id="clubForm" onsubmit="registrarEnClub(event)">
+      <input class="club-hp" id="clubEmpresa" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="club-grid">
+        <label>Nombre completo *<input id="clubNombre" type="text" autocomplete="name" required maxlength="80"></label>
+        <label>WhatsApp *<input id="clubTelefono" type="tel" autocomplete="tel" required maxlength="24"></label>
+        <label>Email *<input id="clubEmail" type="email" autocomplete="email" required maxlength="120"></label>
+        <label>Instagram <input id="clubInstagram" type="text" placeholder="@tu_usuario" maxlength="80"></label>
+      </div>
+      <fieldset class="club-intereses">
+        <legend>¿Qué novedades querés recibir?</legend>
+        <label><input type="checkbox" name="clubInteres" value="TODOS" checked> Todo</label>
+        <label><input type="checkbox" name="clubInteres" value="PROTEINAS"> Proteínas</label>
+        <label><input type="checkbox" name="clubInteres" value="CREATINAS"> Creatinas</label>
+        <label><input type="checkbox" name="clubInteres" value="VITAMINAS"> Vitaminas</label>
+        <label><input type="checkbox" name="clubInteres" value="INDUMENTARIA"> Indumentaria</label>
+      </fieldset>
+      <label class="club-check"><input id="clubAvisos" type="checkbox" checked> Quiero recibir avisos de productos nuevos, reposiciones y cambios relevantes.</label>
+      <label class="club-check"><input id="clubConsentimiento" type="checkbox" required> Acepto las <a href="privacidad.html" target="_blank">bases, privacidad y uso de mis datos</a> para participar.</label>
+      <button class="club-submit" id="clubSubmit" type="submit">REGISTRARME GRATIS</button>
+      <div class="club-status" id="clubStatus" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ── REGISTRO CLUB MAXUP ── -->
+<div class="club-overlay" id="clubOverlay" role="dialog" aria-modal="true" aria-labelledby="clubTitle">
+  <div class="club-modal">
+    <button class="club-close" type="button" onclick="cerrarClubModal(true)" aria-label="Cerrar">✕</button>
+    <div class="club-kicker">🎁 BENEFICIOS · NOVEDADES · SORTEOS</div>
+    <h2 id="clubTitle">CLUB MAXUP</h2>
+    <p class="club-intro">Registrate gratis. El catálogo siempre seguirá abierto para todos.</p>
+    <form id="clubForm" onsubmit="registrarEnClub(event)">
+      <input class="club-hp" id="clubEmpresa" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="club-grid">
+        <label>Nombre completo *<input id="clubNombre" type="text" autocomplete="name" required maxlength="80"></label>
+        <label>WhatsApp *<input id="clubTelefono" type="tel" autocomplete="tel" required maxlength="24"></label>
+        <label>Email *<input id="clubEmail" type="email" autocomplete="email" required maxlength="120"></label>
+        <label>Instagram <input id="clubInstagram" type="text" placeholder="@tu_usuario" maxlength="80"></label>
+      </div>
+      <fieldset class="club-intereses">
+        <legend>¿Qué novedades querés recibir?</legend>
+        <label><input type="checkbox" name="clubInteres" value="TODOS" checked> Todo</label>
+        <label><input type="checkbox" name="clubInteres" value="PROTEINAS"> Proteínas</label>
+        <label><input type="checkbox" name="clubInteres" value="CREATINAS"> Creatinas</label>
+        <label><input type="checkbox" name="clubInteres" value="VITAMINAS"> Vitaminas</label>
+        <label><input type="checkbox" name="clubInteres" value="INDUMENTARIA"> Indumentaria</label>
+      </fieldset>
+      <label class="club-check"><input id="clubAvisos" type="checkbox" checked> Quiero recibir avisos de productos nuevos, reposiciones y cambios relevantes.</label>
+      <label class="club-check"><input id="clubConsentimiento" type="checkbox" required> Acepto las <a href="privacidad.html" target="_blank">bases, privacidad y uso de mis datos</a> para participar.</label>
+      <button class="club-submit" id="clubSubmit" type="submit">REGISTRARME GRATIS</button>
+      <div class="club-status" id="clubStatus" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+
 <div class="grad-line"></div>
 
 <!-- ── FOOTER ── -->
@@ -606,7 +688,7 @@
     </div>
   </div>
   <div class="footer-bottom">
-    <p>© 2025 MAXUP SUPLEMENTOS. Todos los derechos reservados.</p>
+    <p>© 2025 MAXUP SUPLEMENTOS. Todos los derechos reservados. · <a href="privacidad.html" style="color:#777">Privacidad y Club MAXUP</a></p>
     <div class="social-links">
       <a class="social-btn" href="https://www.instagram.com/maxup_suplementos" target="_blank" rel="noopener">ig</a>
       <a class="social-btn" href="https://wa.me/5491168461457" target="_blank" rel="noopener">wa</a>
@@ -892,7 +974,7 @@ function closeMobileMenu(){
 }
 </script>
 
-<script src="app.js?v=20260803-transparent-nav" defer></script>
+<script src="app.js?v=20260803-club-maxup" defer></script>
 </div><!-- /appContent -->
 </body>
 </html>

@@ -8697,3 +8697,76 @@ function _getPriceChange(pid){
     if(pid && typeof openProdModal === 'function') openProdModal(pid);
   });
 })();
+
+// ── CLUB MAXUP: registro opcional, verificación y baja ──
+window._clubActivo=false;
+function abrirClubModal(manual){
+  if(!window._clubActivo) return;
+  var overlay=document.getElementById('clubOverlay');
+  if(!overlay) return;
+  overlay.classList.add('open');
+  document.body.style.overflow='hidden';
+  if(manual) try{localStorage.setItem('maxup_club_visto',String(Date.now()));}catch(e){}
+  setTimeout(function(){var n=document.getElementById('clubNombre');if(n)n.focus();},220);
+}
+function cerrarClubModal(recordar){
+  var overlay=document.getElementById('clubOverlay');
+  if(overlay) overlay.classList.remove('open');
+  document.body.style.overflow='';
+  if(recordar) try{localStorage.setItem('maxup_club_visto',String(Date.now()));}catch(e){}
+}
+function estadoClub(mensaje,ok){
+  var box=document.getElementById('clubStatus');
+  if(!box) return;
+  if(!mensaje){box.className='club-status';box.textContent='';return;}
+  box.className='club-status '+(ok?'ok':'error');
+  box.textContent=mensaje;
+}
+function registrarEnClub(ev){
+  ev.preventDefault();
+  var btn=document.getElementById('clubSubmit');
+  var intereses=Array.prototype.slice.call(document.querySelectorAll('input[name="clubInteres"]:checked')).map(function(x){return x.value;});
+  if(!intereses.length) intereses=['TODOS'];
+  if(intereses.length>1) intereses=intereses.filter(function(x){return x!=='TODOS';});
+  var payload={accion:'club_registro',nombre:document.getElementById('clubNombre').value,telefono:document.getElementById('clubTelefono').value,
+    email:document.getElementById('clubEmail').value,instagram:document.getElementById('clubInstagram').value,
+    intereses:intereses.join(','),notificaciones:document.getElementById('clubAvisos').checked,
+    consentimiento:document.getElementById('clubConsentimiento').checked,empresa:document.getElementById('clubEmpresa').value,origen:'tienda_web'};
+  btn.disabled=true;btn.textContent='REGISTRANDO...';estadoClub('',true);
+  fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),cache:'no-store',credentials:'omit'})
+    .then(function(r){return r.json();}).then(function(data){
+      if(!data.ok) throw new Error(data.error||'No se pudo completar el registro.');
+      estadoClub('✅ '+data.mensaje,true);
+      try{localStorage.setItem('maxup_club_registrado','1');localStorage.setItem('maxup_club_visto',String(Date.now()));}catch(e){}
+      if(data.emailEnviado!==false) document.getElementById('clubForm').reset();
+    }).catch(function(err){estadoClub('❌ '+err.message,false);})
+    .then(function(){btn.disabled=false;btn.textContent='REGISTRARME GRATIS';});
+}
+function activarClubMaxup(){
+  window._clubActivo=true;
+  var promo=document.getElementById('clubMaxup');if(promo)promo.style.display='';
+  var params=new URLSearchParams(location.search),accion=params.get('club'),token=params.get('token');
+  if((accion==='verificar'||accion==='baja')&&token){
+    abrirClubModal(false);estadoClub('Procesando el enlace...',true);
+    fetch(API_URL+'?accion=club_'+accion+'&token='+encodeURIComponent(token),{cache:'no-store'})
+      .then(function(r){return r.json();}).then(function(data){if(data.error||data.ok===false)throw new Error(data.error||'No se pudo procesar.');estadoClub('✅ '+data.mensaje,true);})
+      .catch(function(err){estadoClub('❌ '+err.message,false);});
+    try{history.replaceState({},document.title,location.pathname+location.hash);}catch(e){}
+    return;
+  }
+  setTimeout(function(){
+    try{
+      if(localStorage.getItem('maxup_club_registrado')==='1') return;
+      var visto=Number(localStorage.getItem('maxup_club_visto')||0);
+      if(Date.now()-visto < 14*24*3600000) return;
+    }catch(e){}
+    if(document.querySelector('.modal-overlay.open,.prod-modal-bg.open,.historial-modal.open')) return;
+    abrirClubModal(false);
+  },45000);
+}
+(function iniciarClubMaxup(){
+  fetch(API_URL+'?accion=club_estado',{cache:'no-store'}).then(function(r){return r.json();}).then(function(data){
+    if(data&&data.ok&&data.clubActivo) activarClubMaxup();
+  }).catch(function(){});
+})();
+document.addEventListener('keydown',function(e){if(e.key==='Escape')cerrarClubModal(false);});

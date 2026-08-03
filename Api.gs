@@ -71,6 +71,10 @@ var COL_DESC_MAYORISTA  = 11;
 var ADMIN_SESSION_TTL = 21600; // 6 horas, máximo permitido por CacheService
 var ADMIN_MAX_INTENTOS = 6;
 
+function _adminVersionSesion() {
+  return PropertiesService.getScriptProperties().getProperty('ADMIN_SESSION_VERSION') || '1';
+}
+
 function _jsonOut(data) {
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
@@ -113,7 +117,7 @@ function adminLogin(clave) {
   }
   cache.remove('ADMIN_LOGIN_FALLOS');
   var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
-  cache.put('ADMIN_SESSION_' + _hashSeguro(token), '1', ADMIN_SESSION_TTL);
+  cache.put('ADMIN_SESSION_' + _hashSeguro(token), _adminVersionSesion(), ADMIN_SESSION_TTL);
   _registrarAuditoria('LOGIN EXITOSO', 'Sesión administrativa iniciada', 'administración');
   return { ok: true, sesion: token, expiraEn: ADMIN_SESSION_TTL };
 }
@@ -124,12 +128,29 @@ function adminLogout(sesion) {
   return { ok: true };
 }
 
+function adminCambiarClave(sesion, actual, nueva) {
+  _validarSesionAdmin(sesion);
+  if (String(actual || '') !== String(_getConfig().ADMIN_CLAVE || '')) throw new Error('La clave actual no coincide.');
+  nueva = String(nueva || '');
+  if (nueva.length < 14 || !/[a-z]/.test(nueva) || !/[A-Z]/.test(nueva) || !/[0-9]/.test(nueva) || !/[^A-Za-z0-9]/.test(nueva)) {
+    throw new Error('La nueva clave debe tener al menos 14 caracteres, mayúscula, minúscula, número y símbolo.');
+  }
+  if (nueva === String(actual || '')) throw new Error('La nueva clave debe ser diferente.');
+  var props = PropertiesService.getScriptProperties();
+  props.setProperty('ADMIN_CLAVE', nueva);
+  props.setProperty('ADMIN_SESSION_VERSION', Utilities.getUuid());
+  CacheService.getScriptCache().remove('ADMIN_SESSION_' + _hashSeguro(sesion));
+  _CONFIG = null;
+  _registrarAuditoria('CLAVE ADMIN CAMBIADA', 'Se invalidaron todas las sesiones anteriores', 'administración');
+  return { ok:true, mensaje:'Clave actualizada. Volvé a iniciar sesión.' };
+}
+
 function _validarSesionAdmin(sesion) {
   if (!sesion) throw new Error('Sesión requerida');
   var key = 'ADMIN_SESSION_' + _hashSeguro(sesion);
   var cache = CacheService.getScriptCache();
-  if (cache.get(key) !== '1') throw new Error('Sesión vencida o inválida');
-  cache.put(key, '1', ADMIN_SESSION_TTL);
+  if (cache.get(key) !== _adminVersionSesion()) throw new Error('Sesión vencida o inválida');
+  cache.put(key, _adminVersionSesion(), ADMIN_SESSION_TTL);
   return true;
 }
 
@@ -156,6 +177,9 @@ function doGet(e) {
       case 'es_nuevo':         resultado = esClienteNuevo(e.parameter.telefono); break;
       case 'historial_cliente': resultado = getHistorialCliente(e.parameter.telefono); break;
       case 'puntos_cliente':    resultado = getPuntosCliente(e.parameter.telefono); break;
+      case 'club_estado':       resultado = estadoClubMaxup(); break;
+      case 'club_verificar':    resultado = verificarClubMaxup(e.parameter.token); break;
+      case 'club_baja':         resultado = bajaClubMaxup(e.parameter.token); break;
       default:                 resultado = getCatalogo();
     }
   } catch(err) {
@@ -175,6 +199,9 @@ function doPost(e) {
     if (data && data.object === 'whatsapp_business_account') {
       return _jsonOut(_procesarWebhookWhatsApp(data));
     }
+    if (data && data.object === 'instagram') {
+      return _jsonOut(_procesarWebhookInstagramClub(data));
+    }
 
     if ((data.type === 'payment' || String(data.action || '').indexOf('payment.') === 0) && data.data && data.data.id) {
       return _jsonOut(procesarWebhookMercadoPago(data));
@@ -182,6 +209,7 @@ function doPost(e) {
 
     if (data.accion === 'admin_login')         return _jsonOut(adminLogin(data.clave));
     if (data.accion === 'admin_logout')        return _jsonOut(adminLogout(data.sesion));
+    if (data.accion === 'admin_cambiar_clave') return _jsonOut(adminCambiarClave(data.sesion, data.actual, data.nueva));
     if (data.accion === 'admin_pedidos')       return _jsonOut(adminGetPedidos(data.sesion));
     if (data.accion === 'admin_resumen')       return _jsonOut(adminGetResumen(data.sesion));
     if (data.accion === 'admin_stock')         return _jsonOut(adminGetStockBajo(data.sesion, data.limite));
@@ -194,6 +222,12 @@ function doPost(e) {
     if (data.accion === 'admin_auditoria')     return _jsonOut(adminGetAuditoria(data.sesion, data.limite));
     if (data.accion === 'admin_configuracion') return _jsonOut(adminConfiguracion(data.sesion, data.valores));
     if (data.accion === 'admin_cupones')       return _jsonOut(adminGetCupones(data.sesion));
+    if (data.accion === 'admin_club')          return _jsonOut(adminGetClub(data.sesion));
+    if (data.accion === 'admin_club_chance')   return _jsonOut(adminAgregarChanceClub(data.sesion, data));
+    if (data.accion === 'admin_club_sorteo')   return _jsonOut(adminEjecutarSorteoClub(data.sesion, data));
+    if (data.accion === 'admin_club_instalar') return _jsonOut(adminInstalarClub(data.sesion));
+
+    if (data.accion === 'club_registro')       return _jsonOut(registrarClubMaxup(data));
 
     if (data.accion === 'registro_mayorista') return registroMayorista(data);
     if (data.accion === 'login_mayorista')    return loginMayorista(data);

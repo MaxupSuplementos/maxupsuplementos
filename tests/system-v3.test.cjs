@@ -13,6 +13,7 @@ const app = read('app.js');
 const indumentaria = read('indumentaria.html');
 const styles = read('styles.css');
 const index = read('index.html');
+const privacy = read('privacidad.html');
 const transparentLogo = fs.readFileSync(path.join(root, 'logo-transparent.png'));
 
 for (const file of ['Api.gs', 'SystemV3.gs', 'Ventas.gs', 'app.js']) {
@@ -71,6 +72,9 @@ assert(!index.includes('href="admin.html"'), 'El acceso administrativo no debe e
 assert(!app.includes("window.location.href = 'admin.html'"), 'La tienda pública no debe revelar gestos ocultos de acceso administrativo');
 assert(admin.includes('function postAdmin(body)'), 'El acceso admin mobile debe usar el POST compatible');
 assert(admin.includes('credentials:\'omit\''), 'El login mobile no debe depender de cookies de terceros');
+assert(api.includes("data.accion === 'admin_cambiar_clave'"), 'La contraseña debe poder cambiarse desde el panel');
+assert(api.includes("setProperty('ADMIN_SESSION_VERSION'"), 'Cambiar la clave debe invalidar sesiones anteriores');
+assert(admin.includes('function cambiarClaveAdmin()'), 'Ajustes debe incluir el cambio seguro de contraseña');
 assert(admin.includes('POLITICA_DESCUENTOS_20260803'), 'El panel debe sincronizar la politica comercial solicitada');
 assert(app.includes("if(e.key==='Enter')"), 'Enter debe confirmar la busqueda');
 assert(app.includes("this.blur(); // cierra también el teclado móvil"), 'Enter debe cerrar sugerencias y teclado mobile');
@@ -92,6 +96,29 @@ assert.strictEqual(amountSandbox.discount(299999), null, 'No debe descontar ante
 assert.strictEqual(amountSandbox.discount(300000).pct, 0.08, 'Debe descontar 8% desde $300.000');
 assert.strictEqual(amountSandbox.discount(499999).pct, 0.08, 'Debe mantener 8% antes de $500.000');
 assert.strictEqual(amountSandbox.discount(500000).pct, 0.15, 'Debe descontar 15% desde $500.000');
+
+assert(api.includes("case 'club_verificar'"), 'El email del Club debe poder verificarse');
+assert(api.includes("case 'club_estado'"), 'La tienda debe activar el Club solo cuando el servidor este actualizado');
+assert(api.includes("case 'club_baja'"), 'Cada miembro debe poder solicitar la baja');
+assert(api.includes("data.accion === 'club_registro'"), 'La API debe aceptar registros del Club');
+assert(api.includes("data.accion === 'admin_club_chance'"), 'El panel debe administrar chances');
+assert(system.includes("'CLUB_MAXUP'"), 'Los miembros deben guardarse en una hoja propia');
+assert(system.includes("'CHANCES_CLUB'"), 'Las chances deben tener historial auditable');
+assert(system.includes("'SORTEOS_CLUB'"), 'Los sorteos deben quedar registrados');
+assert(system.includes('MailApp.getRemainingDailyQuota()'), 'Los avisos deben respetar la cuota diaria de correo');
+assert(system.includes("everyHours(1)"), 'El stock debe revisarse automaticamente');
+assert(system.includes('ejecutarSorteoMensualClubAutomatico'), 'Debe existir el sorteo mensual automatico');
+assert(api.includes("data.object === 'instagram'"), 'Las menciones de Instagram deben tener un webhook separado');
+assert(system.includes('function _procesarWebhookInstagramClub'), 'Las menciones compatibles deben acreditarse automaticamente');
+assert(system.includes("tipo:'ETIQUETA_INSTAGRAM'" ) || admin.includes("tipo:'ETIQUETA_INSTAGRAM'"), 'Las etiquetas deben sumar chances identificables');
+assert(index.includes('id="clubMaxup"'), 'La tienda debe invitar al Club sin bloquear el catalogo');
+assert(index.includes('id="clubOverlay"'), 'El registro debe estar disponible en una ventana accesible');
+assert(app.includes('function registrarEnClub'), 'La tienda debe enviar el registro al servidor');
+assert(app.includes("?accion=club_estado"), 'El formulario no debe mostrarse antes de que el backend este disponible');
+assert(admin.includes("switchTab('club'"), 'El panel debe incluir la gestion del Club');
+assert(admin.includes('function sortearClub()'), 'El panel debe permitir ejecutar el sorteo');
+assert(privacy.includes('El registro es opcional'), 'La politica debe aclarar que el catalogo sigue abierto');
+assert(privacy.includes('Bases generales de los sorteos'), 'Deben publicarse bases generales del sorteo');
 
 const flavorHelper = app.match(/function getInitialFlavor\(p\)\{[\s\S]*?\n\}/);
 assert(flavorHelper, 'Debe existir la seleccion inicial de variantes');

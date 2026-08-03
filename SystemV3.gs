@@ -637,3 +637,384 @@ function migrarSistemaMaxupV3() {
   var salud = pruebaSaludSistema();
   return { ok: salud.ok, sku: sku, salud: salud };
 }
+
+// ============================================================
+// CLUB MAXUP - registros, avisos, chances y sorteos mensuales
+// ============================================================
+
+var CLUB_HEADERS = [
+  'ID','Fecha registro','Nombre','Telefono','Email','Instagram','Email verificado','Fecha verificacion',
+  'Notificaciones','Intereses','Activo','Chances base','Chances extra','Total chances',
+  'Token verificacion hash','Vence verificacion','Token baja hash','Consentimiento fecha','Ultimo aviso','Origen'
+];
+var CLUB_CHANCES_HEADERS = ['Fecha','Club ID','Email','Instagram','Tipo','Chances','Referencia','Nota','Usuario'];
+var CLUB_SORTEOS_HEADERS = ['Mes','Fecha','Club ID ganador','Nombre','Email','Telefono','Instagram','Chances ganador','Participantes','Chances totales','Semilla','Premio','Estado'];
+var CLUB_STOCK_HEADERS = ['Clave','SKU','Marca','Producto','Categoria','Stock','Precio','Firma','Actualizado'];
+
+function _clubAsegurarHoja(nombre, headers, oculta) {
+  var ss = _getSS();
+  var hoja = ss.getSheetByName(nombre);
+  if (!hoja) {
+    hoja = ss.insertSheet(nombre);
+    hoja.getRange(1, 1, 1, headers.length).setValues([headers]);
+    hoja.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#111827').setFontColor('#00C8FF');
+    hoja.setFrozenRows(1);
+    hoja.autoResizeColumns(1, headers.length);
+    if (oculta) hoja.hideSheet();
+  }
+  return hoja;
+}
+
+function _clubHoja() {
+  var h = _clubAsegurarHoja('CLUB_MAXUP', CLUB_HEADERS, false);
+  if (h.getMaxRows() > 1 && !h.getRange(2, 7).getDataValidation()) {
+    h.getRange(2, 7, h.getMaxRows() - 1, 1).insertCheckboxes();
+    h.getRange(2, 9, h.getMaxRows() - 1, 1).insertCheckboxes();
+    h.getRange(2, 11, h.getMaxRows() - 1, 1).insertCheckboxes();
+  }
+  return h;
+}
+
+function _clubEmail(v) { return String(v || '').trim().toLowerCase(); }
+function _clubTelefono(v) { return String(v || '').replace(/\D/g, '').replace(/^0+/, ''); }
+function _clubInstagram(v) { return String(v || '').trim().replace(/^@+/, '').toLowerCase(); }
+function _clubBool(v) { var s = String(v == null ? '' : v).toLowerCase(); return v === true || s === 'true' || s === 'si' || s === 'sí' || s === '1'; }
+function _clubToken() { return Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, ''); }
+function _clubHash(v) { return _hashSeguro(String(v || '')); }
+function _clubEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function _clubWebUrl() { return 'https://maxupsuplementos.com.ar/'; }
+function _clubTokenBaja(email) {
+  var raw = Utilities.base64EncodeWebSafe(_clubEmail(email), Utilities.Charset.UTF_8).replace(/=+$/g, '');
+  var firma = _clubHash(raw + '|' + String(_getConfig().LINK_SECRET || 'club-maxup')).slice(0, 32);
+  return raw + '.' + firma;
+}
+function _clubEmailTokenBaja(token) {
+  var partes = String(token || '').split('.');
+  if (partes.length !== 2) return '';
+  var firma = _clubHash(partes[0] + '|' + String(_getConfig().LINK_SECRET || 'club-maxup')).slice(0, 32);
+  if (firma !== partes[1]) return '';
+  try { return _clubEmail(Utilities.newBlob(Utilities.base64DecodeWebSafe(partes[0])).getDataAsString()); }
+  catch(e) { return ''; }
+}
+
+function _clubBuscarFila(hoja, email, telefono, id) {
+  if (hoja.getLastRow() < 2) return 0;
+  var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CLUB_HEADERS.length).getValues();
+  for (var i = 0; i < datos.length; i++) {
+    if (id && String(datos[i][0]) === String(id)) return i + 2;
+    if (email && _clubEmail(datos[i][4]) === email) return i + 2;
+    if (telefono && _clubTelefono(datos[i][3]) === telefono) return i + 2;
+  }
+  return 0;
+}
+
+function estadoClubMaxup() { return {ok:true,clubActivo:true,registroOpcional:true}; }
+
+function registrarClubMaxup(data) {
+  data = data || {};
+  if (String(data.empresa || '').trim()) return { ok: true, mensaje: 'Revisá tu correo para confirmar el registro.' };
+  var nombre = String(data.nombre || '').trim().replace(/\s+/g, ' ');
+  var email = _clubEmail(data.email);
+  var telefono = _clubTelefono(data.telefono);
+  var instagram = _clubInstagram(data.instagram);
+  var intereses = String(data.intereses || 'TODOS').toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ0-9, _-]/g, '').slice(0, 250);
+  if (nombre.length < 2) throw new Error('Ingresá tu nombre.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Ingresá un email válido.');
+  if (telefono.length < 8 || telefono.length > 15) throw new Error('Ingresá un número de celular válido.');
+  if (!_clubBool(data.consentimiento)) throw new Error('Necesitamos tu consentimiento para guardar los datos y participar.');
+  var cache = CacheService.getScriptCache();
+  var rateKey = 'CLUB_REG_' + _clubHash(email + '|' + telefono);
+  if (cache.get(rateKey)) throw new Error('Ya recibimos este registro. Esperá unos minutos antes de volver a intentar.');
+  cache.put(rateKey, '1', 300);
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var hoja = _clubHoja();
+    var fila = _clubBuscarFila(hoja, email, telefono, '');
+    var ahora = new Date();
+    var tokenVerificacion = _clubToken();
+    var tokenBaja = _clubTokenBaja(email);
+    var verificado = false, fechaVerificacion = '', id = 'CLUB-' + Utilities.getUuid().slice(0, 8).toUpperCase();
+    var chancesBase = 0, chancesExtra = 0;
+    if (fila) {
+      var anterior = hoja.getRange(fila, 1, 1, CLUB_HEADERS.length).getValues()[0];
+      id = String(anterior[0] || id);
+      verificado = anterior[6] === true;
+      fechaVerificacion = anterior[7] || '';
+      chancesBase = Number(anterior[11]) || (verificado ? 1 : 0);
+      chancesExtra = Number(anterior[12]) || 0;
+    } else {
+      fila = hoja.getLastRow() + 1;
+    }
+    var bajaHash = _clubHash(tokenBaja);
+    hoja.getRange(fila, 1, 1, CLUB_HEADERS.length).setValues([[
+      id, fila <= hoja.getLastRow() && hoja.getRange(fila, 2).getValue() ? hoja.getRange(fila, 2).getValue() : ahora,
+      nombre, telefono, email, instagram, verificado, fechaVerificacion, _clubBool(data.notificaciones), intereses || 'TODOS', true,
+      chancesBase, chancesExtra, chancesBase + chancesExtra, _clubHash(tokenVerificacion),
+      new Date(ahora.getTime() + 48 * 3600000), bajaHash, ahora, '', String(data.origen || 'web').slice(0, 80)
+    ]]);
+    var emailEnviado = verificado;
+    if (!verificado) {
+      try { _clubEnviarVerificacion(nombre, email, tokenVerificacion, tokenBaja); emailEnviado = true; }
+      catch(eMail) { Logger.log('Club email verificación: ' + eMail.message); }
+    }
+    _registrarAuditoria('CLUB REGISTRO', email + (verificado ? ' actualizado' : ' pendiente de verificación'), 'club');
+    return { ok: true, verificado: verificado, emailEnviado: emailEnviado,
+      mensaje: verificado ? 'Tus preferencias fueron actualizadas.' : (emailEnviado ? 'Te enviamos un correo para confirmar tu participación.' : 'El registro quedó guardado, pero el correo no pudo salir ahora. Volvé a registrarte más tarde para recibir un enlace nuevo.') };
+  } finally { lock.releaseLock(); }
+}
+
+function _clubEnviarVerificacion(nombre, email, tokenVerificacion, tokenBaja) {
+  if (MailApp.getRemainingDailyQuota() < 1) throw new Error('El registro se guardó, pero hoy se alcanzó el límite de emails. Volvé a intentarlo mañana.');
+  var verificar = _clubWebUrl() + '?club=verificar&token=' + encodeURIComponent(tokenVerificacion);
+  var baja = _clubWebUrl() + '?club=baja&token=' + encodeURIComponent(tokenBaja);
+  MailApp.sendEmail({
+    to: email,
+    subject: 'Confirmá tu lugar en Club MAXUP 🎁',
+    name: 'MAXUP Suplementos',
+    htmlBody: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#222">' +
+      '<h2 style="color:#00a9d6">¡Hola ' + _clubEsc(nombre.split(' ')[0]) + '!</h2>' +
+      '<p>Confirmá tu email para participar de los sorteos mensuales y recibir solamente las novedades de stock que elegiste.</p>' +
+      '<p style="text-align:center;margin:28px 0"><a href="' + verificar + '" style="background:linear-gradient(135deg,#00C8FF,#FF0099);color:#fff;padding:14px 24px;border-radius:8px;text-decoration:none;font-weight:bold">CONFIRMAR MI REGISTRO</a></p>' +
+      '<p style="font-size:12px;color:#777">El enlace vence en 48 horas. Podés dejar de recibir avisos cuando quieras desde <a href="' + baja + '">este enlace</a>.</p></div>'
+  });
+}
+
+function verificarClubMaxup(token) {
+  var hash = _clubHash(token);
+  if (!token || !hash) throw new Error('Enlace de verificación incompleto.');
+  var hoja = _clubHoja();
+  if (hoja.getLastRow() < 2) throw new Error('Registro no encontrado.');
+  var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CLUB_HEADERS.length).getValues();
+  for (var i = 0; i < datos.length; i++) {
+    if (String(datos[i][14] || '') !== hash) continue;
+    if (datos[i][6] === true) return { ok: true, mensaje: 'Tu email ya estaba confirmado.' };
+    var vence = datos[i][15] instanceof Date ? datos[i][15].getTime() : new Date(datos[i][15]).getTime();
+    if (!vence || vence < Date.now()) throw new Error('El enlace venció. Registrate nuevamente para recibir otro.');
+    var fila = i + 2;
+    hoja.getRange(fila, 7).setValue(true);
+    hoja.getRange(fila, 8).setValue(new Date());
+    hoja.getRange(fila, 11).setValue(true);
+    hoja.getRange(fila, 12).setValue(1);
+    hoja.getRange(fila, 14).setValue(1 + (Number(datos[i][12]) || 0));
+    hoja.getRange(fila, 15, 1, 2).clearContent();
+    _registrarAuditoria('CLUB VERIFICADO', String(datos[i][4] || ''), 'club');
+    return { ok: true, mensaje: '¡Listo! Ya participás del próximo sorteo de Club MAXUP.' };
+  }
+  throw new Error('El enlace no es válido o ya fue utilizado.');
+}
+
+function bajaClubMaxup(token) {
+  var hash = _clubHash(token);
+  var emailToken = _clubEmailTokenBaja(token);
+  if (!token || !hash) throw new Error('Enlace de baja incompleto.');
+  var hoja = _clubHoja();
+  if (hoja.getLastRow() < 2) throw new Error('Registro no encontrado.');
+  var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CLUB_HEADERS.length).getValues();
+  for (var i = 0; i < datos.length; i++) {
+    if (String(datos[i][16] || '') !== hash && (!emailToken || _clubEmail(datos[i][4]) !== emailToken)) continue;
+    hoja.getRange(i + 2, 9).setValue(false);
+    hoja.getRange(i + 2, 11).setValue(false);
+    _registrarAuditoria('CLUB BAJA', String(datos[i][4] || ''), 'club');
+    return { ok: true, mensaje: 'Tu baja fue registrada. Ya no recibirás avisos de Club MAXUP.' };
+  }
+  throw new Error('El enlace de baja no es válido.');
+}
+
+function adminGetClub(sesion) {
+  _validarSesionAdmin(sesion);
+  var hoja = _clubHoja();
+  var datos = hoja.getLastRow() > 1 ? hoja.getRange(2, 1, hoja.getLastRow() - 1, CLUB_HEADERS.length).getValues() : [];
+  var miembros = datos.map(function(r) {
+    return { id:String(r[0]||''), fecha:r[1], nombre:String(r[2]||''), telefono:String(r[3]||''), email:String(r[4]||''), instagram:String(r[5]||''),
+      verificado:r[6]===true, notificaciones:r[8]===true, intereses:String(r[9]||''), activo:r[10]===true,
+      base:Number(r[11])||0, extra:Number(r[12])||0, chances:Number(r[13])||0, ultimoAviso:r[18]||'' };
+  }).sort(function(a,b){ return String(b.fecha).localeCompare(String(a.fecha)); });
+  var verificados = miembros.filter(function(m){return m.verificado && m.activo;});
+  var sorteosHoja = _clubAsegurarHoja('SORTEOS_CLUB', CLUB_SORTEOS_HEADERS, false);
+  var sorteos = sorteosHoja.getLastRow() > 1 ? sorteosHoja.getRange(2,1,sorteosHoja.getLastRow()-1,CLUB_SORTEOS_HEADERS.length).getValues().slice(-12).reverse().map(function(r){
+    return {mes:String(r[0]||''),fecha:r[1],id:String(r[2]||''),nombre:String(r[3]||''),email:String(r[4]||''),instagram:String(r[6]||''),chances:Number(r[7])||0,participantes:Number(r[8])||0,total:Number(r[9])||0,premio:String(r[11]||''),estado:String(r[12]||'')};
+  }) : [];
+  return { ok:true, miembros:miembros, sorteos:sorteos, total:miembros.length, verificados:verificados.length,
+    conAvisos:miembros.filter(function(m){return m.verificado&&m.activo&&m.notificaciones;}).length,
+    chances:verificados.reduce(function(s,m){return s+m.chances;},0) };
+}
+
+function adminAgregarChanceClub(sesion, data) {
+  _validarSesionAdmin(sesion);
+  data = data || {};
+  var puntos = Math.max(1, Math.min(10, Math.floor(Number(data.puntos) || 1)));
+  var referencia = String(data.referencia || '').trim().slice(0, 180);
+  var nota = String(data.nota || '').trim().slice(0, 300);
+  var hoja = _clubHoja();
+  var fila = _clubBuscarFila(hoja, _clubEmail(data.email), _clubTelefono(data.telefono), String(data.id || ''));
+  if (!fila) throw new Error('Miembro no encontrado.');
+  var miembro = hoja.getRange(fila, 1, 1, CLUB_HEADERS.length).getValues()[0];
+  if (miembro[6] !== true || miembro[10] !== true) throw new Error('El registro todavía no está verificado o está inactivo.');
+  var mov = _clubAsegurarHoja('CHANCES_CLUB', CLUB_CHANCES_HEADERS, false);
+  if (referencia && mov.getLastRow() > 1) {
+    var refs = mov.getRange(2, 7, mov.getLastRow() - 1, 1).getDisplayValues();
+    for (var i=0;i<refs.length;i++) if (String(refs[i][0]).trim().toLowerCase() === referencia.toLowerCase()) throw new Error('Esa etiqueta o referencia ya fue acreditada.');
+  }
+  mov.appendRow([new Date(), miembro[0], miembro[4], miembro[5], String(data.tipo || 'ETIQUETA'), puntos, referencia, nota, 'admin']);
+  var extra = (Number(miembro[12]) || 0) + puntos;
+  hoja.getRange(fila, 13).setValue(extra);
+  hoja.getRange(fila, 14).setValue((Number(miembro[11]) || 0) + extra);
+  _registrarAuditoria('CLUB CHANCE', miembro[4] + ' +' + puntos + (referencia ? ' ' + referencia : ''), 'administración');
+  return { ok:true, mensaje:'Chance agregada', total:(Number(miembro[11])||0)+extra };
+}
+
+function _clubAcreditarChanceInstagram(usuario, referencia, nota) {
+  usuario = _clubInstagram(usuario);
+  referencia = String(referencia || '').trim();
+  if (!usuario || !referencia) return {ok:false,motivo:'Faltan usuario o referencia'};
+  var hoja = _clubHoja();
+  if (hoja.getLastRow()<2) return {ok:false,motivo:'Sin miembros'};
+  var datos=hoja.getRange(2,1,hoja.getLastRow()-1,CLUB_HEADERS.length).getValues(), fila=0, miembro=null;
+  for(var i=0;i<datos.length;i++) if(_clubInstagram(datos[i][5])===usuario){fila=i+2;miembro=datos[i];break;}
+  if(!fila||!miembro||miembro[6]!==true||miembro[10]!==true) return {ok:false,motivo:'Usuario no registrado o pendiente'};
+  var mov=_clubAsegurarHoja('CHANCES_CLUB',CLUB_CHANCES_HEADERS,false);
+  if(mov.getLastRow()>1){
+    var refs=mov.getRange(2,7,mov.getLastRow()-1,1).getDisplayValues();
+    for(var r=0;r<refs.length;r++) if(String(refs[r][0])===referencia) return {ok:true,duplicado:true};
+  }
+  mov.appendRow([new Date(),miembro[0],miembro[4],usuario,'ETIQUETA_INSTAGRAM_AUTO',1,referencia,String(nota||'Mención recibida por webhook').slice(0,300),'meta']);
+  var extra=(Number(miembro[12])||0)+1;
+  hoja.getRange(fila,13).setValue(extra);hoja.getRange(fila,14).setValue((Number(miembro[11])||1)+extra);
+  _registrarAuditoria('CLUB CHANCE AUTO','@'+usuario+' '+referencia,'instagram');
+  return {ok:true,acreditado:true,usuario:usuario};
+}
+
+function _procesarWebhookInstagramClub(data) {
+  var resultados=[];
+  (data.entry||[]).forEach(function(entry){
+    (entry.changes||[]).forEach(function(change){
+      var campo=String(change.field||'').toLowerCase(), v=change.value||{};
+      if(campo!=='mentions'&&campo!=='comments') return;
+      var usuario=_clubInstagram((v.from&&v.from.username)||v.username||(v.sender&&v.sender.username)||'');
+      var referencia=String(v.id||v.comment_id||v.media_id||v.mention_id||'').trim();
+      if(usuario&&referencia) resultados.push(_clubAcreditarChanceInstagram(usuario,'META-'+referencia,String(v.text||v.message||campo)));
+    });
+  });
+  return {ok:true,procesados:resultados.length,resultados:resultados};
+}
+
+function _clubMesAnterior() {
+  var d = new Date();
+  d.setDate(1); d.setMonth(d.getMonth()-1);
+  return Utilities.formatDate(d, Session.getScriptTimeZone() || 'America/Argentina/Buenos_Aires', 'yyyy-MM');
+}
+
+function _clubEjecutarSorteo(mes, premio, automatico) {
+  mes = String(mes || _clubMesAnterior()).trim();
+  if (!/^\d{4}-\d{2}$/.test(mes)) throw new Error('Mes inválido. Usá AAAA-MM.');
+  var sorteos = _clubAsegurarHoja('SORTEOS_CLUB', CLUB_SORTEOS_HEADERS, false);
+  if (sorteos.getLastRow() > 1) {
+    var prev = sorteos.getRange(2,1,sorteos.getLastRow()-1,1).getDisplayValues();
+    for (var p=0;p<prev.length;p++) if (String(prev[p][0]) === mes) throw new Error('El sorteo de ' + mes + ' ya fue realizado.');
+  }
+  var hoja = _clubHoja();
+  var datos = hoja.getLastRow()>1 ? hoja.getRange(2,1,hoja.getLastRow()-1,CLUB_HEADERS.length).getValues() : [];
+  var participantes = datos.filter(function(r){ return r[6]===true && r[10]===true && (Number(r[13])||0)>0; });
+  if (!participantes.length) throw new Error('No hay participantes verificados.');
+  var total = participantes.reduce(function(s,r){return s+(Number(r[13])||0);},0);
+  var semilla = Utilities.getUuid().replace(/-/g,'') + Date.now();
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, semilla, Utilities.Charset.UTF_8);
+  var numero = (((digest[0]&255)*16777216)+((digest[1]&255)*65536)+((digest[2]&255)*256)+(digest[3]&255)) >>> 0;
+  var ticket = numero % total, acumulado = 0, ganador = participantes[0];
+  for (var i=0;i<participantes.length;i++) { acumulado += Number(participantes[i][13])||0; if(ticket < acumulado){ ganador=participantes[i]; break; } }
+  premio = String(premio || 'Premio mensual Club MAXUP').trim().slice(0,200);
+  sorteos.appendRow([mes,new Date(),ganador[0],ganador[2],ganador[4],ganador[3],ganador[5],ganador[13],participantes.length,total,semilla,premio,automatico?'PENDIENTE DE CONTACTO AUTOMÁTICO':'PENDIENTE DE CONTACTO']);
+  datos.forEach(function(r, idx){
+    if (r[6]===true && r[10]===true) {
+      hoja.getRange(idx + 2, 13).setValue(0);
+      hoja.getRange(idx + 2, 14).setValue(Number(r[11]) || 1);
+    }
+  });
+  _notificarTelegram('🎁 SORTEO CLUB MAXUP ' + mes + '\nGanador: ' + ganador[2] + '\nEmail: ' + ganador[4] + '\nInstagram: @' + (ganador[5]||'-') + '\nChances: ' + ganador[13] + '/' + total + '\nPremio: ' + premio);
+  _registrarAuditoria('CLUB SORTEO', mes + ' ganador ' + ganador[4], automatico?'sistema':'administración');
+  return {ok:true,mes:mes,ganador:{id:ganador[0],nombre:ganador[2],email:ganador[4],telefono:ganador[3],instagram:ganador[5],chances:ganador[13]},participantes:participantes.length,totalChances:total,premio:premio};
+}
+
+function adminEjecutarSorteoClub(sesion, data) { _validarSesionAdmin(sesion); return _clubEjecutarSorteo(data && data.mes, data && data.premio, false); }
+
+function ejecutarSorteoMensualClubAutomatico() {
+  try { return _clubEjecutarSorteo(_clubMesAnterior(), 'Premio mensual Club MAXUP', true); }
+  catch(e) { if(String(e.message).indexOf('ya fue realizado')>=0) return {ok:true,omitido:true,motivo:e.message}; throw e; }
+}
+
+function _clubStockActual() {
+  var catalogo = getCatalogo();
+  var productos = (catalogo.productos || []).slice();
+  try {
+    var indumentaria = getIndumentaria();
+    (indumentaria.prendas || []).forEach(function(p){
+      productos.push({sku:p.codigo||'',id:p.codigo||'',marca:p.marca||'',nombre:p.nombre||'',categoria:'indumentaria '+String(p.cat||''),stock:p.stock||0,precio_venta:p.precio||0});
+    });
+  } catch(eInd) { Logger.log('Club indumentaria: ' + eInd.message); }
+  return productos.map(function(p){
+    var stock = Number(p.stock) || 0;
+    if (p.flavors && p.flavors.length) stock = p.flavors.reduce(function(s,f){return s+(Number(f.stock)||0);},0);
+    var sku=String(p.sku||p.id||'').trim(), marca=String(p.marca||p.brand||'').trim(), nombre=String(p.nombre||p.name||'').trim();
+    var categoria=String(p.categoria||p.category||'').trim(), precio=Number(p.precio_venta||p.price)||0;
+    var clave=sku||_normalizarHeaderV3(marca+'|'+nombre);
+    return {clave:clave,sku:sku,marca:marca,nombre:nombre,categoria:categoria,stock:stock,precio:precio,firma:[stock,precio,nombre,marca].join('|')};
+  }).filter(function(p){return p.clave&&p.nombre;});
+}
+
+function _clubCoincideInteres(intereses, cambio) {
+  var normal = _normalizarHeaderV3(intereses || 'TODOS');
+  if (!normal || normal.indexOf('todos')>=0) return true;
+  var texto = _normalizarHeaderV3([cambio.marca,cambio.nombre,cambio.categoria].join(' '));
+  return normal.split(/[,;_ ]+/).some(function(x){
+    if(x.length<=2) return false;
+    return texto.indexOf(x)>=0 || (x.slice(-1)==='s' && texto.indexOf(x.slice(0,-1))>=0);
+  });
+}
+
+function procesarNotificacionesClubStock() {
+  var hoja = _clubAsegurarHoja('_STOCK_CLUB', CLUB_STOCK_HEADERS, true);
+  var actuales = _clubStockActual(), anteriores = {};
+  if (hoja.getLastRow()>1) hoja.getRange(2,1,hoja.getLastRow()-1,CLUB_STOCK_HEADERS.length).getValues().forEach(function(r){ anteriores[String(r[0])]={stock:Number(r[5])||0,precio:Number(r[6])||0,firma:String(r[7]||'')}; });
+  var inicial = Object.keys(anteriores).length===0, cambios=[];
+  actuales.forEach(function(p){
+    var a=anteriores[p.clave];
+    if (!inicial && !a) cambios.push({tipo:'NUEVO',marca:p.marca,nombre:p.nombre,categoria:p.categoria,stock:p.stock,precio:p.precio});
+    else if (a && a.stock<=0 && p.stock>0) cambios.push({tipo:'REINGRESO',marca:p.marca,nombre:p.nombre,categoria:p.categoria,stock:p.stock,precio:p.precio});
+    else if (a && a.precio>0 && p.precio>0 && a.precio!==p.precio) cambios.push({tipo:'PRECIO',marca:p.marca,nombre:p.nombre,categoria:p.categoria,stock:p.stock,precio:p.precio,precioAnterior:a.precio});
+  });
+  if (hoja.getLastRow()>1) hoja.getRange(2,1,hoja.getLastRow()-1,CLUB_STOCK_HEADERS.length).clearContent();
+  if (actuales.length) hoja.getRange(2,1,actuales.length,CLUB_STOCK_HEADERS.length).setValues(actuales.map(function(p){return [p.clave,p.sku,p.marca,p.nombre,p.categoria,p.stock,p.precio,p.firma,new Date()];}));
+  if (inicial || !cambios.length) return {ok:true,inicializado:inicial,cambios:cambios.length,enviados:0};
+
+  var club=_clubHoja(), filas=club.getLastRow()>1?club.getRange(2,1,club.getLastRow()-1,CLUB_HEADERS.length).getValues():[];
+  var cuota=MailApp.getRemainingDailyQuota(), enviados=0;
+  for(var i=0;i<filas.length && cuota>0;i++){
+    var r=filas[i];
+    if(r[6]!==true||r[8]!==true||r[10]!==true) continue;
+    var relevantes=cambios.filter(function(c){return _clubCoincideInteres(r[9],c);});
+    if(!relevantes.length) continue;
+    var items=relevantes.slice(0,12).map(function(c){return '<li><strong>'+_clubEsc(c.marca+' '+c.nombre)+'</strong> — '+(c.tipo==='NUEVO'?'nuevo ingreso':c.tipo==='REINGRESO'?'volvió a tener stock':'precio actualizado')+(c.precio?' · $'+Number(c.precio).toLocaleString('es-AR'):'')+'</li>';}).join('');
+    var baja=_clubWebUrl()+'?club=baja&token='+encodeURIComponent(_clubTokenBaja(r[4]));
+    try {
+      MailApp.sendEmail({to:String(r[4]),subject:'Novedades de stock en MAXUP ⚡',name:'MAXUP Suplementos',htmlBody:'<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto"><h2 style="color:#00a9d6">Novedades elegidas para vos</h2><ul>'+items+'</ul><p><a href="'+_clubWebUrl()+'" style="display:inline-block;background:#00a9d6;color:#fff;padding:12px 20px;border-radius:7px;text-decoration:none">VER CATÁLOGO</a></p><p style="font-size:12px;color:#777">Podés dejar de recibir avisos cuando quieras desde <a href="'+baja+'">este enlace</a>.</p></div>'});
+      club.getRange(i+2,19).setValue(new Date()); enviados++; cuota--;
+    } catch(eEnvio) { Logger.log('Club aviso a '+String(r[4])+': '+eEnvio.message); }
+  }
+  if(enviados) _notificarTelegram('📧 Club MAXUP: '+enviados+' avisos enviados por '+cambios.length+' cambios de catálogo.');
+  return {ok:true,cambios:cambios.length,enviados:enviados,cuotaRestante:cuota};
+}
+
+function instalarAutomatizacionesClub() {
+  var handlers=['procesarNotificacionesClubStock','ejecutarSorteoMensualClubAutomatico'];
+  ScriptApp.getProjectTriggers().forEach(function(t){if(handlers.indexOf(t.getHandlerFunction())>=0) ScriptApp.deleteTrigger(t);});
+  ScriptApp.newTrigger('procesarNotificacionesClubStock').timeBased().everyHours(1).create();
+  ScriptApp.newTrigger('ejecutarSorteoMensualClubAutomatico').timeBased().everyDays(1).atHour(10).create();
+  _clubHoja(); _clubAsegurarHoja('CHANCES_CLUB',CLUB_CHANCES_HEADERS,false); _clubAsegurarHoja('SORTEOS_CLUB',CLUB_SORTEOS_HEADERS,false); _clubAsegurarHoja('_STOCK_CLUB',CLUB_STOCK_HEADERS,true);
+  var inicial=procesarNotificacionesClubStock();
+  _registrarAuditoria('CLUB AUTOMATIZACIONES','Avisos cada hora y sorteo mensual instalados','administración');
+  return {ok:true,inicial:inicial};
+}
+
+function adminInstalarClub(sesion) { _validarSesionAdmin(sesion); return instalarAutomatizacionesClub(); }

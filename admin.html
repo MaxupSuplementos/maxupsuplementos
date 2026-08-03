@@ -226,6 +226,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <button class="tab" onclick="switchTab('pedidos',this)">📦 Pedidos <span class="badge" id="badgePedidos"></span></button>
     <button class="tab" onclick="switchTab('stock',this)">⚠️ Stock bajo <span class="badge" id="badgeStock" style="display:none;background:var(--orange)"></span></button>
     <button class="tab" onclick="switchTab('cupones',this)">🏷️ Cupones</button>
+    <button class="tab" onclick="switchTab('club',this)">🎁 Club & Sorteos</button>
     <button class="tab" onclick="switchTab('descuentos',this)">🎁 Descuentos</button>
     <button class="tab" onclick="switchTab('vencer',this)">⏰ Por vencer <span class="badge" id="badgeVencer"></span></button>
     <button class="tab" onclick="switchTab('log',this)">📋 Actividad</button>
@@ -238,6 +239,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <div id="tabPedidos" style="display:none"></div>
     <div id="tabStock" style="display:none"></div>
     <div id="tabCupones" style="display:none"></div>
+    <div id="tabClub" style="display:none"></div>
     <div id="tabDescuentos" style="display:none"></div>
     <div id="tabVencer" style="display:none"></div>
     <div id="tabLog" style="display:none"></div>
@@ -393,7 +395,7 @@ function detenerAutoRefresh() {
 }
 
 // ── TABS ─────────────────────────────────────────────────────
-var ALL_TABS = ['resumen','dashboard','pedidos','stock','cupones','descuentos','vencer','log','ajustes'];
+var ALL_TABS = ['resumen','dashboard','pedidos','stock','cupones','club','descuentos','vencer','log','ajustes'];
 
 function switchTab(tab, el) {
   tabActual = tab;
@@ -407,6 +409,7 @@ function switchTab(tab, el) {
   if (tab === 'pedidos')     cargarPedidos();
   if (tab === 'stock')       cargarStock();
   if (tab === 'cupones')     cargarCuponesSheets();
+  if (tab === 'club')        cargarClub();
   if (tab === 'descuentos')  cargarDescuentos();
   if (tab === 'vencer')      cargarVencer();
   if (tab === 'log')         cargarLog();
@@ -415,7 +418,7 @@ function switchTab(tab, el) {
 
 function recargarTab() {
   var fn = {resumen:cargarResumen,dashboard:cargarDashboard,pedidos:cargarPedidos,stock:cargarStock,
-    cupones:cargarCuponesSheets,descuentos:cargarDescuentos,vencer:cargarVencer,log:cargarLog,ajustes:cargarAjustes};
+    cupones:cargarCuponesSheets,club:cargarClub,descuentos:cargarDescuentos,vencer:cargarVencer,log:cargarLog,ajustes:cargarAjustes};
   if(fn[tabActual]) fn[tabActual]();
 }
 
@@ -796,6 +799,15 @@ function cargarAjustes() {
     html += '<div id="configCentral" style="background:var(--dark2);border:1px solid rgba(0,200,255,.18);border-radius:10px;padding:20px;margin-bottom:16px">'
       + '<div class="loading-txt">Cargando configuración comercial...</div></div>';
 
+    html += '<div style="background:var(--dark2);border:1px solid rgba(255,215,0,.18);border-radius:10px;padding:20px;margin-bottom:16px">'
+      +'<div style="font-weight:700;font-size:.95rem;margin-bottom:6px">🔐 Cambiar contraseña del panel</div>'
+      +'<div style="color:var(--gray);font-size:.82rem;margin-bottom:12px">Al guardarla se cerrarán todas las sesiones abiertas. Usá 14 caracteres o más, con mayúscula, minúscula, número y símbolo.</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">'
+      +'<input class="filtro-input" id="claveActualAdmin" type="password" autocomplete="current-password" placeholder="Clave actual">'
+      +'<input class="filtro-input" id="claveNuevaAdmin" type="password" autocomplete="new-password" placeholder="Nueva clave">'
+      +'<input class="filtro-input" id="claveRepetirAdmin" type="password" autocomplete="new-password" placeholder="Repetir nueva clave"></div>'
+      +'<button class="btn-estado btn-prep" style="margin-top:10px;padding:10px 18px" onclick="cambiarClaveAdmin()">GUARDAR NUEVA CLAVE</button></div>';
+
     // Links útiles
     html += '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:20px">'
       + '<div style="font-weight:700;font-size:.95rem;margin-bottom:12px">🔗 Links rápidos</div>'
@@ -846,6 +858,19 @@ function cargarConfigCentral(){
       +campoCfg('cfgBackup','Días de backups',Number(v.BACKUP_RETENCION_DIAS||14))
       +'</div><button class="btn-estado btn-listo" style="padding:10px 20px" onclick="guardarConfigCentral()">💾 GUARDAR CONFIGURACIÓN</button>';
   }).catch(function(err){ box.innerHTML='<div class="empty-txt">No se pudo cargar: '+esc(err.message)+'</div>'; });
+}
+
+function cambiarClaveAdmin(){
+  var actual=document.getElementById('claveActualAdmin').value;
+  var nueva=document.getElementById('claveNuevaAdmin').value;
+  var repetir=document.getElementById('claveRepetirAdmin').value;
+  if(!actual||!nueva){showToast('❌ Completá la clave actual y la nueva');return;}
+  if(nueva!==repetir){showToast('❌ Las claves nuevas no coinciden');return;}
+  if(!confirm('Se cerrarán todas las sesiones administrativas. ¿Cambiar la contraseña?'))return;
+  postAdmin({accion:'admin_cambiar_clave',sesion:clave,actual:actual,nueva:nueva}).then(function(d){
+    if(!d.ok)throw new Error(d.error||'No se pudo cambiar');
+    alert('✅ '+d.mensaje);clave='';detenerAutoRefresh();document.getElementById('app').style.display='none';document.getElementById('loginScreen').style.display='flex';document.getElementById('claveInput').focus();
+  }).catch(function(e){showToast('❌ '+e.message);});
 }
 
 function campoCfg(id,label,value){
@@ -1043,6 +1068,66 @@ function cargarCuponesSheets() {
     html += '<div style="color:var(--gray);font-size:.82rem;margin-top:14px">Los cambios pueden tardar hasta 60 segundos en reflejarse en la tienda. Los pedidos siempre se validan nuevamente en el servidor.</div>';
     el.innerHTML = html;
   }).catch(function(err){ el.innerHTML = '<div class="empty-txt">⚠️ ' + esc(err.message) + '</div>'; });
+}
+
+// ── CLUB MAXUP Y SORTEOS ────────────────────────────────────
+function cargarClub(){
+  var el=document.getElementById('tabClub');
+  el.innerHTML='<div class="loading-txt">Cargando miembros y sorteos...</div>';
+  postAdmin({accion:'admin_club',sesion:clave}).then(function(data){
+    if(!data.ok) throw new Error(data.error||'No se pudo cargar Club MAXUP');
+    var html='<div class="section-title">🎁 <span>Club MAXUP</span></div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
+      +'<button class="header-refresh" onclick="instalarClub()">⚡ Activar automatizaciones</button>'
+      +'<button class="header-refresh" style="border-color:rgba(255,0,153,.35);color:var(--pink)" onclick="sortearClub()">🏆 Realizar sorteo</button>'
+      +'<a href="https://docs.google.com/spreadsheets/d/17rFBpuvjam54M3NGE8Pmtc9YwBBRhVYI8bgGpckiAXo/edit" target="_blank" class="header-refresh" style="text-decoration:none">📄 Abrir registros</a></div>'
+      +'<div class="stats-grid">'
+      +'<div class="stat-card"><div class="stat-label">Registrados</div><div class="stat-val cyan">'+Number(data.total||0)+'</div></div>'
+      +'<div class="stat-card"><div class="stat-label">Verificados activos</div><div class="stat-val green">'+Number(data.verificados||0)+'</div></div>'
+      +'<div class="stat-card"><div class="stat-label">Reciben avisos</div><div class="stat-val pink">'+Number(data.conAvisos||0)+'</div></div>'
+      +'<div class="stat-card"><div class="stat-label">Chances actuales</div><div class="stat-val" style="color:#FFD700">'+Number(data.chances||0)+'</div></div></div>';
+    var sorteos=data.sorteos||[];
+    if(sorteos.length){
+      html+='<div class="section-title" style="margin-top:20px">🏆 <span>Últimos sorteos</span></div>';
+      sorteos.forEach(function(s){html+='<div style="background:var(--dark2);border:1px solid rgba(255,215,0,.16);border-radius:10px;padding:12px 14px;margin-bottom:8px"><strong style="color:#FFD700">'+esc(s.mes)+'</strong> · '+esc(s.nombre)+' <span style="color:var(--gray)">('+esc(s.email)+')</span><div style="font-size:.78rem;color:var(--gray)">'+Number(s.participantes||0)+' participantes · '+Number(s.total||0)+' chances · '+esc(s.premio||'')+'</div></div>';});
+    }
+    html+='<div class="section-title" style="margin-top:20px">👥 <span>Miembros</span></div>';
+    var miembros=data.miembros||[];
+    if(!miembros.length) html+='<div class="empty-txt">Todavía no hay registros.</div>';
+    miembros.slice(0,250).forEach(function(m){
+      var color=m.verificado&&m.activo?'#00E676':'#888';
+      html+='<div style="background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:13px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">'
+        +'<div style="flex:1;min-width:210px"><div style="font-weight:700">'+esc(m.nombre)+' <span style="font-size:.72rem;color:'+color+'">'+(m.verificado?'● VERIFICADO':'○ PENDIENTE')+'</span></div>'
+        +'<div style="font-size:.8rem;color:var(--gray)">'+esc(m.email)+' · '+esc(m.telefono)+(m.instagram?' · @'+esc(m.instagram):'')+'</div>'
+        +'<div style="font-size:.74rem;color:#777">Intereses: '+esc(m.intereses||'TODOS')+' · Avisos: '+(m.notificaciones?'Sí':'No')+'</div></div>'
+        +'<div style="text-align:center;min-width:78px"><div style="font-family:Bebas Neue;font-size:1.5rem;color:#FFD700">'+Number(m.chances||0)+'</div><div style="font-size:.66rem;color:#777">CHANCES</div></div>'
+        +(m.verificado&&m.activo?'<button class="header-refresh" onclick="sumarChanceClub(\''+encodeURIComponent(m.id)+'\')">+ Chance</button>':'')+'</div>';
+    });
+    el.innerHTML=html;
+  }).catch(function(err){el.innerHTML='<div class="empty-txt">⚠️ '+esc(err.message)+'</div>';});
+}
+
+function instalarClub(){
+  if(!confirm('Esto creará las hojas del Club, revisará el stock cada hora y ejecutará el sorteo mensual. ¿Continuar?')) return;
+  showToast('⏳ Activando automatizaciones...');
+  postAdmin({accion:'admin_club_instalar',sesion:clave}).then(function(d){if(!d.ok)throw new Error(d.error||'Error');showToast('✅ Club MAXUP automatizado');cargarClub();}).catch(function(e){showToast('❌ '+e.message);});
+}
+function sumarChanceClub(idCodificado){
+  var referencia=prompt('Pegá el enlace o escribí una referencia única de la etiqueta de Instagram:');
+  if(!referencia) return;
+  var nota=prompt('Nota opcional (por ejemplo: Historia del 03/08):')||'';
+  postAdmin({accion:'admin_club_chance',sesion:clave,id:decodeURIComponent(idCodificado),puntos:1,tipo:'ETIQUETA_INSTAGRAM',referencia:referencia,nota:nota})
+    .then(function(d){if(!d.ok)throw new Error(d.error||'Error');showToast('✅ Chance agregada');cargarClub();}).catch(function(e){showToast('❌ '+e.message);});
+}
+function sortearClub(){
+  var ahora=new Date();ahora.setDate(1);ahora.setMonth(ahora.getMonth()-1);
+  var mesDefault=ahora.getFullYear()+'-'+String(ahora.getMonth()+1).padStart(2,'0');
+  var mes=prompt('Mes a sortear (AAAA-MM):',mesDefault);if(!mes)return;
+  var premio=prompt('Premio del sorteo:','Premio mensual Club MAXUP');if(!premio)return;
+  if(!confirm('Se elegirá un ganador y las chances extra volverán a cero para el próximo mes. ¿Realizar sorteo?'))return;
+  postAdmin({accion:'admin_club_sorteo',sesion:clave,mes:mes,premio:premio}).then(function(d){
+    if(!d.ok)throw new Error(d.error||'Error');alert('🏆 Ganador: '+d.ganador.nombre+'\nEmail: '+d.ganador.email+'\nInstagram: @'+(d.ganador.instagram||'-')+'\nChances: '+d.ganador.chances+'/'+d.totalChances);cargarClub();
+  }).catch(function(e){showToast('❌ '+e.message);});
 }
 
 function logActivity(accion, detalle) {
