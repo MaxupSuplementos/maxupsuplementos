@@ -1,7 +1,10 @@
 // MAXUP SUPLEMENTOS - app.js
 // ── LOGO ──────────────────────────────────────────────────
 const LOGO_B64 = 'logo.png?v=20260803';
-document.querySelectorAll('#navLogo,#footerLogo').forEach(i => i.src = LOGO_B64);
+var logoNavegacion = document.getElementById('navLogo');
+if (logoNavegacion) logoNavegacion.src = 'logo-transparent.png?v=20260803-nav';
+var logoPie = document.getElementById('footerLogo');
+if (logoPie) logoPie.src = LOGO_B64;
 var heroLogoPrincipal = document.getElementById('heroLogo');
 if (heroLogoPrincipal) heroLogoPrincipal.src = 'logo-transparent.png?v=20260803';
 
