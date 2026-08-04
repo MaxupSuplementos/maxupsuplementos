@@ -356,6 +356,7 @@ var PRODS_ALL=[];
 var PRODS=PRODS_ALL.slice();
 var generoA='M',catA='all',marcaA='all',busqA='',pag=1,PPP=20;
 var mProd=null,mSelTalle=null,mSelColor=null;
+var _restaurandoModalI=false;
 var API='https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
 
 function cdot(c){
@@ -663,6 +664,14 @@ function aModal(idx){
 
   document.getElementById('mbg').classList.add('open');
   document.body.style.overflow='hidden';
+  if(!_restaurandoModalI){
+    var estado={maxupLayer:'prenda',idx:idx};
+    var url=new URL(location.href);
+    url.searchParams.set('prenda',String(idx));
+    var destino=url.pathname+url.search+url.hash;
+    if(history.state&&history.state.maxupLayer==='prenda')history.replaceState(estado,'',destino);
+    else history.pushState(estado,'',destino);
+  }
 }
 
 function renderColores(talle){
@@ -703,7 +712,31 @@ function renderColores(talle){
 }
 
 function bgClick(e){if(e.target===document.getElementById('mbg'))cModal();}
-function cModal(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
+function _cerrarModalIFisico(){
+  document.getElementById('mbg').classList.remove('open');
+  document.body.style.overflow='';
+  mProd=null;mSelTalle=null;mSelColor=null;
+}
+function cModal(){
+  if(history.state&&history.state.maxupLayer==='prenda'){history.back();return;}
+  _cerrarModalIFisico();
+}
+
+// Atrás cierra sólo la prenda y conserva género, filtros, página y posición.
+window.addEventListener('popstate',function(e){
+  var modal=document.getElementById('mbg');
+  var abierto=modal&&modal.classList.contains('open');
+  var estado=e.state||{};
+  if(estado.maxupLayer==='prenda'&&typeof estado.idx==='number'){
+    if(!abierto){
+      _restaurandoModalI=true;
+      try{aModal(estado.idx);}finally{_restaurandoModalI=false;}
+    }
+  }else if(abierto){
+    _cerrarModalIFisico();
+  }
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('mbg').classList.contains('open'))cModal();});
 
 // ── CARRITO ──
 var cartI=[];

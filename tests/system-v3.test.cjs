@@ -70,6 +70,12 @@ assert(app.includes("logoNavegacion.src = 'logo-transparent.png"), 'El script no
 assert.strictEqual(transparentLogo[25], 6, 'El logo principal debe ser PNG con canal alfa RGBA');
 assert(!index.includes('href="admin.html"'), 'El acceso administrativo no debe estar enlazado desde la tienda pública');
 assert(!app.includes("window.location.href = 'admin.html'"), 'La tienda pública no debe revelar gestos ocultos de acceso administrativo');
+assert(app.includes("toques>=4"), 'El panel debe tener un acceso discreto desde el logo de la tienda');
+assert(app.includes("iframe title=\"Panel de administración MAXUP\""), 'El panel debe abrir dentro de la tienda y no en otro espacio');
+assert(app.includes("maxupLayer: 'producto'"), 'Las fichas de suplementos deben formar parte del historial');
+assert(app.includes("window.addEventListener('popstate'"), 'Atrás debe cerrar o restaurar la ficha de suplementos');
+assert(indumentaria.includes("maxupLayer:'prenda'"), 'Las fichas de indumentaria deben formar parte del historial');
+assert(indumentaria.includes("Atrás cierra sólo la prenda"), 'Atrás debe conservar los filtros de indumentaria');
 assert(admin.includes('function postAdmin(body)'), 'El acceso admin mobile debe usar el POST compatible');
 assert(admin.includes('credentials:\'omit\''), 'El login mobile no debe depender de cookies de terceros');
 assert(api.includes("data.accion === 'admin_cambiar_clave'"), 'La contraseña debe poder cambiarse desde el panel');

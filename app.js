@@ -5265,6 +5265,23 @@ function openImgModal(src, name){
 //  MODAL DE PRODUCTO
 // ══════════════════════════════════════════════════════════
 let modalPid = null;
+let _restaurandoProductoHistorial = false;
+
+function _urlProductoModal(pid) {
+  var url = new URL(location.href);
+  url.searchParams.set('producto', pid);
+  return url.pathname + url.search + url.hash;
+}
+
+function _registrarProductoEnHistorial(pid) {
+  if (_restaurandoProductoHistorial) return;
+  var estado = { maxupLayer: 'producto', pid: String(pid) };
+  if (history.state && history.state.maxupLayer === 'producto') {
+    history.replaceState(estado, '', _urlProductoModal(pid));
+  } else {
+    history.pushState(estado, '', _urlProductoModal(pid));
+  }
+}
 
 function openProdModal(pid) {
   const p = getProduct(pid);
@@ -5351,6 +5368,7 @@ function openProdModal(pid) {
   document.getElementById('prodModal').classList.add('open');
   document.body.style.overflow = 'hidden';
   mostrarRelacionados(p);
+  _registrarProductoEnHistorial(pid);
 }
 
 function updateModalFlavor() {
@@ -5414,12 +5432,35 @@ function mostrarRelacionados(prod) {
 function closeProdModal(e) {
   if (e.target === document.getElementById('prodModal')) closeProdModalBtn();
 }
-function closeProdModalBtn() {
+function _cerrarProdModalFisico() {
   document.getElementById('prodModal').classList.remove('open');
   document.body.style.overflow = '';
   modalPid = null;
   if(typeof resetMeta === 'function') resetMeta();
 }
+function closeProdModalBtn() {
+  if (history.state && history.state.maxupLayer === 'producto') {
+    history.back();
+    return;
+  }
+  _cerrarProdModalFisico();
+}
+
+// La ficha funciona como una pantalla real: Atrás la cierra y Adelante la reabre.
+window.addEventListener('popstate', function(e) {
+  var modal = document.getElementById('prodModal');
+  var abierto = modal && modal.classList.contains('open');
+  var estado = e.state || {};
+  if (estado.maxupLayer === 'producto' && estado.pid) {
+    if (!abierto || String(modalPid) !== String(estado.pid)) {
+      _restaurandoProductoHistorial = true;
+      try { openProdModal(estado.pid); }
+      finally { _restaurandoProductoHistorial = false; }
+    }
+  } else if (abierto) {
+    _cerrarProdModalFisico();
+  }
+});
 
 function addFromModal() {
   if (!modalPid) return;
@@ -8770,3 +8811,70 @@ function activarClubMaxup(){
   }).catch(function(){});
 })();
 document.addEventListener('keydown',function(e){if(e.key==='Escape')cerrarClubModal(false);});
+
+// ── ACCESO ADMINISTRATIVO DISCRETO ──
+// Cuatro toques rápidos en el logo abren el panel dentro de la misma tienda.
+// No se muestra ningún enlace administrativo al público; la clave sigue siendo
+// la barrera de seguridad real.
+(function(){
+  var trigger=document.getElementById('navLogoLink');
+  if(!trigger)return;
+  var toques=0,reinicio=null,overlay=null,overflowAnterior='';
+
+  function crearPanel(){
+    if(overlay)return overlay;
+    var style=document.createElement('style');
+    style.textContent='.admin-integrado{position:fixed;inset:0;z-index:60000;background:#080808;display:none;flex-direction:column}.admin-integrado.open{display:flex}.admin-integrado-barra{height:48px;min-height:48px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;background:#101010;border-bottom:1px solid rgba(0,200,255,.24);color:#fff;font-family:Rajdhani,sans-serif;font-weight:700;letter-spacing:.06em}.admin-integrado-cerrar{width:38px;height:38px;border:1px solid rgba(255,255,255,.16);border-radius:9px;background:#191919;color:#fff;font-size:1.1rem;cursor:pointer}.admin-integrado iframe{width:100%;height:calc(100% - 48px);border:0;background:#080808}';
+    document.head.appendChild(style);
+    overlay=document.createElement('section');
+    overlay.id='adminIntegrado';
+    overlay.className='admin-integrado';
+    overlay.setAttribute('aria-hidden','true');
+    overlay.innerHTML='<div class="admin-integrado-barra"><span>🔐 PANEL MAXUP</span><button type="button" class="admin-integrado-cerrar" aria-label="Cerrar panel">✕</button></div><iframe title="Panel de administración MAXUP" src="about:blank"></iframe>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('.admin-integrado-cerrar').addEventListener('click',cerrarPanel);
+    return overlay;
+  }
+
+  function abrirPanel(desdeHistorial){
+    var panel=crearPanel();
+    var frame=panel.querySelector('iframe');
+    if(frame.getAttribute('src')==='about:blank')frame.setAttribute('src','admin.html?v=20260804-integrado');
+    overflowAnterior=document.body.style.overflow;
+    panel.classList.add('open');
+    panel.setAttribute('aria-hidden','false');
+    document.body.style.overflow='hidden';
+    if(!desdeHistorial)history.pushState({maxupLayer:'admin'},'',location.href);
+  }
+
+  function cerrarFisico(){
+    if(!overlay)return;
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden','true');
+    document.body.style.overflow=overflowAnterior;
+  }
+
+  function cerrarPanel(){
+    if(history.state&&history.state.maxupLayer==='admin')history.back();
+    else cerrarFisico();
+  }
+
+  trigger.addEventListener('click',function(e){
+    e.preventDefault();
+    toques++;
+    clearTimeout(reinicio);
+    reinicio=setTimeout(function(){toques=0;},1500);
+    if(toques>=4){
+      toques=0;clearTimeout(reinicio);abrirPanel(false);
+    }else if(toques===1){
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+  });
+
+  window.addEventListener('popstate',function(e){
+    var estado=e.state||{};
+    if(estado.maxupLayer==='admin')abrirPanel(true);
+    else if(overlay&&overlay.classList.contains('open'))cerrarFisico();
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&overlay&&overlay.classList.contains('open'))cerrarPanel();});
+})();
