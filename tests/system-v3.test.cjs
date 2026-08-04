@@ -109,6 +109,18 @@ assert(api.includes("case 'club_baja'"), 'Cada miembro debe poder solicitar la b
 assert(api.includes("data.accion === 'club_registro'"), 'La API debe aceptar registros del Club');
 assert(api.includes("data.accion === 'admin_club_chance'"), 'El panel debe administrar chances');
 assert(system.includes("'CLUB_MAXUP'"), 'Los miembros deben guardarse en una hoja propia');
+assert(system.includes('function _clubFilaTienePersona'), 'El Club debe distinguir personas reales de filas preparadas');
+assert(system.includes('function _clubCompactarFilasVacias'), 'Las filas fantasma del Club deben compactarse automaticamente');
+assert(!system.includes("h.getRange(2, 7, h.getMaxRows() - 1, 1).insertCheckboxes()"), 'No se deben crear casillas en las 1000 filas vacias');
+assert(system.includes('var datos = _clubCompactarFilasVacias(hoja).datos;'), 'El panel debe contar solamente miembros con datos reales');
+const clubEmailHelper = system.match(/function _clubEmail\(v\) \{[^\n]+\}/);
+const clubTelefonoHelper = system.match(/function _clubTelefono\(v\) \{[^\n]+\}/);
+const clubRealRowHelper = system.match(/function _clubFilaTienePersona\(r\) \{[\s\S]*?\n\}/);
+assert(clubEmailHelper && clubTelefonoHelper && clubRealRowHelper, 'Debe poder validarse el filtro de filas reales del Club');
+const clubRowSandbox = {};
+vm.runInNewContext(`${clubEmailHelper[0]} ${clubTelefonoHelper[0]} ${clubRealRowHelper[0]}; this.esPersona = _clubFilaTienePersona;`, clubRowSandbox);
+assert.strictEqual(clubRowSandbox.esPersona(['','', '', '', '', '', false, '', false, '', false]), false, 'Una fila con casillas vacias no es una persona');
+assert.strictEqual(clubRowSandbox.esPersona(['CLUB-123','', 'Dario', '541168461457', 'maxups24@gmail.com']), true, 'Una fila identificada si es una persona');
 assert(system.includes("'CHANCES_CLUB'"), 'Las chances deben tener historial auditable');
 assert(system.includes("'SORTEOS_CLUB'"), 'Los sorteos deben quedar registrados');
 assert(system.includes('MailApp.getRemainingDailyQuota()'), 'Los avisos deben respetar la cuota diaria de correo');

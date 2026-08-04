@@ -670,13 +670,51 @@ function _clubAsegurarHoja(nombre, headers, oculta) {
 }
 
 function _clubHoja() {
-  var h = _clubAsegurarHoja('CLUB_MAXUP', CLUB_HEADERS, false);
-  if (h.getMaxRows() > 1 && !h.getRange(2, 7).getDataValidation()) {
-    h.getRange(2, 7, h.getMaxRows() - 1, 1).insertCheckboxes();
-    h.getRange(2, 9, h.getMaxRows() - 1, 1).insertCheckboxes();
-    h.getRange(2, 11, h.getMaxRows() - 1, 1).insertCheckboxes();
+  return _clubAsegurarHoja('CLUB_MAXUP', CLUB_HEADERS, false);
+}
+
+function _clubFilaTienePersona(r) {
+  if (!r) return false;
+  return !!(
+    String(r[0] || '').trim() ||
+    String(r[2] || '').trim() ||
+    _clubTelefono(r[3]) ||
+    _clubEmail(r[4])
+  );
+}
+
+function _clubAplicarCheckboxes(hoja, primeraFila, cantidad) {
+  if (!hoja || cantidad < 1) return;
+  var regla = SpreadsheetApp.newDataValidation().requireCheckbox().build();
+  [7, 9, 11].forEach(function(columna) {
+    hoja.getRange(primeraFila, columna, cantidad, 1).setDataValidation(regla);
+  });
+}
+
+function _clubCompactarFilasVacias(hoja) {
+  hoja = hoja || _clubHoja();
+  var ultimaFila = hoja.getLastRow();
+  if (ultimaFila < 2) return { hoja:hoja, datos:[], cantidad:0 };
+
+  var rango = hoja.getRange(2, 1, ultimaFila - 1, CLUB_HEADERS.length);
+  var originales = rango.getValues();
+  var datos = originales.filter(_clubFilaTienePersona);
+  var yaCompacta = datos.length === originales.length;
+  if (yaCompacta) {
+    for (var i = 0; i < datos.length; i++) {
+      if (!_clubFilaTienePersona(originales[i])) { yaCompacta = false; break; }
+    }
   }
-  return h;
+
+  if (!yaCompacta) {
+    rango.clearContent();
+    [7, 9, 11].forEach(function(columna) {
+      hoja.getRange(2, columna, ultimaFila - 1, 1).clearDataValidations();
+    });
+    if (datos.length) hoja.getRange(2, 1, datos.length, CLUB_HEADERS.length).setValues(datos);
+  }
+  _clubAplicarCheckboxes(hoja, 2, datos.length);
+  return { hoja:hoja, datos:datos, cantidad:datos.length };
 }
 
 function _clubEmail(v) { return String(v || '').trim().toLowerCase(); }
@@ -747,6 +785,7 @@ function registrarClubMaxup(data) {
   lock.waitLock(20000);
   try {
     var hoja = _clubHoja();
+    var compactado = _clubCompactarFilasVacias(hoja);
     var fila = _clubBuscarFila(hoja, email, telefono, '');
     var ahora = new Date();
     var tokenVerificacion = _clubToken();
@@ -761,7 +800,7 @@ function registrarClubMaxup(data) {
       chancesBase = Number(anterior[11]) || (verificado ? 1 : 0);
       chancesExtra = Number(anterior[12]) || 0;
     } else {
-      fila = hoja.getLastRow() + 1;
+      fila = compactado.cantidad + 2;
     }
     var bajaHash = _clubHash(tokenBaja);
     hoja.getRange(fila, 1, 1, CLUB_HEADERS.length).setValues([[
@@ -770,6 +809,7 @@ function registrarClubMaxup(data) {
       chancesBase, chancesExtra, chancesBase + chancesExtra, _clubHash(tokenVerificacion),
       new Date(ahora.getTime() + 48 * 3600000), bajaHash, ahora, '', String(data.origen || 'web').slice(0, 80)
     ]]);
+    _clubAplicarCheckboxes(hoja, fila, 1);
     var emailEnviado = verificado;
     if (!verificado) {
       try { _clubEnviarVerificacion(nombre, email, tokenVerificacion, tokenBaja); emailEnviado = true; }
@@ -1002,7 +1042,7 @@ function salirCuentaClub(data) {
 function adminGetClub(sesion) {
   _validarSesionAdmin(sesion);
   var hoja = _clubHoja();
-  var datos = hoja.getLastRow() > 1 ? hoja.getRange(2, 1, hoja.getLastRow() - 1, CLUB_HEADERS.length).getValues() : [];
+  var datos = _clubCompactarFilasVacias(hoja).datos;
   var miembros = datos.map(function(r) {
     return { id:String(r[0]||''), fecha:r[1], nombre:String(r[2]||''), telefono:String(r[3]||''), email:String(r[4]||''), instagram:String(r[5]||''),
       verificado:r[6]===true, notificaciones:r[8]===true, intereses:String(r[9]||''), activo:r[10]===true,
