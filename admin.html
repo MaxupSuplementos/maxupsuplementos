@@ -304,6 +304,7 @@ function login() {
       btn.textContent = 'INGRESAR'; btn.disabled = false;
       if (data.ok) {
         clave = data.sesion;
+        try { localStorage.setItem('maxup_admin_device','1'); } catch(e) {}
         document.getElementById('claveInput').value = '';
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
@@ -856,8 +857,30 @@ function cargarConfigCentral(){
       +campoCfg('cfgPromoMeses','Meses para fidelidad',Number(v.PROMO_MESES||3))
       +campoCfg('cfgPromoPct','Descuento fidelidad (%)',pct('PROMO_DESCUENTO',.10))
       +campoCfg('cfgBackup','Días de backups',Number(v.BACKUP_RETENCION_DIAS||14))
-      +'</div><button class="btn-estado btn-listo" style="padding:10px 20px" onclick="guardarConfigCentral()">💾 GUARDAR CONFIGURACIÓN</button>';
+      +'</div>'
+      +'<div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)">'
+      +'<div style="font-weight:700;font-size:.9rem;margin-bottom:5px">🎁 Excepciones de la ventana del Club</div>'
+      +'<div style="color:var(--gray);font-size:.78rem;margin-bottom:8px">Una persona por línea. Podés escribir: Nombre | email o Nombre | teléfono. Se reconoce en los dispositivos donde esa persona ya se registró o hizo un pedido.</div>'
+      +'<textarea id="cfgClubExcluidos" class="filtro-input" rows="5" placeholder="Ejemplo:\nDario | correo@ejemplo.com\nCaja local | 3874000000" style="width:100%;resize:vertical">'+esc(v.CLUB_POPUP_EXCLUIDOS||'')+'</textarea>'
+      +'<div id="estadoPopupDispositivo" style="font-size:.78rem;color:var(--green);margin:9px 0"></div>'
+      +'<button type="button" class="filtro-btn" onclick="alternarPopupEsteDispositivo()">CAMBIAR EN ESTE DISPOSITIVO</button></div>'
+      +'<button class="btn-estado btn-listo" style="padding:10px 20px;margin-top:16px" onclick="guardarConfigCentral()">💾 GUARDAR CONFIGURACIÓN</button>';
+    mostrarEstadoPopupDispositivo();
   }).catch(function(err){ box.innerHTML='<div class="empty-txt">No se pudo cargar: '+esc(err.message)+'</div>'; });
+}
+
+function mostrarEstadoPopupDispositivo(){
+  var el=document.getElementById('estadoPopupDispositivo');if(!el)return;
+  var excluido=false;try{excluido=localStorage.getItem('maxup_admin_device')==='1';}catch(e){}
+  el.textContent=excluido?'✅ Este dispositivo está identificado como administrador y no verá la ventana.':'⚠️ La ventana también se mostrará en este dispositivo.';
+  el.style.color=excluido?'var(--green)':'var(--pink)';
+}
+function alternarPopupEsteDispositivo(){
+  try{
+    if(localStorage.getItem('maxup_admin_device')==='1')localStorage.removeItem('maxup_admin_device');
+    else localStorage.setItem('maxup_admin_device','1');
+  }catch(e){}
+  mostrarEstadoPopupDispositivo();
 }
 
 function cambiarClaveAdmin(){
@@ -889,7 +912,8 @@ function guardarConfigCentral(){
     DESCUENTO_BIENVENIDA:String(n('cfgBienvenida')/100), COMBO_DESCUENTO:String(n('cfgCombo')),
     DESCUENTOS_MONTO_JSON:JSON.stringify(descuentosMonto),
     PROMO_MINIMO:String(n('cfgPromoMin')), PROMO_MESES:String(n('cfgPromoMeses')),
-    PROMO_DESCUENTO:String(n('cfgPromoPct')/100), BACKUP_RETENCION_DIAS:String(n('cfgBackup'))
+    PROMO_DESCUENTO:String(n('cfgPromoPct')/100), BACKUP_RETENCION_DIAS:String(n('cfgBackup')),
+    CLUB_POPUP_EXCLUIDOS:String((document.getElementById('cfgClubExcluidos')||{}).value||'')
   };
   postAdmin({accion:'admin_configuracion',sesion:clave,valores:valores}).then(function(data){
       if(!data.ok) throw new Error(data.error||'Error');

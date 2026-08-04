@@ -119,6 +119,16 @@ assert(system.includes('function _procesarWebhookInstagramClub'), 'Las menciones
 assert(system.includes("tipo:'ETIQUETA_INSTAGRAM'" ) || admin.includes("tipo:'ETIQUETA_INSTAGRAM'"), 'Las etiquetas deben sumar chances identificables');
 assert(index.includes('id="clubMaxup"'), 'La tienda debe invitar al Club sin bloquear el catalogo');
 assert(index.includes('id="clubOverlay"'), 'El registro debe estar disponible en una ventana accesible');
+assert.strictEqual((index.match(/id="clubMaxup"/g)||[]).length, 1, 'La invitacion visible al Club no debe estar duplicada');
+assert.strictEqual((index.match(/id="clubOverlay"/g)||[]).length, 1, 'La ventana de registro al Club no debe estar duplicada');
+assert(app.includes('setTimeout(function(){mostrarAlEntrar(0);},1400)'), 'La invitacion debe aparecer al entrar y no al llegar al final');
+assert(!app.includes('maxup_club_visto'), 'Cerrar la invitacion no debe ocultarla durante visitas futuras');
+assert(admin.includes("localStorage.setItem('maxup_admin_device','1')"), 'Un inicio admin debe excluir automaticamente ese dispositivo');
+assert(admin.includes('cfgClubExcluidos'), 'Ajustes debe permitir editar las personas excluidas');
+assert(system.includes('CLUB_POPUP_EXCLUIDOS'), 'Las exclusiones deben guardarse de forma persistente');
+assert(api.includes("data.accion === 'club_estado'"), 'El servidor debe decidir la exclusion sin publicar la lista');
+assert(app.includes("body:JSON.stringify({accion:'club_estado'"), 'La identidad no debe viajar en la direccion publica');
+assert(app.includes('if(!capacidad.controlExclusiones)'), 'La tienda no debe enviar una accion nueva a una version anterior del servidor');
 assert(app.includes('function registrarEnClub'), 'La tienda debe enviar el registro al servidor');
 assert(app.includes("?accion=club_estado"), 'El formulario no debe mostrarse antes de que el backend este disponible');
 assert(admin.includes("switchTab('club'"), 'El panel debe incluir la gestion del Club');

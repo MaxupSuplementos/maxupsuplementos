@@ -177,7 +177,7 @@ function doGet(e) {
       case 'es_nuevo':         resultado = esClienteNuevo(e.parameter.telefono); break;
       case 'historial_cliente': resultado = getHistorialCliente(e.parameter.telefono); break;
       case 'puntos_cliente':    resultado = getPuntosCliente(e.parameter.telefono); break;
-      case 'club_estado':       resultado = estadoClubMaxup(); break;
+      case 'club_estado':       resultado = estadoClubMaxup('', ''); break;
       case 'club_verificar':    resultado = verificarClubMaxup(e.parameter.token); break;
       case 'club_baja':         resultado = bajaClubMaxup(e.parameter.token); break;
       default:                 resultado = getCatalogo();
@@ -227,6 +227,7 @@ function doPost(e) {
     if (data.accion === 'admin_club_sorteo')   return _jsonOut(adminEjecutarSorteoClub(data.sesion, data));
     if (data.accion === 'admin_club_instalar') return _jsonOut(adminInstalarClub(data.sesion));
 
+    if (data.accion === 'club_estado')         return _jsonOut(estadoClubMaxup(data.email, data.telefono));
     if (data.accion === 'club_registro')       return _jsonOut(registrarClubMaxup(data));
 
     if (data.accion === 'registro_mayorista') return registroMayorista(data);

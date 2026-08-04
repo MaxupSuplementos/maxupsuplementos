@@ -13,7 +13,8 @@ var CONFIG_MAXUP_DEFAULTS = {
   DESCUENTOS_MONTO_JSON: '[{"minimo":500000,"pct":0.15,"label":"15% off por compra desde $500.000"},{"minimo":300000,"pct":0.08,"label":"8% off por compra desde $300.000"}]',
   CUPONES_JSON: '{"MAXUP5":{"pct":0.05,"label":"5% off con cupon MAXUP5"},"MAXUP10":{"pct":0.10,"label":"10% off con cupon MAXUP10"},"PRIMERA15":{"pct":0.15,"label":"15% off primera compra"}}',
   ALERTA_VENCIMIENTO_DIAS: '70',
-  BACKUP_RETENCION_DIAS: '14'
+  BACKUP_RETENCION_DIAS: '14',
+  CLUB_POPUP_EXCLUIDOS: ''
 };
 
 function _normalizarHeaderV3(v) {
@@ -51,7 +52,8 @@ function _asegurarHojaConfiguracion() {
     DESCUENTOS_MONTO_JSON: 'Escalas de descuento del carrito en formato JSON',
     CUPONES_JSON: 'Cupones activos en formato JSON',
     ALERTA_VENCIMIENTO_DIAS: 'Dias para alerta de vencimientos',
-    BACKUP_RETENCION_DIAS: 'Dias que se conservan copias automaticas'
+    BACKUP_RETENCION_DIAS: 'Dias que se conservan copias automaticas',
+    CLUB_POPUP_EXCLUIDOS: 'Correos o telefonos que no ven la invitacion emergente del Club'
   };
   var nuevas = [];
   Object.keys(CONFIG_MAXUP_DEFAULTS).forEach(function(k) {
@@ -708,7 +710,19 @@ function _clubBuscarFila(hoja, email, telefono, id) {
   return 0;
 }
 
-function estadoClubMaxup() { return {ok:true,clubActivo:true,registroOpcional:true}; }
+function estadoClubMaxup(email, telefono) {
+  email = _clubEmail(email);
+  telefono = _clubTelefono(telefono);
+  var raw = String(_leerConfiguracionMaxup().CLUB_POPUP_EXCLUIDOS || '');
+  var excluidos = raw.split(/[\n,;]+/).map(function(x){ return String(x || '').trim(); }).filter(String);
+  var excluido = excluidos.some(function(item) {
+    var texto = item.toLowerCase();
+    if (email && texto.indexOf(email) >= 0) return true;
+    var telItem = _clubTelefono(item);
+    return !!(telefono && telItem && telefono === telItem);
+  });
+  return {ok:true,clubActivo:true,registroOpcional:true,controlExclusiones:true,mostrarPopup:!excluido};
+}
 
 function registrarClubMaxup(data) {
   data = data || {};

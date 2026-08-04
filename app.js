@@ -4510,6 +4510,9 @@ function finalizarPedido(){
         })
       });
     }
+    if(data&&data.ok){
+      try{localStorage.setItem('maxup_club_identidad',JSON.stringify({email:email,telefono:phone}));}catch(e){}
+    }
     var ct = document.getElementById('codigoPedidoTexto');
     if (ct && codigo) ct.textContent = codigo;
     var le = document.getElementById('linkEstadoPedido');
@@ -8747,14 +8750,12 @@ function abrirClubModal(manual){
   if(!overlay) return;
   overlay.classList.add('open');
   document.body.style.overflow='hidden';
-  if(manual) try{localStorage.setItem('maxup_club_visto',String(Date.now()));}catch(e){}
   setTimeout(function(){var n=document.getElementById('clubNombre');if(n)n.focus();},220);
 }
 function cerrarClubModal(recordar){
   var overlay=document.getElementById('clubOverlay');
   if(overlay) overlay.classList.remove('open');
   document.body.style.overflow='';
-  if(recordar) try{localStorage.setItem('maxup_club_visto',String(Date.now()));}catch(e){}
 }
 function estadoClub(mensaje,ok){
   var box=document.getElementById('clubStatus');
@@ -8778,12 +8779,15 @@ function registrarEnClub(ev){
     .then(function(r){return r.json();}).then(function(data){
       if(!data.ok) throw new Error(data.error||'No se pudo completar el registro.');
       estadoClub('✅ '+data.mensaje,true);
-      try{localStorage.setItem('maxup_club_registrado','1');localStorage.setItem('maxup_club_visto',String(Date.now()));}catch(e){}
+      try{
+        localStorage.setItem('maxup_club_registrado','1');
+        localStorage.setItem('maxup_club_identidad',JSON.stringify({email:payload.email,telefono:payload.telefono}));
+      }catch(e){}
       if(data.emailEnviado!==false) document.getElementById('clubForm').reset();
     }).catch(function(err){estadoClub('❌ '+err.message,false);})
     .then(function(){btn.disabled=false;btn.textContent='REGISTRARME GRATIS';});
 }
-function activarClubMaxup(){
+function activarClubMaxup(estadoServidor){
   window._clubActivo=true;
   var promo=document.getElementById('clubMaxup');if(promo)promo.style.display='';
   var params=new URLSearchParams(location.search),accion=params.get('club'),token=params.get('token');
@@ -8795,19 +8799,30 @@ function activarClubMaxup(){
     try{history.replaceState({},document.title,location.pathname+location.hash);}catch(e){}
     return;
   }
-  setTimeout(function(){
+  function mostrarAlEntrar(intentos){
     try{
+      if(localStorage.getItem('maxup_admin_device')==='1') return;
       if(localStorage.getItem('maxup_club_registrado')==='1') return;
-      var visto=Number(localStorage.getItem('maxup_club_visto')||0);
-      if(Date.now()-visto < 14*24*3600000) return;
     }catch(e){}
-    if(document.querySelector('.modal-overlay.open,.prod-modal-bg.open,.historial-modal.open')) return;
+    if(estadoServidor&&estadoServidor.mostrarPopup===false)return;
+    if(document.querySelector('.modal-overlay.open,.prod-modal-bg.open,.historial-modal.open,.admin-integrado.open')){
+      if(intentos<10)setTimeout(function(){mostrarAlEntrar(intentos+1);},1000);
+      return;
+    }
     abrirClubModal(false);
-  },45000);
+  }
+  setTimeout(function(){mostrarAlEntrar(0);},1400);
 }
 (function iniciarClubMaxup(){
-  fetch(API_URL+'?accion=club_estado',{cache:'no-store'}).then(function(r){return r.json();}).then(function(data){
-    if(data&&data.ok&&data.clubActivo) activarClubMaxup();
+  var identidad={};try{identidad=JSON.parse(localStorage.getItem('maxup_club_identidad')||'{}')||{};}catch(e){}
+  fetch(API_URL+'?accion=club_estado',{cache:'no-store'}).then(function(r){return r.json();}).then(function(capacidad){
+    if(!capacidad||!capacidad.ok||!capacidad.clubActivo)return;
+    // Sólo consultar la identidad cuando el servidor confirma que ya conoce
+    // esta función; una versión anterior nunca lo interpreta como un pedido.
+    if(!capacidad.controlExclusiones){activarClubMaxup(capacidad);return;}
+    return fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({accion:'club_estado',email:identidad.email||'',telefono:identidad.telefono||''}),cache:'no-store',credentials:'omit'}).then(function(r){return r.json();}).then(function(data){
+      activarClubMaxup(data&&data.ok?data:capacidad);
+    });
   }).catch(function(){});
 })();
 document.addEventListener('keydown',function(e){if(e.key==='Escape')cerrarClubModal(false);});
