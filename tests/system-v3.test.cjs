@@ -70,7 +70,7 @@ assert(app.includes("logoNavegacion.src = 'logo-transparent.png"), 'El script no
 assert.strictEqual(transparentLogo[25], 6, 'El logo principal debe ser PNG con canal alfa RGBA');
 assert(!index.includes('href="admin.html"'), 'El acceso administrativo no debe estar enlazado desde la tienda pública');
 assert(!app.includes("window.location.href = 'admin.html'"), 'La tienda pública no debe revelar gestos ocultos de acceso administrativo');
-assert(app.includes("toques>=4"), 'El panel debe tener un acceso discreto desde el logo de la tienda');
+assert(app.includes("toques>=5"), 'El panel debe requerir cinco toques para evitar aperturas accidentales');
 assert(app.includes("iframe title=\"Panel de administración MAXUP\""), 'El panel debe abrir dentro de la tienda y no en otro espacio');
 assert(app.includes("maxupLayer: 'producto'"), 'Las fichas de suplementos deben formar parte del historial');
 assert(app.includes("window.addEventListener('popstate'"), 'Atrás debe cerrar o restaurar la ficha de suplementos');
@@ -140,8 +140,8 @@ assert(app.includes('programarSincronizacionCarrito'), 'Cada cambio del carrito 
 assert(app.includes("consentimiento:document.getElementById('clubConsentimiento').checked,empresa:''"), 'El autocompletado no debe activar por error el campo antispam');
 assert(app.includes('¡Bienvenido/a a MAXUP! Tu cuenta quedó creada'), 'El registro debe mostrar una bienvenida clara');
 assert(system.includes('cuentaCliente:true'), 'La cuenta sólo debe mostrarse después de actualizar el servidor');
-assert(app.includes("trigger.addEventListener('dblclick'"), 'El panel debe abrir con doble clic en computadora');
-assert(app.includes("e.ctrlKey&&e.altKey"), 'El panel debe tener un atajo alternativo en computadora');
+assert(!app.includes("trigger.addEventListener('dblclick'"), 'El doble clic no debe abrir el panel por accidente');
+assert(!app.includes("e.ctrlKey&&e.altKey"), 'No debe quedar un atajo administrativo accidental');
 assert(app.includes('function registrarEnClub'), 'La tienda debe enviar el registro al servidor');
 assert(app.includes("?accion=club_estado"), 'El formulario no debe mostrarse antes de que el backend este disponible');
 assert(admin.includes("switchTab('club'"), 'El panel debe incluir la gestion del Club');

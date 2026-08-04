@@ -8938,7 +8938,7 @@ function iniciarSesionCuentaGuardada(){
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('accountOverlay').classList.contains('open'))cerrarCuentaModal();});
 
 // ── ACCESO ADMINISTRATIVO DISCRETO ──
-// Cuatro toques en celular o doble clic en computadora abren el panel.
+// Cinco toques o clics rápidos en el logo abren el panel.
 // No se muestra ningún enlace administrativo al público; la clave sigue siendo
 // la barrera de seguridad real.
 (function(){
@@ -8989,21 +8989,16 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.ge
     toques++;
     clearTimeout(reinicio);
     reinicio=setTimeout(function(){toques=0;},1500);
-    if(toques>=4){
+    if(toques>=5){
       toques=0;clearTimeout(reinicio);abrirPanel(false);
     }else if(toques===1){
       window.scrollTo({top:0,behavior:'smooth'});
     }
   });
-  trigger.addEventListener('dblclick',function(e){e.preventDefault();toques=0;clearTimeout(reinicio);abrirPanel(false);});
-
   window.addEventListener('popstate',function(e){
     var estado=e.state||{};
     if(estado.maxupLayer==='admin')abrirPanel(true);
     else if(overlay&&overlay.classList.contains('open'))cerrarFisico();
   });
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape'&&overlay&&overlay.classList.contains('open'))cerrarPanel();
-    if(e.ctrlKey&&e.altKey&&String(e.key).toLowerCase()==='a'){e.preventDefault();abrirPanel(false);}
-  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&overlay&&overlay.classList.contains('open'))cerrarPanel();});
 })();
