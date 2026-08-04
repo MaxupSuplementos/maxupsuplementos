@@ -3970,7 +3970,10 @@ function loadCart(){
   try{ const s=localStorage.getItem('maxup_cart_v3'); if(s) cart=JSON.parse(s); }catch(e){cart=[];}
   renderCart(); updateBadge();
 }
-function saveCart(){ try{localStorage.setItem('maxup_cart_v3',JSON.stringify(cart));}catch(e){} }
+function saveCart(){
+  try{localStorage.setItem('maxup_cart_v3',JSON.stringify(cart));}catch(e){}
+  if(typeof programarSincronizacionCarrito==='function')programarSincronizacionCarrito();
+}
 
 function addToCartById(pid){
   const p = getProduct(pid);
@@ -8773,12 +8776,12 @@ function registrarEnClub(ev){
   var payload={accion:'club_registro',nombre:document.getElementById('clubNombre').value,telefono:document.getElementById('clubTelefono').value,
     email:document.getElementById('clubEmail').value,instagram:document.getElementById('clubInstagram').value,
     intereses:intereses.join(','),notificaciones:document.getElementById('clubAvisos').checked,
-    consentimiento:document.getElementById('clubConsentimiento').checked,empresa:document.getElementById('clubEmpresa').value,origen:'tienda_web'};
+    consentimiento:document.getElementById('clubConsentimiento').checked,empresa:'',origen:'tienda_web'};
   btn.disabled=true;btn.textContent='REGISTRANDO...';estadoClub('',true);
   fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),cache:'no-store',credentials:'omit'})
     .then(function(r){return r.json();}).then(function(data){
       if(!data.ok) throw new Error(data.error||'No se pudo completar el registro.');
-      estadoClub('✅ '+data.mensaje,true);
+      estadoClub('✅ ¡Bienvenido/a a MAXUP! Tu cuenta quedó creada. Revisá tu email para confirmarla y después podrás recuperar tu carrito desde cualquier dispositivo.',true);
       try{
         localStorage.setItem('maxup_club_registrado','1');
         localStorage.setItem('maxup_club_identidad',JSON.stringify({email:payload.email,telefono:payload.telefono}));
@@ -8789,12 +8792,22 @@ function registrarEnClub(ev){
 }
 function activarClubMaxup(estadoServidor){
   window._clubActivo=true;
+  if(estadoServidor&&estadoServidor.cuentaCliente){
+    window._cuentaDisponible=true;
+    var cuentaNav=document.getElementById('accountNavBtn'),cuentaMov=document.getElementById('accountMobileBtn');
+    if(cuentaNav)cuentaNav.style.display='';if(cuentaMov)cuentaMov.style.display='';
+    iniciarSesionCuentaGuardada();
+  }
   var promo=document.getElementById('clubMaxup');if(promo)promo.style.display='';
   var params=new URLSearchParams(location.search),accion=params.get('club'),token=params.get('token');
   if((accion==='verificar'||accion==='baja')&&token){
     abrirClubModal(false);estadoClub('Procesando el enlace...',true);
     fetch(API_URL+'?accion=club_'+accion+'&token='+encodeURIComponent(token),{cache:'no-store'})
-      .then(function(r){return r.json();}).then(function(data){if(data.error||data.ok===false)throw new Error(data.error||'No se pudo procesar.');estadoClub('✅ '+data.mensaje,true);})
+      .then(function(r){return r.json();}).then(function(data){
+        if(data.error||data.ok===false)throw new Error(data.error||'No se pudo procesar.');
+        estadoClub('✅ '+data.mensaje,true);
+        if(data.sesion)activarSesionCuenta(data,true);
+      })
       .catch(function(err){estadoClub('❌ '+err.message,false);});
     try{history.replaceState({},document.title,location.pathname+location.hash);}catch(e){}
     return;
@@ -8805,7 +8818,7 @@ function activarClubMaxup(estadoServidor){
       if(localStorage.getItem('maxup_club_registrado')==='1') return;
     }catch(e){}
     if(estadoServidor&&estadoServidor.mostrarPopup===false)return;
-    if(document.querySelector('.modal-overlay.open,.prod-modal-bg.open,.historial-modal.open,.admin-integrado.open')){
+    if(document.querySelector('.modal-overlay.open,.prod-modal-bg.open,.historial-modal.open,.admin-integrado.open,.account-overlay.open')){
       if(intentos<10)setTimeout(function(){mostrarAlEntrar(intentos+1);},1000);
       return;
     }
@@ -8827,8 +8840,105 @@ function activarClubMaxup(estadoServidor){
 })();
 document.addEventListener('keydown',function(e){if(e.key==='Escape')cerrarClubModal(false);});
 
+// ── CUENTA MAXUP Y CARRITO SINCRONIZADO ──
+window._cuentaDisponible=false;
+var _cuentaCliente=null,_cuentaSesion='',_syncCarritoTimer=null,_aplicandoCarritoRemoto=false,_cuentaInicioHecho=false;
+function cuentaEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+function cuentaPost(datos){
+  return fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(datos),cache:'no-store',credentials:'omit'})
+    .then(function(r){return r.json();});
+}
+function estadoCuentaUI(mensaje,ok){
+  var el=document.getElementById('accountStatus');if(!el)return;
+  if(!mensaje){el.className='club-status';el.textContent='';return;}
+  el.className='club-status '+(ok?'ok':'error');el.textContent=mensaje;
+}
+function abrirCuentaModal(email){
+  if(!window._cuentaDisponible){showToast('La cuenta MAXUP se está cargando. Probá nuevamente en unos segundos.');return;}
+  cerrarClubModal(false);
+  var ov=document.getElementById('accountOverlay');if(!ov)return;
+  ov.classList.add('open');document.body.style.overflow='hidden';
+  if(email){var input=document.getElementById('accountEmail');if(input)input.value=email;}
+  renderCuentaCliente();
+  setTimeout(function(){var i=document.getElementById(_cuentaCliente?'accountLoggedIn':'accountEmail');if(i&&i.focus)i.focus();},180);
+}
+function cerrarCuentaModal(){var ov=document.getElementById('accountOverlay');if(ov)ov.classList.remove('open');document.body.style.overflow='';}
+function renderCuentaCliente(){
+  var fuera=document.getElementById('accountLoggedOut'),dentro=document.getElementById('accountLoggedIn');
+  if(!fuera||!dentro)return;
+  fuera.style.display=_cuentaCliente?'none':'block';dentro.style.display=_cuentaCliente?'block':'none';
+  var nav=document.getElementById('accountNavBtn'),mov=document.getElementById('accountMobileBtn');
+  if(_cuentaCliente){
+    var nombre=String(_cuentaCliente.nombre||'Cliente').trim().split(/\s+/)[0];
+    if(nav)nav.textContent='👤 HOLA, '+nombre.toUpperCase();
+    if(mov)mov.textContent='👤 Hola, '+nombre+' · Mi cuenta';
+    var w=document.getElementById('accountWelcome');if(w)w.innerHTML='<strong>¡Hola, '+cuentaEsc(nombre)+'!</strong><br><span style="color:#aaa;font-size:.85rem">Tu cuenta está activa. Tenés '+Number(_cuentaCliente.chances||0)+' chance(s) para sorteos.</span>';
+  }else{
+    if(nav)nav.textContent='👤 ENTRAR';if(mov)mov.textContent='👤 Entrar a mi cuenta';
+  }
+}
+function solicitarCodigoCuenta(){
+  var email=String((document.getElementById('accountEmail')||{}).value||'').trim();
+  var btn=document.getElementById('accountSendBtn');if(!email){estadoCuentaUI('Ingresá tu email.',false);return;}
+  btn.disabled=true;btn.textContent='ENVIANDO...';estadoCuentaUI('',true);
+  cuentaPost({accion:'cuenta_solicitar',email:email}).then(function(d){
+    if(!d.ok)throw new Error(d.error||'No se pudo enviar.');
+    document.getElementById('accountCodeWrap').style.display='block';
+    estadoCuentaUI('📧 '+d.mensaje,true);setTimeout(function(){document.getElementById('accountCode').focus();},100);
+  }).catch(function(e){estadoCuentaUI('❌ '+e.message,false);}).then(function(){btn.disabled=false;btn.textContent='REENVIAR CÓDIGO';});
+}
+function ingresarCuenta(){
+  var email=String((document.getElementById('accountEmail')||{}).value||'').trim();
+  var codigo=String((document.getElementById('accountCode')||{}).value||'').trim();
+  var btn=document.getElementById('accountLoginBtn');btn.disabled=true;btn.textContent='ENTRANDO...';
+  cuentaPost({accion:'cuenta_ingresar',email:email,codigo:codigo}).then(function(d){
+    if(!d.ok)throw new Error(d.error||'No pudimos ingresar.');activarSesionCuenta(d,false);
+  }).catch(function(e){estadoCuentaUI('❌ '+e.message,false);}).then(function(){btn.disabled=false;btn.textContent='ENTRAR A MI CUENTA';});
+}
+function aplicarCarritoRemoto(remoto){
+  if(!Array.isArray(remoto)||!remoto.length)return false;
+  _aplicandoCarritoRemoto=true;cart=remoto;
+  try{localStorage.setItem('maxup_cart_v3',JSON.stringify(cart));}catch(e){}
+  renderCart();updateBadge();_aplicandoCarritoRemoto=false;return true;
+}
+function activarSesionCuenta(data,desdeVerificacion){
+  _cuentaSesion=String(data.sesion||'');_cuentaCliente=data.perfil||null;
+  try{localStorage.setItem('maxup_cuenta_sesion',_cuentaSesion);localStorage.setItem('maxup_club_registrado','1');
+    if(_cuentaCliente)localStorage.setItem('maxup_club_identidad',JSON.stringify({email:_cuentaCliente.email||'',telefono:_cuentaCliente.telefono||''}));}catch(e){}
+  var recuperado=aplicarCarritoRemoto(data.carrito||[]);
+  if(!recuperado&&cart.length)programarSincronizacionCarrito(true);
+  renderCuentaCliente();estadoCuentaUI('✅ '+(data.mensaje||'Sesión iniciada.'),true);
+  showToast(recuperado?'☁️ Recuperamos tu carrito guardado':'👋 ¡Bienvenido/a a tu cuenta MAXUP!');
+  if(desdeVerificacion)setTimeout(function(){abrirCuentaModal();},350);
+}
+function programarSincronizacionCarrito(ahora){
+  if(_aplicandoCarritoRemoto||!_cuentaSesion||!_cuentaCliente)return;
+  clearTimeout(_syncCarritoTimer);
+  _syncCarritoTimer=setTimeout(function(){
+    cuentaPost({accion:'cuenta_carrito',sesion:_cuentaSesion,carrito:cart}).then(function(d){
+      if(!d.ok&&/sesión|sesion|venció|vencio/i.test(d.error||''))limpiarSesionCuenta();
+    }).catch(function(){});
+  },ahora?50:700);
+}
+function limpiarSesionCuenta(){
+  _cuentaSesion='';_cuentaCliente=null;try{localStorage.removeItem('maxup_cuenta_sesion');}catch(e){}renderCuentaCliente();
+}
+function salirCuenta(){
+  var token=_cuentaSesion;limpiarSesionCuenta();estadoCuentaUI('',true);
+  if(token)cuentaPost({accion:'cuenta_salir',sesion:token}).catch(function(){});
+  showToast('Sesión cerrada. El carrito sigue guardado en este dispositivo.');
+}
+function iniciarSesionCuentaGuardada(){
+  if(_cuentaInicioHecho||!window._cuentaDisponible)return;_cuentaInicioHecho=true;
+  try{_cuentaSesion=localStorage.getItem('maxup_cuenta_sesion')||'';}catch(e){}
+  renderCuentaCliente();if(!_cuentaSesion)return;
+  cuentaPost({accion:'cuenta_estado',sesion:_cuentaSesion}).then(function(d){if(!d.ok)throw new Error(d.error||'Sesión vencida');activarSesionCuenta({sesion:_cuentaSesion,perfil:d.perfil,carrito:d.carrito,mensaje:''},false);}).catch(function(){limpiarSesionCuenta();});
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('accountOverlay').classList.contains('open'))cerrarCuentaModal();});
+
 // ── ACCESO ADMINISTRATIVO DISCRETO ──
-// Cuatro toques rápidos en el logo abren el panel dentro de la misma tienda.
+// Cuatro toques en celular o doble clic en computadora abren el panel.
 // No se muestra ningún enlace administrativo al público; la clave sigue siendo
 // la barrera de seguridad real.
 (function(){
@@ -8885,11 +8995,15 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')cerrarClubMo
       window.scrollTo({top:0,behavior:'smooth'});
     }
   });
+  trigger.addEventListener('dblclick',function(e){e.preventDefault();toques=0;clearTimeout(reinicio);abrirPanel(false);});
 
   window.addEventListener('popstate',function(e){
     var estado=e.state||{};
     if(estado.maxupLayer==='admin')abrirPanel(true);
     else if(overlay&&overlay.classList.contains('open'))cerrarFisico();
   });
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&overlay&&overlay.classList.contains('open'))cerrarPanel();});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&overlay&&overlay.classList.contains('open'))cerrarPanel();
+    if(e.ctrlKey&&e.altKey&&String(e.key).toLowerCase()==='a'){e.preventDefault();abrirPanel(false);}
+  });
 })();

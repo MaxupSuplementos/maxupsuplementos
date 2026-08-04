@@ -652,6 +652,8 @@ var CLUB_HEADERS = [
 var CLUB_CHANCES_HEADERS = ['Fecha','Club ID','Email','Instagram','Tipo','Chances','Referencia','Nota','Usuario'];
 var CLUB_SORTEOS_HEADERS = ['Mes','Fecha','Club ID ganador','Nombre','Email','Telefono','Instagram','Chances ganador','Participantes','Chances totales','Semilla','Premio','Estado'];
 var CLUB_STOCK_HEADERS = ['Clave','SKU','Marca','Producto','Categoria','Stock','Precio','Firma','Actualizado'];
+var CLUB_CARRITOS_HEADERS = ['Club ID','Email','Carrito JSON','Actualizado'];
+var CLUB_SESIONES_HEADERS = ['Token hash','Club ID','Email','Creada','Vence','Activa','Ultimo uso'];
 
 function _clubAsegurarHoja(nombre, headers, oculta) {
   var ss = _getSS();
@@ -721,7 +723,7 @@ function estadoClubMaxup(email, telefono) {
     var telItem = _clubTelefono(item);
     return !!(telefono && telItem && telefono === telItem);
   });
-  return {ok:true,clubActivo:true,registroOpcional:true,controlExclusiones:true,mostrarPopup:!excluido};
+  return {ok:true,clubActivo:true,registroOpcional:true,controlExclusiones:true,cuentaCliente:true,mostrarPopup:!excluido};
 }
 
 function registrarClubMaxup(data) {
@@ -774,7 +776,7 @@ function registrarClubMaxup(data) {
       catch(eMail) { Logger.log('Club email verificación: ' + eMail.message); }
     }
     _registrarAuditoria('CLUB REGISTRO', email + (verificado ? ' actualizado' : ' pendiente de verificación'), 'club');
-    return { ok: true, verificado: verificado, emailEnviado: emailEnviado,
+    return { ok: true, id:id, verificado: verificado, emailEnviado: emailEnviado,
       mensaje: verificado ? 'Tus preferencias fueron actualizadas.' : (emailEnviado ? 'Te enviamos un correo para confirmar tu participación.' : 'El registro quedó guardado, pero el correo no pudo salir ahora. Volvé a registrarte más tarde para recibir un enlace nuevo.') };
   } finally { lock.releaseLock(); }
 }
@@ -803,7 +805,12 @@ function verificarClubMaxup(token) {
   var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CLUB_HEADERS.length).getValues();
   for (var i = 0; i < datos.length; i++) {
     if (String(datos[i][14] || '') !== hash) continue;
-    if (datos[i][6] === true) return { ok: true, mensaje: 'Tu email ya estaba confirmado.' };
+    if (datos[i][6] === true) {
+      hoja.getRange(i + 2, 15, 1, 2).clearContent();
+      var sesionExistente = _cuentaCrearSesion(String(datos[i][0] || ''), _clubEmail(datos[i][4]));
+      return { ok: true, mensaje: 'Tu email ya estaba confirmado.', sesion:sesionExistente,
+        perfil:_cuentaPerfilDesdeFila(datos[i]), carrito:_cuentaObtenerCarrito(String(datos[i][0] || '')) };
+    }
     var vence = datos[i][15] instanceof Date ? datos[i][15].getTime() : new Date(datos[i][15]).getTime();
     if (!vence || vence < Date.now()) throw new Error('El enlace venció. Registrate nuevamente para recibir otro.');
     var fila = i + 2;
@@ -814,7 +821,10 @@ function verificarClubMaxup(token) {
     hoja.getRange(fila, 14).setValue(1 + (Number(datos[i][12]) || 0));
     hoja.getRange(fila, 15, 1, 2).clearContent();
     _registrarAuditoria('CLUB VERIFICADO', String(datos[i][4] || ''), 'club');
-    return { ok: true, mensaje: '¡Listo! Ya participás del próximo sorteo de Club MAXUP.' };
+    var sesion = _cuentaCrearSesion(String(datos[i][0] || ''), _clubEmail(datos[i][4]));
+    datos[i][6] = true; datos[i][7] = new Date(); datos[i][10] = true; datos[i][11] = 1;
+    return { ok: true, mensaje: '¡Bienvenido/a! Tu cuenta MAXUP quedó activada y ya participás del próximo sorteo.',
+      sesion:sesion, perfil:_cuentaPerfilDesdeFila(datos[i]), carrito:_cuentaObtenerCarrito(String(datos[i][0] || '')) };
   }
   throw new Error('El enlace no es válido o ya fue utilizado.');
 }
@@ -834,6 +844,159 @@ function bajaClubMaxup(token) {
     return { ok: true, mensaje: 'Tu baja fue registrada. Ya no recibirás avisos de Club MAXUP.' };
   }
   throw new Error('El enlace de baja no es válido.');
+}
+
+// ── CUENTA CLUB Y CARRITO ENTRE DISPOSITIVOS ────────────────
+function _cuentaPerfilDesdeFila(r) {
+  return { id:String(r[0]||''), nombre:String(r[2]||''), telefono:String(r[3]||''), email:_clubEmail(r[4]),
+    instagram:String(r[5]||''), verificado:r[6]===true, intereses:String(r[9]||''), chances:Number(r[13])||0 };
+}
+
+function _cuentaMiembroPorEmail(email) {
+  email = _clubEmail(email);
+  var hoja = _clubHoja();
+  var fila = _clubBuscarFila(hoja, email, '', '');
+  if (!fila) return null;
+  var datos = hoja.getRange(fila, 1, 1, CLUB_HEADERS.length).getValues()[0];
+  if (datos[10] !== true) return null;
+  return { hoja:hoja, fila:fila, datos:datos };
+}
+
+function _cuentaCrearSesion(clubId, email) {
+  if (!clubId || !email) throw new Error('No se pudo crear la sesión de la cuenta.');
+  var token = _clubToken();
+  var ahora = new Date();
+  var vence = new Date(ahora.getTime() + 30 * 24 * 3600000);
+  var hoja = _clubAsegurarHoja('CLUB_SESIONES', CLUB_SESIONES_HEADERS, true);
+  hoja.appendRow([_clubHash(token), clubId, _clubEmail(email), ahora, vence, true, ahora]);
+  return token;
+}
+
+function _cuentaValidarSesion(token) {
+  token = String(token || '');
+  if (token.length < 32) throw new Error('Iniciá sesión nuevamente.');
+  var hash = _clubHash(token);
+  var hoja = _clubAsegurarHoja('CLUB_SESIONES', CLUB_SESIONES_HEADERS, true);
+  if (hoja.getLastRow() < 2) throw new Error('La sesión venció.');
+  var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CLUB_SESIONES_HEADERS.length).getValues();
+  for (var i = datos.length - 1; i >= 0; i--) {
+    if (String(datos[i][0] || '') !== hash) continue;
+    var vence = datos[i][4] instanceof Date ? datos[i][4].getTime() : new Date(datos[i][4]).getTime();
+    if (datos[i][5] !== true || !vence || vence < Date.now()) throw new Error('La sesión venció.');
+    var clubId = String(datos[i][1] || '');
+    var club = _clubHoja();
+    var filaClub = _clubBuscarFila(club, '', '', clubId);
+    if (!filaClub) throw new Error('La cuenta ya no está disponible.');
+    var miembro = club.getRange(filaClub, 1, 1, CLUB_HEADERS.length).getValues()[0];
+    if (miembro[10] !== true) throw new Error('La cuenta está inactiva.');
+    hoja.getRange(i + 2, 7).setValue(new Date());
+    return { hojaSesion:hoja, filaSesion:i+2, clubId:clubId, email:_clubEmail(datos[i][2]), miembro:miembro };
+  }
+  throw new Error('La sesión venció.');
+}
+
+function _cuentaObtenerCarrito(clubId) {
+  var hoja = _clubAsegurarHoja('CLUB_CARRITOS', CLUB_CARRITOS_HEADERS, true);
+  if (hoja.getLastRow() < 2) return [];
+  var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CLUB_CARRITOS_HEADERS.length).getValues();
+  for (var i = 0; i < datos.length; i++) {
+    if (String(datos[i][0] || '') !== String(clubId)) continue;
+    try { var carrito = JSON.parse(String(datos[i][2] || '[]')); return Array.isArray(carrito) ? carrito : []; }
+    catch(e) { return []; }
+  }
+  return [];
+}
+
+function _cuentaSanitizarCarrito(items) {
+  if (!Array.isArray(items)) throw new Error('Carrito inválido.');
+  if (items.length > 40) throw new Error('El carrito tiene demasiados productos.');
+  function txt(v, n) { return String(v == null ? '' : v).slice(0, n); }
+  return items.map(function(i) {
+    i = i || {};
+    return { key:txt(i.key,180), pid:txt(i.pid,100), sku:txt(i.sku,100), sheetName:txt(i.sheetName,180),
+      name:txt(i.name,180), brand:txt(i.brand,100), flavor:txt(i.flavor,120), price:Math.max(0,Number(i.price)||0),
+      emoji:txt(i.emoji,12), img:txt(i.img,700), maxStock:Math.max(0,Math.min(9999,Number(i.maxStock)||0)),
+      qty:Math.max(1,Math.min(999,Number(i.qty)||1)), combo:i.combo===true };
+  });
+}
+
+function solicitarCodigoCuenta(data) {
+  data = data || {};
+  var email = _clubEmail(data.email);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Ingresá un email válido.');
+  var miembro = _cuentaMiembroPorEmail(email);
+  var respuesta = { ok:true, mensaje:'Si el email está registrado, vas a recibir un código en unos instantes.' };
+  if (!miembro) return respuesta;
+  var cache = CacheService.getScriptCache();
+  var clave = 'CUENTA_CODIGO_' + _clubHash(email);
+  if (cache.get(clave + '_ESPERA')) throw new Error('Esperá un minuto antes de pedir otro código.');
+  var base = parseInt(_clubHash(Utilities.getUuid() + '|' + Date.now()).slice(0, 12), 16);
+  var codigo = ('000000' + String(base % 1000000)).slice(-6);
+  var firma = _clubHash(email + '|' + codigo + '|' + String(_getConfig().LINK_SECRET || 'maxup-cuenta'));
+  cache.put(clave, JSON.stringify({firma:firma,intentos:0}), 600);
+  cache.put(clave + '_ESPERA', '1', 60);
+  MailApp.sendEmail({to:email,subject:'Tu código para entrar a MAXUP',name:'MAXUP Suplementos',
+    htmlBody:'<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#222"><h2 style="color:#00a9d6">Entrá a tu cuenta MAXUP</h2><p>Tu código de acceso es:</p><p style="font-size:34px;font-weight:bold;letter-spacing:8px;text-align:center">'+codigo+'</p><p>Vence en 10 minutos. Si no lo pediste, ignorá este correo.</p></div>'});
+  return respuesta;
+}
+
+function ingresarCuentaClub(data) {
+  data = data || {};
+  var email = _clubEmail(data.email), codigo = String(data.codigo || '').replace(/\D/g, '');
+  if (codigo.length !== 6) throw new Error('Ingresá el código de 6 números.');
+  var cache = CacheService.getScriptCache();
+  var clave = 'CUENTA_CODIGO_' + _clubHash(email);
+  var raw = cache.get(clave);
+  if (!raw) throw new Error('El código venció. Pedí uno nuevo.');
+  var intento; try { intento = JSON.parse(raw); } catch(e) { intento = {}; }
+  intento.intentos = Number(intento.intentos || 0) + 1;
+  if (intento.intentos > 5) { cache.remove(clave); throw new Error('Demasiados intentos. Pedí un código nuevo.'); }
+  var firma = _clubHash(email + '|' + codigo + '|' + String(_getConfig().LINK_SECRET || 'maxup-cuenta'));
+  if (firma !== String(intento.firma || '')) { cache.put(clave, JSON.stringify(intento), 600); throw new Error('Código incorrecto.'); }
+  var miembro = _cuentaMiembroPorEmail(email);
+  if (!miembro) throw new Error('No encontramos una cuenta activa con ese email.');
+  cache.remove(clave); cache.remove(clave + '_ESPERA');
+  if (miembro.datos[6] !== true) {
+    miembro.hoja.getRange(miembro.fila, 7).setValue(true);
+    miembro.hoja.getRange(miembro.fila, 8).setValue(new Date());
+    miembro.hoja.getRange(miembro.fila, 12).setValue(1);
+    miembro.hoja.getRange(miembro.fila, 14).setValue(1 + (Number(miembro.datos[12]) || 0));
+    miembro.hoja.getRange(miembro.fila, 15, 1, 2).clearContent();
+    miembro.datos[6] = true; miembro.datos[7] = new Date(); miembro.datos[11] = 1; miembro.datos[13] = 1 + (Number(miembro.datos[12]) || 0);
+  }
+  var sesion = _cuentaCrearSesion(String(miembro.datos[0] || ''), email);
+  return {ok:true,sesion:sesion,perfil:_cuentaPerfilDesdeFila(miembro.datos),carrito:_cuentaObtenerCarrito(String(miembro.datos[0] || '')),
+    mensaje:'¡Bienvenido/a a MAXUP!'};
+}
+
+function estadoCuentaClub(data) {
+  var ctx = _cuentaValidarSesion((data || {}).sesion);
+  return {ok:true,perfil:_cuentaPerfilDesdeFila(ctx.miembro),carrito:_cuentaObtenerCarrito(ctx.clubId)};
+}
+
+function guardarCarritoCuenta(data) {
+  var ctx = _cuentaValidarSesion((data || {}).sesion);
+  var carrito = _cuentaSanitizarCarrito((data || {}).carrito);
+  var json = JSON.stringify(carrito);
+  if (json.length > 45000) throw new Error('El carrito supera el tamaño permitido.');
+  var lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    var hoja = _clubAsegurarHoja('CLUB_CARRITOS', CLUB_CARRITOS_HEADERS, true);
+    var fila = 0;
+    if (hoja.getLastRow() > 1) {
+      var ids = hoja.getRange(2, 1, hoja.getLastRow() - 1, 1).getValues();
+      for (var i = 0; i < ids.length; i++) if (String(ids[i][0] || '') === ctx.clubId) { fila = i + 2; break; }
+    }
+    if (!fila) fila = hoja.getLastRow() + 1;
+    hoja.getRange(fila, 1, 1, 4).setValues([[ctx.clubId,ctx.email,json,new Date()]]);
+  } finally { lock.releaseLock(); }
+  return {ok:true,guardado:true,items:carrito.length};
+}
+
+function salirCuentaClub(data) {
+  var ctx = _cuentaValidarSesion((data || {}).sesion);
+  ctx.hojaSesion.getRange(ctx.filaSesion, 6).setValue(false);
+  return {ok:true};
 }
 
 function adminGetClub(sesion) {

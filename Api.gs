@@ -229,6 +229,11 @@ function doPost(e) {
 
     if (data.accion === 'club_estado')         return _jsonOut(estadoClubMaxup(data.email, data.telefono));
     if (data.accion === 'club_registro')       return _jsonOut(registrarClubMaxup(data));
+    if (data.accion === 'cuenta_solicitar')    return _jsonOut(solicitarCodigoCuenta(data));
+    if (data.accion === 'cuenta_ingresar')     return _jsonOut(ingresarCuentaClub(data));
+    if (data.accion === 'cuenta_estado')       return _jsonOut(estadoCuentaClub(data));
+    if (data.accion === 'cuenta_carrito')      return _jsonOut(guardarCarritoCuenta(data));
+    if (data.accion === 'cuenta_salir')        return _jsonOut(salirCuentaClub(data));
 
     if (data.accion === 'registro_mayorista') return registroMayorista(data);
     if (data.accion === 'login_mayorista')    return loginMayorista(data);

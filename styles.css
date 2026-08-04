@@ -984,8 +984,19 @@ body.light .filtro-select option{background:#f5f5f5;color:#333}
 .club-status{display:none;margin-top:12px;padding:10px 12px;border-radius:8px;font-size:.84rem;text-align:center}
 .club-status.ok{display:block;color:#00E676;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.25)}
 .club-status.error{display:block;color:#ff6b6b;background:rgba(255,61,61,.08);border:1px solid rgba(255,61,61,.25)}
+.nav-account-btn{border:1px solid rgba(0,200,255,.35);background:rgba(0,200,255,.08);color:var(--cyan);border-radius:20px;padding:6px 11px;font-family:Rajdhani,sans-serif;font-size:.72rem;font-weight:800;white-space:nowrap;cursor:pointer}
+.account-overlay{position:fixed;inset:0;z-index:6100;background:rgba(0,0,0,.86);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s}
+.account-overlay.open{opacity:1;pointer-events:auto}
+.account-modal{position:relative;width:100%;max-width:470px;max-height:92vh;overflow:auto;background:#111;border:1px solid rgba(0,200,255,.28);border-radius:16px;padding:30px;box-shadow:0 24px 80px rgba(0,0,0,.65)}
+.account-modal h2{font-family:Bebas Neue,sans-serif;letter-spacing:.08em;font-size:2.2rem;margin:5px 0 8px}
+.account-label{display:block;color:#aaa;font-size:.76rem;font-weight:700;margin:14px 0 8px}
+.account-label input{display:block;width:100%;margin-top:5px;background:#191919;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:12px;color:#fff;font:600 .95rem Rajdhani,sans-serif;outline:none}
+.account-label input:focus{border-color:var(--cyan)}
+.account-welcome{padding:18px;border:1px solid rgba(0,230,118,.24);background:rgba(0,230,118,.07);border-radius:12px;color:#fff;font-size:1.05rem;margin:16px 0}
+.account-sync{color:#aaa;font-size:.85rem;line-height:1.5;margin:12px 0 18px}
+.account-logout{display:block;margin:16px auto 0;border:0;background:none;color:#888;text-decoration:underline;cursor:pointer}
 .club-hp{position:absolute!important;left:-9999px!important;width:1px!important;height:1px!important;opacity:0!important}
 @media(max-width:650px){
   .club-promo{margin:18px 14px 42px;padding:22px;display:block;text-align:center}.club-promo>button{margin-top:16px;width:100%}
-  .club-modal{padding:24px 18px}.club-grid{grid-template-columns:1fr}.club-intereses{display:grid;grid-template-columns:1fr 1fr}
+  .club-modal,.account-modal{padding:24px 18px}.club-grid{grid-template-columns:1fr}.club-intereses{display:grid;grid-template-columns:1fr 1fr}
 }

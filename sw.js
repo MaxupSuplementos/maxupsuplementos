@@ -1,5 +1,5 @@
 // MAXUP Service Worker — Cache & Offline
-const CACHE_NAME = 'maxup-v18-club-popup';
+const CACHE_NAME = 'maxup-v19-cuenta-maxup';
 // OJO: si un asset de esta lista no existe (404), addAll falla y NO se cachea nada.
 // mantenimiento.webp se descarga solo si el mantenimiento se activa.
 const ASSETS = [
@@ -7,7 +7,7 @@ const ASSETS = [
   './index.html',
   './privacidad.html',
   './styles.css?v=20260803-club-maxup',
-  './app.js?v=20260804-club-popup',
+  './app.js?v=20260804-cuenta-maxup',
   './logo.png',
   './logo-transparent.png',
   './favicon.png',

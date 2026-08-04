@@ -212,6 +212,7 @@
     <li><a href="#" onclick="document.getElementById('historialModal').classList.add('open');return false" style="color:#FFD700">🏆 Puntos</a></li>
     <li><a href="#" onclick="solicitarPush();return false" style="color:#FF6B00">🔔</a></li>
     <li><button onclick="toggleTheme()" id="themeToggle" style="background:none;border:1px solid rgba(255,255,255,.15);color:#999;padding:5px 10px;border-radius:20px;cursor:pointer;font-size:.75rem;font-family:Rajdhani,sans-serif;font-weight:600" title="Cambiar tema">🌙</button></li>
+    <li><button type="button" class="nav-account-btn" id="accountNavBtn" onclick="abrirCuentaModal()" style="display:none">👤 ENTRAR</button></li>
     <li><a href="#" class="nav-cart-mini" onclick="openCart();return false">🛒 <span id="navCartCount" class="nav-cart-count hidden">0</span></a></li>
   </ul>
   <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileMenu()" aria-label="Menú" aria-expanded="false">☰</button>
@@ -234,6 +235,7 @@
   <a href="salud.html" style="color:var(--green);border-color:rgba(0,230,118,.3)">🏥 Salud</a>
   <a href="mayorista.html" style="color:#FFB800;border-color:rgba(255,184,0,.3)">🏭 Mayorista</a>
   <a href="estado.html" style="color:#00C8FF;border-color:rgba(0,200,255,.3)">📋 Mi Pedido</a>
+  <a href="#" id="accountMobileBtn" onclick="abrirCuentaModal();closeMobileMenu();return false" style="display:none">👤 Entrar a mi cuenta</a>
   <a href="https://wa.me/5491168461457" target="_blank">📲 WhatsApp</a>
 </div>
 <div class="nav-menu-backdrop" id="navMenuBackdrop" onclick="closeMobileMenu()"></div>
@@ -596,6 +598,31 @@
   </div>
 </div>
 
+<!-- ── CUENTA MAXUP ── -->
+<div class="account-overlay" id="accountOverlay" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+  <div class="account-modal">
+    <button class="club-close" type="button" onclick="cerrarCuentaModal()" aria-label="Cerrar">✕</button>
+    <div class="club-kicker">👤 TU CUENTA · TU CARRITO</div>
+    <h2 id="accountTitle">MI CUENTA MAXUP</h2>
+    <div id="accountLoggedOut">
+      <p class="club-intro">Entrá con tu email. Te enviamos un código de 6 números; no necesitás recordar otra contraseña.</p>
+      <label class="account-label">Email<input id="accountEmail" type="email" autocomplete="email" placeholder="tu@email.com"></label>
+      <button class="club-submit" id="accountSendBtn" type="button" onclick="solicitarCodigoCuenta()">ENVIARME UN CÓDIGO</button>
+      <div id="accountCodeWrap" style="display:none">
+        <label class="account-label">Código recibido<input id="accountCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000"></label>
+        <button class="club-submit" id="accountLoginBtn" type="button" onclick="ingresarCuenta()">ENTRAR A MI CUENTA</button>
+      </div>
+    </div>
+    <div id="accountLoggedIn" style="display:none">
+      <div class="account-welcome" id="accountWelcome"></div>
+      <p class="account-sync">☁️ Tu carrito se guarda automáticamente y aparece cuando entrás desde otro celular o computadora.</p>
+      <button class="club-submit" type="button" onclick="cerrarCuentaModal();openCart()">VER MI CARRITO</button>
+      <button class="account-logout" type="button" onclick="salirCuenta()">Cerrar sesión</button>
+    </div>
+    <div class="club-status" id="accountStatus" aria-live="polite"></div>
+  </div>
+</div>
+
 <div class="grad-line"></div>
 
 <!-- ── FOOTER ── -->
@@ -933,7 +960,7 @@ function closeMobileMenu(){
 }
 </script>
 
-<script src="app.js?v=20260804-club-popup" defer></script>
+<script src="app.js?v=20260804-cuenta-maxup" defer></script>
 </div><!-- /appContent -->
 </body>
 </html>
