@@ -1100,11 +1100,14 @@ function cargarClub(){
   el.innerHTML='<div class="loading-txt">Cargando miembros y sorteos...</div>';
   postAdmin({accion:'admin_club',sesion:clave}).then(function(data){
     if(!data.ok) throw new Error(data.error||'No se pudo cargar Club MAXUP');
+    var auto=data.automatizaciones||{};
+    var autoOk=auto.completas===true;
     var html='<div class="section-title">🎁 <span>Club MAXUP</span></div>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
-      +'<button class="header-refresh" onclick="instalarClub()">⚡ Activar automatizaciones</button>'
+      +'<button class="header-refresh" style="'+(autoOk?'border-color:rgba(0,230,118,.45);color:#00E676':'')+'" onclick="instalarClub()">'+(autoOk?'✅ Automatizaciones activas':'⚡ Activar automatizaciones')+'</button>'
       +'<button class="header-refresh" style="border-color:rgba(255,0,153,.35);color:var(--pink)" onclick="sortearClub()">🏆 Realizar sorteo</button>'
       +'<a href="https://docs.google.com/spreadsheets/d/17rFBpuvjam54M3NGE8Pmtc9YwBBRhVYI8bgGpckiAXo/edit" target="_blank" class="header-refresh" style="text-decoration:none">📄 Abrir registros</a></div>'
+      +'<div style="margin:-7px 0 16px;color:'+(autoOk?'#00E676':'#FFB300')+';font-size:.78rem">'+(autoOk?'Los avisos de stock se revisan cada hora y el sorteo mensual está programado.':'Falta activar: '+(!auto.avisos?'avisos de stock ': '')+(!auto.sorteo?'sorteo mensual':'')+'.')+'</div>'
       +'<div class="stats-grid">'
       +'<div class="stat-card"><div class="stat-label">Registrados</div><div class="stat-val cyan">'+Number(data.total||0)+'</div></div>'
       +'<div class="stat-card"><div class="stat-label">Verificados activos</div><div class="stat-val green">'+Number(data.verificados||0)+'</div></div>'

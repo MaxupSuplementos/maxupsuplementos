@@ -149,6 +149,10 @@ assert(api.includes("data.accion === 'cuenta_solicitar'"), 'La cuenta debe permi
 assert(api.includes("data.accion === 'cuenta_carrito'"), 'La cuenta debe guardar el carrito autenticado');
 assert(app.includes("maxup_cuenta_sesion"), 'El dispositivo debe recordar la sesión de cliente');
 assert(app.includes('programarSincronizacionCarrito'), 'Cada cambio del carrito debe sincronizarse');
+assert(app.includes("Marca: ${p.brand || 'Sin marca informada'}"), 'La consulta de un suplemento debe incluir su marca');
+assert(app.includes('Producto: ${p.name}'), 'La consulta de un suplemento debe identificar el producto');
+assert(app.includes('Precio contado: $${p.price.toLocaleString'), 'La consulta de un suplemento debe incluir el precio');
+assert(app.includes("'Marca: ' + (p.marca || 'Sin marca informada')"), 'Las consultas de ofertas también deben incluir la marca');
 assert(app.includes("consentimiento:document.getElementById('clubConsentimiento').checked,empresa:''"), 'El autocompletado no debe activar por error el campo antispam');
 assert(app.includes('¡Bienvenido/a a MAXUP! Tu cuenta quedó creada'), 'El registro debe mostrar una bienvenida clara');
 assert(system.includes('cuentaCliente:true'), 'La cuenta sólo debe mostrarse después de actualizar el servidor');
@@ -158,6 +162,9 @@ assert(app.includes('function registrarEnClub'), 'La tienda debe enviar el regis
 assert(app.includes("?accion=club_estado"), 'El formulario no debe mostrarse antes de que el backend este disponible');
 assert(admin.includes("switchTab('club'"), 'El panel debe incluir la gestion del Club');
 assert(admin.includes('function sortearClub()'), 'El panel debe permitir ejecutar el sorteo');
+assert(system.includes('handlersClub.procesarNotificacionesClubStock'), 'El panel debe comprobar si los avisos automáticos están instalados');
+assert(system.includes('handlersClub.ejecutarSorteoMensualClubAutomatico'), 'El panel debe comprobar si el sorteo automático está instalado');
+assert(admin.includes("autoOk?'✅ Automatizaciones activas':'⚡ Activar automatizaciones'"), 'El panel debe mostrar claramente si las automatizaciones están activas');
 assert(privacy.includes('El registro es opcional'), 'La politica debe aclarar que el catalogo sigue abierto');
 assert(privacy.includes('Bases generales de los sorteos'), 'Deben publicarse bases generales del sorteo');
 

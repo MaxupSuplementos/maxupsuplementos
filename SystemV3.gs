@@ -1043,6 +1043,13 @@ function adminGetClub(sesion) {
   _validarSesionAdmin(sesion);
   var hoja = _clubHoja();
   var datos = _clubCompactarFilasVacias(hoja).datos;
+  var handlersClub = {};
+  ScriptApp.getProjectTriggers().forEach(function(t) { handlersClub[t.getHandlerFunction()] = true; });
+  var automatizaciones = {
+    avisos: !!handlersClub.procesarNotificacionesClubStock,
+    sorteo: !!handlersClub.ejecutarSorteoMensualClubAutomatico
+  };
+  automatizaciones.completas = automatizaciones.avisos && automatizaciones.sorteo;
   var miembros = datos.map(function(r) {
     return { id:String(r[0]||''), fecha:r[1], nombre:String(r[2]||''), telefono:String(r[3]||''), email:String(r[4]||''), instagram:String(r[5]||''),
       verificado:r[6]===true, notificaciones:r[8]===true, intereses:String(r[9]||''), activo:r[10]===true,
@@ -1053,7 +1060,7 @@ function adminGetClub(sesion) {
   var sorteos = sorteosHoja.getLastRow() > 1 ? sorteosHoja.getRange(2,1,sorteosHoja.getLastRow()-1,CLUB_SORTEOS_HEADERS.length).getValues().slice(-12).reverse().map(function(r){
     return {mes:String(r[0]||''),fecha:r[1],id:String(r[2]||''),nombre:String(r[3]||''),email:String(r[4]||''),instagram:String(r[6]||''),chances:Number(r[7])||0,participantes:Number(r[8])||0,total:Number(r[9])||0,premio:String(r[11]||''),estado:String(r[12]||'')};
   }) : [];
-  return { ok:true, miembros:miembros, sorteos:sorteos, total:miembros.length, verificados:verificados.length,
+  return { ok:true, miembros:miembros, sorteos:sorteos, automatizaciones:automatizaciones, total:miembros.length, verificados:verificados.length,
     conAvisos:miembros.filter(function(m){return m.verificado&&m.activo&&m.notificaciones;}).length,
     chances:verificados.reduce(function(s,m){return s+m.chances;},0) };
 }

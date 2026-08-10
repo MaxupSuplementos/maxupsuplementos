@@ -4590,7 +4590,13 @@ async function cargarLiquidaciones() {
         ? 'Venció hace ' + Math.abs(p.diasRestantes) + ' días'
         : p.diasRestantes === 0 ? 'Vence HOY'
         : 'Vence en ' + p.diasRestantes + ' días';
-      var waMsg = encodeURIComponent('Hola! Me interesa: ' + p.nombre + '. ¿Tienen precio especial?');
+      var waMsg = encodeURIComponent(
+        'Hola MAXUP! Quiero consultar por esta oferta:\n' +
+        'Marca: ' + (p.marca || 'Sin marca informada') + '\n' +
+        'Producto: ' + p.nombre + '\n' +
+        'Precio publicado: $' + Number(p.precio).toLocaleString('es-AR') + '\n' +
+        '¿Tienen precio especial?'
+      );
       return '<div style="background:var(--dark2);border:1px solid ' + cfg.border + ';border-radius:12px;overflow:hidden">'
         + '<div style="background:' + cfg.bg + ';border-bottom:1px solid ' + cfg.border + ';padding:6px 12px;display:flex;justify-content:space-between;align-items:center">'
         + '<span style="color:' + cfg.color + ';font-size:.72rem;font-weight:700">' + cfg.label + '</span>'
@@ -5484,7 +5490,7 @@ function consultarWA() {
   if (!modalPid) return;
   const p = getProduct(modalPid);
   const sabor = document.getElementById('modalFlavor')?.value || '';
-  const msg = `Hola MAXUP! Quiero consultar sobre: ${p.name}${sabor?' - '+sabor:''} ($${p.price.toLocaleString('es-AR')} efectivo). ¿Tienen disponible?`;
+  const msg = `Hola MAXUP! Quiero consultar por este suplemento:\nMarca: ${p.brand || 'Sin marca informada'}\nProducto: ${p.name}${sabor?`\nSabor: ${sabor}`:''}\nPrecio contado: $${p.price.toLocaleString('es-AR')}\n¿Tienen disponible?`;
   window.open(`https://wa.me/${WA_DEFAULT}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -8625,7 +8631,7 @@ function enviarStockAlert(){
   localStorage.setItem('maxup_stock_alerts', JSON.stringify(alerts));
   // Enviar WhatsApp al dueño
   var p = getProduct(_stockAlertPid);
-  var msg = 'Nuevo pedido de aviso de stock:\n📦 ' + (p ? p.name : _stockAlertPid) + '\n📱 Cliente: ' + phone;
+  var msg = 'Nuevo pedido de aviso de stock:\n🏷️ Marca: ' + (p && p.brand ? p.brand : 'Sin marca informada') + '\n📦 Producto: ' + (p ? p.name : _stockAlertPid) + '\n📱 Cliente: ' + phone;
   window.open('https://wa.me/5491168461457?text=' + encodeURIComponent(msg), '_blank');
   cerrarStockAlert();
   toast('✅ Te avisaremos cuando haya stock!');
