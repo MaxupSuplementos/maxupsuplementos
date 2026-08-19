@@ -42,7 +42,7 @@ canvas{display:block;max-width:100%;height:auto;border-radius:10px;box-shadow:0 
 </div>
 <canvas id="cv" width="1080" height="1350"></canvas>
 <div class="st" id="st"></div>
-<div class="daily-help" id="dailyHelp">Cada placa ya incluye foto, precio y un beneficio breve. Guardala o compartila directamente en WhatsApp; el texto viajará dentro de la imagen a Instagram y Facebook.</div>
+<div class="daily-help" id="dailyHelp">Cada placa incluye foto, una explicación clara y tres beneficios. Guardala o compartila directamente en WhatsApp; toda la información viajará dentro de la imagen a Instagram y Facebook.</div>
 <div class="daily-grid" id="dailyGrid" hidden></div>
 
 <script>
@@ -161,24 +161,47 @@ function smokeGlow(ctx,cx,cy,radius){
 }
 
 const DAILY_BENEFITS={
-  creatina:'Acompaña tu fuerza, potencia y recuperación para rendir mejor en cada entrenamiento.',
-  proteina:'Una forma práctica de completar tu proteína diaria y acompañar la recuperación muscular.',
-  preworkout:'Energía y enfoque para empezar el entrenamiento con la intensidad que buscás.',
-  aminoacido:'Un aliado práctico para acompañar el rendimiento y la recuperación de tu rutina.',
-  colageno:'Ideal para acompañar el cuidado diario de articulaciones, tendones y piel.',
-  vitamin:'Un complemento simple para sumar bienestar y recuperación a tu rutina diaria.',
-  gainer:'Calorías y proteínas en una opción práctica para acompañar tus objetivos de masa.',
-  hidratacion:'Ayuda a reponer líquidos y minerales para mantener el ritmo durante el entrenamiento.',
-  barra:'Una opción rica y práctica para llevar, entrenar o resolver una colación.',
-  shaker:'Prepará y llevá tus suplementos de forma cómoda donde quieras.',
-  accesorio:'Más comodidad, soporte y practicidad para disfrutar cada entrenamiento.',
-  indumentaria:'Comodidad y estilo para entrenar, moverte y usar todos los días.',
-  otros:'Sumalo a tu rutina y llevá tu entrenamiento al próximo nivel.'
+  creatina:['Contribuye a mejorar fuerza y potencia.','Acompaña el rendimiento en series intensas.','Uso diario, simple de sumar a tu rutina.'],
+  proteina:['Ayuda a completar tu proteína diaria.','Acompaña la recuperación muscular.','Práctica para después de entrenar.'],
+  preworkout:['Energía para empezar el entrenamiento.','Más enfoque en sesiones exigentes.','Ideal para tomar antes de tu rutina.'],
+  aminoacido:['Acompaña la recuperación muscular.','Práctico para usar antes o después.','Complementa una rutina activa.'],
+  colageno:['Acompaña el cuidado de articulaciones.','Complementa el bienestar de piel y tendones.','Fácil de incorporar todos los días.'],
+  vitamin:['Complementa la alimentación diaria.','Acompaña energía y bienestar general.','Formato práctico y fácil de incorporar.'],
+  gainer:['Aporta calorías en forma práctica.','Incluye proteínas y carbohidratos.','Ideal para objetivos de aumento de masa.'],
+  hidratacion:['Ayuda a reponer líquidos y minerales.','Acompaña el rendimiento durante la actividad.','Práctico para entrenamientos intensos.'],
+  barra:['Colación práctica para cualquier momento.','Fácil de llevar al trabajo o al gimnasio.','Una opción rica para resolver el día.'],
+  shaker:['Mezclá tus suplementos con facilidad.','Cómodo para llevar al gimnasio.','Reutilizable y simple de limpiar.'],
+  accesorio:['Más comodidad durante el entrenamiento.','Práctico para sumar a tu rutina.','Diseñado para uso frecuente.'],
+  indumentaria:['Comodidad para entrenar y moverte.','Diseñada para acompañar tu actividad.','Estilo deportivo para todos los días.'],
+  quemador:['Pensado para etapas de definición.','Complementa entrenamiento y alimentación.','Uso práctico dentro de una rutina activa.'],
+  otros:['Un aliado práctico para tu rutina.','Fácil de incorporar todos los días.','Pensado para acompañar tus objetivos.']
 };
 
-function dailyBenefit(p){
+const DAILY_EXPLAINERS={
+  creatina:'Suplemento de uso diario para acompañar la fuerza, la potencia y el rendimiento físico.',
+  proteina:'Fuente práctica de proteína para complementar la alimentación y la recuperación muscular.',
+  preworkout:'Fórmula pensada para tomar antes de entrenar y preparar una sesión exigente.',
+  aminoacido:'Suplemento que aporta aminoácidos para complementar una rutina deportiva activa.',
+  colageno:'Complemento orientado al cuidado diario de articulaciones, tendones y piel.',
+  vitamin:'Complemento de vitaminas o minerales para sumar a la alimentación cotidiana.',
+  gainer:'Fórmula con calorías, proteínas y carbohidratos para acompañar objetivos de aumento de masa.',
+  hidratacion:'Producto pensado para reponer líquidos y minerales durante la actividad física.',
+  barra:'Colación lista para consumir, práctica para llevar al trabajo o al gimnasio.',
+  shaker:'Recipiente diseñado para mezclar y transportar tus suplementos de forma cómoda.',
+  accesorio:'Accesorio pensado para sumar comodidad, soporte y practicidad al entrenamiento.',
+  indumentaria:'Prenda deportiva diseñada para entrenar, moverte y usar todos los días.',
+  quemador:'Complemento para etapas de definición, junto con entrenamiento y alimentación adecuada.',
+  otros:'Producto pensado para complementar tu rutina deportiva y acompañar tus objetivos.'
+};
+
+function dailyBenefits(p){
   const cat=dailyCategory(p);
   return DAILY_BENEFITS[cat]||DAILY_BENEFITS.otros;
+}
+
+function dailyExplainer(p){
+  const cat=dailyCategory(p);
+  return DAILY_EXPLAINERS[cat]||DAILY_EXPLAINERS.otros;
 }
 
 function dailyCategory(p){
@@ -195,7 +218,20 @@ function dailyCategory(p){
   if(raw.includes('shaker')||raw.includes('vaso'))return 'shaker';
   if(raw.includes('accesor'))return 'accesorio';
   if(raw.includes('indument')||raw.includes('ropa'))return 'indumentaria';
+  if(raw.includes('quem')||raw.includes('termogen'))return 'quemador';
   return raw||'otros';
+}
+
+function drawDailyBenefitList(ctx,p,startY){
+  const items=dailyBenefits(p).slice(0,3);
+  ctx.save();ctx.font="600 29px 'Rajdhani',sans-serif";ctx.textAlign='left';ctx.textBaseline='alphabetic';
+  items.forEach((item,index)=>{
+    const y=startY+(index*57);
+    ctx.beginPath();ctx.arc(124,y-10,9,0,Math.PI*2);ctx.fillStyle='#00C8FF';ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillText(item,152,y+2);
+    ctx.fillStyle='#eee';ctx.fillText(item,150,y);
+  });
+  ctx.restore();
 }
 
 function effectiveDailyDate(){
@@ -252,17 +288,19 @@ async function drawDailyStory(canvas,p,index,total){
   const brandY=Math.min(nameEnd+58,1250);
   solidText(ctx,String(p.b||'MAXUP'),W/2,brandY,'#00C8FF',"600 30px 'Rajdhani',sans-serif");
 
-  const benefitY=Math.max(1315,brandY+48);
-  rr(ctx,70,benefitY,W-140,165,18);ctx.fillStyle='rgba(153,51,255,.10)';ctx.fill();
+  const benefitY=Math.max(1285,brandY+48);
+  rr(ctx,70,benefitY,W-140,425,18);ctx.fillStyle='rgba(153,51,255,.10)';ctx.fill();
   ctx.strokeStyle='rgba(153,51,255,.35)';ctx.lineWidth=2;ctx.stroke();
-  solidText(ctx,'POR QUE ELEGIRLO',W/2,benefitY+43,'#FF0099',"bold 24px 'Rajdhani',sans-serif");
-  wrapSolid(ctx,dailyBenefit(p),W/2,benefitY+88,W-210,40,'#eee',"600 29px 'Rajdhani',sans-serif");
+  solidText(ctx,'QUE ES',W/2,benefitY+45,'#FF0099',"bold 25px 'Rajdhani',sans-serif");
+  wrapSolid(ctx,dailyExplainer(p),W/2,benefitY+92,W-220,38,'#eee',"600 28px 'Rajdhani',sans-serif");
+  ctx.strokeStyle='rgba(0,200,255,.25)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(115,benefitY+190);ctx.lineTo(W-115,benefitY+190);ctx.stroke();
+  solidText(ctx,'BENEFICIOS PRINCIPALES',W/2,benefitY+232,'#00C8FF',"bold 25px 'Rajdhani',sans-serif");
+  drawDailyBenefitList(ctx,p,benefitY+286);
 
-  solidText(ctx,fmt(Number(p.p)||0),W/2,1555,'#FF0099',"bold 92px 'Bebas Neue',sans-serif");
-  rr(ctx,W/2-210,1600,420,68,34);ctx.fillStyle=g;ctx.fill();
-  solidText(ctx,'PEDILO POR WHATSAPP',W/2,1646,'#fff',"bold 29px 'Rajdhani',sans-serif");
-  solidText(ctx,'maxupsuplementos.com.ar',W/2,1722,'#aaa',"600 26px 'Rajdhani',sans-serif");
-  solidText(ctx,'@maxupsuplementos',W/2,1762,'#666',"500 23px 'Rajdhani',sans-serif");
+  rr(ctx,W/2-235,1730,470,72,36);ctx.fillStyle=g;ctx.fill();
+  solidText(ctx,'PEDILO EN NUESTRA WEB',W/2,1778,'#fff',"bold 29px 'Rajdhani',sans-serif");
+  solidText(ctx,'maxupsuplementos.com.ar',W/2,1860,'#00C8FF',"bold 35px 'Rajdhani',sans-serif");
+  solidText(ctx,'@maxupsuplementos',W/2,1898,'#666',"500 21px 'Rajdhani',sans-serif");
 
   if(logoImg){
     const la=logoImg.width/logoImg.height;
