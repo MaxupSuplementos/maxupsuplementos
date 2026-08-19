@@ -177,8 +177,37 @@ const DAILY_BENEFITS={
 };
 
 function dailyBenefit(p){
-  const cat=String(p.cat||'otros').toLowerCase();
+  const cat=dailyCategory(p);
   return DAILY_BENEFITS[cat]||DAILY_BENEFITS.otros;
+}
+
+function dailyCategory(p){
+  const raw=String(p.cat||'otros').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if(raw.includes('creatina'))return 'creatina';
+  if(raw.includes('prote'))return 'proteina';
+  if(raw.includes('pre')&&raw.includes('entren'))return 'preworkout';
+  if(raw.includes('amino')||raw.includes('glutamina')||raw.includes('carnitina'))return 'aminoacido';
+  if(raw.includes('colag'))return 'colageno';
+  if(raw.includes('vitamin')||raw.includes('mineral'))return 'vitamin';
+  if(raw.includes('ganador')||raw.includes('gainer'))return 'gainer';
+  if(raw.includes('hidrat')||raw.includes('isot'))return 'hidratacion';
+  if(raw.includes('barra')||raw.includes('snack'))return 'barra';
+  if(raw.includes('shaker')||raw.includes('vaso'))return 'shaker';
+  if(raw.includes('accesor'))return 'accesorio';
+  if(raw.includes('indument')||raw.includes('ropa'))return 'indumentaria';
+  return raw||'otros';
+}
+
+function effectiveDailyDate(){
+  if(dailyDate)return dailyDate;
+  try{return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Buenos_Aires'}).format(new Date())}
+  catch(err){return new Date().toISOString().slice(0,10)}
+}
+
+function dailyScore(value){
+  const text=effectiveDailyDate()+'|'+String(value||'');let hash=2166136261;
+  for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619)}
+  return hash>>>0;
 }
 
 function safeFilePart(value){
@@ -187,7 +216,7 @@ function safeFilePart(value){
 }
 
 function dailyFilename(p,index){
-  const date=dailyDate||new Date().toISOString().slice(0,10);
+  const date=effectiveDailyDate();
   return `MAXUP_estado_${String(index+1).padStart(2,'0')}_${safeFilePart(p.n)}_${date}.png`;
 }
 
@@ -272,7 +301,7 @@ async function renderDaily(products){
   document.getElementById('singleBtns').hidden=true;
   document.getElementById('cv').hidden=true;
   document.getElementById('st').hidden=true;
-  document.getElementById('info').textContent=`Publicaciones diarias${dailyDate?' - '+dailyDate:''}`;
+  document.getElementById('info').textContent=`Publicaciones diarias - ${effectiveDailyDate()}`;
   document.getElementById('found').textContent=`${products.length} placas verticales listas para guardar o compartir`;
 
   for(let index=0;index<products.length;index++){
@@ -297,7 +326,14 @@ function resolveDailyProducts(){
   function add(p){if(!p)return;const key=String(p.id||'')+'|'+p.n;if(seen.has(key))return;seen.add(key);selected.push(p)}
   dailyIds.forEach(id=>add(P.find(p=>String(p.id)===String(id))));
   dailyNames.forEach(name=>{if(selected.length<5)add(findProduct(name.toLowerCase()))});
-  if(selected.length<5){P.filter(p=>p.p>0&&p.img).forEach(p=>{if(selected.length<5)add(p)})}
+  const eligible=P.filter(p=>p.p>0&&p.img&&(typeof p.stock==='undefined'||p.stock>0))
+    .sort((a,b)=>dailyScore((a.id||a.n)+'|'+a.n)-dailyScore((b.id||b.n)+'|'+b.n));
+  const usedCategories=new Set(selected.map(dailyCategory));
+  eligible.forEach(p=>{
+    const cat=dailyCategory(p);
+    if(selected.length<5&&!usedCategories.has(cat)){add(p);usedCategories.add(cat)}
+  });
+  eligible.forEach(p=>{if(selected.length<5)add(p)});
   return selected.slice(0,5);
 }
 
@@ -399,7 +435,8 @@ async function init(){
           p:Number(pr.precio_venta)||0,
           img:imgUrl,
           cat:pr.categoria||'otros',
-          desc:pr.descripcion||''
+          desc:pr.descripcion||'',
+          stock:Number(pr.stock)||0
         };
       });
       document.getElementById('st').textContent='Catálogo cargado desde API: '+P.length+' productos';
