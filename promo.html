@@ -42,7 +42,7 @@ canvas{display:block;max-width:100%;height:auto;border-radius:10px;box-shadow:0 
 </div>
 <canvas id="cv" width="1080" height="1350"></canvas>
 <div class="st" id="st"></div>
-<div class="daily-help" id="dailyHelp">Cada placa incluye foto, una explicación clara y tres beneficios. Guardala o compartila directamente en WhatsApp; toda la información viajará dentro de la imagen a Instagram y Facebook.</div>
+<div class="daily-help" id="dailyHelp">Cada placa incluye foto, una descripción específica y cinco puntos claros. Guardala o compartila directamente en WhatsApp; toda la información viajará dentro de la imagen a Instagram y Facebook.</div>
 <div class="daily-grid" id="dailyGrid" hidden></div>
 
 <script>
@@ -196,10 +196,14 @@ const DAILY_EXPLAINERS={
 
 function dailyBenefits(p){
   const cat=dailyCategory(p);
-  return DAILY_BENEFITS[cat]||DAILY_BENEFITS.otros;
+  const fallback=DAILY_BENEFITS[cat]||DAILY_BENEFITS.otros;
+  const custom=Array.isArray(p.pubBenefits)?p.pubBenefits.map(v=>String(v||'').trim()).filter(Boolean):[];
+  const extras=['Revisá la porción indicada para conocer su aporte.','Complementa una alimentación acorde a tus objetivos.'];
+  return [...new Set(custom.concat(fallback,extras))].slice(0,5);
 }
 
 function dailyExplainer(p){
+  if(String(p.pubDesc||'').trim())return String(p.pubDesc).trim();
   const cat=dailyCategory(p);
   return DAILY_EXPLAINERS[cat]||DAILY_EXPLAINERS.otros;
 }
@@ -222,14 +226,37 @@ function dailyCategory(p){
   return raw||'otros';
 }
 
-function drawDailyBenefitList(ctx,p,startY){
-  const items=dailyBenefits(p).slice(0,3);
-  ctx.save();ctx.font="600 29px 'Rajdhani',sans-serif";ctx.textAlign='left';ctx.textBaseline='alphabetic';
+function wrapCanvasLines(ctx,text,maxWidth,maxLines){
+  const words=String(text||'').split(/\s+/).filter(Boolean),lines=[];let line='';
+  words.forEach(word=>{
+    const test=line?line+' '+word:word;
+    if(line&&ctx.measureText(test).width>maxWidth){lines.push(line);line=word}else line=test;
+  });
+  if(line)lines.push(line);
+  if(lines.length>maxLines){
+    const visible=lines.slice(0,maxLines);
+    let last=visible[maxLines-1];
+    while(last&&ctx.measureText(last+'…').width>maxWidth)last=last.slice(0,-1);
+    visible[maxLines-1]=last+'…';return visible;
+  }
+  return lines;
+}
+
+function drawDailyBenefitList(ctx,p,startY,endY){
+  const items=dailyBenefits(p).slice(0,5);
+  const rowHeight=Math.max(54,Math.floor((endY-startY)/Math.max(items.length,1)));
+  const fontSize=rowHeight<65?23:25;
+  const lineHeight=fontSize+5;
+  ctx.save();ctx.font=`600 ${fontSize}px 'Rajdhani',sans-serif`;ctx.textAlign='left';ctx.textBaseline='alphabetic';
   items.forEach((item,index)=>{
-    const y=startY+(index*57);
-    ctx.beginPath();ctx.arc(124,y-10,9,0,Math.PI*2);ctx.fillStyle='#00C8FF';ctx.fill();
-    ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillText(item,152,y+2);
-    ctx.fillStyle='#eee';ctx.fillText(item,150,y);
+    const y=startY+(index*rowHeight);
+    const lines=wrapCanvasLines(ctx,item,790,2);
+    ctx.beginPath();ctx.arc(124,y+7,8,0,Math.PI*2);ctx.fillStyle='#00C8FF';ctx.fill();
+    lines.forEach((line,lineIndex)=>{
+      const lineY=y+15+(lineIndex*lineHeight);
+      ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillText(line,152,lineY+2);
+      ctx.fillStyle='#eee';ctx.fillText(line,150,lineY);
+    });
   });
   ctx.restore();
 }
@@ -276,26 +303,27 @@ async function drawDailyStory(canvas,p,index,total){
   solidText(ctx,'RECOMENDADO DEL DIA',W/2,234,'#fff',"bold 50px 'Bebas Neue',sans-serif");
   solidText(ctx,`${index+1} DE ${total}`,W-92,148,'#777',"600 22px 'Rajdhani',sans-serif",'right');
 
-  smokeGlow(ctx,W/2,680,420);
+  smokeGlow(ctx,W/2,600,390);
   const img=await li(p.img);
   if(img){
-    const ratio=img.width/img.height;let dw,dh;const maxW=620,maxH=650;
+    const ratio=img.width/img.height;let dw,dh;const maxW=590,maxH=560;
     if(ratio>maxW/maxH){dw=maxW;dh=maxW/ratio}else{dh=maxH;dw=maxH*ratio}
-    ctx.drawImage(img,W/2-dw/2,680-dh/2,dw,dh);
+    ctx.drawImage(img,W/2-dw/2,600-dh/2,dw,dh);
   }
 
-  const nameEnd=wrapSolid(ctx,String(p.n||'').toUpperCase(),W/2,1080,W-130,55,'#fff',"bold 48px 'Rajdhani',sans-serif");
-  const brandY=Math.min(nameEnd+58,1250);
-  solidText(ctx,String(p.b||'MAXUP'),W/2,brandY,'#00C8FF',"600 30px 'Rajdhani',sans-serif");
+  const nameEnd=wrapSolid(ctx,String(p.n||'').toUpperCase(),W/2,920,W-130,49,'#fff',"bold 44px 'Rajdhani',sans-serif");
+  const brandY=Math.min(nameEnd+48,1080);
+  solidText(ctx,String(p.b||'MAXUP'),W/2,brandY,'#00C8FF',"600 28px 'Rajdhani',sans-serif");
 
-  const benefitY=Math.max(1285,brandY+48);
-  rr(ctx,70,benefitY,W-140,425,18);ctx.fillStyle='rgba(153,51,255,.10)';ctx.fill();
+  const benefitY=Math.max(1095,brandY+30),benefitBottom=1705;
+  rr(ctx,70,benefitY,W-140,benefitBottom-benefitY,18);ctx.fillStyle='rgba(153,51,255,.10)';ctx.fill();
   ctx.strokeStyle='rgba(153,51,255,.35)';ctx.lineWidth=2;ctx.stroke();
-  solidText(ctx,'QUÉ ES',W/2,benefitY+45,'#FF0099',"bold 25px 'Rajdhani',sans-serif");
-  wrapSolid(ctx,dailyExplainer(p),W/2,benefitY+92,W-220,38,'#eee',"600 28px 'Rajdhani',sans-serif");
-  ctx.strokeStyle='rgba(0,200,255,.25)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(115,benefitY+190);ctx.lineTo(W-115,benefitY+190);ctx.stroke();
-  solidText(ctx,'BENEFICIOS PRINCIPALES',W/2,benefitY+232,'#00C8FF',"bold 25px 'Rajdhani',sans-serif");
-  drawDailyBenefitList(ctx,p,benefitY+286);
+  solidText(ctx,'QUÉ ES',W/2,benefitY+38,'#FF0099',"bold 24px 'Rajdhani',sans-serif");
+  const descriptionEnd=wrapSolid(ctx,dailyExplainer(p),W/2,benefitY+74,W-220,31,'#eee',"600 25px 'Rajdhani',sans-serif");
+  const separatorY=descriptionEnd+24;
+  ctx.strokeStyle='rgba(0,200,255,.25)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(115,separatorY);ctx.lineTo(W-115,separatorY);ctx.stroke();
+  solidText(ctx,'5 PUNTOS CLAVE',W/2,separatorY+38,'#00C8FF',"bold 24px 'Rajdhani',sans-serif");
+  drawDailyBenefitList(ctx,p,separatorY+58,benefitBottom-18);
 
   rr(ctx,W/2-235,1730,470,72,36);ctx.fillStyle=g;ctx.fill();
   solidText(ctx,'PEDILO EN NUESTRA WEB',W/2,1778,'#fff',"bold 29px 'Rajdhani',sans-serif");
@@ -474,6 +502,8 @@ async function init(){
           img:imgUrl,
           cat:pr.categoria||'otros',
           desc:pr.descripcion||'',
+          pubDesc:pr.descripcion_publicacion||'',
+          pubBenefits:Array.isArray(pr.beneficios_publicacion)?pr.beneficios_publicacion:[],
           stock:Number(pr.stock)||0
         };
       });
