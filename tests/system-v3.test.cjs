@@ -55,6 +55,13 @@ assert(api.includes('_procesarWebhookWhatsApp'), 'Los mensajes entrantes de What
 assert(api.includes('_waDerivarHumano'), 'El asistente debe ofrecer derivacion a una persona');
 assert(api.includes('WA_RATE_'), 'El asistente debe limitar mensajes excesivos');
 assert(api.includes('WA_MSG_'), 'El webhook debe ignorar mensajes repetidos');
+assert(api.includes("getSheetByName('ASISTENTE_RESPUESTAS')"), 'Las respuestas comerciales del asistente deben ser editables desde Sheets');
+assert(api.includes('p.beneficios_publicacion'), 'El asistente debe reutilizar los beneficios precisos de cada ficha');
+assert(api.includes('WA_RESULTS_'), 'El asistente debe recordar las opciones de producto mostradas');
+assert(app.includes("const WA_DEFAULT = '5493875104606'"), 'La tienda debe enviar consultas al WhatsApp oficial 387');
+assert(!app.includes('5491168461457'), 'La tienda no debe enviar clientes al numero personal');
+assert(!index.includes('5491168461457'), 'La portada no debe publicar el numero personal');
+assert(!api.includes("WA_TELEFONO_HUMANO = '5491168461457'"), 'El asistente no debe revelar el numero personal al derivar');
 assert(!/EA[A-Za-z0-9_-]{80,}/.test(api), 'No debe haber tokens de acceso de Meta en el codigo');
 assert(app.includes('function getInitialFlavor(p)'), 'Las variantes deben elegir primero una opcion con stock');
 assert(app.includes('Number(f.stock) > 0'), 'Una tarjeta solo debe mostrarse agotada si todas sus variantes lo estan');
@@ -126,6 +133,9 @@ assert(system.includes("'SORTEOS_CLUB'"), 'Los sorteos deben quedar registrados'
 assert(system.includes('MailApp.getRemainingDailyQuota()'), 'Los avisos deben respetar la cuota diaria de correo');
 assert(system.includes("everyHours(1)"), 'El stock debe revisarse automaticamente');
 assert(system.includes('ejecutarSorteoMensualClubAutomatico'), 'Debe existir el sorteo mensual automatico');
+assert(system.includes('CLUB_MIN_VERIFICADOS_SORTEO = 50'), 'El primer sorteo debe exigir 50 miembros verificados');
+assert(system.includes('participantes.length < CLUB_MIN_VERIFICADOS_SORTEO'), 'El servidor debe bloquear sorteos antes del minimo');
+assert(admin.includes('data.sorteoHabilitado===true'), 'El panel debe bloquear visualmente el sorteo antes de 50 confirmados');
 assert(api.includes("data.object === 'instagram'"), 'Las menciones de Instagram deben tener un webhook separado');
 assert(system.includes('function _procesarWebhookInstagramClub'), 'Las menciones compatibles deben acreditarse automaticamente');
 assert(system.includes("tipo:'ETIQUETA_INSTAGRAM'" ) || admin.includes("tipo:'ETIQUETA_INSTAGRAM'"), 'Las etiquetas deben sumar chances identificables');
@@ -191,5 +201,13 @@ assert(waSandbox._waRespuestaPagos().includes('1 a 3 cuotas'), 'La respuesta deb
 assert(waSandbox._waRespuestaEntregas().includes('Calixto Gauna 1045'), 'La respuesta debe informar el retiro');
 assert(waSandbox._waEsConsultaSalud('como tomar si tengo diabetes'), 'Las consultas de salud deben derivarse');
 assert.strictEqual(waSandbox._waMoneda(123456), '$123.456', 'Los precios deben tener formato argentino');
+const detalleAsistente = waSandbox._waDetalleProducto({
+  marca: 'MAXUP', nombre: 'Whey Test', precio_venta: 10000, precio_lista: 12000, stock: 3,
+  descripcion_publicacion: 'Proteina de suero para complementar la alimentacion.',
+  beneficios_publicacion: ['Ayuda a reparar el musculo', 'Aporta saciedad']
+});
+assert(detalleAsistente.includes('Proteina de suero'), 'El detalle debe explicar que es el producto');
+assert(detalleAsistente.includes('Ayuda a reparar el musculo'), 'El detalle debe enumerar beneficios especificos');
+assert(detalleAsistente.includes('3 x $4.000'), 'El detalle debe informar el estimado de cuotas');
 
 console.log('OK - contratos principales del sistema v3 verificados');

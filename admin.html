@@ -1102,12 +1102,18 @@ function cargarClub(){
     if(!data.ok) throw new Error(data.error||'No se pudo cargar Club MAXUP');
     var auto=data.automatizaciones||{};
     var autoOk=auto.completas===true;
+    var minSorteo=Number(data.minimoSorteo||50);
+    var faltanSorteo=Math.max(0,Number(data.faltanSorteo||0));
+    var sorteoHabilitado=data.sorteoHabilitado===true;
     var html='<div class="section-title">🎁 <span>Club MAXUP</span></div>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
       +'<button class="header-refresh" style="'+(autoOk?'border-color:rgba(0,230,118,.45);color:#00E676':'')+'" onclick="instalarClub()">'+(autoOk?'✅ Automatizaciones activas':'⚡ Activar automatizaciones')+'</button>'
-      +'<button class="header-refresh" style="border-color:rgba(255,0,153,.35);color:var(--pink)" onclick="sortearClub()">🏆 Realizar sorteo</button>'
+      +(sorteoHabilitado
+        ?'<button class="header-refresh" style="border-color:rgba(255,0,153,.35);color:var(--pink)" onclick="sortearClub()">🏆 Realizar sorteo</button>'
+        :'<button class="header-refresh" style="opacity:.58;cursor:not-allowed" disabled title="El sorteo se habilita con '+minSorteo+' miembros verificados">🔒 Faltan '+faltanSorteo+' para el sorteo</button>')
       +'<a href="https://docs.google.com/spreadsheets/d/17rFBpuvjam54M3NGE8Pmtc9YwBBRhVYI8bgGpckiAXo/edit" target="_blank" class="header-refresh" style="text-decoration:none">📄 Abrir registros</a></div>'
       +'<div style="margin:-7px 0 16px;color:'+(autoOk?'#00E676':'#FFB300')+';font-size:.78rem">'+(autoOk?'Los avisos de stock se revisan cada hora y el sorteo mensual está programado.':'Falta activar: '+(!auto.avisos?'avisos de stock ': '')+(!auto.sorteo?'sorteo mensual':'')+'.')+'</div>'
+      +'<div style="margin:-7px 0 16px;color:'+(sorteoHabilitado?'#00E676':'#FFD700')+';font-size:.78rem">'+(sorteoHabilitado?'Ya alcanzaste el mínimo de '+minSorteo+' miembros verificados.':'El sorteo permanecerá bloqueado hasta llegar a '+minSorteo+' verificados. Faltan '+faltanSorteo+'.')+'</div>'
       +'<div class="stats-grid">'
       +'<div class="stat-card"><div class="stat-label">Registrados</div><div class="stat-val cyan">'+Number(data.total||0)+'</div></div>'
       +'<div class="stat-card"><div class="stat-label">Verificados activos</div><div class="stat-val green">'+Number(data.verificados||0)+'</div></div>'
