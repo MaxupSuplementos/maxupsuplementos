@@ -654,6 +654,7 @@ var CLUB_SORTEOS_HEADERS = ['Mes','Fecha','Club ID ganador','Nombre','Email','Te
 var CLUB_STOCK_HEADERS = ['Clave','SKU','Marca','Producto','Categoria','Stock','Precio','Firma','Actualizado'];
 var CLUB_CARRITOS_HEADERS = ['Club ID','Email','Carrito JSON','Actualizado'];
 var CLUB_SESIONES_HEADERS = ['Token hash','Club ID','Email','Creada','Vence','Activa','Ultimo uso'];
+var CLUB_MIN_VERIFICADOS_SORTEO = 50;
 
 function _clubAsegurarHoja(nombre, headers, oculta) {
   var ss = _getSS();
@@ -1061,6 +1062,8 @@ function adminGetClub(sesion) {
     return {mes:String(r[0]||''),fecha:r[1],id:String(r[2]||''),nombre:String(r[3]||''),email:String(r[4]||''),instagram:String(r[6]||''),chances:Number(r[7])||0,participantes:Number(r[8])||0,total:Number(r[9])||0,premio:String(r[11]||''),estado:String(r[12]||'')};
   }) : [];
   return { ok:true, miembros:miembros, sorteos:sorteos, automatizaciones:automatizaciones, total:miembros.length, verificados:verificados.length,
+    minimoSorteo:CLUB_MIN_VERIFICADOS_SORTEO, faltanSorteo:Math.max(0,CLUB_MIN_VERIFICADOS_SORTEO-verificados.length),
+    sorteoHabilitado:verificados.length>=CLUB_MIN_VERIFICADOS_SORTEO,
     conAvisos:miembros.filter(function(m){return m.verificado&&m.activo&&m.notificaciones;}).length,
     chances:verificados.reduce(function(s,m){return s+m.chances;},0) };
 }
@@ -1141,7 +1144,9 @@ function _clubEjecutarSorteo(mes, premio, automatico) {
   var hoja = _clubHoja();
   var datos = hoja.getLastRow()>1 ? hoja.getRange(2,1,hoja.getLastRow()-1,CLUB_HEADERS.length).getValues() : [];
   var participantes = datos.filter(function(r){ return r[6]===true && r[10]===true && (Number(r[13])||0)>0; });
-  if (!participantes.length) throw new Error('No hay participantes verificados.');
+  if (participantes.length < CLUB_MIN_VERIFICADOS_SORTEO) {
+    throw new Error('El sorteo requiere al menos ' + CLUB_MIN_VERIFICADOS_SORTEO + ' miembros verificados. Actualmente hay ' + participantes.length + '.');
+  }
   var total = participantes.reduce(function(s,r){return s+(Number(r[13])||0);},0);
   var semilla = Utilities.getUuid().replace(/-/g,'') + Date.now();
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, semilla, Utilities.Charset.UTF_8);
@@ -1165,7 +1170,11 @@ function adminEjecutarSorteoClub(sesion, data) { _validarSesionAdmin(sesion); re
 
 function ejecutarSorteoMensualClubAutomatico() {
   try { return _clubEjecutarSorteo(_clubMesAnterior(), 'Premio mensual Club MAXUP', true); }
-  catch(e) { if(String(e.message).indexOf('ya fue realizado')>=0) return {ok:true,omitido:true,motivo:e.message}; throw e; }
+  catch(e) {
+    var mensaje=String(e.message||'');
+    if(mensaje.indexOf('ya fue realizado')>=0 || mensaje.indexOf('requiere al menos')>=0) return {ok:true,omitido:true,motivo:mensaje};
+    throw e;
+  }
 }
 
 function _clubStockActual() {

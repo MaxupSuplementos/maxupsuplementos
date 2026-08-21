@@ -830,6 +830,11 @@ function getCatalogo() {
   hoja = ss.getSheetByName('SUPLEMENTOS');
   if (!resultado && hoja) resultado = getCatalogoDesdeSuplemetos(hoja);
   if (!resultado) resultado = { productos: [], total: 0, error: 'No se encontró hoja CATALOGO ni SUPLEMENTOS' };
+  if (!ss.getSheetByName(_HOJA_FICHAS_PUBLICACIONES)) {
+    try { sincronizarFichasPublicaciones(resultado.productos); }
+    catch(e) { Logger.log('No se pudo crear FICHAS_PUBLICACIONES: ' + e.message); }
+  }
+  _aplicarFichasPublicaciones(resultado.productos, ss);
   resultado.configuracion = _configPublicaMaxup();
   return resultado;
 }
@@ -1721,9 +1726,9 @@ function actualizarAnalisisOfertas() {
       }
     }
 
-    // Puntaje de urgencia: menor = más urgente
-    // Combina días restantes, stock y ventas
-    var puntaje = diasRestantes * 10 + stockActual * 5 - ventasProd * 20;
+    // Puntaje de urgencia: menor = más urgente.
+    // Vencimiento cercano, stock alto y pocas ventas aumentan la prioridad.
+    var puntaje = diasRestantes * 10 - stockActual * 5 + ventasProd * 20;
     if (diasRestantes < 0) puntaje -= 1000;
 
     var loteNombre = nombre + ' [Vence: ' + Utilities.formatDate(fechaVence, 'America/Argentina/Buenos_Aires', 'dd/MM/yy') + ']';
@@ -2914,6 +2919,169 @@ function bienvenidaClientesNuevos() {
 //  AUTOMATIZACIÓN: CONTENIDO DIARIO PARA REDES SOCIALES
 // ════════════════════════════════════════════════════════════
 
+function _seleccionarProductosEstadosDiarios(cantidad, fecha) {
+  try {
+    sincronizarFichasPublicaciones();
+  } catch(e) {
+    Logger.log('Estados diarios: no se pudo sincronizar FICHAS_PUBLICACIONES: ' + e.message);
+  }
+  var catalogo = getCatalogo();
+  var productos = (catalogo && catalogo.productos ? catalogo.productos : []).filter(function(p) {
+    var categoria = String(p.categoria || '').toLowerCase().trim();
+    return Number(p.stock || 0) > 0 &&
+      Number(p.precio_venta || p.precio || 0) > 0 &&
+      String(p.imagen_url || '').trim() !== '' &&
+      categoria !== 'quimicos';
+  });
+  if (!productos.length) return [];
+
+  function normalizar(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function clave(marca, nombre) {
+    return normalizar(marca) + '||' + normalizar(nombre);
+  }
+
+  var fechaBase = fecha || new Date();
+  var desde = new Date(fechaBase.getTime() - 30 * 86400000);
+  var ventasPorClave = {};
+  var ventasPorNombre = {};
+  var lotes = {};
+  var ss = _getSS();
+
+  // Ventas reales de los últimos 30 días para todos los productos.
+  try {
+    var hojaVD = ss.getSheetByName('VentasDiarias');
+    if (hojaVD && hojaVD.getLastRow() > 1) {
+      var ventasRows = hojaVD.getDataRange().getValues();
+      for (var v = 1; v < ventasRows.length; v++) {
+        var fechaVenta = ventasRows[v][0];
+        if (!fechaVenta || typeof fechaVenta === 'string') continue;
+        var fv = new Date(fechaVenta);
+        if (isNaN(fv.getTime()) || fv < desde || fv > fechaBase) continue;
+        var nombreVenta = String(ventasRows[v][1] || '').trim();
+        var marcaVenta = String(ventasRows[v][2] || '').trim();
+        var cantidadVenta = Number(ventasRows[v][3]) || 0;
+        if (!nombreVenta || cantidadVenta <= 0) continue;
+        var claveVenta = clave(marcaVenta, nombreVenta);
+        ventasPorClave[claveVenta] = (ventasPorClave[claveVenta] || 0) + cantidadVenta;
+        var nombreNormalizado = normalizar(nombreVenta);
+        ventasPorNombre[nombreNormalizado] = (ventasPorNombre[nombreNormalizado] || 0) + cantidadVenta;
+      }
+    }
+  } catch(e) {
+    Logger.log('Estados diarios: no se pudieron leer ventas de 30 días: ' + e.message);
+  }
+
+  // Refrescar y leer la hoja que concentra vencimientos, stock y rotación.
+  try {
+    actualizarAnalisisOfertas();
+    var hojaAO = ss.getSheetByName('ANALISIS_OFERTAS');
+    if (hojaAO && hojaAO.getLastRow() > 1) {
+      var analisisRows = hojaAO.getDataRange().getValues();
+      for (var a = 1; a < analisisRows.length; a++) {
+        var nombreLote = String(analisisRows[a][0] || '').replace(/\s*\[Vence:.*\]\s*$/i, '').trim();
+        var marcaLote = String(analisisRows[a][1] || '').trim();
+        var stockLote = Number(analisisRows[a][2]) || 0;
+        var diasValor = analisisRows[a][4];
+        if (!nombreLote || stockLote <= 0 || diasValor === '' || diasValor === null) continue;
+        var dias = Number(diasValor);
+        if (isNaN(dias)) continue;
+        var claveLote = clave(marcaLote, nombreLote);
+        if (!lotes[claveLote]) lotes[claveLote] = { vigente: false, vencido: false, dias: 999999 };
+        if (dias < 0) {
+          lotes[claveLote].vencido = true;
+        } else {
+          lotes[claveLote].vigente = true;
+          if (dias < lotes[claveLote].dias) lotes[claveLote].dias = dias;
+        }
+      }
+    }
+  } catch(e) {
+    Logger.log('Estados diarios: no se pudo actualizar ANALISIS_OFERTAS: ' + e.message);
+  }
+
+  var zona = 'America/Argentina/Buenos_Aires';
+  var semilla = Utilities.formatDate(fechaBase, zona, 'yyyyMMdd');
+
+  productos = productos.filter(function(p) {
+    var estado = lotes[clave(p.marca, p.nombre)];
+    return !(estado && estado.vencido && !estado.vigente);
+  });
+
+  productos.forEach(function(p) {
+    var claveProducto = clave(p.marca, p.nombre);
+    var estado = lotes[claveProducto];
+    var ventas = ventasPorClave[claveProducto];
+    if (typeof ventas === 'undefined') ventas = ventasPorNombre[normalizar(p.nombre)] || 0;
+    p._ventas30Estado = Number(ventas) || 0;
+    p._diasVencimientoEstado = estado && estado.vigente ? estado.dias : 999999;
+    p._urgenteEstado = p._diasVencimientoEstado <= 90;
+
+    var textoHash = semilla + '|' + claveProducto;
+    var hash = 2166136261;
+    for (var h = 0; h < textoHash.length; h++) {
+      hash ^= textoHash.charCodeAt(h);
+      hash = Math.imul(hash, 16777619);
+    }
+    p._rotacionEstado = hash >>> 0;
+    p._motivoEstado = p._urgenteEstado
+      ? 'vence en ' + p._diasVencimientoEstado + ' días'
+      : (p._ventas30Estado === 0 ? 'sin ventas en 30 días' : p._ventas30Estado + ' ventas en 30 días');
+  });
+
+  productos.sort(function(a, b) {
+    if (a._urgenteEstado !== b._urgenteEstado) return a._urgenteEstado ? -1 : 1;
+    if (a._urgenteEstado && a._diasVencimientoEstado !== b._diasVencimientoEstado) {
+      return a._diasVencimientoEstado - b._diasVencimientoEstado;
+    }
+    if (a._ventas30Estado !== b._ventas30Estado) return a._ventas30Estado - b._ventas30Estado;
+    var stockDiff = Number(b.stock || 0) - Number(a.stock || 0);
+    if (stockDiff !== 0) return stockDiff;
+    return a._rotacionEstado - b._rotacionEstado;
+  });
+
+  return productos.slice(0, cantidad);
+}
+
+function _crearEnlaceEstadosDiarios(productos, fecha) {
+  var zona = 'America/Argentina/Buenos_Aires';
+  var ids = productos.map(function(p) { return String(p.id || p.sku || ''); }).join('|');
+  var nombres = productos.map(function(p) { return String(p.nombre || ''); }).join('|');
+  var dia = Utilities.formatDate(fecha || new Date(), zona, 'yyyy-MM-dd');
+  return 'https://maxupsuplementos.github.io/maxupsuplementos/promo.html' +
+    '?modo=diario&ids=' + encodeURIComponent(ids) +
+    '&productos=' + encodeURIComponent(nombres) +
+    '&fecha=' + encodeURIComponent(dia);
+}
+
+function _enviarEnlaceEstadosDiarios(fecha) {
+  try {
+    var productos = _seleccionarProductosEstadosDiarios(5, fecha);
+    if (!productos.length) {
+      Logger.log('Estados diarios: no hay productos con stock, precio e imagen');
+      return { ok: false, productos: [] };
+    }
+
+    var zona = 'America/Argentina/Buenos_Aires';
+    var enlace = _crearEnlaceEstadosDiarios(productos, fecha);
+    var mensaje = '📸 5 ESTADOS LISTOS — ' + Utilities.formatDate(fecha || new Date(), zona, 'dd/MM') + '\n\n' +
+      'Abri este enlace para generar las 5 placas verticales con foto, reseña y beneficios:\n' +
+      enlace + '\n\n' +
+      productos.map(function(p, i) {
+        var motivo = p._motivoEstado ? ' · ' + p._motivoEstado : '';
+        return (i + 1) + '. ' + String(p.nombre || '') + (p.marca ? ' — ' + p.marca : '') + motivo;
+      }).join('\n') + '\n\n' +
+      '✅ Podes guardar o compartir cada placa directamente en WhatsApp.';
+    _notificarTelegram(mensaje);
+    return { ok: true, productos: productos, enlace: enlace };
+  } catch(e) {
+    Logger.log('Error generando enlace de estados diarios: ' + e.message);
+    return { ok: false, error: e.message, productos: [] };
+  }
+}
+
 function generarContenidoRedes() {
   var ss = _getSS();
   var hoy = new Date();
@@ -2924,6 +3092,7 @@ function generarContenidoRedes() {
   var HASHTAGS_BASE = '#suplementos #fitness #gym #nutricion #salta #argentina #maxup #salud #entrenamiento #proteina';
 
   var posts = [];
+  _enviarEnlaceEstadosDiarios(hoy);
 
   // ── TIPO 1: OFERTAS POR VENCIMIENTO (Lunes y Jueves)
   if (diaSemana === 1 || diaSemana === 4) {
@@ -3490,6 +3659,54 @@ function getPuntosCliente(telefono) {
 // servicios de IA pagos y no modifica los pedidos ni el stock.
 var WA_TTL_ESTADO = 21600; // 6 horas, maximo de CacheService
 var WA_TELEFONO_HUMANO = '5491168461457';
+var WA_RESPUESTAS_HEADERS = ['Tema','Palabras clave','Respuesta de MAXUP','Activo','Prioridad'];
+
+function _waAsegurarRespuestasMaxup() {
+  var ss = _getSS();
+  var hoja = ss.getSheetByName('ASISTENTE_RESPUESTAS');
+  if (hoja) return hoja;
+  hoja = ss.insertSheet('ASISTENTE_RESPUESTAS');
+  hoja.getRange(1,1,1,WA_RESPUESTAS_HEADERS.length).setValues([WA_RESPUESTAS_HEADERS]);
+  hoja.getRange(2,4,4,1).insertCheckboxes();
+  hoja.getRange(2,1,4,WA_RESPUESTAS_HEADERS.length).setValues([
+    ['Originalidad','original,originales,son originales','Trabajamos con productos originales adquiridos a distribuidores y marcas habilitadas. Podés revisar el envase, lote, vencimiento y registro correspondiente al recibirlo.',true,10],
+    ['Como comprar','como compro,hacer pedido,quiero comprar','Podés armar el carrito desde maxupsuplementos.com.ar y enviarnos el pedido por WhatsApp. Confirmamos stock, forma de pago y entrega antes de cerrarlo.',true,9],
+    ['Recomendacion','que me recomendas,recomendame,no se cual elegir','Contame cuál es tu objetivo, si entrenás y qué producto estabas considerando. Puedo mostrarte opciones y beneficios generales; para una recomendación personalizada te comunico con una persona.',true,8],
+    ['Atencion humana','quiero asesoramiento,necesito ayuda','Claro. Contame brevemente qué necesitás y, si hace falta una recomendación personal, aviso al equipo de MAXUP para que continúe la conversación.',true,7]
+  ]);
+  hoja.getRange(1,1,1,WA_RESPUESTAS_HEADERS.length).setFontWeight('bold').setBackground('#111827').setFontColor('#00C8FF');
+  hoja.setFrozenRows(1);
+  hoja.autoResizeColumns(1,WA_RESPUESTAS_HEADERS.length);
+  return hoja;
+}
+
+function configurarAsistenteWhatsApp() {
+  var hoja = _waAsegurarRespuestasMaxup();
+  return {ok:true,hoja:hoja.getName(),respuestas:Math.max(0,hoja.getLastRow()-1),mensaje:'El asistente usa esta hoja para responder con el estilo de MAXUP.'};
+}
+
+function _waRespuestaPersonalizada(normal) {
+  try {
+    var hoja = _waAsegurarRespuestasMaxup();
+    if (hoja.getLastRow()<2) return '';
+    var filas=hoja.getRange(2,1,hoja.getLastRow()-1,WA_RESPUESTAS_HEADERS.length).getValues();
+    var mejor='',mejorPuntaje=-1;
+    filas.forEach(function(r){
+      var activa=r[3]===true || /^(si|true|activo|1)$/i.test(String(r[3]||''));
+      if(!activa || !String(r[2]||'').trim()) return;
+      var prioridad=Number(r[4])||0,puntaje=-1;
+      String(r[1]||'').split(/[,;|\n]+/).forEach(function(frase){
+        var clave=_waNormalizar(frase);
+        if(clave && normal.indexOf(clave)>=0) puntaje=Math.max(puntaje,prioridad*100+clave.length);
+      });
+      if(puntaje>mejorPuntaje){mejorPuntaje=puntaje;mejor=String(r[2]||'').trim();}
+    });
+    return mejor;
+  } catch(e) {
+    Logger.log('Asistente respuestas: '+e.message);
+    return '';
+  }
+}
 
 function _verificarWebhookWhatsApp(e) {
   var p = (e && e.parameter) || {};
@@ -3577,7 +3794,7 @@ function _waNormalizar(texto) {
 function _waMenu() {
   return 'Hola! Soy el *asistente automatico de MAXUP*.\n\n'
     + 'Puedo ayudarte con:\n'
-    + '*1* - Buscar producto, stock y precio\n'
+    + '*1* - Buscar producto, beneficios, stock y precio\n'
     + '*2* - Consultar el estado de un pedido\n'
     + '*3* - Medios de pago y 3 cuotas\n'
     + '*4* - Envios y retiro\n'
@@ -3608,6 +3825,51 @@ function _waGuardarEstado(telefono, paso) {
 
 function _waLimpiarEstado(telefono) {
   CacheService.getScriptCache().remove(_waClaveEstado(telefono));
+  CacheService.getScriptCache().remove('WA_RESULTS_' + _hashSeguro(telefono));
+}
+
+function _waGuardarResultadosProductos(telefono, coincidencias) {
+  var referencias=(coincidencias||[]).slice(0,5).map(function(item){
+    var p=item.p||item;
+    return {id:String(p.id||''),sku:String(p.sku||''),marca:String(p.marca||''),nombre:String(p.nombre||'')};
+  });
+  CacheService.getScriptCache().put('WA_RESULTS_'+_hashSeguro(telefono),JSON.stringify(referencias),WA_TTL_ESTADO);
+}
+
+function _waProductoElegido(telefono, numero) {
+  try {
+    var raw=CacheService.getScriptCache().get('WA_RESULTS_'+_hashSeguro(telefono));
+    var refs=raw?JSON.parse(raw):[];
+    var ref=refs[Number(numero)-1];
+    if(!ref) return null;
+    var productos=(getCatalogo().productos||[]);
+    for(var i=0;i<productos.length;i++){
+      var p=productos[i];
+      if(ref.sku && String(p.sku||'')===ref.sku) return p;
+      if(ref.id && String(p.id||'')===ref.id) return p;
+      if(_waNormalizar(p.marca)===_waNormalizar(ref.marca) && _waNormalizar(p.nombre)===_waNormalizar(ref.nombre)) return p;
+    }
+  } catch(e) { Logger.log('Asistente seleccion: '+e.message); }
+  return null;
+}
+
+function _waDetalleProducto(p) {
+  if(!p) return '';
+  var marca=String(p.marca||'').trim(),nombre=String(p.nombre||'').trim();
+  var contado=Number(p.precio_venta||0),lista=Number(p.precio_lista||contado),stock=Number(p.stock||0);
+  var descripcion=String(p.descripcion_publicacion||p.descripcion||'').trim();
+  var beneficios=Array.isArray(p.beneficios_publicacion)?p.beneficios_publicacion.filter(Boolean).slice(0,5):[];
+  var salida=['*'+(marca?marca+' - ':'')+nombre+'*'];
+  if(descripcion) salida.push('\n*Qué es:* '+descripcion);
+  if(beneficios.length){
+    salida.push('\n*Beneficios principales:*');
+    beneficios.forEach(function(b){salida.push('• '+String(b));});
+  }
+  salida.push('\n*Precio contado:* '+_waMoneda(contado));
+  salida.push('*Crédito de 1 a 3 cuotas:* '+_waMoneda(lista)+(lista>0?' (3 x '+_waMoneda(Math.ceil(lista/3))+')':''));
+  salida.push('*Stock disponible:* '+stock);
+  salida.push('\nSi querés comprarlo, decime *lo quiero*. Para dosis, contraindicaciones o una situación de salud te comunico con una persona.');
+  return salida.join('\n');
 }
 
 function _resolverAsistenteWhatsApp(telefono, texto) {
@@ -3634,9 +3896,19 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
 
   if (estado.paso === 'HUMANO') return '';
 
+  if (/^(lo quiero|quiero comprarlo|quiero llevarlo|comprar|reservar|encargar)$/.test(normal)) {
+    return _waDerivarHumano(telefono, 'quiere comprar un producto consultado');
+  }
+
   if (estado.paso === 'PRODUCTO') {
+    var opcionProducto=normal.match(/^[1-5]$/);
+    if(opcionProducto){
+      var elegido=_waProductoElegido(telefono,Number(opcionProducto[0]));
+      if(elegido) return _waDetalleProducto(elegido);
+      return 'Esa opción ya venció o no está disponible. Escribí nuevamente el producto que buscás.';
+    }
     _waGuardarEstado(telefono, 'PRODUCTO');
-    return _waBuscarProductos(texto);
+    return _waBuscarProductos(telefono,texto,false);
   }
   if (estado.paso === 'PEDIDO') {
     var codigoPedido = normal.toUpperCase().match(/(?:MXP-?)?\d{3,}/);
@@ -3647,13 +3919,13 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
     return _waRespuestaPedido(limpio);
   }
 
-  if (normal === '1' || /buscar|producto|precio|stock|tenes|tienen/.test(normal)) {
+  if (normal === '1' || /buscar|producto|precio|stock|tenes|tienen|beneficio|para que sirve|que es|contiene|composicion|ingrediente/.test(normal)) {
     _waGuardarEstado(telefono, 'PRODUCTO');
-    var consultaDirecta = normal.replace(/\b(buscar|busco|producto|precio|stock|tenes|tienen|hay|de|del|un|una|quiero|necesito)\b/g, ' ').replace(/\s+/g, ' ').trim();
+    var consultaDirecta = normal.replace(/\b(buscar|busco|producto|precio|stock|tenes|tienen|hay|beneficio|beneficios|sirve|contiene|composicion|ingrediente|ingredientes|que|es|para|de|del|la|el|los|las|un|una|quiero|necesito)\b/g, ' ').replace(/\s+/g, ' ').trim();
     if (normal === '1' || consultaDirecta.length < 2) {
       return 'Que producto buscas? Podes escribir, por ejemplo: *creatina ENA* o *whey vainilla*.';
     }
-    return _waBuscarProductos(consultaDirecta);
+    return _waBuscarProductos(telefono,consultaDirecta,false);
   }
   if (normal === '2' || /estado.*pedido|seguir.*pedido|donde.*pedido/.test(normal)) {
     _waGuardarEstado(telefono, 'PEDIDO');
@@ -3669,6 +3941,15 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
     return _waDerivarHumano(telefono, 'solicitud del cliente');
   }
 
+  var personalizada=_waRespuestaPersonalizada(normal);
+  if(personalizada) return personalizada+'\n\nEscribí *menu* para ver todas las opciones.';
+
+  var posibleProducto=_waBuscarProductos(telefono,texto,true);
+  if(posibleProducto){
+    _waGuardarEstado(telefono,'PRODUCTO');
+    return posibleProducto;
+  }
+
   return 'No llegue a entender la consulta.\n\n' + _waMenu();
 }
 
@@ -3676,11 +3957,11 @@ function _waEsConsultaSalud(normal) {
   return /dosis|dosificacion|como tomar|cuanto tomar|embaraz|presion|diabetes|medicamento|contraindic|efecto secundario|enfermedad|lesion/.test(normal);
 }
 
-function _waBuscarProductos(consulta) {
+function _waBuscarProductos(telefono, consulta, silencioso) {
   var normal = _waNormalizar(consulta);
-  var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, precio:1, stock:1, quiero:1, busco:1, tenes:1 };
+  var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1 };
   var tokens = normal.split(' ').filter(function(t) { return t.length > 1 && !stop[t]; });
-  if (!tokens.length) return 'Escribi el nombre o la marca del producto que buscas.';
+  if (!tokens.length) return silencioso?'':'Escribi el nombre o la marca del producto que buscas.';
 
   var catalogo = getCatalogo();
   var productos = catalogo.productos || [];
@@ -3704,22 +3985,22 @@ function _waBuscarProductos(consulta) {
   coincidencias = coincidencias.slice(0, 5);
 
   if (!coincidencias.length) {
-    return 'No encontre stock para *' + String(consulta).slice(0, 80) + '*. Proba con otra marca o escribi *5* para consultar a una persona.';
+    return silencioso?'':'No encontre stock para *' + String(consulta).slice(0, 80) + '*. Proba con otra marca o escribi *5* para consultar a una persona.';
   }
+
+  if(coincidencias.length===1) return _waDetalleProducto(coincidencias[0].p);
+  _waGuardarResultadosProductos(telefono,coincidencias);
 
   var salida = ['Encontre estas opciones con stock:'];
   coincidencias.forEach(function(item, i) {
     var p = item.p;
     var contado = Number(p.precio_venta || 0);
-    var lista = Number(p.precio_lista || contado);
     var linea = '\n*' + (i + 1) + '. ' + String(p.marca || '') + ' - ' + String(p.nombre || '') + '*'
-      + '\nContado/transferencia/debito: ' + _waMoneda(contado)
-      + '\nCredito 1 a 3 cuotas: ' + _waMoneda(lista);
-    if (lista > 0) linea += ' (3 x ' + _waMoneda(Math.ceil(lista / 3)) + ')';
-    linea += '\nStock: ' + Number(p.stock || 0);
+      + '\nContado: ' + _waMoneda(contado)
+      + ' · Stock: ' + Number(p.stock || 0);
     salida.push(linea);
   });
-  salida.push('\nPodes escribir otro producto o enviar *menu*. El stock se confirma al tomar el pedido.');
+  salida.push('\nRespondé con el número para ver qué es, sus beneficios, precio completo y cuotas. También podés escribir otro producto o enviar *menu*.');
   return salida.join('\n');
 }
 
