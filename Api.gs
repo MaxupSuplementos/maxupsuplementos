@@ -3655,10 +3655,9 @@ function getPuntosCliente(telefono) {
 // ============================================================
 //  ASISTENTE DE WHATSAPP (PRUEBA GRATUITA POR REGLAS)
 // ============================================================
-// Usa el numero temporal de WhatsApp Cloud API de Meta. No consume
+// Usa el WhatsApp oficial 387-5104606 mediante Cloud API de Meta. No consume
 // servicios de IA pagos y no modifica los pedidos ni el stock.
 var WA_TTL_ESTADO = 21600; // 6 horas, maximo de CacheService
-var WA_TELEFONO_HUMANO = '5491168461457';
 var WA_RESPUESTAS_HEADERS = ['Tema','Palabras clave','Respuesta de MAXUP','Activo','Prioridad'];
 
 function _waAsegurarRespuestasMaxup() {
@@ -4042,8 +4041,7 @@ function _waDerivarHumano(telefono, motivo) {
   try {
     _notificarTelegram('🙋 WhatsApp solicita atencion humana\nTelefono: +' + telefono + '\nMotivo: ' + String(motivo || 'consulta'));
   } catch (e) {}
-  return 'Listo, deje avisado al equipo de MAXUP. Una persona va a continuar por este mismo chat. '
-    + 'Si es urgente, tambien podes escribir al +' + WA_TELEFONO_HUMANO + '.';
+  return 'Listo, deje avisado al equipo de MAXUP. Una persona va a continuar por este mismo chat.';
 }
 
 function _enviarWhatsAppTexto(telefono, texto) {

@@ -26,7 +26,7 @@ if (heroLogoPrincipal) heroLogoPrincipal.src = 'logo-transparent.png?v=20260803'
 
 // ── DATOS DE LA TIENDA ────────────────────────────────────
 const STORE_NAME = 'MAXUP SUPLEMENTOS';   // Nombre de la tienda
-const WA_DEFAULT = '5491168461457';        // Número de WhatsApp (sin + ni espacios)
+const WA_DEFAULT = '5493875104606';        // WhatsApp oficial de MAXUP (sin + ni espacios)
 const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
 
 // ── CHEQUEO DE MANTENIMIENTO ──────────────────────────────
@@ -4609,7 +4609,7 @@ async function cargarLiquidaciones() {
         + '<span style="font-size:1.4rem;font-weight:700;color:var(--cyan)">$' + Number(p.precio).toLocaleString('es-AR') + '</span>'
         + '<span style="font-size:.75rem;color:#666">Stock: ' + p.stock + '</span>'
         + '</div>'
-        + '<a href="https://wa.me/5491168461457?text=' + waMsg + '" target="_blank"'
+        + '<a href="https://wa.me/5493875104606?text=' + waMsg + '" target="_blank"'
         + ' style="display:block;text-align:center;padding:8px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border-radius:8px;font-size:.85rem;font-weight:700;letter-spacing:.06em;text-decoration:none">'
         + '📲 CONSULTAR PRECIO ESPECIAL</a>'
         + '</div></div>';
@@ -7709,7 +7709,7 @@ function consultarIndum(btn) {
   var col = btn.getAttribute('data-c');
   var pr = btn.getAttribute('data-p');
   var msg = encodeURIComponent('Hola MAXUP! Me interesa: ' + n + ' - Color: ' + col + ' - Precio: $' + Number(pr).toLocaleString('es-AR') + ' - Esta disponible?');
-  window.open('https://wa.me/5491168461457?text=' + msg, '_blank');
+  window.open('https://wa.me/5493875104606?text=' + msg, '_blank');
 }
 
 function actualizarFiltrosMarca() {
@@ -8042,7 +8042,7 @@ function mostrarCombos(){
     }).join('');
 
     var waMsg = encodeURIComponent('Hola MAXUP! Me interesa el '+c.nombre.replace(/[^\w\s]/g,'')+'. ¿Cuál es el precio del combo?');
-    var waLink = 'https://wa.me/5491168461457?text='+waMsg;
+    var waLink = 'https://wa.me/5493875104606?text='+waMsg;
 
     return '<div style="background:var(--dark2);border:1px solid '+c.color+'33;border-radius:12px;overflow:hidden;transition:border-color .3s" onmouseenter="this.style.borderColor=\''+c.color+'88\'" onmouseleave="this.style.borderColor=\''+c.color+'33\'">'
       + '<div style="background:'+c.color+'10;border-bottom:1px solid '+c.color+'22;padding:16px">'
@@ -8632,7 +8632,7 @@ function enviarStockAlert(){
   // Enviar WhatsApp al dueño
   var p = getProduct(_stockAlertPid);
   var msg = 'Nuevo pedido de aviso de stock:\n🏷️ Marca: ' + (p && p.brand ? p.brand : 'Sin marca informada') + '\n📦 Producto: ' + (p ? p.name : _stockAlertPid) + '\n📱 Cliente: ' + phone;
-  window.open('https://wa.me/5491168461457?text=' + encodeURIComponent(msg), '_blank');
+  window.open('https://wa.me/5493875104606?text=' + encodeURIComponent(msg), '_blank');
   cerrarStockAlert();
   toast('✅ Te avisaremos cuando haya stock!');
 }
