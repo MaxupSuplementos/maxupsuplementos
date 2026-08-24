@@ -245,15 +245,17 @@ function wrapCanvasLines(ctx,text,maxWidth,maxLines){
 function drawDailyBenefitList(ctx,p,startY,endY){
   const items=dailyBenefits(p).slice(0,5);
   const rowHeight=Math.max(54,Math.floor((endY-startY)/Math.max(items.length,1)));
-  const fontSize=rowHeight<65?23:25;
-  const lineHeight=fontSize+5;
+  // El flyer se comparte principalmente desde el teléfono: aprovechamos la
+  // altura disponible para que los beneficios se lean sin tener que ampliar.
+  const fontSize=Math.max(30,Math.min(36,Math.floor(rowHeight*.45)));
+  const lineHeight=fontSize+7;
   ctx.save();ctx.font=`600 ${fontSize}px 'Rajdhani',sans-serif`;ctx.textAlign='left';ctx.textBaseline='alphabetic';
   items.forEach((item,index)=>{
     const y=startY+(index*rowHeight);
-    const lines=wrapCanvasLines(ctx,item,790,2);
-    ctx.beginPath();ctx.arc(124,y+7,8,0,Math.PI*2);ctx.fillStyle='#00C8FF';ctx.fill();
+    const lines=wrapCanvasLines(ctx,item,800,2);
+    ctx.beginPath();ctx.arc(124,y+12,10,0,Math.PI*2);ctx.fillStyle='#00C8FF';ctx.fill();
     lines.forEach((line,lineIndex)=>{
-      const lineY=y+15+(lineIndex*lineHeight);
+      const lineY=y+fontSize-8+(lineIndex*lineHeight);
       ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillText(line,152,lineY+2);
       ctx.fillStyle='#eee';ctx.fillText(line,150,lineY);
     });
@@ -318,12 +320,12 @@ async function drawDailyStory(canvas,p,index,total){
   const benefitY=Math.max(1095,brandY+30),benefitBottom=1705;
   rr(ctx,70,benefitY,W-140,benefitBottom-benefitY,18);ctx.fillStyle='rgba(153,51,255,.10)';ctx.fill();
   ctx.strokeStyle='rgba(153,51,255,.35)';ctx.lineWidth=2;ctx.stroke();
-  solidText(ctx,'QUÉ ES',W/2,benefitY+38,'#FF0099',"bold 24px 'Rajdhani',sans-serif");
-  const descriptionEnd=wrapSolid(ctx,dailyExplainer(p),W/2,benefitY+74,W-220,31,'#eee',"600 25px 'Rajdhani',sans-serif");
+  solidText(ctx,'QUÉ ES',W/2,benefitY+42,'#FF0099',"bold 30px 'Rajdhani',sans-serif");
+  const descriptionEnd=wrapSolid(ctx,dailyExplainer(p),W/2,benefitY+84,W-190,38,'#eee',"600 31px 'Rajdhani',sans-serif");
   const separatorY=descriptionEnd+24;
   ctx.strokeStyle='rgba(0,200,255,.25)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(115,separatorY);ctx.lineTo(W-115,separatorY);ctx.stroke();
-  solidText(ctx,'5 PUNTOS CLAVE',W/2,separatorY+38,'#00C8FF',"bold 24px 'Rajdhani',sans-serif");
-  drawDailyBenefitList(ctx,p,separatorY+58,benefitBottom-18);
+  solidText(ctx,'5 PUNTOS CLAVE',W/2,separatorY+42,'#00C8FF',"bold 30px 'Rajdhani',sans-serif");
+  drawDailyBenefitList(ctx,p,separatorY+66,benefitBottom-18);
 
   rr(ctx,W/2-235,1730,470,72,36);ctx.fillStyle=g;ctx.fill();
   solidText(ctx,'PEDILO EN NUESTRA WEB',W/2,1778,'#fff',"bold 29px 'Rajdhani',sans-serif");
