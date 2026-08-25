@@ -2,2906 +2,7 @@
 //  MAXUP — API.gs (v2 — corregido)
 //  Reemplazar el contenido de Api.gs con este código
 //  Luego: Implementar → Administrar implementaciones →
-//         ✏️ Editar → Nueva versión → Implementar
-// ============================================================
-
-// ── CONFIGURACIÓN CENTRALIZADA ──────────────────────────────
-// Ejecutar configurarCredenciales() UNA VEZ desde el editor de Apps Script.
-// Después de ejecutarla, podés borrar los valores por defecto de _getConfig().
-var _CONFIG = null;
-function _getConfig() {
-  if (_CONFIG) return _CONFIG;
-  try {
-    var props = PropertiesService.getScriptProperties();
-    _CONFIG = {
-      SS_ID:            props.getProperty('SS_ID')            || '17rFBpuvjam54M3NGE8Pmtc9YwBBRhVYI8bgGpckiAXo',
-      TELEGRAM_TOKEN:   props.getProperty('TELEGRAM_TOKEN')   || '',
-      TELEGRAM_CHAT_ID: props.getProperty('TELEGRAM_CHAT_ID') || '',
-      ADMIN_CLAVE:      props.getProperty('ADMIN_CLAVE')      || '',
-      API_URL_SELF:     props.getProperty('API_URL_SELF')      || '',
-      LINK_SECRET:      props.getProperty('LINK_SECRET')       || '',
-      WA_VERIFY_TOKEN:  props.getProperty('WA_VERIFY_TOKEN')   || '',
-      WA_ACCESS_TOKEN:  props.getProperty('WA_ACCESS_TOKEN')   || '',
-      WA_PHONE_ID:      props.getProperty('WA_PHONE_ID')       || '',
-      WA_GRAPH_VERSION: props.getProperty('WA_GRAPH_VERSION')  || 'v26.0'
-    };
-  } catch(e) {
-    _CONFIG = {
-      SS_ID:            '17rFBpuvjam54M3NGE8Pmtc9YwBBRhVYI8bgGpckiAXo',
-      TELEGRAM_TOKEN:   '',
-      TELEGRAM_CHAT_ID: '',
-      ADMIN_CLAVE:      '',
-      API_URL_SELF:     '',
-      LINK_SECRET:      '',
-      WA_VERIFY_TOKEN:  '',
-      WA_ACCESS_TOKEN:  '',
-      WA_PHONE_ID:      '',
-      WA_GRAPH_VERSION: 'v26.0'
-    };
-  }
-  return _CONFIG;
-}
-
-function configurarBaseSegura() {
-  var props = PropertiesService.getScriptProperties();
-  if (!props.getProperty('SS_ID')) props.setProperty('SS_ID', '17rFBpuvjam54M3NGE8Pmtc9YwBBRhVYI8bgGpckiAXo');
-  if (!props.getProperty('API_URL_SELF')) props.setProperty('API_URL_SELF', 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec');
-  if (!props.getProperty('LINK_SECRET')) {
-    props.setProperty('LINK_SECRET', Utilities.getUuid() + Utilities.getUuid());
-  }
-  Logger.log('Configuración base segura verificada. Las credenciales sensibles permanecen únicamente en Script Properties.');
-}
-
-// ── CACHE DE SPREADSHEET ────────────────────────────────────
-var _ss = null;
-function _getSS() {
-  if (!_ss) _ss = SpreadsheetApp.openById(_getConfig().SS_ID);
-  return _ss;
-}
-
-// ── CONSTANTES ──────────────────────────────────────────────
-var PROMO_MINIMO_API    = 40000;
-var PROMO_MESES_API     = 3;
-var PROMO_DESCUENTO_API = 0.10;
-var NOMBRES_MESES_API   = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-var HOJA_MAYORISTAS     = 'MAYORISTAS';
-var HOJA_PEDIDOS_MAYO   = 'PEDIDOS_MAYORISTA';
-var COL_DESC_MAYORISTA  = 11;
-
-var ADMIN_SESSION_TTL = 21600; // 6 horas, máximo permitido por CacheService
-var ADMIN_MAX_INTENTOS = 6;
-
-function _adminVersionSesion() {
-  return PropertiesService.getScriptProperties().getProperty('ADMIN_SESSION_VERSION') || '1';
-}
-
-function _jsonOut(data) {
-  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
-}
-
-function _hashSeguro(value) {
-  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(value || ''), Utilities.Charset.UTF_8);
-  return digest.map(function(b) {
-    var n = b < 0 ? b + 256 : b;
-    return ('0' + n.toString(16)).slice(-2);
-  }).join('');
-}
-
-function _registrarAuditoria(accion, detalle, usuario) {
-  try {
-    var ss = _getSS();
-    var hoja = ss.getSheetByName('AUDITORIA');
-    if (!hoja) {
-      hoja = ss.insertSheet('AUDITORIA');
-      hoja.appendRow(['Fecha', 'Acción', 'Detalle', 'Usuario']);
-      hoja.getRange(1, 1, 1, 4).setFontWeight('bold').setBackground('#111827').setFontColor('#ffffff');
-      hoja.setFrozenRows(1);
-    }
-    hoja.appendRow([new Date(), String(accion || ''), String(detalle || ''), String(usuario || 'sistema')]);
-  } catch(e) {
-    Logger.log('Error auditoría: ' + e.message);
-  }
-}
-
-function adminLogin(clave) {
-  var cache = CacheService.getScriptCache();
-  var intentos = Number(cache.get('ADMIN_LOGIN_FALLOS') || 0);
-  if (intentos >= ADMIN_MAX_INTENTOS) {
-    _registrarAuditoria('LOGIN BLOQUEADO', 'Demasiados intentos fallidos', 'administración');
-    return { ok: false, error: 'Demasiados intentos. Esperá 10 minutos.' };
-  }
-  if (!clave || clave !== _getConfig().ADMIN_CLAVE) {
-    cache.put('ADMIN_LOGIN_FALLOS', String(intentos + 1), 600);
-    _registrarAuditoria('LOGIN FALLIDO', 'Clave incorrecta', 'administración');
-    return { ok: false, error: 'Clave incorrecta' };
-  }
-  cache.remove('ADMIN_LOGIN_FALLOS');
-  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
-  cache.put('ADMIN_SESSION_' + _hashSeguro(token), _adminVersionSesion(), ADMIN_SESSION_TTL);
-  _registrarAuditoria('LOGIN EXITOSO', 'Sesión administrativa iniciada', 'administración');
-  return { ok: true, sesion: token, expiraEn: ADMIN_SESSION_TTL };
-}
-
-function adminLogout(sesion) {
-  if (sesion) CacheService.getScriptCache().remove('ADMIN_SESSION_' + _hashSeguro(sesion));
-  _registrarAuditoria('LOGOUT', 'Sesión administrativa cerrada', 'administración');
-  return { ok: true };
-}
-
-function adminCambiarClave(sesion, actual, nueva) {
-  _validarSesionAdmin(sesion);
-  if (String(actual || '') !== String(_getConfig().ADMIN_CLAVE || '')) throw new Error('La clave actual no coincide.');
-  nueva = String(nueva || '');
-  if (nueva.length < 14 || !/[a-z]/.test(nueva) || !/[A-Z]/.test(nueva) || !/[0-9]/.test(nueva) || !/[^A-Za-z0-9]/.test(nueva)) {
-    throw new Error('La nueva clave debe tener al menos 14 caracteres, mayúscula, minúscula, número y símbolo.');
-  }
-  if (nueva === String(actual || '')) throw new Error('La nueva clave debe ser diferente.');
-  var props = PropertiesService.getScriptProperties();
-  props.setProperty('ADMIN_CLAVE', nueva);
-  props.setProperty('ADMIN_SESSION_VERSION', Utilities.getUuid());
-  CacheService.getScriptCache().remove('ADMIN_SESSION_' + _hashSeguro(sesion));
-  _CONFIG = null;
-  _registrarAuditoria('CLAVE ADMIN CAMBIADA', 'Se invalidaron todas las sesiones anteriores', 'administración');
-  return { ok:true, mensaje:'Clave actualizada. Volvé a iniciar sesión.' };
-}
-
-function _validarSesionAdmin(sesion) {
-  if (!sesion) throw new Error('Sesión requerida');
-  var key = 'ADMIN_SESSION_' + _hashSeguro(sesion);
-  var cache = CacheService.getScriptCache();
-  if (cache.get(key) !== _adminVersionSesion()) throw new Error('Sesión vencida o inválida');
-  cache.put(key, _adminVersionSesion(), ADMIN_SESSION_TTL);
-  return true;
-}
-
-// ── GET ─────────────────────────────────────────────────────
-function doGet(e) {
-  if (e && e.parameter && e.parameter['hub.mode']) {
-    return _verificarWebhookWhatsApp(e);
-  }
-  var accion = (e && e.parameter && e.parameter.accion) ? e.parameter.accion : 'catalogo';
-
-  if (accion === 'aprobar_mayorista')  return aprobarMayorista(e.parameter);
-  if (accion === 'rechazar_mayorista') return rechazarMayorista(e.parameter);
-
-  var resultado;
-  try {
-    switch(accion) {
-      case 'catalogo':         resultado = getCatalogo();  break;
-      case 'stats':            resultado = getStats();     break;
-      case 'estado':           resultado = getEstadoPedido(e.parameter.pedido); break;
-      case 'mantenimiento':    resultado = getMantenimiento(); break;
-      case 'ofertas':          resultado = getOfertas(); break;
-      case 'indumentaria':     resultado = getIndumentaria(); break;
-      case 'resenas':          resultado = getResenas(); break;
-      case 'es_nuevo':         resultado = esClienteNuevo(e.parameter.telefono); break;
-      case 'historial_cliente': resultado = getHistorialCliente(e.parameter.telefono); break;
-      case 'puntos_cliente':    resultado = getPuntosCliente(e.parameter.telefono); break;
-      case 'club_estado':       resultado = estadoClubMaxup('', ''); break;
-      case 'club_verificar':    resultado = verificarClubMaxup(e.parameter.token); break;
-      case 'club_baja':         resultado = bajaClubMaxup(e.parameter.token); break;
-      default:                 resultado = getCatalogo();
-    }
-  } catch(err) {
-    resultado = { error: err.message };
-  }
-
-  return ContentService
-    .createTextOutput(JSON.stringify(resultado))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-// ── POST ────────────────────────────────────────────────────
-function doPost(e) {
-  try {
-    var data = JSON.parse(e.postData.contents);
-
-    if (data && data.object === 'whatsapp_business_account') {
-      return _jsonOut(_procesarWebhookWhatsApp(data));
-    }
-    if (data && data.object === 'instagram') {
-      return _jsonOut(_procesarWebhookInstagramClub(data));
-    }
-
-    if ((data.type === 'payment' || String(data.action || '').indexOf('payment.') === 0) && data.data && data.data.id) {
-      return _jsonOut(procesarWebhookMercadoPago(data));
-    }
-
-    if (data.accion === 'admin_login')         return _jsonOut(adminLogin(data.clave));
-    if (data.accion === 'admin_logout')        return _jsonOut(adminLogout(data.sesion));
-    if (data.accion === 'admin_cambiar_clave') return _jsonOut(adminCambiarClave(data.sesion, data.actual, data.nueva));
-    if (data.accion === 'admin_pedidos')       return _jsonOut(adminGetPedidos(data.sesion));
-    if (data.accion === 'admin_resumen')       return _jsonOut(adminGetResumen(data.sesion));
-    if (data.accion === 'admin_stock')         return _jsonOut(adminGetStockBajo(data.sesion, data.limite));
-    if (data.accion === 'admin_descuentos')    return _jsonOut(adminGetClientesDescuento(data.sesion));
-    if (data.accion === 'admin_estado')        return _jsonOut(adminCambiarEstado(data.sesion, data.pedido, data.estado));
-    if (data.accion === 'admin_vencer')        return _jsonOut(adminGetPorVencer(data.sesion, data.dias));
-    if (data.accion === 'admin_dashboard')     return _jsonOut(adminGetDashboard(data.sesion));
-    if (data.accion === 'admin_mantenimiento') return _jsonOut(adminMantenimiento(data.sesion, data.activo, data.mensaje));
-    if (data.accion === 'admin_mayoristas')    return adminMayoristas({ sesion: data.sesion });
-    if (data.accion === 'admin_auditoria')     return _jsonOut(adminGetAuditoria(data.sesion, data.limite));
-    if (data.accion === 'admin_configuracion') return _jsonOut(adminConfiguracion(data.sesion, data.valores));
-    if (data.accion === 'admin_cupones')       return _jsonOut(adminGetCupones(data.sesion));
-    if (data.accion === 'admin_club')          return _jsonOut(adminGetClub(data.sesion));
-    if (data.accion === 'admin_club_chance')   return _jsonOut(adminAgregarChanceClub(data.sesion, data));
-    if (data.accion === 'admin_club_sorteo')   return _jsonOut(adminEjecutarSorteoClub(data.sesion, data));
-    if (data.accion === 'admin_club_instalar') return _jsonOut(adminInstalarClub(data.sesion));
-
-    if (data.accion === 'club_estado')         return _jsonOut(estadoClubMaxup(data.email, data.telefono));
-    if (data.accion === 'club_registro')       return _jsonOut(registrarClubMaxup(data));
-    if (data.accion === 'cuenta_solicitar')    return _jsonOut(solicitarCodigoCuenta(data));
-    if (data.accion === 'cuenta_ingresar')     return _jsonOut(ingresarCuentaClub(data));
-    if (data.accion === 'cuenta_estado')       return _jsonOut(estadoCuentaClub(data));
-    if (data.accion === 'cuenta_carrito')      return _jsonOut(guardarCarritoCuenta(data));
-    if (data.accion === 'cuenta_salir')        return _jsonOut(salirCuentaClub(data));
-
-    if (data.accion === 'registro_mayorista') return registroMayorista(data);
-    if (data.accion === 'login_mayorista')    return loginMayorista(data);
-    if (data.accion === 'catalogo_mayorista') return catalogoMayorista(data);
-    if (data.accion === 'pedido_mayorista')   return pedidoMayorista(data);
-    if (data.accion === 'nueva_resena')       return ContentService.createTextOutput(JSON.stringify(guardarResena(data))).setMimeType(ContentService.MimeType.JSON);
-
-    var resultado = registrarPedidoWeb(data);
-    try { actualizarHojaReposicion(); } catch(eRepo) {}
-    return ContentService
-      .createTextOutput(JSON.stringify(resultado))
-      .setMimeType(ContentService.MimeType.JSON);
-
-  } catch(err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ ok: false, error: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-// ── GENERAR CÓDIGO DE PEDIDO SECUENCIAL ─────────────────────
-function _generarCodigoPedido() {
-  var hojaPed = _getSS().getSheetByName('PEDIDOS');
-  if (!hojaPed || hojaPed.getLastRow() < 2) return 'MXP-1001';
-  var codigos = hojaPed.getRange(2, 1, hojaPed.getLastRow() - 1, 1).getValues();
-  var maxNum = 1000;
-  for (var i = 0; i < codigos.length; i++) {
-    var match = String(codigos[i][0]).match(/MXP-(\d+)/);
-    if (match) {
-      var num = parseInt(match[1]);
-      if (num > maxNum) maxNum = num;
-    }
-  }
-  return 'MXP-' + (maxNum + 1);
-}
-
-// ── REGISTRAR PEDIDO WEB ────────────────────────────────────
-function registrarPedidoWeb(data) {
-  var ss       = _getSS();
-  var hojaCli  = ss.getSheetByName('CLIENTES');
-  var hojaVD   = ss.getSheetByName('VentasDiarias');
-
-  if (!hojaCli || !hojaVD) throw new Error('Hojas CLIENTES o VentasDiarias no encontradas');
-
-  var nombre   = String(data.nombre   || '').trim();
-  var telefono = String(data.telefono || '').trim();
-  var email    = String(data.email    || '').trim();
-  var items    = data.items || [];
-  var total    = Number(data.total)   || 0;
-  var entrega  = String(data.entrega  || 'retiro').trim();
-  var pago     = String(data.pago     || 'transferencia').trim();
-  var direccion= String(data.direccion|| '').trim();
-
-  if (!nombre || !telefono) throw new Error('Nombre y teléfono son requeridos');
-
-  // ── CANDADO + ANTI-DUPLICADOS ────────────────────────────
-  // Serializa pedidos simultáneos (evita códigos repetidos y filas mezcladas)
-  var lock = LockService.getScriptLock();
-  try { lock.waitLock(15000); } catch(eL) { throw new Error('Sistema ocupado, reintentá en unos segundos'); }
-  try {
-
-  // Si el MISMO teléfono mandó un pedido por el MISMO total hace menos de
-  // 3 minutos, es un reintento (doble clic / recarga): devolver el mismo
-  // código en vez de crear otro pedido.
-  var hojaPedPrev = ss.getSheetByName('PEDIDOS');
-  if (hojaPedPrev && hojaPedPrev.getLastRow() > 1) {
-    var prevRows = hojaPedPrev.getDataRange().getValues();
-    var ahoraMs = Date.now();
-    var telNorm = telefono.replace(/\D/g, '');
-    for (var pr = prevRows.length - 1; pr >= 1 && pr >= prevRows.length - 15; pr--) {
-      var fPrev = prevRows[pr][1];
-      if (!(fPrev instanceof Date)) continue;
-      if (ahoraMs - fPrev.getTime() > 3 * 60 * 1000) break; // más de 3 min: dejar de mirar
-      var telPrev = String(prevRows[pr][3] || '').replace(/\D/g, '');
-      if (telPrev === telNorm) {
-        return { ok: true, codigo: String(prevRows[pr][0]), duplicado: true,
-                 mensaje: 'Tu pedido ya estaba registrado' };
-      }
-    }
-  }
-
-  var codigoPedido = _generarCodigoPedido();
-
-  // ── Buscar o crear cliente ──────────────────────────────
-  var rowsCli    = hojaCli.getDataRange().getValues();
-  var headersCli = rowsCli[0];
-  var codigoCliente = null;
-
-  for (var i = 1; i < rowsCli.length; i++) {
-    var telExistente = String(rowsCli[i][2] || '').replace(/\D/g,'');
-    var telNuevo     = telefono.replace(/\D/g,'');
-    var nombreExist  = String(rowsCli[i][1] || '').toLowerCase().trim();
-    if (telExistente && telExistente === telNuevo) {
-      codigoCliente = rowsCli[i][0];
-      break;
-    }
-    if (nombreExist === nombre.toLowerCase()) {
-      codigoCliente = rowsCli[i][0];
-      break;
-    }
-  }
-
-  if (!codigoCliente) {
-    var codigos   = rowsCli.slice(1).map(function(r){ return Number(r[0]); }).filter(function(c){ return !isNaN(c) && c > 0; });
-    codigoCliente = codigos.length > 0 ? Math.max.apply(null, codigos) + 1 : 101;
-    hojaCli.appendRow([codigoCliente, nombre, telefono]);
-  }
-
-  // ── Verificar descuentos ────────────────────────────────
-  var tieneDesc = _tieneDescuentoApi(codigoCliente, rowsCli, headersCli);
-  var esNuevo = false;
-  if (!tieneDesc) {
-    var nombreLower = nombre.toLowerCase();
-    if (hojaVD.getLastRow() > 1) {
-      var rowsVD2 = hojaVD.getDataRange().getValues();
-      var tieneCompras = rowsVD2.some(function(r) {
-        return String(r[6] || '').toLowerCase() === nombreLower;
-      });
-      esNuevo = !tieneCompras;
-    } else {
-      esNuevo = true;
-    }
-  }
-  var descuentoFidelidad = _configNumeroMaxup('PROMO_DESCUENTO', PROMO_DESCUENTO_API);
-  var descBienvenida = esNuevo ? _configNumeroMaxup('DESCUENTO_BIENVENIDA', 0.02) : 0;
-  var factor   = tieneDesc ? (1 - descuentoFidelidad) : (1 - descBienvenida);
-  var tipoDesc = tieneDesc ? '10% fidelidad' : (esNuevo ? '2% bienvenida' : '');
-
-  // ── Calcular totales (la VENTA se anota recién al ENTREGAR) ──
-  // El pedido web ya NO escribe en VentasDiarias ni suma al cliente acá.
-  // Eso pasa cuando el pedido se marca Entregado/Retirado (junto con el
-  // stock), en _registrarVentaPedidoWeb. Así un pedido que nunca se
-  // concreta (o se cancela) no ensucia las ventas.
-  var hoy      = new Date();
-  var totalReal = 0;
-  var detalleTotalSeguro = null;
-
-  if (items.length > 0) {
-    items = _validarItemsPedidoWeb(items);
-    // La web manda "total" con TODOS sus descuentos aplicados (combos,
-    // descuento por monto, cupón, bienvenida). Antes se ignoraba y
-    // los items se anotaban a precio de lista (y el link de Mercado Pago se
-    // generaba sin el descuento). Ahora ese total manda: se reparte
-    // proporcionalmente entre los items para obtener el precio FINAL cobrado.
-    var sumItems = 0;
-    for (var s = 0; s < items.length; s++) {
-      sumItems += (Number(items[s].precio || 0)) * (Number(items[s].cantidad || 1));
-    }
-    detalleTotalSeguro = _calcularPedidoSeguroDetalle(items, data.cupon, esNuevo, tieneDesc, telefono);
-    var totalFront = detalleTotalSeguro.total;
-    if (detalleTotalSeguro.cupon) tipoDesc = 'Cupon ' + detalleTotalSeguro.cupon.codigo;
-    var usarTotalWeb = (totalFront > 0 && sumItems > 0 && totalFront <= sumItems);
-    // Todos los descuentos se validaron del lado del servidor.
-    var factorServer = usarTotalWeb ? 1 : factor;
-    var ratio = usarTotalWeb ? (totalFront / sumItems) : 1;
-
-    for (var idx = 0; idx < items.length; idx++) {
-      var item = items[idx];
-      var precioFinal = Math.round(Number(item.precio || 0) * ratio * factorServer);
-      var cantidad    = Number(item.cantidad || 1);
-      // Guardar el precio FINAL cobrado (con descuentos) dentro del item:
-      // se usa al registrar la venta cuando el pedido se entrega.
-      item.precioFinal = precioFinal;
-      totalReal += precioFinal * cantidad;
-    }
-  } else {
-    totalReal = Math.round(total * factor);
-  }
-
-  // ── Registrar en hoja PEDIDOS ───────────────────────────
-  var filaPedidoNueva = 0;
-  try {
-    var hojaPed = ss.getSheetByName('PEDIDOS');
-    if (!hojaPed) {
-      hojaPed = ss.insertSheet('PEDIDOS');
-      hojaPed.appendRow(['Código','Fecha','Cliente','Teléfono','Productos','Total','Entrega','Dirección','Pago','Estado']);
-      hojaPed.getRange(1,1,1,10).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
-    }
-    var itemsResumen = items.length > 0
-      ? items.map(function(i){ return (i.marca ? '[' + i.marca + '] ' : '') + i.nombre + ' x' + i.cantidad; }).join(' | ')
-      : 'Pedido web';
-    var itemsJSON = items.length > 0 ? JSON.stringify(items) : '[]';
-    filaPedidoNueva = hojaPed.getLastRow() + 1;
-    hojaPed.appendRow([
-      codigoPedido, hoy, nombre, telefono, itemsResumen,
-      '$' + _formatoPrecio(totalReal),
-      entrega === 'envio' ? 'Envío' : 'Retiro en local',
-      direccion || '-', pago, 'Recibido', itemsJSON
-    ]);
-  } catch(ePed) {
-    throw new Error('No se pudo registrar el pedido: ' + ePed.message);
-  }
-
-  if (detalleTotalSeguro && detalleTotalSeguro.cupon) {
-    try {
-      _registrarUsoCupon(
-        detalleTotalSeguro.cupon, telefono, codigoPedido,
-        detalleTotalSeguro.totalAntesCupon, detalleTotalSeguro.descuentoCupon
-      );
-    } catch(eUsoCupon) {
-      try {
-        if (filaPedidoNueva > 1 && String(hojaPed.getRange(filaPedidoNueva, 1).getValue()) === codigoPedido) {
-          hojaPed.deleteRow(filaPedidoNueva);
-        }
-      } catch(eLimpieza) {}
-      throw new Error('No se pudo reservar el cupon: ' + eUsoCupon.message);
-    }
-  }
-
-  // ── Notificar por Telegram ──────────────────────────────
-  try {
-    var itemsTexto = items.length > 0
-      ? items.map(function(i) { return '  • ' + (i.marca ? '[' + i.marca + '] ' : '') + i.nombre + ' x' + i.cantidad; }).join('\n')
-      : 'Pedido web';
-    var msg = '🛒 NUEVO PEDIDO WEB — MAXUP\n\n'
-      + '🔑 Código: ' + codigoPedido + '\n'
-      + '👤 ' + nombre + '\n'
-      + '📱 ' + telefono + '\n'
-      + (email ? '📧 ' + email + '\n' : '')
-      + '\n📦 Productos:\n' + itemsTexto + '\n\n'
-      + '💰 Total: $' + _formatoPrecio(totalReal)
-      + (tipoDesc ? ' 🎁 ' + tipoDesc : '') + '\n'
-      + '🚚 ' + (entrega === 'envio' ? 'Envío a: ' + direccion : 'Retiro en local') + '\n'
-      + '💳 Pago: ' + pago + '\n\n'
-      + '✅ Registrado en Sheets\n'
-      + '📋 Ver pedido: https://maxupsuplementos.com.ar/estado.html?pedido=' + codigoPedido;
-    _notificarTelegram(msg);
-  } catch(e) {}
-
-  // ── Notificar por Email ──────────────────────────────────
-  try {
-    var asunto = '🛒 Nuevo Pedido ' + codigoPedido + ' — ' + nombre;
-    var cuerpoEmail = '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;background:#0a0a0a;color:#fff;padding:24px;border-radius:12px">'
-      + '<h2 style="color:#00C8FF;margin:0 0 16px">NUEVO PEDIDO WEB</h2>'
-      + '<p style="color:#FF0099;font-size:20px;margin:4px 0">Código: <strong>' + codigoPedido + '</strong></p>'
-      + '<hr style="border-color:#222">'
-      + '<p>👤 <strong>' + nombre + '</strong></p>'
-      + '<p>📱 ' + telefono + '</p>'
-      + (email ? '<p>📧 ' + email + '</p>' : '')
-      + '<h3 style="color:#00C8FF;margin:16px 0 8px">Productos:</h3>'
-      + '<ul>' + items.map(function(i){ return '<li>' + i.nombre + ' x' + i.cantidad + '</li>'; }).join('') + '</ul>'
-      + '<p style="font-size:22px;color:#FF0099"><strong>Total: $' + _formatoPrecio(totalReal) + '</strong></p>'
-      + '<p>🚚 ' + (entrega === 'envio' ? 'Envío a: ' + direccion : 'Retiro en local') + '</p>'
-      + '<p>💳 Pago: ' + pago + '</p>'
-      + '</div>';
-    MailApp.sendEmail({
-      to: 'maxups24@gmail.com',
-      subject: asunto,
-      htmlBody: cuerpoEmail
-    });
-  } catch(eEmail) {}
-
-  // ── Registrar en hoja NOTIFICACIONES ────────────────────
-  try {
-    var itemsNotif = items.length > 0
-      ? items.map(function(i){ return i.nombre + ' x' + i.cantidad; }).join(', ')
-      : 'Pedido web';
-    _registrarNotificacion('🛒 PEDIDO', nombre + ' — $' + _formatoPrecio(totalReal) + ' — ' + itemsNotif);
-  } catch(eNotif) {}
-
-  // ── Mercado Pago: generar link de pago si el cliente eligió MP ──
-  var initPoint = null;
-  if (String(pago).toLowerCase() === 'mercadopago' && totalReal > 0) {
-    try {
-      var _mp = crearPreferenciaMP({ total: totalReal, codigo: codigoPedido, email: email, items: items });
-      if (_mp && _mp.ok) initPoint = _mp.init_point;
-    } catch(eMp) {}
-  }
-
-  return {
-    ok: true,
-    codigo: codigoPedido,
-    esNuevo: esNuevo,
-    descuento: tipoDesc,
-    init_point: initPoint,
-    mensaje: 'Cliente ' + nombre + ' registrado. Total: $' + _formatoPrecio(totalReal) + (tipoDesc ? ' (' + tipoDesc + ')' : '')
-  };
-
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-// ════════════════════════════════════════════════════════════
-//  MERCADO PAGO — Checkout Pro (crear link de pago)
-//  El Access Token se lee de las Propiedades del Script (seguro,
-//  nunca en el código ni en GitHub). Configurar la propiedad
-//  MP_ACCESS_TOKEN en: Configuración del proyecto → Propiedades del script.
-// ════════════════════════════════════════════════════════════
-function crearPreferenciaMP(data) {
-  try {
-    var token = PropertiesService.getScriptProperties().getProperty('MP_ACCESS_TOKEN');
-    if (!token) return { ok: false, error: 'sin_token' };
-
-    var total = Math.round(Number(data.total) || 0);
-    if (total <= 0) return { ok: false, error: 'total_invalido' };
-
-    var nItems = (data.items || []).length;
-    var titulo = 'Pedido MAXUP ' + (data.codigo || '') +
-      (nItems ? (' (' + nItems + ' producto' + (nItems !== 1 ? 's' : '') + ')') : '');
-
-    var base = 'https://maxupsuplementos.github.io/maxupsuplementos/';
-    var urlEstado = base + 'estado.html?pedido=' + encodeURIComponent(data.codigo || '');
-
-    var pref = {
-      items: [{ title: titulo.slice(0, 250), quantity: 1, unit_price: total, currency_id: 'ARS' }],
-      external_reference: String(data.codigo || ''),
-      metadata: { pedido: String(data.codigo || '') },
-      notification_url: _getConfig().API_URL_SELF,
-      back_urls: { success: urlEstado, pending: urlEstado, failure: base },
-      auto_return: 'approved',
-      statement_descriptor: 'MAXUP'
-    };
-    if (data.email) pref.payer = { email: String(data.email) };
-
-    var resp = UrlFetchApp.fetch('https://api.mercadopago.com/checkout/preferences', {
-      method: 'post',
-      contentType: 'application/json',
-      headers: { 'Authorization': 'Bearer ' + token },
-      payload: JSON.stringify(pref),
-      muteHttpExceptions: true
-    });
-    var code = resp.getResponseCode();
-    var body = JSON.parse(resp.getContentText() || '{}');
-    if (code >= 200 && code < 300 && body.init_point) {
-      return { ok: true, init_point: body.init_point, id: body.id };
-    }
-    return { ok: false, error: (body.message || ('http_' + code)) };
-  } catch(e) {
-    return { ok: false, error: e.message };
-  }
-}
-
-// ── HELPERS ─────────────────────────────────────────────────
-function _tieneDescuentoApi(codigo, rowsCli, headersCli) {
-  var clienteFila = null;
-  for (var i = 0; i < rowsCli.length; i++) {
-    if (String(rowsCli[i][0]) === String(codigo)) { clienteFila = rowsCli[i]; break; }
-  }
-  if (!clienteFila) return false;
-
-  var ahora  = new Date();
-  var streak = 0;
-
-  var promoMeses = _configNumeroMaxup('PROMO_MESES', PROMO_MESES_API);
-  var promoMinimo = _configNumeroMaxup('PROMO_MINIMO', PROMO_MINIMO_API);
-  for (var m = 0; m < promoMeses; m++) {
-    var fecha  = new Date(ahora.getFullYear(), ahora.getMonth() - m, 1);
-    var colIdx = _buscarColumnaMes(headersCli, fecha);
-    if (colIdx === -1) break;
-    var monto = Number(clienteFila[colIdx]) || 0;
-    if (monto >= promoMinimo) { streak++; } else { break; }
-  }
-
-  return streak >= promoMeses;
-}
-
-// Busca la columna del mes en CLIENTES, soportando ambos formatos:
-// "Abr 2026" (creado por el código) y Date/2026-04-01 (creado por Setup)
-function _buscarColumnaMes(headers, fecha) {
-  var textoMes = NOMBRES_MESES_API[fecha.getMonth()] + ' ' + fecha.getFullYear();
-  var anio = fecha.getFullYear();
-  var mes = fecha.getMonth();
-
-  for (var h = 0; h < headers.length; h++) {
-    var val = headers[h];
-    // Formato texto: "Abr 2026"
-    if (String(val).trim() === textoMes) return h;
-    // Formato Date object de Google Sheets
-    if (val instanceof Date) {
-      if (val.getFullYear() === anio && val.getMonth() === mes) return h;
-    }
-    // Formato string ISO: "2026-04-01"
-    var strVal = String(val).trim();
-    if (/^\d{4}-\d{2}-\d{2}/.test(strVal)) {
-      var parts = strVal.split('-');
-      if (parseInt(parts[0]) === anio && parseInt(parts[1]) - 1 === mes) return h;
-    }
-  }
-  return -1;
-}
-
-function _actualizarClienteMensualApi(codigo, monto) {
-  var ss      = _getSS();
-  var hojaCli = ss.getSheetByName('CLIENTES');
-  if (!hojaCli) return;
-
-  var ahora     = new Date();
-  var headerMes = NOMBRES_MESES_API[ahora.getMonth()] + ' ' + ahora.getFullYear();
-  var ultCol    = hojaCli.getLastColumn();
-  var ultFila   = hojaCli.getLastRow();
-  var headers   = hojaCli.getRange(1, 1, 1, ultCol).getValues()[0];
-  var colMes    = _buscarColumnaMes(headers, ahora) + 1;
-
-  if (colMes === 0) {
-    colMes = ultCol + 1;
-    hojaCli.getRange(1, colMes).setValue(headerMes);
-  }
-
-  var clientes = hojaCli.getRange(1, 1, ultFila, 1).getValues();
-  for (var i = 1; i < clientes.length; i++) {
-    if (String(clientes[i][0]) === String(codigo)) {
-      var anterior = Number(hojaCli.getRange(i + 1, colMes).getValue()) || 0;
-      hojaCli.getRange(i + 1, colMes).setValue(anterior + monto);
-      break;
-    }
-  }
-}
-
-// CORREGIDO: no recibe ingreso, totalDia ya incluye la venta recién insertada
-function _actualizarTotalDiaApi(hojaVD, fechaStr) {
-  var rows       = hojaVD.getDataRange().getValues();
-  var totalLabel = 'TOTAL ' + fechaStr;
-
-  // 1. Buscar y ELIMINAR la fila TOTAL existente (si está en el medio)
-  for (var i = rows.length - 1; i >= 0; i--) {
-    if (String(rows[i][0]).startsWith(totalLabel)) {
-      hojaVD.deleteRow(i + 1);
-      break;
-    }
-  }
-
-  // 2. Re-leer datos y sumar todo lo del día
-  rows = hojaVD.getDataRange().getValues();
-  var totalDia = 0;
-  for (var j = 0; j < rows.length; j++) {
-    var celda = rows[j][0];
-    if (!celda || typeof celda === 'string') continue;
-    try {
-      var f = Utilities.formatDate(new Date(celda), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
-      if (f === fechaStr) {
-        totalDia += Number(rows[j][5]) || 0;
-      }
-    } catch(e) {}
-  }
-
-  // 3. Agregar TOTAL siempre al final
-  var filaTotal = [totalLabel, '', '', '', '', totalDia, '', '', ''];
-  hojaVD.appendRow(filaTotal);
-  var lastRow = hojaVD.getLastRow();
-  _aplicarFormatoFilaTotal(hojaVD, lastRow);
-}
-
-// ── CATÁLOGO ────────────────────────────────────────────────
-// ════════════════════════════════════════════════════════════
-//  NUEVOS INGRESOS (server-side) — igual para TODOS los visitantes
-//  Compara el stock actual contra una "foto" guardada en una hoja
-//  oculta (_NUEVOS_<clave>). Marca productos nuevos o con stock
-//  aumentado con la fecha de hoy y devuelve los más recientes primero.
-//  Cada catálogo es independiente (SUP = suplementos, IND = indumentaria).
-//  A prueba de errores: si algo falla, devuelve [] (el front usa su fallback).
-// ════════════════════════════════════════════════════════════
-function _calcularNuevosIngresos(clave, items) {
-  // items: [{ key, stock, marca, nombre }] en orden de planilla
-  try {
-    var props = PropertiesService.getScriptProperties();
-    var DATA_PROP = 'nv_data_' + clave;
-    var TS_PROP   = 'nv_ts_'   + clave;
-    var THROTTLE  = 60 * 1000; // recalcular como máximo 1 vez por minuto
-    var now = Date.now();
-
-    // Si calculamos hace menos de 1 min, devolver lo cacheado (rápido)
-    var lastTs = Number(props.getProperty(TS_PROP) || 0);
-    if (now - lastTs < THROTTLE) {
-      var cached = props.getProperty(DATA_PROP);
-      if (cached) { try { return JSON.parse(cached); } catch(e){} }
-    }
-
-    var lock = LockService.getScriptLock();
-    if (!lock.tryLock(4000)) {
-      var c2 = props.getProperty(DATA_PROP);
-      try { return c2 ? JSON.parse(c2) : []; } catch(e){ return []; }
-    }
-
-    try {
-      var ss = _getSS();
-      var hojaNombre = '_NUEVOS_' + clave;
-      var hoja = ss.getSheetByName(hojaNombre);
-      var baseline = false;
-      var prev = {}; // key -> {stock, ts}
-
-      if (!hoja) {
-        hoja = ss.insertSheet(hojaNombre);
-        try { hoja.hideSheet(); } catch(e){}
-        baseline = true;
-      } else {
-        var vals = hoja.getDataRange().getValues();
-        for (var r = 1; r < vals.length; r++) {
-          var k = String(vals[r][0] || '');
-          if (!k) continue;
-          prev[k] = { stock: Number(vals[r][1]) || 0, ts: Number(vals[r][2]) || 0 };
-        }
-        if (Object.keys(prev).length === 0) baseline = true;
-      }
-
-      var filas = [['key','stock','ts','marca','nombre','codigo']];
-      items.forEach(function(it, i) {
-        var ts;
-        if (baseline) {
-          // Primera vez: sembrar con el orden de planilla (los últimos = más nuevos).
-          // Entero pequeño; los cambios reales usarán Date.now() (mucho mayor) y ganan.
-          ts = i + 1;
-        } else {
-          var p = prev[it.key];
-          if (!p) {
-            ts = (it.stock > 0) ? now : 0;          // producto nuevo
-          } else if (it.stock > p.stock) {
-            ts = now;                                // reposición (sumaste stock)
-          } else {
-            ts = p.ts || (it.stock > 0 ? (i + 1) : 0);
-          }
-        }
-        filas.push([it.key, it.stock, ts, it.marca || '', it.nombre || '', it.codigo || '']);
-      });
-
-      // Guardar la foto nueva
-      hoja.clearContents();
-      hoja.getRange(1, 1, filas.length, 6).setValues(filas);
-
-      // Ordenar por recencia (ts desc), sólo con stock, top 30
-      var ordenados = items.map(function(it, i) {
-        return { it: it, ts: Number(filas[i + 1][2]) || 0 };
-      }).filter(function(x) { return x.it.stock > 0; })
-        .sort(function(a, b) { return b.ts - a.ts; })
-        .slice(0, 80)  // antes 30: con 80 entran ingresos de ambos generos (mujer + hombre SOUR) sin taparse
-        .map(function(x) { return { marca: x.it.marca || '', nombre: x.it.nombre || '', codigo: x.it.codigo || '' }; });
-
-      props.setProperty(DATA_PROP, JSON.stringify(ordenados));
-      props.setProperty(TS_PROP, String(now));
-      return ordenados;
-    } finally {
-      lock.releaseLock();
-    }
-  } catch (e) {
-    return [];
-  }
-}
-
-// ════════════════════════════════════════════════════════════
-//  RESEÑAS (valoraciones) — globales, iguales para todos
-//  Se guardan en la hoja RESENAS. Clave estable = MARCA||NOMBRE.
-// ════════════════════════════════════════════════════════════
-function getResenas() {
-  try {
-    var hoja = _getSS().getSheetByName('RESENAS');
-    if (!hoja || hoja.getLastRow() < 2) return { ok: true, resenas: {} };
-    var datos = hoja.getDataRange().getValues();
-    var map = {};
-    for (var i = 1; i < datos.length; i++) {
-      var key = String(datos[i][1] || '').trim();
-      var rating = Number(datos[i][3]) || 0;
-      if (!key || rating < 1) continue;
-      if (!map[key]) map[key] = [];
-      map[key].push({
-        rating: rating,
-        text: String(datos[i][4] || ''),
-        fecha: String(datos[i][0] || ''),
-        nombre: String(datos[i][5] || '')
-      });
-    }
-    return { ok: true, resenas: map };
-  } catch(e) {
-    return { ok: false, error: e.message, resenas: {} };
-  }
-}
-
-function guardarResena(data) {
-  try {
-    var rating = Number(data.rating) || 0;
-    var key = String(data.key || '').trim();
-    if (!key || rating < 1 || rating > 5) return { ok: false, error: 'datos_invalidos' };
-    var ss = _getSS();
-    var hoja = ss.getSheetByName('RESENAS');
-    if (!hoja) {
-      hoja = ss.insertSheet('RESENAS');
-      hoja.appendRow(['Fecha', 'Clave', 'Producto', 'Rating', 'Comentario', 'Cliente']);
-    }
-    var fecha = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
-    hoja.appendRow([
-      fecha, key, String(data.producto || ''), rating,
-      String(data.texto || '').slice(0, 300), String(data.nombre || '')
-    ]);
-    return { ok: true };
-  } catch(e) {
-    return { ok: false, error: e.message };
-  }
-}
-
-function getCatalogo() {
-  var ss   = _getSS();
-  var hoja = ss.getSheetByName('CATALOGO');
-  var resultado;
-  if (hoja && hoja.getLastRow() > 1) resultado = getCatalogoDesdeHojaCatalogo(hoja);
-  hoja = ss.getSheetByName('SUPLEMENTOS');
-  if (!resultado && hoja) resultado = getCatalogoDesdeSuplemetos(hoja);
-  if (!resultado) resultado = { productos: [], total: 0, error: 'No se encontró hoja CATALOGO ni SUPLEMENTOS' };
-  if (!ss.getSheetByName(_HOJA_FICHAS_PUBLICACIONES)) {
-    try { sincronizarFichasPublicaciones(resultado.productos); }
-    catch(e) { Logger.log('No se pudo crear FICHAS_PUBLICACIONES: ' + e.message); }
-  }
-  _aplicarFichasPublicaciones(resultado.productos, ss);
-  resultado.configuracion = _configPublicaMaxup();
-  return resultado;
-}
-
-function getCatalogoDesdeHojaCatalogo(hoja) {
-  var datos = hoja.getDataRange().getValues();
-  if (datos.length <= 1) return { productos: [], total: 0 };
-  var acentos = {á:'a',é:'e',í:'i',ó:'o',ú:'u'};
-  var headers = datos[0].map(function(h) {
-    return String(h).toLowerCase().trim()
-      .replace(/\s+/g,'_').replace(/[()%áéíóú]/g, function(c) { return acentos[c] || c; });
-  });
-  var productos = [];
-  datos.slice(1).forEach(function(row, i) {
-    var p = {};
-    headers.forEach(function(h, j) { p[h] = row[j]; });
-    var nombre = String(p.nombre || '').trim();
-    var precio = Number(p.precio_venta || p.precio_lista || 0);
-    if (!nombre || precio <= 0) return;
-    if (p.activo === false || p.activo === 'FALSE') return;
-    // Soportar múltiples imágenes separadas por salto de línea o ;
-    var imagenRaw = String(p.imagen_url || '').trim();
-    var imagenes = imagenRaw.split(/[\r\n;]+/).map(function(u){ return u.trim(); }).filter(Boolean);
-    productos.push({
-      id: p.sku || p.id || (i + 1), sku: String(p.sku || p.id || '').trim(), nombre: nombre, marca: String(p.marca || '').trim(),
-      categoria: String(p.categoria || 'otros').trim(),
-      precio_venta: precio, precio_lista: Number(p.precio_lista || precio),
-      stock: Number(p.stock || 0), imagen_url: imagenes[0] || '', imagenes: imagenes,
-      descripcion: String(p.descripcion || '').trim(),
-    });
-  });
-  var _itemsSup = productos.map(function(p){ return { key:(p.marca||'')+'||'+p.nombre, stock:Number(p.stock)||0, marca:p.marca||'', nombre:p.nombre }; });
-  return { productos: productos, total: productos.length, fuente: 'CATALOGO', timestamp: new Date().toISOString(), nuevos_ingresos: _calcularNuevosIngresos('SUP', _itemsSup) };
-}
-
-function _columnasCatalogoSuplementos(datos) {
-  function normalizar(v) {
-    return String(v || '').trim().toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s+/g, ' ');
-  }
-
-  var limite = Math.min(datos.length, 10);
-  for (var f = 0; f < limite; f++) {
-    var headers = datos[f].map(normalizar);
-    var producto = headers.indexOf('producto');
-    if (producto < 0) continue;
-
-    var contado = -1, lista = -1, stock = -1, imagen = -1, descripcion = -1, sku = -1;
-    for (var c = 0; c < headers.length; c++) {
-      var h = headers[c];
-      if (contado < 0 && (h === 'precio unitario' || h === 'precio contado' || h === 'precio efectivo')) contado = c;
-      if (lista < 0 && (h === 'precio de lista' || h === 'precio lista' || h === 'precio financiado')) lista = c;
-      if (stock < 0 && (h === 'cantidad en stock' || h === 'stock' || h === 'stock actual')) stock = c;
-      if (imagen < 0 && (h === 'imagen url' || h === 'imagen_url' || h === 'imagen')) imagen = c;
-      if (descripcion < 0 && h === 'descripcion') descripcion = c;
-      if (sku < 0 && (h === 'sku' || h === 'codigo sku' || h === 'codigo_sku')) sku = c;
-    }
-    return {
-      filaHeader: f,
-      producto: producto,
-      contado: contado >= 0 ? contado : 1,
-      lista: lista >= 0 ? lista : 4,
-      stock: stock >= 0 ? stock : 3,
-      imagen: imagen >= 0 ? imagen : 8,
-      descripcion: descripcion >= 0 ? descripcion : 9,
-      sku: sku
-    };
-  }
-  return { filaHeader: 1, producto: 0, contado: 1, lista: 4, stock: 3, imagen: 8, descripcion: 9, sku: -1 };
-}
-
-function getCatalogoDesdeSuplemetos(hoja) {
-  var datos = hoja.getDataRange().getValues();
-  if (datos.length <= 1) return { productos: [], total: 0 };
-
-  var columnas = _columnasCatalogoSuplementos(datos);
-  var productos = [];
-  var marcaActual = '';
-  var id = 1;
-
-  datos.forEach(function(row, filaIndex) {
-    var col0 = String(row[columnas.producto] || '').trim();
-    var col1 = row[columnas.contado], col2 = row[columnas.lista], col3 = row[columnas.stock];
-    if (!col0) return;
-    if (filaIndex === columnas.filaHeader || col0.toLowerCase() === 'producto') return;
-    if (col0 && (col1 === null || col1 === '')) { marcaActual = col0; return; }
-    var precio_unit  = Number(col1) || 0;
-    var precio_lista = Number(col2) || 0;
-    var stock        = Number(col3) || 0;
-    if (precio_unit <= 0 && precio_lista <= 0) return;
-    var imagenRaw   = String(row[columnas.imagen] || '').trim();
-    var descripcion = String(row[columnas.descripcion] || '').trim();
-    // Soportar múltiples imágenes separadas por salto de línea o ;
-    var imagenes = imagenRaw.split(/[\r\n;]+/).map(function(u){ return u.trim(); }).filter(Boolean);
-    // Si la fila cae bajo la sección SHAKERS o LICUADORAS de la planilla,
-    // forzar "shaker" (cubre "Star Simple", "Gold Doble", etc. que por nombre no se detectan)
-    var _marcaUp = marcaActual.toUpperCase();
-    var _cat = (_marcaUp === 'SHAKERS' || _marcaUp === 'LICUADORAS') ? 'shaker' : inferirCat(col0);
-    productos.push({
-      id: (columnas.sku >= 0 && row[columnas.sku]) ? String(row[columnas.sku]) : _skuDeterministico(marcaActual, col0, 'SUP'),
-      sku: (columnas.sku >= 0 && row[columnas.sku]) ? String(row[columnas.sku]) : _skuDeterministico(marcaActual, col0, 'SUP'),
-      nombre: col0, marca: marcaActual, categoria: _cat,
-      precio_venta: precio_unit, precio_lista: precio_lista || precio_unit,
-      stock: stock, imagen_url: imagenes[0] || '', imagenes: imagenes,
-      descripcion: descripcion,
-    });
-  });
-
-  var _itemsSup = productos.map(function(p){ return { key:(p.marca||'')+'||'+p.nombre, stock:Number(p.stock)||0, marca:p.marca||'', nombre:p.nombre }; });
-  return { productos: productos, total: productos.length, fuente: 'SUPLEMENTOS', timestamp: new Date().toISOString(), nuevos_ingresos: _calcularNuevosIngresos('SUP', _itemsSup) };
-}
-
-function inferirCat(nombre) {
-  var n = nombre.toLowerCase()
-    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e')
-    .replace(/[íìï]/g,'i').replace(/[óòö]/g,'o')
-    .replace(/[úùü]/g,'u').replace(/ñ/g,'n');
-  if (/whey.{0,5}bar|low.{0,5}carb.{0,10}bar|protein.{0,5}bar/.test(n)) return 'barra';
-  if (/gelatina.{0,15}colag|colag.{0,15}gelatina/.test(n)) return 'barra';
-  // Shakers, vasos, botellas, bidones y licuadoras/batidoras mini → categoría "shaker"
-  if (/shaker|licuadora|\bvaso\b|botella|bidon|mini.{0,8}batidora|batidora.{0,8}pila|everlast|mamushka|maxup.{0,4}simple/.test(n)) return 'shaker';
-  if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|munequera|hand.{0,8}grip|ejercitador|bolso|scoop|llavero|vincha|tope.{0,8}barra|latex|banda.{0,30}elastic|tobillera|pelota|pilates|faja|neoprene|venda|boxeo|\bcono\b|soga|colchoneta/.test(n)) return 'accesorio';
-  // QUIMICOS (hormonales / anabolicos)
-  if (/testo|testosterona|stanozol|\bstano\b|winstrol|primobolan|cipionato|enantato|propionato|sustanon|trembolona|trenbolona|boldenona|nandrolona|deca.{0,3}durabolin|dianabol|metandro|oxandrolona|anavar|oximetolona|anadrol|masteron|clembuterol|clenbuterol|somatropina|\bhgh\b|oxandro/.test(n)) return 'quimicos';
-  if (/creatin/.test(n)) return 'creatina';
-  if (/gainer|ultra.{0,5}mass|mutant.{0,5}mass|nitro.{0,5}gain|mass.{0,5}fusion|extreme.{0,5}mass|mass.{0,5}builder/.test(n)) return 'gainer';
-  if (/whey|wh3y|proteina|protein|\bprote\b|caseina|isolate|pea.{0,5}prot|bio.{0,5}prot/.test(n)) return 'proteina';
-  if (/bcaa|glutamin|aminoacid|taurina|arginina|leucina|eaa|hmb|carnitin/.test(n)) return 'aminoacido';
-  if (/pre.{0,5}work|pre.{0,5}entren|pump|tnt|dynamite|beta.{0,5}alan|oxido.{0,4}nitric|nitrico|\bn\.o\b/.test(n)) return 'preworkout';
-  if ((/colag|collagen|flexo|glucosamin|condroitin/.test(n)) && !/gelatina/.test(n)) return 'colageno';
-  if (/thermo|fat.{0,5}burn|cla |quemad|lipo|termogen|black.{0,4}cuts/.test(n)) return 'quemador';
-  if (/omega|vitam|magnesio|zinc|calcio|resveratrol|ashwagandha|astaxantina|zma|cafeina|nad |multivit|citrato|bisglicinato/.test(n)) return 'vitamin';
-  if (/hidrat|iso.{0,5}sport|electro|recovery.{0,5}drink|sport.{0,5}drink|just.{0,5}carb|hydromax|hydroplus|energy.{0,5}gel|maltodextri|isotonic/.test(n)) return 'hidratacion';
-  if (/beauty.{0,5}bar|iron.{0,5}bar|barra.{0,10}proteic|barra.{0,10}cereal|cereal.{0,5}bar|grows.{0,5}bar|brava.{0,5}bar|snack|granola|pancake|cupcake|omelette.{0,10}proteic|quelopaleo|bros.{0,5}bar|gelatina|mani.{0,5}king|vitalgy/.test(n)) return 'barra';
-  if (/short|remera|camiseta|calza|top |buzo|campera|catsuit/.test(n)) return 'indumentaria';
-  return 'otros';
-}
-
-function getStats() {
-  var cat   = getCatalogo();
-  var prods = cat.productos || [];
-  return {
-    total_productos:    prods.length,
-    productos_en_stock: prods.filter(function(p){ return p.stock > 0; }).length,
-    sin_stock:          prods.filter(function(p){ return p.stock === 0; }).length,
-    timestamp:          new Date().toISOString()
-  };
-}
-
-// ── NOTIFICACIÓN TELEGRAM (única función) ───────────────────
-function _notificarTelegram(mensaje) {
-  var cfg = _getConfig();
-  if (!cfg.TELEGRAM_TOKEN || !cfg.TELEGRAM_CHAT_ID) {
-    Logger.log('Telegram no configurado');
-    return false;
-  }
-  var url = 'https://api.telegram.org/bot' + cfg.TELEGRAM_TOKEN + '/sendMessage';
-  try {
-    var respuesta = UrlFetchApp.fetch(url, {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify({ chat_id: cfg.TELEGRAM_CHAT_ID, text: mensaje }),
-      muteHttpExceptions: true
-    });
-    var codigo = respuesta.getResponseCode();
-    if (codigo < 200 || codigo >= 300) {
-      Logger.log('Error Telegram HTTP ' + codigo);
-      return false;
-    }
-    Logger.log('Telegram enviado OK (HTTP ' + codigo + ')');
-    return true;
-  } catch(e) {
-    Logger.log('Error Telegram: ' + e.message);
-    return false;
-  }
-}
-
-// ── REGISTRAR NOTIFICACIÓN EN SHEETS ────────────────────────
-function _registrarNotificacion(tipo, detalle) {
-  try {
-    var ss = _getSS();
-    var hoja = ss.getSheetByName('NOTIFICACIONES');
-    if (!hoja) {
-      hoja = ss.insertSheet('NOTIFICACIONES');
-      hoja.appendRow(['⏰ FECHA', '📌 TIPO', '📝 DETALLE', '✅ VISTO']);
-      hoja.getRange(1, 1, 1, 4).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
-      hoja.setColumnWidth(1, 160);
-      hoja.setColumnWidth(2, 130);
-      hoja.setColumnWidth(3, 500);
-      hoja.setColumnWidth(4, 80);
-    }
-    var fecha = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
-    var newRow = hoja.getLastRow() + 1;
-    hoja.appendRow([fecha, tipo, detalle, '']);
-    // Color de fondo según tipo
-    var color = tipo.indexOf('PEDIDO') !== -1 ? '#0d2818' : '#2d1800';
-    hoja.getRange(newRow, 1, 1, 4).setBackground(color).setFontColor('#ffffff');
-    // Mover al tope para que lo más nuevo se vea primero
-    if (newRow > 2) {
-      hoja.moveRows(hoja.getRange(newRow, 1), 2);
-    }
-  } catch(e) {
-    Logger.log('Error notificación: ' + e.message);
-  }
-}
-
-// ── CONSULTAR ESTADO DE PEDIDO ──────────────────────────────
-function getEstadoPedido(codigo) {
-  if (!codigo) return { ok: false, error: 'Código no proporcionado' };
-
-  var hojaPed = _getSS().getSheetByName('PEDIDOS');
-  if (!hojaPed) return { ok: false, error: 'No hay pedidos registrados' };
-
-  var rows = hojaPed.getDataRange().getValues();
-  for (var i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]).trim().toUpperCase() === String(codigo).trim().toUpperCase()) {
-      return {
-        ok: true,
-        codigo:    rows[i][0],
-        fecha:     Utilities.formatDate(new Date(rows[i][1]), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm'),
-        cliente:   rows[i][2],
-        productos: rows[i][4],
-        total:     rows[i][5],
-        entrega:   rows[i][6],
-        direccion: rows[i][7],
-        pago:      rows[i][8],
-        estado:    rows[i][9],
-        estadoPago: String(rows[i][11] || ''),
-        idPago: String(rows[i][12] || '')
-      };
-    }
-  }
-  return { ok: false, error: 'Pedido no encontrado. Verificá el código.' };
-}
-
-// ════════════════════════════════════════════════════════════
-//  ENDPOINTS DE ADMINISTRACIÓN
-// ════════════════════════════════════════════════════════════
-
-function _validarClave(sesion) {
-  return _validarSesionAdmin(sesion);
-}
-
-function adminGetPedidos(clave) {
-  _validarClave(clave);
-  var hoja = _getSS().getSheetByName('PEDIDOS');
-  if (!hoja || hoja.getLastRow() < 2) return { ok: true, pedidos: [] };
-
-  var rows = hoja.getDataRange().getValues();
-  var pedidos = [];
-  for (var i = rows.length - 1; i >= 1; i--) {
-    if (!rows[i][0]) continue;
-    var fecha = '';
-    try { fecha = Utilities.formatDate(new Date(rows[i][1]), 'America/Argentina/Buenos_Aires', 'dd/MM HH:mm'); } catch(e) {}
-    pedidos.push({
-      codigo:    String(rows[i][0]),
-      fecha:     fecha,
-      cliente:   String(rows[i][2]),
-      telefono:  String(rows[i][3]),
-      productos: String(rows[i][4]),
-      total:     String(rows[i][5]),
-      entrega:   String(rows[i][6]),
-      pago:      String(rows[i][8]),
-      estado:    String(rows[i][9]),
-      estadoPago:String(rows[i][11] || ''),
-      fila:      i + 1
-    });
-    if (pedidos.length >= 50) break;
-  }
-  return { ok: true, pedidos: pedidos };
-}
-
-function adminCambiarEstado(clave, codigo, nuevoEstado) {
-  _validarClave(clave);
-  var estadosValidos = ['Recibido','En preparación','Listo para retirar','Enviado','Entregado','Retirado','Cancelado'];
-  if (estadosValidos.indexOf(nuevoEstado) < 0) throw new Error('Estado inválido. Válidos: ' + estadosValidos.join(', '));
-
-  var hoja = _getSS().getSheetByName('PEDIDOS');
-  if (!hoja) throw new Error('Hoja PEDIDOS no encontrada');
-
-  var rows = hoja.getDataRange().getValues();
-  for (var i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]).trim() === String(codigo).trim()) {
-      var estadoAnterior = String(rows[i][9] || '');
-      hoja.getRange(i + 1, 10).setValue(nuevoEstado);
-
-      // Descontar stock SOLO al marcar como Entregado o Retirado
-      var estadosFinales = ['Entregado', 'Retirado'];
-      if (estadosFinales.indexOf(nuevoEstado) >= 0 && estadosFinales.indexOf(estadoAnterior) < 0) {
-        var itemsJSON = String(rows[i][10] || '[]');
-        var items = JSON.parse(itemsJSON);
-        var resultadoStock = _descontarStockPedido(items, codigo);
-        if (!resultadoStock.ok) {
-          hoja.getRange(i + 1, 10).setValue(estadoAnterior);
-          _registrarAuditoria('STOCK BLOQUEADO', codigo + ': ' + (resultadoStock.errores || []).join('; '), 'administracion');
-          throw new Error('No se cambio el estado: ' + (resultadoStock.errores || ['error de stock']).join('; '));
-        }
-        // Recién acá la venta queda anotada en VentasDiarias (pedido concretado)
-        _registrarVentaPedidoWeb(codigo);
-      }
-
-      // Al CANCELAR: revertir la venta (VentasDiarias + compra mensual del cliente)
-      if (nuevoEstado === 'Cancelado' && estadoAnterior !== 'Cancelado') {
-        try { _revertirVentaPedidoWeb(codigo, estadoAnterior); } catch(eRev) {
-          Logger.log('Error revirtiendo venta de ' + codigo + ': ' + eRev.message);
-        }
-        try { _actualizarEstadoUsoCupon(codigo, 'Cancelado'); } catch(eCup) {
-          Logger.log('Error liberando cupon de ' + codigo + ': ' + eCup.message);
-        }
-      }
-
-      try {
-        var cliente = String(rows[i][2]);
-        var emoji = nuevoEstado === 'Entregado' || nuevoEstado === 'Retirado' ? '✅' : '✏️';
-        _notificarTelegram(emoji + ' ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')'
-          + (estadosFinales.indexOf(nuevoEstado) >= 0 ? '\n📦 Stock descontado automáticamente' : ''));
-      } catch(e) {}
-      _registrarAuditoria('ESTADO PEDIDO', codigo + ': ' + estadoAnterior + ' -> ' + nuevoEstado, 'administracion');
-      return { ok: true, mensaje: 'Estado actualizado a ' + nuevoEstado };
-    }
-  }
-  throw new Error('Pedido no encontrado: ' + codigo);
-}
-
-// Busca solamente una coincidencia exacta de marca + producto.
-// Nunca se descuenta stock por similitud: dos marcas pueden vender el mismo nombre.
-function _matchFilaProducto(data, colNombre, nombreItem, startRow, colMarca, marcaItem) {
-  var exacto = _normNombreSD(nombreItem);
-  var marcaExacta = _normNombreSD(marcaItem);
-  if (exacto) {
-    for (var r = startRow; r < data.length; r++) {
-      if (colMarca >= 0 && _normNombreSD(data[r][colMarca]) !== marcaExacta) continue;
-      var nf = data[r][colNombre];
-      if (nf && _normNombreSD(nf) === exacto) return r;
-    }
-  }
-  return -1;
-}
-
-// SUPLEMENTOS organiza las marcas como encabezados en la columna A. Esta
-// busqueda respeta primero la marca y despues el nombre del producto.
-function _buscarFilaSuplementoMarcaNombreApi(data, nombreItem, marcaItem, startRow) {
-  var claveBuscar = _claveProductoStock(marcaItem, nombreItem);
-  if (!nombreItem || !marcaItem) return -1;
-  var marcaActual = '';
-  for (var r = startRow || 0; r < data.length; r++) {
-    var nombre = String(data[r][0] || '').trim();
-    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
-    if (!nombre) continue;
-    if (_claveProductoStock(marcaActual, nombre) === claveBuscar) return r;
-  }
-  return -1;
-}
-
-// Descuenta stock cuando el pedido se marca como finalizado
-function _descontarStockPedido(items, referencia) {
-  if (!items || items.length === 0) return { ok: true, movimientos: 0 };
-  var lock = LockService.getScriptLock();
-  try { lock.waitLock(15000); } catch(eLock) { return { ok: false, errores: ['Sistema ocupado; reintenta'] }; }
-  try {
-    var ss = _getSS();
-    var hojaCat = ss.getSheetByName('CATALOGO');
-    if (hojaCat && hojaCat.getLastRow() > 1) {
-      var catData = hojaCat.getDataRange().getValues();
-      var headers = catData[0].map(_normalizarHeaderV3);
-      var colNombre = headers.indexOf('nombre');
-      var colStock = headers.indexOf('stock');
-      var colMarca = headers.indexOf('marca');
-      var colSku = headers.indexOf('sku');
-      if (colNombre >= 0 && colStock >= 0 && colMarca >= 0) {
-        var cambiosCat = [], erroresCat = [];
-        items.forEach(function(item) {
-          var cantidad = Math.max(1, Number(item.cantidad) || 1);
-          var marca = String(item.marca || item.brand || '');
-          var fila = -1;
-          if (colSku >= 0 && item.sku) {
-            for (var r = 1; r < catData.length; r++) {
-              if (String(catData[r][colSku]).trim() === String(item.sku).trim()) { fila = r; break; }
-            }
-          }
-          if (fila < 0) fila = _matchFilaProducto(catData, colNombre, item.nombre, 1, colMarca, marca);
-          if (fila < 0) { erroresCat.push('No se encontro [' + marca + '] ' + item.nombre); return; }
-          var antes = Number(catData[fila][colStock]) || 0;
-          if (antes < cantidad) { erroresCat.push('Stock insuficiente [' + marca + '] ' + item.nombre + ' (' + antes + ')'); return; }
-          cambiosCat.push({ fila: fila, cantidad: cantidad, antes: antes, despues: antes - cantidad, marca: marca,
-            nombre: String(item.nombre || ''), sku: String(item.sku || (colSku >= 0 ? catData[fila][colSku] : '')) });
-        });
-        if (erroresCat.length) return { ok: false, errores: erroresCat };
-        cambiosCat.forEach(function(c) {
-          hojaCat.getRange(c.fila + 1, colStock + 1).setValue(c.despues);
-          descontarStockDetallado(c.nombre, c.cantidad, c.marca);
-          _registrarMovimientoStock('SALIDA', c.sku, c.marca, c.nombre, c.cantidad, c.antes, c.despues, referencia || '', 'pedido web');
-        });
-        try { actualizarHojaReposicion(); } catch(eRepo) {}
-        return { ok: true, movimientos: cambiosCat.length };
-      }
-    }
-
-    var hojaSup = ss.getSheetByName('SUPLEMENTOS');
-    if (!hojaSup) return { ok: false, errores: ['Falta hoja SUPLEMENTOS'] };
-    var supData = hojaSup.getDataRange().getValues();
-    var cols = _columnasCatalogoSuplementos(supData);
-    var cambios = [], errores = [];
-    items.forEach(function(item) {
-      var cantidad = Math.max(1, Number(item.cantidad) || 1);
-      var marca = String(item.marca || item.brand || '');
-      var fila = -1;
-      if (cols.sku >= 0 && item.sku) {
-        for (var r = cols.filaHeader + 1; r < supData.length; r++) {
-          if (String(supData[r][cols.sku]).trim() === String(item.sku).trim()) { fila = r; break; }
-        }
-      }
-      if (fila < 0) fila = _buscarFilaSuplementoMarcaNombreApi(supData, item.nombre, marca, 0);
-      if (fila < 0) { errores.push('No se encontro [' + marca + '] ' + item.nombre); return; }
-      var antes = Number(supData[fila][cols.stock]) || 0;
-      if (antes < cantidad) { errores.push('Stock insuficiente [' + marca + '] ' + item.nombre + ' (' + antes + ')'); return; }
-      cambios.push({ fila: fila, cantidad: cantidad, antes: antes, despues: antes - cantidad, marca: marca,
-        nombre: String(item.nombre || ''), sku: String(item.sku || (cols.sku >= 0 ? supData[fila][cols.sku] : '')) });
-    });
-    if (errores.length) return { ok: false, errores: errores };
-    cambios.forEach(function(c) {
-      hojaSup.getRange(c.fila + 1, cols.stock + 1).setValue(c.despues);
-      descontarStockDetallado(c.nombre, c.cantidad, c.marca);
-      _registrarMovimientoStock('SALIDA', c.sku, c.marca, c.nombre, c.cantidad, c.antes, c.despues, referencia || '', 'pedido web');
-    });
-    try { actualizarHojaReposicion(); } catch(eRepo2) {}
-    return { ok: true, movimientos: cambios.length };
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-// ── REGISTRAR LA VENTA DE UN PEDIDO WEB AL ENTREGARLO ───────
-// El pedido web ya no escribe en VentasDiarias al momento del clic:
-// la venta se anota ACÁ, cuando el pedido pasa a Entregado/Retirado
-// (el mismo momento en que se descuenta el stock). Usa el precio FINAL
-// cobrado (precioFinal guardado en el JSON del pedido).
-// Es a prueba de repeticiones: si la venta ya está anotada, no la duplica.
-function _registrarVentaPedidoWeb(codigo) {
-  try {
-    var ss = _getSS();
-    var hojaVD = ss.getSheetByName('VentasDiarias');
-    var hojaPed = ss.getSheetByName('PEDIDOS');
-    if (!hojaVD || !hojaPed) return;
-
-    // ¿Ya está anotada? (idempotente: no duplicar jamás)
-    var vdRows = hojaVD.getDataRange().getValues();
-    for (var v = 0; v < vdRows.length; v++) {
-      if (String(vdRows[v][8] || '').indexOf(String(codigo)) >= 0) return;
-    }
-
-    // Buscar el pedido
-    var pRows = hojaPed.getDataRange().getValues();
-    var ped = null;
-    for (var p = 1; p < pRows.length; p++) {
-      if (String(pRows[p][0]).trim() === String(codigo).trim()) { ped = pRows[p]; break; }
-    }
-    if (!ped) return;
-
-    var cliente  = String(ped[2] || '');
-    var telefono = String(ped[3] || '');
-    var entregaC = String(ped[6] || '');
-    var pagoC    = String(ped[8] || '');
-    var items = [];
-    try { items = JSON.parse(String(ped[10] || '[]')); } catch(eJ) {}
-
-    var hoy = new Date();
-    var fechaStr = Utilities.formatDate(hoy, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
-    var nota = 'WEB ' + codigo + ' | ' + entregaC + ' | ' + pagoC;
-    var totalVenta = 0;
-
-    if (items.length > 0) {
-      for (var i = 0; i < items.length; i++) {
-        var it = items[i];
-        var precioFila = Number(it.precioFinal || it.precio || 0);
-        var cant = Number(it.cantidad || 1);
-        var ingreso = precioFila * cant;
-        totalVenta += ingreso;
-        _insertarFilaVenta(hojaVD, [hoy, String(it.nombre || ''), String(it.marca || ''),
-          cant, precioFila, ingreso, cliente, '', nota], fechaStr);
-      }
-    } else {
-      // Sin detalle de items: usar el total del pedido ("$123.456" → 123456)
-      totalVenta = Number(String(ped[5] || '').replace(/[^\d]/g, '')) || 0;
-      if (totalVenta > 0) {
-        _insertarFilaVenta(
-          hojaVD,
-          [hoy, 'Pedido web', '', 1, totalVenta, totalVenta, cliente, '', nota],
-          fechaStr
-        );
-      }
-    }
-    if (totalVenta <= 0) return;
-
-    _actualizarTotalDiaApi(hojaVD, fechaStr);
-
-    // Sumar la compra al mes del cliente (buscarlo por teléfono, si no por nombre)
-    var hojaCli = ss.getSheetByName('CLIENTES');
-    if (hojaCli) {
-      var cRows = hojaCli.getDataRange().getValues();
-      var telNorm = telefono.replace(/\D/g, '');
-      var codigoCli = null;
-      for (var c = 1; c < cRows.length; c++) {
-        var telC = String(cRows[c][2] || '').replace(/\D/g, '');
-        if (telNorm && telC === telNorm) { codigoCli = cRows[c][0]; break; }
-      }
-      if (codigoCli === null) {
-        for (var c2 = 1; c2 < cRows.length; c2++) {
-          if (String(cRows[c2][1] || '').trim().toLowerCase() === cliente.trim().toLowerCase()) { codigoCli = cRows[c2][0]; break; }
-        }
-      }
-      if (codigoCli !== null) _actualizarClienteMensualApi(codigoCli, totalVenta);
-    }
-
-    Logger.log('💵 Venta anotada por entrega: ' + codigo + ' → $' + totalVenta);
-  } catch(e) {
-    Logger.log('Error _registrarVentaPedidoWeb ' + codigo + ': ' + e.message);
-  }
-}
-
-// ── REVERTIR VENTA DE PEDIDO WEB CANCELADO ─────────────────
-// Al momento del pedido, la venta ya se anotó en VentasDiarias y se sumó
-// al mensual del cliente. Si el pedido se CANCELA, esto lo deshace:
-//   1. Borra las filas de VentasDiarias cuya nota contiene el código (WEB MXP-xxxx).
-//   2. Recalcula el TOTAL del día de cada fecha afectada.
-//   3. Le resta el monto al mes del cliente en CLIENTES.
-// Solo alcanza a pedidos posteriores a este cambio (los anteriores no llevan
-// el código en la nota; esos se corrigen a mano si hiciera falta).
-function _revertirVentaPedidoWeb(codigo, estadoAnterior) {
-  var ss = _getSS();
-  var hojaVD = ss.getSheetByName('VentasDiarias');
-  if (!hojaVD) return;
-
-  var rows = hojaVD.getDataRange().getValues();
-  var filasBorrar = [];          // índices 1-based, se borran de abajo hacia arriba
-  var fechasAfectadas = {};      // fechaStr -> true
-  var porClienteMes = [];        // {nombre, fecha(Date), monto}
-
-  for (var r = 0; r < rows.length; r++) {
-    var nota = String(rows[r][8] || '');
-    if (nota.indexOf(String(codigo)) < 0) continue;
-    filasBorrar.push(r + 1);
-    var fecha = rows[r][0];
-    var ingreso = Number(rows[r][5]) || 0;
-    var nombreCli = String(rows[r][6] || '').trim();
-    if (fecha && !(typeof fecha === 'string')) {
-      try {
-        var fStr = Utilities.formatDate(new Date(fecha), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
-        fechasAfectadas[fStr] = true;
-        if (nombreCli && ingreso > 0) porClienteMes.push({ nombre: nombreCli, fecha: new Date(fecha), monto: ingreso });
-      } catch(e) {}
-    }
-  }
-
-  if (filasBorrar.length === 0) {
-    // Normal: el pedido se canceló ANTES de entregarse, así que su venta
-    // nunca se anotó. No hay nada que revertir.
-    _notificarTelegram('🚫 ' + codigo + ' cancelado (no estaba entregado: no había venta que revertir).');
-    return;
-  }
-
-  // 1) Borrar las filas de la venta (de abajo hacia arriba para no correr índices)
-  filasBorrar.sort(function(a, b){ return b - a; });
-  filasBorrar.forEach(function(f){ hojaVD.deleteRow(f); });
-
-  // 2) Recalcular el total de cada día afectado
-  for (var fStr2 in fechasAfectadas) {
-    try { _actualizarTotalDiaApi(hojaVD, fStr2); } catch(e) {}
-  }
-
-  // 3) Restar del mensual del cliente (busca por nombre en CLIENTES)
-  var hojaCli = ss.getSheetByName('CLIENTES');
-  if (hojaCli && porClienteMes.length) {
-    var datosCli = hojaCli.getDataRange().getValues();
-    var headersCli = datosCli[0];
-    porClienteMes.forEach(function(x) {
-      var filaCli = -1;
-      for (var c = 1; c < datosCli.length; c++) {
-        if (String(datosCli[c][1] || '').trim().toLowerCase() === x.nombre.toLowerCase()) { filaCli = c + 1; break; }
-      }
-      if (filaCli < 0) return;
-      var colIdx = _buscarColumnaMes(headersCli, x.fecha);   // helper de Ventas.gs (mismo proyecto)
-      if (colIdx < 0) return;
-      var celda = hojaCli.getRange(filaCli, colIdx + 1);
-      var actual = Number(celda.getValue()) || 0;
-      celda.setValue(Math.max(0, actual - x.monto));
-    });
-  }
-
-  // Aviso: si ya estaba Entregado/Retirado, el stock ya se había descontado
-  var avisoStock = (estadoAnterior === 'Entregado' || estadoAnterior === 'Retirado')
-    ? '\n⚠️ OJO: este pedido ya estaba ' + estadoAnterior + ' y su stock ya se descontó. Si te devuelven la mercadería, sumala de nuevo al lote.'
-    : '';
-  _notificarTelegram('↩️ ' + codigo + ' CANCELADO: venta revertida (' + filasBorrar.length +
-    ' renglón(es) borrados de VentasDiarias, total del día y cliente corregidos).' + avisoStock);
-}
-
-function _getMsgEstado(estado) {
-  var msgs = {
-    'Recibido': 'Tu pedido fue recibido correctamente.',
-    'En preparación': 'Estamos preparando tu pedido. En breve estará listo.',
-    'Listo para retirar': '¡Tu pedido está listo! Podés pasar a retirarlo.',
-    'Enviado': '¡Tu pedido está en camino! Pronto lo recibís.',
-    'Entregado': '¡Pedido entregado! Gracias por tu compra.',
-    'Retirado': '¡Pedido retirado! Gracias por tu compra.',
-    'Cancelado': 'Tu pedido fue cancelado. Contactanos para más info.'
-  };
-  return msgs[estado] || '';
-}
-
-function adminGetResumen(clave) {
-  _validarClave(clave);
-  var ss = _getSS();
-  var hojaVD = ss.getSheetByName('VentasDiarias');
-  if (!hojaVD) return { ok: true, hoy: 0, ayer: 0, ventasHoy: 0, ventasAyer: 0, items: [] };
-
-  var hoy = new Date();
-  var ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1);
-  var hoyStr  = Utilities.formatDate(hoy,  'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
-  var ayerStr = Utilities.formatDate(ayer, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
-
-  var rows = hojaVD.getDataRange().getValues();
-  var totalHoy = 0, totalAyer = 0, ventasHoy = 0, ventasAyer = 0;
-  var itemsHoy = [];
-
-  for (var i = 1; i < rows.length; i++) {
-    if (!rows[i][0] || typeof rows[i][0] === 'string') continue;
-    var fechaFila = '';
-    try { fechaFila = Utilities.formatDate(new Date(rows[i][0]), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy'); } catch(e) { continue; }
-
-    var monto = Number(rows[i][5]) || 0;
-    if (fechaFila === hoyStr) {
-      totalHoy += monto; ventasHoy++;
-      itemsHoy.push({ producto: String(rows[i][1]), cantidad: rows[i][3], monto: monto, cliente: String(rows[i][6] || '') });
-    }
-    if (fechaFila === ayerStr) { totalAyer += monto; ventasAyer++; }
-  }
-
-  var hojaPed = ss.getSheetByName('PEDIDOS');
-  var pedidosHoy = 0;
-  if (hojaPed && hojaPed.getLastRow() > 1) {
-    var rowsPed = hojaPed.getDataRange().getValues();
-    for (var j = 1; j < rowsPed.length; j++) {
-      if (!rowsPed[j][1]) continue;
-      try {
-        var fPed = Utilities.formatDate(new Date(rowsPed[j][1]), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
-        if (fPed === hoyStr) pedidosHoy++;
-      } catch(e) {}
-    }
-  }
-
-  // Stock bajo para alertas en resumen
-  var stockBajo = [];
-  try {
-    var hojaSup = ss.getSheetByName('SUPLEMENTOS');
-    if (hojaSup) {
-      var rowsSup = hojaSup.getDataRange().getValues();
-      var marcaAct = '';
-      for (var s = 2; s < rowsSup.length; s++) {
-        var nom = String(rowsSup[s][0] || '').trim();
-        var pre = Number(rowsSup[s][1]);
-        var stk = Number(rowsSup[s][3]);
-        if (!nom) continue;
-        if (!pre || isNaN(pre)) { marcaAct = nom; continue; }
-        if (stk <= 2) stockBajo.push({ nombre: nom, marca: marcaAct, stock: stk });
-      }
-      stockBajo.sort(function(a,b){ return a.stock - b.stock; });
-      if (stockBajo.length > 8) stockBajo.length = 8; // máx 8 en resumen
-    }
-  } catch(e) {}
-
-  return {
-    ok: true, hoy: totalHoy, ayer: totalAyer,
-    ventasHoy: ventasHoy, ventasAyer: ventasAyer,
-    pedidosWeb: pedidosHoy, items: itemsHoy.slice(0, 20), fecha: hoyStr,
-    stockBajo: stockBajo
-  };
-}
-
-function adminGetStockBajo(clave, limite) {
-  _validarClave(clave);
-  var limiteNum = Number(limite) || 3;
-  var hoja = _getSS().getSheetByName('SUPLEMENTOS');
-  if (!hoja) return { ok: true, productos: [] };
-
-  var rows = hoja.getDataRange().getValues();
-  var productos = [];
-  var marcaActual = '';
-
-  for (var i = 2; i < rows.length; i++) {
-    var nombre = String(rows[i][0] || '').trim();
-    var precio = Number(rows[i][1]);
-    var stock  = Number(rows[i][3]);
-    if (!nombre) continue;
-    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
-    if (stock <= limiteNum) {
-      productos.push({ nombre: nombre, marca: marcaActual, stock: stock, precio: precio });
-    }
-  }
-
-  productos.sort(function(a, b) { return a.stock - b.stock; });
-  return { ok: true, productos: productos, limite: limiteNum };
-}
-
-function adminGetClientesDescuento(clave) {
-  _validarClave(clave);
-  var hoja = _getSS().getSheetByName('CLIENTES');
-  if (!hoja) return { ok: true, clientes: [] };
-
-  var rows = hoja.getDataRange().getValues();
-  var headers = rows[0];
-  var clientes = [];
-
-  for (var i = 1; i < rows.length; i++) {
-    var codigo = rows[i][0];
-    var nombre = rows[i][1];
-    if (!codigo || !nombre) continue;
-    if (_tieneDescuentoApi(codigo, rows, headers)) {
-      var ahora = new Date();
-      var total3m = 0;
-      for (var m = 0; m < 3; m++) {
-        var fecha = new Date(ahora.getFullYear(), ahora.getMonth() - m, 1);
-        var colIdx = _buscarColumnaMes(headers, fecha);
-        if (colIdx >= 0) total3m += Number(rows[i][colIdx]) || 0;
-      }
-      clientes.push({ codigo: codigo, nombre: String(nombre), telefono: String(rows[i][2] || ''), total3m: total3m });
-    }
-  }
-  return { ok: true, clientes: clientes };
-}
-
-// ════════════════════════════════════════════════════════════
-//  OFERTAS / VENCIMIENTOS
-// ════════════════════════════════════════════════════════════
-
-function _leerOfertasHoja(diasLimite) {
-  // Lee el stock EN VIVO desde STOCK_DETALLADO (que se actualiza en cada venta),
-  // no de la "foto" diaria de ANALISIS_OFERTAS. Asi no aparecen vencidos fantasma
-  // de productos que ya se vendieron durante el dia.
-  var ss = _getSS();
-  var hojaSD = ss.getSheetByName('STOCK_DETALLADO');
-  if (!hojaSD || hojaSD.getLastRow() < 2) return [];
-
-  // Precios actuales desde SUPLEMENTOS (por marca + nombre)
-  var precios = {};
-  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
-  if (hojaSup) {
-    var rs = hojaSup.getDataRange().getValues();
-    var marcaSup = '';
-    for (var s = 2; s < rs.length; s++) {
-      var nom = String(rs[s][0] || '').trim();
-      if (_esEncabezadoMarca(nom)) { marcaSup = nom; continue; }
-      var pr  = Number(rs[s][1]) || 0;
-      if (nom && pr > 0) precios[_claveProductoStock(marcaSup, nom)] = pr;
-    }
-  }
-
-  var rows = hojaSD.getDataRange().getValues();
-  var productos = [];
-  var hoy = new Date(); hoy.setHours(0,0,0,0);
-
-  for (var i = 1; i < rows.length; i++) {
-    var nombre = String(rows[i][0] || '').trim();
-    var marca  = String(rows[i][1] || '').trim();
-    var vence  = rows[i][2];
-    var stock  = Number(rows[i][4]) || 0; // col E = Stock Actual (EN VIVO)
-
-    if (!nombre || !vence) continue;
-    if (stock <= 0) continue; // Ignorar lotes sin stock
-
-    var fechaVence = new Date(vence); fechaVence.setHours(0,0,0,0);
-    if (isNaN(fechaVence.getTime())) continue;
-    var diasReales = Math.round((fechaVence - hoy) / (1000*60*60*24));
-
-    if (diasReales <= diasLimite) {
-      // Umbrales: 40d=critico, 50d=advertencia, 70d=atencion
-      var urgencia;
-      if (diasReales < 0)        urgencia = 'vencido';
-      else if (diasReales <= 40) urgencia = 'critico';
-      else if (diasReales <= 50) urgencia = 'advertencia';
-      else                       urgencia = 'atencion';
-
-      productos.push({
-        nombre: nombre, marca: marca, stock: stock,
-        diasRestantes: diasReales,
-        fechaVence: Utilities.formatDate(fechaVence, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy'),
-        ventas30d: 0, precio: precios[_claveProductoStock(marca, nombre)] || 0, urgencia: urgencia
-      });
-    }
-  }
-  productos.sort(function(a,b){ return a.diasRestantes - b.diasRestantes; });
-  return productos;
-}
-
-function getOfertas() {
-  var productos = _leerOfertasHoja(50);
-  return { ok: true, productos: productos, total: productos.length };
-}
-
-function adminGetPorVencer(clave, dias) {
-  _validarClave(clave);
-  var diasLimite = Number(dias) || 50;
-  var productos = _leerOfertasHoja(diasLimite);
-  return { ok: true, productos: productos };
-}
-
-// ── REGENERAR ANALISIS_OFERTAS desde STOCK_DETALLADO + VentasDiarias ─
-function actualizarAnalisisOfertas() {
-  var ss = _getSS();
-  var hojaSD = ss.getSheetByName('STOCK_DETALLADO');
-  if (!hojaSD || hojaSD.getLastRow() < 2) return;
-
-  var hojaVD = ss.getSheetByName('VentasDiarias');
-  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
-
-  var hoy = new Date(); hoy.setHours(0,0,0,0);
-  var hace30 = new Date(hoy); hace30.setDate(hace30.getDate() - 30);
-
-  // 1. Contar ventas por producto en los últimos 30 días
-  var ventas30d = {};
-  if (hojaVD && hojaVD.getLastRow() > 1) {
-    var rowsVD = hojaVD.getDataRange().getValues();
-    for (var v = 1; v < rowsVD.length; v++) {
-      var fechaVenta = rowsVD[v][0];
-      if (!fechaVenta || typeof fechaVenta === 'string') continue;
-      try {
-        var fv = new Date(fechaVenta);
-        if (fv >= hace30 && fv <= hoy) {
-          var prodNombre = String(rowsVD[v][1] || '').trim();
-          var prodMarca = String(rowsVD[v][2] || '').trim();
-          var cant = Number(rowsVD[v][3]) || 0;
-          if (prodNombre && prodMarca) {
-            var claveVenta = _claveProductoStock(prodMarca, prodNombre);
-            ventas30d[claveVenta] = (ventas30d[claveVenta] || 0) + cant;
-          }
-        }
-      } catch(e) {}
-    }
-  }
-
-  // 2. Obtener precios actuales de SUPLEMENTOS
-  var precios = {};
-  if (hojaSup) {
-    var rowsSup = hojaSup.getDataRange().getValues();
-    var marcaSup = '';
-    for (var s = 2; s < rowsSup.length; s++) {
-      var nombreSup = String(rowsSup[s][0] || '').trim();
-      if (_esEncabezadoMarca(nombreSup)) { marcaSup = nombreSup; continue; }
-      var precioSup = Number(rowsSup[s][1]) || 0;
-      if (nombreSup && precioSup > 0) {
-        precios[_claveProductoStock(marcaSup, nombreSup)] = precioSup;
-      }
-    }
-  }
-
-  // 3. Leer STOCK_DETALLADO y generar filas para ANALISIS_OFERTAS
-  var datosSD = hojaSD.getDataRange().getValues();
-  var filas = [];
-
-  for (var i = 1; i < datosSD.length; i++) {
-    var nombre = String(datosSD[i][0] || '').trim();
-    var marca = String(datosSD[i][1] || '').trim();
-    var vencimiento = datosSD[i][2];
-    var stockActual = Number(datosSD[i][4]) || 0;
-
-    if (!nombre || !vencimiento) continue;
-
-    var fechaVence = new Date(vencimiento); fechaVence.setHours(0,0,0,0);
-    var diasRestantes = Math.round((fechaVence - hoy) / (1000 * 60 * 60 * 24));
-
-    var claveProducto = _claveProductoStock(marca, nombre);
-    var ventasProd = ventas30d[claveProducto] || 0;
-
-    // Buscar precio dentro de la misma marca: exacto y luego parcial.
-    var precio = precios[claveProducto] || 0;
-    if (!precio) {
-      var nombreLower = nombre.toLowerCase();
-      var marcaNorm = _normalizarNombre(marca) + '||';
-      var palabras = nombreLower.split(/\s+/).filter(function(w) { return w.length > 3; });
-      for (var key in precios) {
-        if (key.indexOf(marcaNorm) !== 0) continue;
-        var hits = 0;
-        palabras.forEach(function(p) { if (key.indexOf(p) >= 0) hits++; });
-        if (palabras.length > 0 && hits / palabras.length >= 0.7) {
-          precio = precios[key];
-          break;
-        }
-      }
-    }
-
-    // Puntaje de urgencia: menor = más urgente.
-    // Vencimiento cercano, stock alto y pocas ventas aumentan la prioridad.
-    var puntaje = diasRestantes * 10 - stockActual * 5 + ventasProd * 20;
-    if (diasRestantes < 0) puntaje -= 1000;
-
-    var loteNombre = nombre + ' [Vence: ' + Utilities.formatDate(fechaVence, 'America/Argentina/Buenos_Aires', 'dd/MM/yy') + ']';
-
-    var precioOferta = diasRestantes <= 30 && precio > 0 ? Math.round(precio * 0.95) : 0;
-    var ahorro = precioOferta > 0 ? precio - precioOferta : 0;
-
-    filas.push([
-      loteNombre, marca, stockActual, fechaVence, diasRestantes,
-      ventasProd, precio, puntaje, precioOferta, ahorro
-    ]);
-  }
-
-  // 4. Ordenar por puntaje (más urgente primero)
-  filas.sort(function(a, b) { return a[7] - b[7]; });
-
-  // 5. Escribir en ANALISIS_OFERTAS
-  var hojaAO = ss.getSheetByName('ANALISIS_OFERTAS');
-  if (!hojaAO) hojaAO = ss.insertSheet('ANALISIS_OFERTAS');
-
-  hojaAO.clearContents();
-  hojaAO.clearFormats();
-
-  var headers = [['Lote / Producto', 'Marca', 'Stock Lote', 'Vencimiento', 'Días Restantes',
-                  'Ventas Prod (30d)', 'Precio Actual', 'Puntaje Urgencia', 'PRECIO OFERTA (5% OFF)', 'AHORRO']];
-  hojaAO.getRange(1, 1, 1, 10).setValues(headers);
-  hojaAO.getRange(1, 1, 1, 10).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
-
-  if (filas.length > 0) {
-    hojaAO.getRange(2, 1, filas.length, 10).setValues(filas);
-
-    // Colorear por urgencia (40d critico, 50d advertencia, 70d atencion)
-    for (var f = 0; f < filas.length; f++) {
-      var dias = filas[f][4];
-      var stockFila = filas[f][2];
-      var bgColor, ftColor;
-      if (stockFila <= 0)  { bgColor = '#1a1a1a'; ftColor = '#555555'; } // Sin stock: gris
-      else if (dias < 0)   { bgColor = '#3a0000'; ftColor = '#FF4444'; } // Vencido
-      else if (dias <= 40) { bgColor = '#3a0000'; ftColor = '#FF6666'; } // Critico
-      else if (dias <= 50) { bgColor = '#2a1500'; ftColor = '#FF9900'; } // Advertencia
-      else if (dias <= 70) { bgColor = '#0a1a2a'; ftColor = '#00C8FF'; } // Atencion
-      else                 { bgColor = null; ftColor = null; }
-      if (bgColor) {
-        hojaAO.getRange(f + 2, 1, 1, 10).setBackground(bgColor).setFontColor(ftColor);
-      }
-    }
-
-    hojaAO.setColumnWidth(1, 350);
-    hojaAO.setColumnWidth(2, 130);
-    hojaAO.getRange(2, 4, filas.length, 1).setNumberFormat('dd/MM/yyyy');
-  }
-
-  var fechaActualiz = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
-  hojaAO.getRange(1, 11).setValue('Actualizado: ' + fechaActualiz);
-  hojaAO.getRange(1, 11).setFontColor('#888888').setFontStyle('italic');
-
-  Logger.log('ANALISIS_OFERTAS actualizado: ' + filas.length + ' lotes');
-}
-
-// ── TRIGGER DIARIO: actualizar análisis + alerta Telegram ───
-function triggerDiarioMaxup() {
-  avisoDeudoresDiario();
-  actualizarHojaReposicion();
-  alertaVencimientosDiaria();
-  recordatoriosRecompra();
-  alertaOfertasClientes();
-  bienvenidaClientesNuevos();
-  generarContenidoRedes();
-}
-
-// ── AVISO DIARIO DE DEUDORES (Telegram) ─────────────────────
-// Lee la hoja DEUDORES (A=Nombre, C=Monto, D=Estado) y manda el total
-// pendiente + el detalle por persona. Si no hay deudas pendientes, no molesta.
-function avisoDeudoresDiario() {
-  try {
-    var hoja = _getSS().getSheetByName('DEUDORES');
-    if (!hoja || hoja.getLastRow() < 2) return;
-
-    var datos = hoja.getDataRange().getValues();
-    var total = 0;
-    var porPersona = {};
-    for (var i = 1; i < datos.length; i++) {
-      var estado = String(datos[i][3] || '').trim().toLowerCase();
-      if (estado !== 'pendiente') continue;
-      var monto = Number(datos[i][2]) || 0;
-      if (monto <= 0) continue;
-      var nombre = String(datos[i][0] || '').trim();
-      if (!nombre) nombre = '(sin nombre)';
-      // Agrupar sin importar mayúsculas ("Fer" y "fer" son la misma persona)
-      var key = nombre.toLowerCase();
-      if (!porPersona[key]) porPersona[key] = { nombre: nombre, monto: 0 };
-      porPersona[key].monto += monto;
-      total += monto;
-    }
-
-    if (total <= 0) return; // sin deudas pendientes → no mandar nada
-
-    var lista = Object.keys(porPersona).map(function(k){ return porPersona[k]; });
-    lista.sort(function(a, b){ return b.monto - a.monto; });
-
-    var msg = '💰 MAXUP — Te deben: $' + _formatoPrecio(total) + '\n';
-    msg += '(' + lista.length + ' deudor' + (lista.length === 1 ? '' : 'es') + ' pendiente' + (lista.length === 1 ? '' : 's') + ')\n\n';
-    lista.slice(0, 15).forEach(function(d){
-      msg += '  • ' + d.nombre + ': $' + _formatoPrecio(d.monto) + '\n';
-    });
-    if (lista.length > 15) msg += '  ... y ' + (lista.length - 15) + ' más\n';
-    _notificarTelegram(msg);
-  } catch(e) {
-    Logger.log('Error avisoDeudoresDiario: ' + e.message);
-  }
-}
-
-// Ejecutar UNA VEZ para instalar el trigger diario (8 AM Argentina)
-function instalarTriggerDiario() {
-  // Eliminar triggers anteriores de esta función
-  var triggers = ScriptApp.getProjectTriggers();
-  for (var i = 0; i < triggers.length; i++) {
-    if (triggers[i].getHandlerFunction() === 'triggerDiarioMaxup') {
-      ScriptApp.deleteTrigger(triggers[i]);
-    }
-  }
-  // Crear nuevo trigger diario a las 8 AM hora Argentina
-  ScriptApp.newTrigger('triggerDiarioMaxup')
-    .timeBased()
-    .atHour(9)
-    .everyDays(1)
-    .inTimezone('America/Argentina/Buenos_Aires')
-    .create();
-  Logger.log('✅ Trigger diario instalado: triggerDiarioMaxup a las 8:00 AM Argentina');
-}
-
-function alertaVencimientosDiaria() {
-  // 1. Auto-limpieza: eliminar filas con stock 0 de STOCK_DETALLADO
-  var eliminados = _limpiarStockDetallado();
-
-  // 2. Leer productos que vencen en ≤70 días (solo con stock > 0)
-  var productos = _leerOfertasHoja(70);
-
-  var vencidos    = productos.filter(function(p){ return p.urgencia === 'vencido'; });
-  var criticos    = productos.filter(function(p){ return p.urgencia === 'critico'; });
-  var advertencia = productos.filter(function(p){ return p.urgencia === 'advertencia'; });
-  var atencion    = productos.filter(function(p){ return p.urgencia === 'atencion'; });
-
-  // Si no hay nada que reportar, no molestar
-  if (productos.length === 0 && eliminados === 0) return;
-
-  var msg = '🗓️ MAXUP — Vencimientos\n';
-  msg += Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy') + '\n';
-
-  if (eliminados > 0) {
-    msg += '\n🧹 Se limpiaron ' + eliminados + ' productos sin stock\n';
-  }
-
-  var PROMO_URL = 'https://maxupsuplementos.github.io/maxupsuplementos/promo.html';
-
-  if (vencidos.length > 0) {
-    msg += '\n🔴 VENCIDOS con stock (' + vencidos.length + '):\n';
-    msg += '⚠️ SACALOS DE LA VENTA\n';
-    vencidos.forEach(function(p){
-      msg += '  • ' + p.nombre + ' (' + p.marca + ')\n    Venció: ' + p.fechaVence + ' | Stock: ' + p.stock + '\n';
-    });
-  }
-
-  if (criticos.length > 0) {
-    msg += '\n🚨 VENDÉ YA — ≤40 días (' + criticos.length + '):\n';
-    criticos.forEach(function(p){
-      var desc = p.diasRestantes <= 20 ? 20 : p.diasRestantes <= 30 ? 15 : 10;
-      var promoLink = PROMO_URL + '?q=' + encodeURIComponent(p.nombre) + '&desc=' + desc;
-      msg += '  • ' + p.nombre + ' (' + p.marca + ')\n    Vence: ' + p.fechaVence + ' (' + p.diasRestantes + 'd) | Stock: ' + p.stock + '\n';
-      msg += '    📸 Crear promo -' + desc + '%: ' + promoLink + '\n';
-    });
-  }
-
-  if (advertencia.length > 0) {
-    msg += '\n⚠️ ATENCIÓN — ≤50 días (' + advertencia.length + '):\n';
-    advertencia.forEach(function(p){
-      var promoLink = PROMO_URL + '?q=' + encodeURIComponent(p.nombre) + '&desc=10';
-      msg += '  • ' + p.nombre + ' (' + p.marca + ') — ' + p.fechaVence + ' (' + p.diasRestantes + 'd)\n';
-      msg += '    📸 Crear promo: ' + promoLink + '\n';
-    });
-  }
-
-  if (atencion.length > 0) {
-    msg += '\n🔵 PRÓXIMOS — ≤70 días (' + atencion.length + '):\n';
-    atencion.forEach(function(p){
-      msg += '  • ' + p.nombre + ' (' + p.marca + ') — ' + p.fechaVence + ' (' + p.diasRestantes + 'd)\n';
-    });
-  }
-
-  if (productos.length === 0) {
-    msg += '\n✅ No hay productos por vencer en los próximos 70 días';
-  }
-
-  _notificarTelegram(msg);
-}
-
-// ── Auto-limpieza: eliminar filas con stock 0 o vencidos sin stock ──
-function _limpiarStockDetallado() {
-  var hoja = _getSS().getSheetByName('STOCK_DETALLADO');
-  if (!hoja || hoja.getLastRow() < 2) return 0;
-
-  var datos = hoja.getDataRange().getValues();
-  var filasEliminar = [];
-  var hoy = new Date(); hoy.setHours(0,0,0,0);
-
-  for (var i = datos.length - 1; i >= 1; i--) {
-    var stock = Number(datos[i][4]) || 0;
-    var vence = datos[i][2];
-    var fechaVence = vence ? new Date(vence) : null;
-    var diasRest = fechaVence ? Math.round((fechaVence - hoy) / (1000*60*60*24)) : 9999;
-
-    // Eliminar si: stock = 0, o vencido hace más de 7 días con stock 0
-    if (stock <= 0) {
-      filasEliminar.push(i + 1);
-    }
-  }
-
-  // Eliminar de abajo hacia arriba para no afectar los índices
-  for (var j = 0; j < filasEliminar.length; j++) {
-    hoja.deleteRow(filasEliminar[j]);
-  }
-
-  if (filasEliminar.length > 0) {
-    Logger.log('🧹 Limpieza STOCK_DETALLADO: ' + filasEliminar.length + ' filas eliminadas (stock 0)');
-  }
-  return filasEliminar.length;
-}
-
-// ── VERIFICAR SI ES CLIENTE NUEVO ───────────────────────────
-function esClienteNuevo(telefono) {
-  if (!telefono) return { ok: true, esNuevo: false };
-
-  var tel = String(telefono).replace(/\D/g, '');
-  var ss = _getSS();
-
-  var hojaCli = ss.getSheetByName('CLIENTES');
-  if (hojaCli && hojaCli.getLastRow() > 1) {
-    var rows = hojaCli.getDataRange().getValues();
-    for (var i = 1; i < rows.length; i++) {
-      var telExistente = String(rows[i][2] || '').replace(/\D/g, '');
-      if (telExistente && telExistente === tel) {
-        var hojaVD = ss.getSheetByName('VentasDiarias');
-        if (!hojaVD) return { ok: true, esNuevo: false };
-        var nombre = String(rows[i][1] || '').toLowerCase();
-        var rowsVD = hojaVD.getDataRange().getValues();
-        var tieneCompras = rowsVD.some(function(r) {
-          return String(r[6] || '').toLowerCase() === nombre;
-        });
-        return { ok: true, esNuevo: !tieneCompras };
-      }
-    }
-  }
-
-  return { ok: true, esNuevo: true };
-}
-
-// ════════════════════════════════════════════════════════════
-//  SISTEMA MAYORISTA
-// ════════════════════════════════════════════════════════════
-
-function _crearTokenAccion(tipo, email, horas) {
-  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
-  var payload = {
-    tipo: String(tipo || ''),
-    email: String(email || '').toLowerCase().trim(),
-    vence: Date.now() + (Number(horas || 48) * 3600000)
-  };
-  PropertiesService.getScriptProperties().setProperty('ACTION_' + _hashSeguro(token), JSON.stringify(payload));
-  return token;
-}
-
-function _consumirTokenAccion(token, tipoEsperado) {
-  if (!token) throw new Error('Enlace inválido o incompleto');
-  var props = PropertiesService.getScriptProperties();
-  var key = 'ACTION_' + _hashSeguro(token);
-  var raw = props.getProperty(key);
-  if (!raw) throw new Error('Este enlace ya fue usado o venció');
-  props.deleteProperty(key); // un solo uso, incluso si se vuelve a abrir
-  var data = JSON.parse(raw);
-  if (data.tipo !== tipoEsperado || Number(data.vence || 0) < Date.now()) throw new Error('Enlace inválido o vencido');
-  return data;
-}
-
-function registroMayorista(body) {
-  try {
-    var ss   = _getSS();
-    var hoja = ss.getSheetByName(HOJA_MAYORISTAS);
-    if (!hoja) hoja = ss.insertSheet(HOJA_MAYORISTAS);
-
-    var datos = hoja.getDataRange().getValues();
-    for (var i = 1; i < datos.length; i++) {
-      if (datos[i][0].toString().toLowerCase() === body.email.toLowerCase()) {
-        return jsonResp({ ok: false, error: 'Ese email ya está registrado. Intentá iniciar sesión.' });
-      }
-    }
-
-    var passHash = hashPassword(body.password);
-
-    hoja.appendRow([
-      body.email, body.nombre, body.negocio, body.telefono,
-      body.ciudad || '', body.rubro || '', passHash,
-      'pendiente', new Date().toLocaleDateString('es-AR')
-    ]);
-
-    var cfg = _getConfig();
-    var tokenAprobar = _crearTokenAccion('aprobar_mayorista', body.email, 48);
-    var tokenRechazar = _crearTokenAccion('rechazar_mayorista', body.email, 48);
-    var msg = '🏭 *NUEVA SOLICITUD MAYORISTA*\n\n'
-      + '👤 Nombre: ' + body.nombre + '\n'
-      + '🏪 Negocio: ' + body.negocio + '\n'
-      + '📱 Tel: ' + body.telefono + '\n'
-      + '📍 Ciudad: ' + (body.ciudad || '-') + '\n'
-      + '📧 Email: ' + body.email + '\n'
-      + '💼 Rubro: ' + (body.rubro || '-') + '\n\n'
-      + 'Para aprobar:\n'
-      + cfg.API_URL_SELF + '?accion=aprobar_mayorista&token=' + encodeURIComponent(tokenAprobar) + '\n\n'
-      + 'Para rechazar:\n'
-      + cfg.API_URL_SELF + '?accion=rechazar_mayorista&token=' + encodeURIComponent(tokenRechazar);
-
-    _notificarTelegram(msg);
-
-    // Email de notificación
-    try {
-      MailApp.sendEmail({
-        to: 'maxups24@gmail.com',
-        subject: '🏭 Nueva solicitud mayorista — ' + body.nombre,
-        htmlBody: '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;background:#0a0a0a;color:#fff;padding:24px;border-radius:12px">'
-          + '<h2 style="color:#FFB800;margin:0 0 16px">🏭 NUEVA SOLICITUD MAYORISTA</h2>'
-          + '<p>👤 <strong>' + body.nombre + '</strong></p>'
-          + '<p>🏪 Negocio: ' + body.negocio + '</p>'
-          + '<p>📱 Tel: ' + body.telefono + '</p>'
-          + '<p>📍 Ciudad: ' + (body.ciudad || '-') + '</p>'
-          + '<p>📧 Email: ' + body.email + '</p>'
-          + '<p>💼 Rubro: ' + (body.rubro || '-') + '</p>'
-          + '</div>'
-      });
-    } catch(eEmail) {}
-
-    // Registrar en hoja NOTIFICACIONES
-    _registrarNotificacion('🏭 MAYORISTA', body.nombre + ' — ' + body.negocio + ' — ' + body.telefono);
-
-    return jsonResp({ ok: true });
-  } catch(e) {
-    return jsonResp({ ok: false, error: 'Error interno: ' + e.message });
-  }
-}
-
-function loginMayorista(params) {
-  try {
-    var email = (params.email || '').toLowerCase().trim();
-    var pass  = params.password || '';
-
-    var hoja = _getSS().getSheetByName(HOJA_MAYORISTAS);
-    if (!hoja) return jsonResp({ ok: false, error: 'Sistema en configuración.' });
-
-    var datos = hoja.getDataRange().getValues();
-    for (var i = 1; i < datos.length; i++) {
-      var row = datos[i];
-      if (row[0].toString().toLowerCase() === email) {
-        if (!verificarPassword(pass, row[6].toString())) {
-          return jsonResp({ ok: false, error: 'Contraseña incorrecta.' });
-        }
-        var estado = row[7].toString().toLowerCase();
-
-        if (estado === 'pendiente') return jsonResp({ ok: true, estado: 'pendiente' });
-        if (estado === 'rechazado') return jsonResp({ ok: false, error: 'Tu solicitud fue rechazada. Contactanos por WhatsApp.' });
-        if (estado === 'aprobado') {
-          var sesion = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
-          CacheService.getScriptCache().put('MAYO_SESSION_' + _hashSeguro(sesion), email, ADMIN_SESSION_TTL);
-          return jsonResp({
-            ok: true, estado: 'aprobado',
-            usuario: { nombre: row[1], negocio: row[2], telefono: row[3], email: email, sesion: sesion },
-            productos: obtenerCatalogoMayorista()
-          });
-        }
-      }
-    }
-    return jsonResp({ ok: false, error: 'Email no registrado.' });
-  } catch(e) {
-    return jsonResp({ ok: false, error: 'Error: ' + e.message });
-  }
-}
-
-function catalogoMayorista(params) {
-  try {
-    var sesion = String(params.sesion || '');
-    var email = String(CacheService.getScriptCache().get('MAYO_SESSION_' + _hashSeguro(sesion)) || '').toLowerCase();
-    if (!email) return jsonResp({ ok: false, error: 'Sesion vencida.' });
-    CacheService.getScriptCache().put('MAYO_SESSION_' + _hashSeguro(sesion), email, ADMIN_SESSION_TTL);
-    var hoja  = _getSS().getSheetByName(HOJA_MAYORISTAS);
-    if (!hoja) return jsonResp({ ok: false });
-
-    var datos = hoja.getDataRange().getValues();
-    var esAprobado = false;
-    for (var i = 1; i < datos.length; i++) {
-      if (datos[i][0].toString().toLowerCase() === email && datos[i][7] === 'aprobado') {
-        esAprobado = true;
-        break;
-      }
-    }
-    if (!esAprobado) return jsonResp({ ok: false, error: 'No autorizado.' });
-
-    return jsonResp({ ok: true, productos: obtenerCatalogoMayorista() });
-  } catch(e) {
-    return jsonResp({ ok: false, error: e.message });
-  }
-}
-
-function obtenerCatalogoMayorista() {
-  var hoja = _getSS().getSheetByName('SUPLEMENTOS');
-  if (!hoja) return [];
-
-  var datos  = hoja.getDataRange().getValues();
-  var prods  = [];
-  var catAct = '';
-  var colsMayo = _columnasCatalogoSuplementos(datos);
-
-  for (var i = 2; i < datos.length; i++) {
-    var row = datos[i];
-    var nombre = row[0] ? row[0].toString().trim() : '';
-    if (!nombre) continue;
-
-    var precio = parseFloat(row[1]) || 0;
-    if (precio === 0) {
-      catAct = nombre;
-      continue;
-    }
-
-    var descMayo   = parseFloat(row[COL_DESC_MAYORISTA - 1]) || 15;
-    var precioMayo = Math.round(precio * (1 - descMayo / 100));
-    var stock      = parseFloat(row[3]) || 0;
-    var img        = row[8] ? row[8].toString() : '';
-    var desc       = row[9] ? row[9].toString() : '';
-    var skuMayo    = colsMayo.sku >= 0 ? String(row[colsMayo.sku] || '') : _skuDeterministico(catAct, nombre, 'SUP');
-
-    prods.push({
-      id: skuMayo || (nombre.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 30) + '_' + i),
-      sku: skuMayo,
-      name: nombre, brand: catAct,
-      cat: categoriaNormalizada(catAct),
-      precio: precio,
-      precio_lista: _calcularPrecioListaTresCuotas(precio),
-      precio_mayorista: precioMayo,
-      desc_mayorista: descMayo,
-      stock: stock, img: img, desc: desc
-    });
-  }
-  return prods;
-}
-
-function pedidoMayorista(body) {
-  try {
-    var emailSesion = String(CacheService.getScriptCache().get('MAYO_SESSION_' + _hashSeguro(body.sesion || '')) || '').toLowerCase();
-    if (!emailSesion || !body.cliente || emailSesion !== String(body.cliente.email || '').toLowerCase()) {
-      return jsonResp({ ok: false, error: 'Sesion mayorista vencida o invalida.' });
-    }
-    if (body.items && body.items.length) {
-      var catalogoMayo = obtenerCatalogoMayorista();
-      var totalMayoSeguro = 0, totalListaSeguro = 0;
-      body.items = body.items.map(function(i) {
-        var prod = null;
-        for (var pm = 0; pm < catalogoMayo.length; pm++) {
-          if ((i.sku && String(catalogoMayo[pm].sku) === String(i.sku)) ||
-              (!i.sku && _claveProductoStock(catalogoMayo[pm].brand, catalogoMayo[pm].name) === _claveProductoStock(i.marca || i.brand, i.nombre))) {
-            prod = catalogoMayo[pm]; break;
-          }
-        }
-        if (!prod) throw new Error('Producto mayorista no encontrado: ' + i.nombre);
-        var qty = Math.max(1, Math.floor(Number(i.qty) || 1));
-        if (Number(prod.stock) < qty) throw new Error('Stock insuficiente: ' + prod.name);
-        totalMayoSeguro += Number(prod.precio_mayorista) * qty;
-        totalListaSeguro += Number(prod.precio) * qty;
-        return { id: prod.id, sku: prod.sku, nombre: prod.name, marca: prod.brand, qty: qty,
-          precio_mayo: Number(prod.precio_mayorista), precio_orig: Number(prod.precio) };
-      });
-      body.total_mayorista = totalMayoSeguro;
-      body.total_lista = totalListaSeguro;
-      body.ahorro = totalListaSeguro - totalMayoSeguro;
-      var itemsStock = body.items.map(function(i) { return { sku: i.sku || '', nombre: i.nombre, marca: i.marca || i.brand || '', cantidad: i.qty || 1 }; });
-      var stockRes = _descontarStockPedido(itemsStock, body.codigo);
-      if (!stockRes.ok) return jsonResp({ ok: false, error: (stockRes.errores || ['Error de stock']).join('; ') });
-    }
-    var ss   = _getSS();
-    var hoja = ss.getSheetByName(HOJA_PEDIDOS_MAYO);
-    if (!hoja) hoja = ss.insertSheet(HOJA_PEDIDOS_MAYO);
-
-    var itemsStr = body.items.map(function(i) {
-      return i.qty + 'x ' + i.nombre + ' ($' + i.precio_mayo + ' c/u)';
-    }).join(' | ');
-
-    hoja.appendRow([
-      body.codigo, new Date().toLocaleDateString('es-AR'),
-      body.cliente.email, body.cliente.nombre, body.cliente.negocio || '',
-      body.cliente.telefono, itemsStr,
-      body.total_lista, body.total_mayorista, body.ahorro,
-      body.direccion, body.pago, body.notas || '', 'Recibido'
-    ]);
-
-    var msg = '🏭 *PEDIDO MAYORISTA*\n'
-      + 'Código: ' + body.codigo + '\n'
-      + '👤 ' + body.cliente.nombre + ' — ' + (body.cliente.negocio||'') + '\n'
-      + '📱 ' + body.cliente.telefono + '\n'
-      + '💰 Total: $' + _formatoPrecio(body.total_mayorista) + '\n'
-      + '💚 Ahorro: $' + _formatoPrecio(body.ahorro) + '\n'
-      + '📦 Entrega: ' + body.direccion + '\n'
-      + '💳 Pago: ' + body.pago;
-    _notificarTelegram(msg);
-
-    return jsonResp({ ok: true, codigo: body.codigo });
-  } catch(e) {
-    return jsonResp({ ok: false, error: e.message });
-  }
-}
-
-function descontarStockMayorista(items) {
-  try {
-    var hoja  = _getSS().getSheetByName('SUPLEMENTOS');
-    var datos = hoja.getDataRange().getValues();
-    items.forEach(function(item) {
-      var marcaItem = item.marca || item.brand || '';
-      var fila = _buscarFilaSuplementoMarcaNombreApi(datos, item.nombre, marcaItem, 0);
-      if (fila >= 0) {
-        var stockActual = parseFloat(datos[fila][3]) || 0;
-        hoja.getRange(fila + 1, 4).setValue(Math.max(0, stockActual - item.qty));
-      }
-    });
-  } catch(e) {
-    Logger.log('Error descontando stock mayorista: ' + e);
-  }
-}
-
-// ════════════════════════════════════════════════════════════
-//  STOCK_DETALLADO — FIFO por fecha de vencimiento
-// ════════════════════════════════════════════════════════════
-
-function descontarStockDetallado(nombreProducto, cantidadVendida, marcaProducto) {
-  try {
-    var hoja = _getSS().getSheetByName('STOCK_DETALLADO');
-    if (!hoja) return;
-    var datos = hoja.getDataRange().getValues();
-
-    var buscar = _normNombreSD(nombreProducto);
-    var marcaBuscar = _normNombreSD(marcaProducto);
-    if (!buscar || !marcaBuscar || cantidadVendida <= 0) return;
-
-    // Solo lotes con el nombre EXACTO (ya normalizado) — nada de "parecidos".
-    // Así una venta de "Creatina X 300 Grs - Doypack" no descuenta de
-    // "...Doypack - Frutos Rojos" ni de "...Pote" (que comparten palabras).
-    var lotes = [];
-    for (var i = 1; i < datos.length; i++) {
-      if (_normNombreSD(datos[i][0]) !== buscar || _normNombreSD(datos[i][1]) !== marcaBuscar) continue;
-      var stock = parseFloat(datos[i][4]) || 0;
-      if (stock <= 0) continue;
-      lotes.push({ fila: i + 1, stock: stock, venc: datos[i][2] });
-    }
-    if (lotes.length === 0) return;
-
-    // FIFO: descontar primero del lote que vence antes.
-    lotes.sort(function(a, b) {
-      var da = a.venc instanceof Date ? a.venc : new Date(a.venc);
-      var db = b.venc instanceof Date ? b.venc : new Date(b.venc);
-      return da - db;
-    });
-
-    var pendiente = cantidadVendida;
-    for (var j = 0; j < lotes.length && pendiente > 0; j++) {
-      var descontar = Math.min(lotes[j].stock, pendiente);
-      hoja.getRange(lotes[j].fila, 5).setValue(lotes[j].stock - descontar);
-      pendiente -= descontar;
-    }
-  } catch(e) {
-    Logger.log('Error en descontarStockDetallado: ' + e.message);
-  }
-}
-
-// Normaliza nombres para comparar de forma EXACTA pero tolerante:
-// ignora acentos, mayúsculas, puntuación, espacios de más y "x 300" vs "x300".
-function _normNombreSD(n) {
-  return String(n || '').trim().toLowerCase()
-    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
-    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
-    .replace(/[.,;:!¡¿?'"()\[\]{}]/g,'')
-    .replace(/[-_]+/g,' ')
-    .replace(/\s+/g,' ')
-    .replace(/x\s*(\d)/g,'x$1')
-    .replace(/(\d)\s*,\s*(\d)/g,'$1.$2')
-    .trim();
-}
-
-// ════════════════════════════════════════════════════════════
-//  MAYORISTA — APROBACIÓN / RECHAZO / ADMIN
-// ════════════════════════════════════════════════════════════
-
-function aprobarMayorista(params) {
-  try {
-    var accion = _consumirTokenAccion(params.token, 'aprobar_mayorista');
-    var email = accion.email;
-    var hoja  = _getSS().getSheetByName(HOJA_MAYORISTAS);
-    var datos = hoja.getDataRange().getValues();
-    for (var i = 1; i < datos.length; i++) {
-      if (datos[i][0].toString().toLowerCase() === email.toLowerCase()) {
-        hoja.getRange(i + 1, 8).setValue('aprobado');
-        _registrarAuditoria('MAYORISTA APROBADO', email, 'enlace seguro');
-        _notificarTelegram('✅ Mayorista APROBADO: ' + datos[i][1] + ' (' + datos[i][2] + ')\n📱 ' + datos[i][3]);
-        return ContentService.createTextOutput('✅ Mayorista ' + datos[i][1] + ' APROBADO. Ya puede ingresar.').setMimeType(ContentService.MimeType.TEXT);
-      }
-    }
-    return ContentService.createTextOutput('Email no encontrado: ' + email).setMimeType(ContentService.MimeType.TEXT);
-  } catch(e) {
-    return ContentService.createTextOutput('Error: ' + e.message).setMimeType(ContentService.MimeType.TEXT);
-  }
-}
-
-function rechazarMayorista(params) {
-  try {
-    var accion = _consumirTokenAccion(params.token, 'rechazar_mayorista');
-    var email = accion.email;
-    var hoja  = _getSS().getSheetByName(HOJA_MAYORISTAS);
-    var datos = hoja.getDataRange().getValues();
-    for (var i = 1; i < datos.length; i++) {
-      if (datos[i][0].toString().toLowerCase() === email.toLowerCase()) {
-        hoja.getRange(i + 1, 8).setValue('rechazado');
-        _registrarAuditoria('MAYORISTA RECHAZADO', email, 'enlace seguro');
-        return ContentService.createTextOutput('❌ Mayorista ' + datos[i][1] + ' RECHAZADO.').setMimeType(ContentService.MimeType.TEXT);
-      }
-    }
-    return ContentService.createTextOutput('Email no encontrado.').setMimeType(ContentService.MimeType.TEXT);
-  } catch(e) {
-    return ContentService.createTextOutput('Error: ' + e.message).setMimeType(ContentService.MimeType.TEXT);
-  }
-}
-
-function adminMayoristas(params) {
-  _validarClave(params.sesion);
-  try {
-    var hoja = _getSS().getSheetByName(HOJA_MAYORISTAS);
-    if (!hoja) return jsonResp({ ok: true, mayoristas: [] });
-    var datos = hoja.getDataRange().getValues();
-    var lista = [];
-    for (var i = 1; i < datos.length; i++) {
-      if (datos[i][0]) {
-        lista.push({
-          email: datos[i][0], nombre: datos[i][1], negocio: datos[i][2],
-          telefono: datos[i][3], ciudad: datos[i][4], rubro: datos[i][5],
-          estado: datos[i][7], fecha: datos[i][8]
-        });
-      }
-    }
-    return jsonResp({ ok: true, mayoristas: lista });
-  } catch(e) {
-    return jsonResp({ ok: false, error: e.message });
-  }
-}
-
-// ════════════════════════════════════════════════════════════
-//  INDUMENTARIA
-// ════════════════════════════════════════════════════════════
-
-function extraerTalle(nombre) {
-  var n = nombre.trim();
-  var re = /(?:[\s,]+(?:-\s*)?|[\s]*-\s*)(T[\/]?U|[2-4]XL[\/-][2-4]XL|XXX+L[\/-]XXX+L|XXL[\/-]XXX+L|XL[\/-]XXX+L|XL[\/-]XXL|L[\/-]XL|L[\/-]XXL|M[\/-]L|M[\/-]XL|S[\/-]M|S[\/-]L|[2-4]XL|XXX+L|XXL|XL|GG|G|L|M|S)\s*$/i;
-  var m = n.match(re);
-  if (m) {
-    var base = n.slice(0, m.index).replace(/[\s,.\-]+$/, '').trim();
-    return { base: base, talle: m[1].toUpperCase() };
-  }
-  return { base: n, talle: '' };
-}
-
-function getIndumentaria() {
-  try {
-    var hoja = _getSS().getSheetByName('INDUMENTARIA');
-    if (!hoja) return { ok: false, error: 'Hoja INDUMENTARIA no encontrada', prendas: [] };
-
-    var datos = hoja.getDataRange().getValues();
-    var mapa  = {};
-    var orden = [];
-    var marcaActual = '';
-    var lastBase  = '';
-    var lastTalle = '';
-    // Por defecto, las marcas siguen siendo de mujer como hasta ahora.
-    // Las filas HOMBRE/MUJER permiten cambiar de seccion sin registrar
-    // cada marca nueva en el codigo.
-    var generoActual = 'M';
-    // Compatibilidad con la estructura anterior, donde SOUR ya era hombre
-    // aunque todavia no existiera la fila separadora HOMBRE.
-    var MEN_BRANDS = ['SOUR'];
-    var lastCodigo = '';
-
-    for (var i = 2; i < datos.length; i++) {
-      var row        = datos[i];
-      var codigo     = row[0] ? row[0].toString().trim() : '';
-      var nombre     = row[1] ? row[1].toString().trim() : '';
-      var color      = row[2] ? row[2].toString().trim() : '';
-      var precioUnit = parseFloat(row[3]) || 0;
-      var precioList = parseFloat(row[4]) || 0;
-      var stock      = parseInt(row[5]) || 0;
-      var imgRaw     = row[9] ? row[9].toString().trim() : '';
-
-      if (!nombre && !color && precioUnit === 0) continue;
-
-      if (nombre && precioUnit === 0 && precioList === 0) {
-        var encabezado = nombre.toUpperCase().trim();
-
-        // Separadores de genero. Se escriben en la columna B igual que una
-        // marca, pero no se publican como marcas en la pagina.
-        if (encabezado === 'HOMBRE' || encabezado === 'HOMBRES' || encabezado === 'MASCULINO') {
-          generoActual = 'H';
-          marcaActual = '';
-          lastBase = '';
-          lastTalle = '';
-          lastCodigo = '';
-          continue;
-        }
-        if (encabezado === 'MUJER' || encabezado === 'MUJERES' || encabezado === 'FEMENINO') {
-          generoActual = 'M';
-          marcaActual = '';
-          lastBase = '';
-          lastTalle = '';
-          lastCodigo = '';
-          continue;
-        }
-
-        marcaActual = nombre;
-        lastBase = '';
-        lastTalle = '';
-        lastCodigo = '';
-        continue;
-      }
-
-      // Trackear código actual (el código aplica a las filas siguientes hasta que aparezca otro)
-      if (codigo) lastCodigo = codigo;
-
-      // Soportar múltiples imágenes separadas por salto de línea o ;
-      var imgUrls = imgRaw.split(/[\r\n;]+/).map(function(u){ return u.trim(); }).filter(Boolean);
-      var imgUrlsProcessed = imgUrls.map(function(url) {
-        if (url.indexOf('weserv.nl') !== -1) return url;
-        var clean = url.replace('https://','').replace('http://','');
-        return 'https://images.weserv.nl/?url=' + clean + '&w=400&output=webp&q=82';
-      });
-      var imgUrl = imgUrlsProcessed[0] || '';
-
-      if (nombre) {
-        var parsed = extraerTalle(nombre);
-        lastBase  = parsed.base;
-        lastTalle = parsed.talle;
-      }
-
-      if (!lastBase) continue;
-
-      // Agrupar por marca + código + nombre base
-      // Si tiene código distinto → producto separado aunque tenga el mismo nombre
-      var clave = marcaActual + '||' + (lastCodigo || '') + '||' + lastBase;
-
-      if (!mapa[clave]) {
-        var genero = generoActual;
-        if (MEN_BRANDS.indexOf(marcaActual.toUpperCase()) >= 0) genero = 'H';
-        mapa[clave] = {
-          codigo: codigo, nombre: lastBase, precio: precioUnit,
-          precio_lista: precioList || Math.round(precioUnit * 1.06),
-          stock: 0, cat: detectarCatIndum(lastBase),
-          marca: marcaActual, genero: genero, img: imgUrl, imagenes: [], variantes: []
-        };
-        orden.push(clave);
-      }
-
-      if (lastCodigo && !mapa[clave].codigo) mapa[clave].codigo = lastCodigo;
-      if (imgUrl && !mapa[clave].img)    mapa[clave].img    = imgUrl;
-      // Acumular imágenes múltiples sin duplicar
-      imgUrlsProcessed.forEach(function(u) {
-        if (mapa[clave].imagenes.indexOf(u) === -1) mapa[clave].imagenes.push(u);
-      });
-
-      mapa[clave].variantes.push({ talle: lastTalle || 'T/U', color: color, stock: stock });
-      mapa[clave].stock += stock;
-    }
-
-    var prendas = orden.map(function(k) { return mapa[k]; });
-
-    var _itemsInd = prendas.map(function(p){ return { key:(p.marca||'')+'||'+(p.codigo||'')+'||'+p.nombre, stock:Number(p.stock)||0, marca:p.marca||'', nombre:p.nombre, codigo:p.codigo||'' }; });
-    return { ok: true, prendas: prendas, total: prendas.length, nuevos_ingresos: _calcularNuevosIngresos('IND', _itemsInd) };
-  } catch(e) {
-    return { ok: false, error: e.message, prendas: [] };
-  }
-}
-
-function detectarCatIndum(nombre) {
-  var n = nombre.toLowerCase();
-  if (n.indexOf('catsuit') >= 0) return 'Catsuit';
-  if (n.indexOf('conjunto') >= 0) return 'Conjunto';
-  if (n.indexOf('biker') >= 0 || n.indexOf('short') >= 0 || n.indexOf('cancan') >= 0) return 'Calza Corta';
-  if (n.indexOf('calza corta') >= 0) return 'Calza Corta';
-  if (n.indexOf('calza') >= 0) return 'Calza Larga';
-  if (n.indexOf('remera') >= 0 || n.indexOf('remerón') >= 0 || n.indexOf('remeron') >= 0) return 'Remera';
-  if (n.indexOf('musculosa') >= 0 || n.indexOf('crop top') >= 0 || n.indexOf('top') >= 0) return 'Top';
-  if (n.indexOf('media') >= 0) return 'Medias';
-  return 'Otros';
-}
-
-// ════════════════════════════════════════════════════════════
-//  HOJA REPOSICIÓN
-// ════════════════════════════════════════════════════════════
-// La función actualizarHojaReposicion vive en Ventas.gs (mismo proyecto,
-// las funciones se comparten). Acá había una copia duplicada con otra
-// lógica: se eliminó para que exista UNA sola versión (la de Ventas.gs,
-// ordenada por más vendidos en 30 días).
-
-// ════════════════════════════════════════════════════════════
-//  HELPERS GENERALES
-// ════════════════════════════════════════════════════════════
-
-function hashPassword(pass) {
-  var salt = 'maxup_salt_2024';
-  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, pass + salt);
-  var hex = '';
-  for (var i = 0; i < digest.length; i++) {
-    hex += ('0' + (digest[i] & 0xFF).toString(16)).slice(-2);
-  }
-  return 'sha256:' + hex;
-}
-
-function verificarPassword(pass, hash) {
-  // SHA-256 (nuevo)
-  if (hash.indexOf('sha256:') === 0) return hashPassword(pass) === hash;
-  // XOR legacy — compatibilidad con hashes existentes
-  if (hash.indexOf('h:') === 0) {
-    var legacyHash = '';
-    for (var i = 0; i < pass.length; i++) {
-      legacyHash += (pass.charCodeAt(i) ^ 42).toString(16);
-    }
-    return 'h:' + legacyHash === hash;
-  }
-  // Plaintext fallback
-  return pass === hash;
-}
-
-function categoriaNormalizada(cat) {
-  var mapa = {
-    'PROTEINAS': 'proteina', 'PROTEÍNA': 'proteina',
-    'CREATINAS': 'creatina', 'CREATINA': 'creatina',
-    'AMINOACIDOS': 'aminoacido', 'AMINOÁCIDOS': 'aminoacido',
-    'PRE-ENTRENO': 'preworkout', 'PRE ENTRENO': 'preworkout', 'PREWORKOUT': 'preworkout',
-    'QUEMADORES': 'quemador', 'TERMOGENICOS': 'quemador',
-    'GAINERS': 'gainer', 'VOLUMINIZADORES': 'gainer',
-    'COLAGENO': 'colageno', 'COLÁGENO': 'colageno',
-    'VITAMINAS': 'vitamin', 'VITAMINAS Y MINERALES': 'vitamin',
-    'HIDRATACION': 'hidratacion', 'HIDRATACIÓN': 'hidratacion',
-    'BARRAS': 'barra', 'SNACKS': 'barra',
-    'ACCESORIOS': 'accesorio'
-  };
-  return mapa[cat.toUpperCase()] || 'otro';
-}
-
-function _formatoPrecio(num) {
-  var n = Math.round(Number(num) || 0);
-  var str = String(n);
-  var resultado = '';
-  var count = 0;
-  for (var i = str.length - 1; i >= 0; i--) {
-    if (count > 0 && count % 3 === 0) resultado = '.' + resultado;
-    resultado = str[i] + resultado;
-    count++;
-  }
-  return resultado;
-}
-
-function jsonResp(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-// ════════════════════════════════════════════════════════════
-//  AUTOMATIZACIÓN: RECORDATORIOS DE RECOMPRA
-// ════════════════════════════════════════════════════════════
-
-var DURACIONES_PRODUCTO = {
-  'creatina': 30, 'whey': 25, 'proteina': 25, 'isolate': 25, 'blend': 25,
-  'bcaa': 30, 'glutamina': 30, 'aminoacido': 30, 'pre entreno': 30,
-  'pre-entreno': 30, 'colageno': 30, 'omega': 45, 'vitamina': 45,
-  'magnesio': 45, 'multivitaminico': 60, 'quemador': 30, 'carnitina': 30,
-  'gainer': 20, 'mass': 20, 'hidratacion': 20, 'electrolit': 20
-};
-
-function _estimarDuracion(nombreProducto) {
-  var n = String(nombreProducto).toLowerCase();
-  for (var key in DURACIONES_PRODUCTO) {
-    if (n.indexOf(key) >= 0) return DURACIONES_PRODUCTO[key];
-  }
-  return 0;
-}
-
-function recordatoriosRecompra() {
-  var ss = _getSS();
-  var hojaVD  = ss.getSheetByName('VentasDiarias');
-  var hojaCli = ss.getSheetByName('CLIENTES');
-  if (!hojaVD || !hojaCli) return;
-
-  var ventas   = hojaVD.getDataRange().getValues();
-  var clientes = hojaCli.getDataRange().getValues();
-  var hoy = new Date();
-  var zona = 'America/Argentina/Buenos_Aires';
-
-  var clienteMap = {};
-  for (var c = 1; c < clientes.length; c++) {
-    var cod = String(clientes[c][0] || '').trim();
-    if (!cod) continue;
-    clienteMap[cod] = {
-      nombre: String(clientes[c][1] || ''),
-      telefono: String(clientes[c][2] || '').replace(/\D/g, ''),
-      email: String(clientes[c][3] || '').trim()
-    };
-  }
-  var clienteNombreMap = {};
-  for (var k in clienteMap) clienteNombreMap[clienteMap[k].nombre.toLowerCase()] = k;
-
-  var recordatorios = [];
-
-  for (var i = 1; i < ventas.length; i++) {
-    var row = ventas[i];
-    if (!row[0] || typeof row[0] === 'string') continue;
-    var fechaVenta;
-    try { fechaVenta = new Date(row[0]); } catch(e) { continue; }
-    if (isNaN(fechaVenta.getTime())) continue;
-
-    var producto = String(row[1] || '').trim();
-    var clienteNombre = String(row[6] || '').trim();
-    if (!producto || !clienteNombre) continue;
-
-    var duracion = _estimarDuracion(producto);
-    if (duracion === 0) continue;
-
-    var diasDesdeCompra = Math.floor((hoy - fechaVenta) / 86400000);
-    var margen = Math.floor(duracion * 0.85);
-    if (diasDesdeCompra < margen || diasDesdeCompra > duracion + 5) continue;
-
-    var codCli = clienteNombreMap[clienteNombre.toLowerCase()] || '';
-    var info = codCli ? clienteMap[codCli] : null;
-    if (!info || !info.telefono) continue;
-
-    var yaExiste = recordatorios.some(function(r) {
-      return r.telefono === info.telefono && r.producto === producto;
-    });
-    if (yaExiste) continue;
-
-    recordatorios.push({
-      nombre: info.nombre || clienteNombre,
-      telefono: info.telefono,
-      email: info.email,
-      producto: producto,
-      dias: diasDesdeCompra,
-      duracion: duracion
-    });
-  }
-
-  if (recordatorios.length === 0) return;
-
-  var msgTelegram = '🔄 RECORDATORIOS DE RECOMPRA\n' +
-    Utilities.formatDate(hoy, zona, 'dd/MM/yyyy') + '\n\n' +
-    recordatorios.length + ' cliente(s) para contactar:\n\n';
-
-  for (var r = 0; r < recordatorios.length; r++) {
-    var rec = recordatorios[r];
-    var msgWA = 'Hola ' + rec.nombre.split(' ')[0] + '! Soy de MAXUP 💪\n\n' +
-      'Hace ' + rec.dias + ' días compraste ' + rec.producto + ' y calculamos que se te debe estar terminando.\n\n' +
-      '¿Querés que te reserve uno? Te lo tenemos listo 🚀';
-    var linkWA = 'https://wa.me/54' + rec.telefono + '?text=' + encodeURIComponent(msgWA);
-
-    msgTelegram += '👤 ' + rec.nombre + '\n';
-    msgTelegram += '📦 ' + rec.producto + ' (hace ' + rec.dias + ' días)\n';
-    msgTelegram += '📱 Click para enviar: ' + linkWA + '\n\n';
-
-    if (rec.email) {
-      try {
-        MailApp.sendEmail({
-          to: rec.email,
-          subject: '¿Se te terminó ' + rec.producto + '? — MAXUP',
-          htmlBody: '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px">' +
-            '<h2 style="color:#00C8FF">¡Hola ' + rec.nombre.split(' ')[0] + '! 💪</h2>' +
-            '<p>Hace <strong>' + rec.dias + ' días</strong> compraste <strong>' + rec.producto + '</strong> y calculamos que se te debe estar terminando.</p>' +
-            '<p>¿Querés que te reservemos uno? Escribinos y te lo tenemos listo:</p>' +
-            '<a href="' + linkWA + '" style="display:inline-block;background:#25D366;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0">📲 Escribinos por WhatsApp</a>' +
-            '<p style="color:#888;font-size:12px;margin-top:24px">MAXUP Suplementos — maxupsuplementos.com.ar</p>' +
-            '</div>'
-        });
-      } catch(e) { Logger.log('Error email recompra: ' + e.message); }
-    }
-  }
-
-  _notificarTelegram(msgTelegram);
-}
-
-// ════════════════════════════════════════════════════════════
-//  AUTOMATIZACIÓN: ALERTAS DE OFERTAS A CLIENTES
-// ════════════════════════════════════════════════════════════
-
-function alertaOfertasClientes() {
-  var ss = _getSS();
-  var ofertas = _leerOfertasHoja(20);
-  if (!ofertas || !ofertas.length) return;
-
-  var ofertasUrgentes = ofertas.filter(function(p) {
-    return p.urgencia === 'critico' || p.urgencia === 'urgente';
-  });
-  if (ofertasUrgentes.length === 0) return;
-
-  var hojaVD  = ss.getSheetByName('VentasDiarias');
-  var hojaCli = ss.getSheetByName('CLIENTES');
-  if (!hojaVD || !hojaCli) return;
-
-  var ventas   = hojaVD.getDataRange().getValues();
-  var clientes = hojaCli.getDataRange().getValues();
-
-  var clienteMap = {};
-  for (var c = 1; c < clientes.length; c++) {
-    var cod = String(clientes[c][0] || '').trim();
-    if (!cod) continue;
-    clienteMap[String(clientes[c][1] || '').toLowerCase()] = {
-      nombre: String(clientes[c][1] || ''),
-      telefono: String(clientes[c][2] || '').replace(/\D/g, ''),
-      email: String(clientes[c][3] || '').trim()
-    };
-  }
-
-  var clientesNotificar = {};
-  for (var o = 0; o < ofertasUrgentes.length; o++) {
-    var oferta = ofertasUrgentes[o];
-    var nomOferta = String(oferta.producto || oferta.nombre || '').toLowerCase();
-
-    for (var v = 1; v < ventas.length; v++) {
-      var nomVenta = String(ventas[v][1] || '').toLowerCase();
-      var cliNombre = String(ventas[v][6] || '').toLowerCase().trim();
-      if (!cliNombre || nomVenta.indexOf(nomOferta) < 0) continue;
-      var info = clienteMap[cliNombre];
-      if (!info || !info.telefono) continue;
-
-      if (!clientesNotificar[info.telefono]) {
-        clientesNotificar[info.telefono] = { nombre: info.nombre, telefono: info.telefono, email: info.email, productos: [] };
-      }
-      var yaAgregado = clientesNotificar[info.telefono].productos.some(function(p) { return p.nombre === oferta.producto; });
-      if (!yaAgregado) {
-        clientesNotificar[info.telefono].productos.push({
-          nombre: oferta.producto || oferta.nombre,
-          precioOferta: oferta.precioOferta,
-          ahorro: oferta.ahorro,
-          diasRestantes: oferta.diasRestantes
-        });
-      }
-    }
-  }
-
-  var lista = Object.keys(clientesNotificar).map(function(k) { return clientesNotificar[k]; });
-  if (lista.length === 0) return;
-
-  var hoy = new Date();
-  var zona = 'America/Argentina/Buenos_Aires';
-  var msgTelegram = '🔥 OFERTAS — Clientes para contactar\n' +
-    Utilities.formatDate(hoy, zona, 'dd/MM/yyyy') + '\n\n';
-
-  for (var i = 0; i < lista.length; i++) {
-    var cli = lista[i];
-    var prodsTexto = cli.productos.map(function(p) {
-      return p.nombre + ' a $' + _formatoPrecio(p.precioOferta) + ' (-' + p.ahorro + '%)';
-    }).join('\n');
-
-    var msgWA = 'Hola ' + cli.nombre.split(' ')[0] + '! 🔥\n\n' +
-      'Tenemos ofertas especiales en productos que compraste:\n\n' +
-      prodsTexto + '\n\n' +
-      '¡Stock limitado! ¿Te reservo alguno?';
-    var linkWA = 'https://wa.me/54' + cli.telefono + '?text=' + encodeURIComponent(msgWA);
-
-    msgTelegram += '👤 ' + cli.nombre + '\n';
-    msgTelegram += '📦 ' + cli.productos.map(function(p) { return p.nombre; }).join(', ') + '\n';
-    msgTelegram += '📱 ' + linkWA + '\n\n';
-
-    if (cli.email) {
-      try {
-        var htmlProds = cli.productos.map(function(p) {
-          return '<li><strong>' + p.nombre + '</strong> — $' + _formatoPrecio(p.precioOferta) + ' <span style="color:#00FF88">(-' + p.ahorro + '%)</span></li>';
-        }).join('');
-        MailApp.sendEmail({
-          to: cli.email,
-          subject: '🔥 Ofertas especiales para vos — MAXUP',
-          htmlBody: '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px">' +
-            '<h2 style="color:#FF0099">¡' + cli.nombre.split(' ')[0] + ', tenemos ofertas para vos!</h2>' +
-            '<ul style="line-height:2">' + htmlProds + '</ul>' +
-            '<p>Stock limitado, no te las pierdas:</p>' +
-            '<a href="' + linkWA + '" style="display:inline-block;background:#25D366;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">📲 Reservar por WhatsApp</a>' +
-            '<p style="color:#888;font-size:12px;margin-top:24px">MAXUP Suplementos — maxupsuplementos.com.ar</p>' +
-            '</div>'
-        });
-      } catch(e) { Logger.log('Error email oferta: ' + e.message); }
-    }
-  }
-
-  _notificarTelegram(msgTelegram);
-}
-
-// ════════════════════════════════════════════════════════════
-//  AUTOMATIZACIÓN: BIENVENIDA CLIENTE NUEVO
-// ════════════════════════════════════════════════════════════
-
-function bienvenidaClientesNuevos() {
-  var ss = _getSS();
-  var hojaCli = ss.getSheetByName('CLIENTES');
-  if (!hojaCli) return;
-
-  var datos = hojaCli.getDataRange().getValues();
-  var headers = datos[0];
-  var hoy = new Date();
-  var zona = 'America/Argentina/Buenos_Aires';
-  var mesActual = _buscarColumnaMes(headers, hoy);
-
-  var colBienvenida = -1;
-  for (var h = 0; h < headers.length; h++) {
-    if (String(headers[h]).toLowerCase() === 'bienvenida') { colBienvenida = h; break; }
-  }
-  if (colBienvenida < 0) {
-    hojaCli.getRange(1, headers.length + 1).setValue('Bienvenida');
-    colBienvenida = headers.length;
-  }
-
-  var nuevos = [];
-  for (var i = 1; i < datos.length; i++) {
-    var cod    = String(datos[i][0] || '').trim();
-    var nombre = String(datos[i][1] || '').trim();
-    var tel    = String(datos[i][2] || '').replace(/\D/g, '');
-    var email  = String(datos[i][3] || '').trim();
-    var yaEnviado = String(datos[i][colBienvenida] || '').trim();
-
-    if (!cod || !nombre || !tel || yaEnviado) continue;
-
-    var tieneCompra = false;
-    if (mesActual >= 0 && Number(datos[i][mesActual]) > 0) tieneCompra = true;
-    if (!tieneCompra) {
-      var mesAnt = _buscarColumnaMes(headers, new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1));
-      if (mesAnt >= 0 && Number(datos[i][mesAnt]) > 0) tieneCompra = true;
-    }
-    if (!tieneCompra) continue;
-
-    nuevos.push({ fila: i + 1, nombre: nombre, telefono: tel, email: email });
-  }
-
-  if (nuevos.length === 0) return;
-
-  var config = _getConfig();
-  var urlWeb = 'https://maxupsuplementos.com.ar';
-  var msgTelegram = '👋 CLIENTES NUEVOS — Bienvenida\n' +
-    Utilities.formatDate(hoy, zona, 'dd/MM/yyyy') + '\n\n';
-
-  for (var n = 0; n < nuevos.length; n++) {
-    var cli = nuevos[n];
-    var msgWA = 'Hola ' + cli.nombre.split(' ')[0] + '! 👋\n\n' +
-      'Gracias por confiar en MAXUP para tu nutrición deportiva 💪\n\n' +
-      'Tenés un 2% de descuento en tu primera compra como bienvenida 🎁\n\n' +
-      'Cualquier duda sobre productos, dosis o combinaciones, escribinos sin compromiso.\n\n' +
-      '🌐 Catálogo: ' + urlWeb;
-    var linkWA = 'https://wa.me/54' + cli.telefono + '?text=' + encodeURIComponent(msgWA);
-
-    msgTelegram += '👤 ' + cli.nombre + '\n';
-    msgTelegram += '📱 ' + linkWA + '\n\n';
-
-    if (cli.email) {
-      try {
-        MailApp.sendEmail({
-          to: cli.email,
-          subject: '¡Bienvenido/a a MAXUP! 💪 Tu 2% de descuento',
-          htmlBody: '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px">' +
-            '<h2 style="color:#00C8FF">¡Bienvenido/a ' + cli.nombre.split(' ')[0] + '! 💪</h2>' +
-            '<p>Gracias por confiar en MAXUP para tu nutrición deportiva.</p>' +
-            '<p style="background:linear-gradient(135deg,#00C8FF,#FF0099);color:white;padding:16px;border-radius:10px;text-align:center;font-size:18px;font-weight:bold">🎁 2% de descuento en tu próxima compra</p>' +
-            '<p>Cualquier duda sobre productos, dosis o combinaciones, escribinos:</p>' +
-            '<a href="' + linkWA + '" style="display:inline-block;background:#25D366;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0">📲 Escribinos por WhatsApp</a>' +
+//         ✏️ Editar → Nueva versión → Imper-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0">📲 Escribinos por WhatsApp</a>' +
             '<p><a href="' + urlWeb + '" style="color:#00C8FF">🌐 Ver catálogo completo</a></p>' +
             '<p style="color:#888;font-size:12px;margin-top:24px">MAXUP Suplementos — maxupsuplementos.com.ar</p>' +
             '</div>'
@@ -2919,6 +20,61 @@ function bienvenidaClientesNuevos() {
 //  AUTOMATIZACIÓN: CONTENIDO DIARIO PARA REDES SOCIALES
 // ════════════════════════════════════════════════════════════
 
+var HOJA_HISTORIAL_PUBLICACIONES = '_HISTORIAL_PUBLICACIONES';
+
+function _normalizarPublicacionDiaria(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function _clavePublicacionDiaria(marca, nombre) {
+  return _normalizarPublicacionDiaria(marca) + '||' + _normalizarPublicacionDiaria(nombre);
+}
+
+function _hojaHistorialPublicaciones() {
+  var ss = _getSS();
+  var hoja = ss.getSheetByName(HOJA_HISTORIAL_PUBLICACIONES);
+  if (!hoja) {
+    hoja = ss.insertSheet(HOJA_HISTORIAL_PUBLICACIONES);
+    hoja.getRange(1, 1, 1, 5).setValues([['Tipo','Clave producto','Firma publicación','Fecha','Producto']]);
+    hoja.getRange(1, 1, 1, 5).setFontWeight('bold');
+    try { hoja.hideSheet(); } catch(e) {}
+  }
+  return hoja;
+}
+
+function _leerHistorialPublicaciones(tipo) {
+  var historial = {};
+  var inicializado = false;
+  try {
+    var hoja = _hojaHistorialPublicaciones();
+    if (hoja.getLastRow() < 2) return historial;
+    hoja.getRange(2, 1, hoja.getLastRow() - 1, 5).getValues().forEach(function(r) {
+      if (String(r[0] || '') !== tipo || !String(r[1] || '')) return;
+      inicializado = true;
+      var fecha = r[3] instanceof Date ? r[3] : new Date(r[3]);
+      historial[String(r[1])] = { firma: String(r[2] || ''), fecha: isNaN(fecha.getTime()) ? 0 : fecha.getTime() };
+    });
+  } catch(e) {
+    Logger.log('Historial de publicaciones: ' + e.message);
+  }
+  historial.__inicializado = inicializado;
+  return historial;
+}
+
+function _guardarHistorialPublicaciones(tipo, publicaciones, fecha) {
+  if (!publicaciones || !publicaciones.length) return;
+  try {
+    var hoja = _hojaHistorialPublicaciones();
+    var filas = publicaciones.map(function(p) {
+      return [tipo, p.clave, p.firma || '', fecha || new Date(), p.nombre || ''];
+    });
+    hoja.getRange(hoja.getLastRow() + 1, 1, filas.length, 5).setValues(filas);
+  } catch(e) {
+    Logger.log('No se pudo guardar el historial de publicaciones: ' + e.message);
+  }
+}
+
 function _seleccionarProductosEstadosDiarios(cantidad, fecha) {
   try {
     sincronizarFichasPublicaciones();
@@ -2935,12 +91,9 @@ function _seleccionarProductosEstadosDiarios(cantidad, fecha) {
   });
   if (!productos.length) return [];
 
-  function normalizar(value) {
-    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-  }
+  function normalizar(value) { return _normalizarPublicacionDiaria(value); }
   function clave(marca, nombre) {
-    return normalizar(marca) + '||' + normalizar(nombre);
+    return _clavePublicacionDiaria(marca, nombre);
   }
 
   var fechaBase = fecha || new Date();
@@ -3004,6 +157,9 @@ function _seleccionarProductosEstadosDiarios(cantidad, fecha) {
 
   var zona = 'America/Argentina/Buenos_Aires';
   var semilla = Utilities.formatDate(fechaBase, zona, 'yyyyMMdd');
+  var historialEstados = _leerHistorialPublicaciones('ESTADO');
+  var historialEstadosInicializado = !!historialEstados.__inicializado;
+  var baselineUrgentes = [];
 
   productos = productos.filter(function(p) {
     var estado = lotes[clave(p.marca, p.nombre)];
@@ -3018,6 +174,16 @@ function _seleccionarProductosEstadosDiarios(cantidad, fecha) {
     p._ventas30Estado = Number(ventas) || 0;
     p._diasVencimientoEstado = estado && estado.vigente ? estado.dias : 999999;
     p._urgenteEstado = p._diasVencimientoEstado <= 90;
+    p._descuentoEstado = p._diasVencimientoEstado <= 20 ? 20 : p._diasVencimientoEstado <= 30 ? 15 : p._diasVencimientoEstado <= 50 ? 10 : 0;
+    p._firmaPublicacionEstado = p._urgenteEstado ? 'URGENCIA-' + p._descuentoEstado : 'INFORMATIVA';
+    p._historialPublicacionEstado = historialEstados[claveProducto] || null;
+    p._cambioPublicacionEstado = historialEstadosInicializado && (!p._historialPublicacionEstado ||
+      (p._urgenteEstado && p._historialPublicacionEstado.firma !== p._firmaPublicacionEstado));
+    p._bloqueadoPublicacionEstado = p._urgenteEstado && !p._cambioPublicacionEstado;
+    p._ultimaPublicacionEstado = p._historialPublicacionEstado ? p._historialPublicacionEstado.fecha : 0;
+    if (!historialEstadosInicializado && p._urgenteEstado) {
+      baselineUrgentes.push({ clave: claveProducto, firma: p._firmaPublicacionEstado, nombre: p.nombre });
+    }
 
     var textoHash = semilla + '|' + claveProducto;
     var hash = 2166136261;
@@ -3032,6 +198,14 @@ function _seleccionarProductosEstadosDiarios(cantidad, fecha) {
   });
 
   productos.sort(function(a, b) {
+    // Urgentes nuevos o cuyo descuento cambió primero. Los productos normales
+    // que nunca salieron van después y luego rotan desde el menos reciente.
+    var grupoA = a._urgenteEstado ? (a._cambioPublicacionEstado ? 0 : 3) : (a._historialPublicacionEstado ? 2 : 1);
+    var grupoB = b._urgenteEstado ? (b._cambioPublicacionEstado ? 0 : 3) : (b._historialPublicacionEstado ? 2 : 1);
+    if (grupoA !== grupoB) return grupoA - grupoB;
+    if (grupoA === 2 && a._ultimaPublicacionEstado !== b._ultimaPublicacionEstado) {
+      return a._ultimaPublicacionEstado - b._ultimaPublicacionEstado;
+    }
     if (a._urgenteEstado !== b._urgenteEstado) return a._urgenteEstado ? -1 : 1;
     if (a._urgenteEstado && a._diasVencimientoEstado !== b._diasVencimientoEstado) {
       return a._diasVencimientoEstado - b._diasVencimientoEstado;
@@ -3042,7 +216,14 @@ function _seleccionarProductosEstadosDiarios(cantidad, fecha) {
     return a._rotacionEstado - b._rotacionEstado;
   });
 
-  return productos.slice(0, cantidad);
+  // Los urgentes que hoy ya aparecen repetidos se registran silenciosamente
+  // como publicados. Así, desde la primera ejecución salen otros productos.
+  if (!historialEstadosInicializado && baselineUrgentes.length) {
+    _guardarHistorialPublicaciones('ESTADO', baselineUrgentes, fechaBase);
+  }
+
+  // Un urgente ya publicado queda afuera hasta que cambie su descuento.
+  return productos.filter(function(p) { return !p._bloqueadoPublicacionEstado; }).slice(0, cantidad);
 }
 
 function _crearEnlaceEstadosDiarios(productos, fecha) {
@@ -3074,7 +255,21 @@ function _enviarEnlaceEstadosDiarios(fecha) {
         return (i + 1) + '. ' + String(p.nombre || '') + (p.marca ? ' — ' + p.marca : '') + motivo;
       }).join('\n') + '\n\n' +
       '✅ Podes guardar o compartir cada placa directamente en WhatsApp.';
-    _notificarTelegram(mensaje);
+    var ofertasActualizadas = productos.filter(function(p) {
+      return p._urgenteEstado && p._cambioPublicacionEstado && p._descuentoEstado > 0;
+    });
+    if (ofertasActualizadas.length) {
+      mensaje += '\n\n🔄 FLYERS DE OFERTA NUEVOS O ACTUALIZADOS:\n' + ofertasActualizadas.map(function(p) {
+        return '📸 ' + p.nombre + ' -' + p._descuentoEstado + '%: https://maxupsuplementos.github.io/maxupsuplementos/promo.html?q=' +
+          encodeURIComponent(p.nombre) + '&desc=' + p._descuentoEstado;
+      }).join('\n');
+    }
+    var enviado = _notificarTelegram(mensaje);
+    if (enviado) {
+      _guardarHistorialPublicaciones('ESTADO', productos.map(function(p) {
+        return { clave: _clavePublicacionDiaria(p.marca, p.nombre), firma: p._firmaPublicacionEstado, nombre: p.nombre };
+      }), fecha || new Date());
+    }
     return { ok: true, productos: productos, enlace: enlace };
   } catch(e) {
     Logger.log('Error generando enlace de estados diarios: ' + e.message);
@@ -3741,6 +936,7 @@ function _procesarWebhookWhatsApp(payload) {
         var telefono = String(mensaje.from || '').replace(/\D/g, '');
         if (!telefono) continue;
         recibidos++;
+        _waRegistrarDiagnostico('MENSAJE_RECIBIDO', telefono, 'Meta entrego correctamente el mensaje al asistente.');
 
         try {
           if (!_waPermitirMensaje(telefono)) continue;
@@ -3752,6 +948,7 @@ function _procesarWebhookWhatsApp(payload) {
           var respuesta = _resolverAsistenteWhatsApp(telefono, texto);
           if (respuesta) _enviarWhatsAppTexto(telefono, respuesta);
         } catch (errMensaje) {
+          _waRegistrarDiagnostico('ERROR_AL_RESPONDER', telefono, errMensaje.message);
           Logger.log('WhatsApp: no se pudo procesar un mensaje (' + errMensaje.message + ')');
         }
       }
@@ -3801,6 +998,26 @@ function _waMenu() {
     + 'Responde con un numero. En cualquier momento escribi *menu* para volver a este menu principal.';
 }
 
+function _waEsConsultaGeneralCatalogo(normal) {
+  normal = _waNormalizar(normal);
+  return /viendo (el |su )?catalogo/.test(normal)
+    || /(?:mas|mayor) (?:info|informacion).*(?:productos|catalogo).*(?:precio|precios)/.test(normal)
+    || /asesoramiento general.*(?:producto|catalogo|precio)/.test(normal)
+    || (/(?:producto|productos|catalogo)/.test(normal) && /asesor|orientar|recomendar/.test(normal) && /precio|precios|info|informacion/.test(normal));
+}
+
+function _waRespuestaCatalogoGeneral() {
+  return '¡Claro! Soy *Max* y te asesoro para encontrar una opción con stock.\n\n'
+    + 'Decime qué querés ver:\n'
+    + '• *proteínas*\n'
+    + '• *creatinas*\n'
+    + '• *aminoácidos*\n'
+    + '• *pre entrenos*\n'
+    + '• *colágenos o vitaminas*\n'
+    + '• *snacks, shakers o accesorios*\n\n'
+    + 'También podés mandarme el nombre o la marca de un producto. Te voy a mostrar solamente opciones disponibles, con precio y beneficios.';
+}
+
 function _waClaveEstado(telefono) {
   return 'WA_STATE_' + _hashSeguro(telefono);
 }
@@ -3828,7 +1045,7 @@ function _waLimpiarEstado(telefono) {
 }
 
 function _waGuardarResultadosProductos(telefono, coincidencias) {
-  var referencias=(coincidencias||[]).slice(0,5).map(function(item){
+  var referencias=(coincidencias||[]).slice(0,30).map(function(item){
     var p=item.p||item;
     return {id:String(p.id||''),sku:String(p.sku||''),marca:String(p.marca||''),nombre:String(p.nombre||'')};
   });
@@ -3895,12 +1112,19 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
 
   if (estado.paso === 'HUMANO') return '';
 
+  // El botón flotante de la web envía una consulta general. No hay que tratar
+  // toda esa oración como si fuera el nombre literal de un producto.
+  if (_waEsConsultaGeneralCatalogo(normal)) {
+    _waGuardarEstado(telefono, 'MENU');
+    return _waRespuestaCatalogoGeneral();
+  }
+
   if (/^(lo quiero|quiero comprarlo|quiero llevarlo|comprar|reservar|encargar)$/.test(normal)) {
     return _waDerivarHumano(telefono, 'quiere comprar un producto consultado');
   }
 
   if (estado.paso === 'PRODUCTO') {
-    var opcionProducto=normal.match(/^[1-5]$/);
+    var opcionProducto=normal.match(/^\d{1,2}$/);
     if(opcionProducto){
       var elegido=_waProductoElegido(telefono,Number(opcionProducto[0]));
       if(elegido) return _waDetalleProducto(elegido);
@@ -3956,11 +1180,70 @@ function _waEsConsultaSalud(normal) {
   return /dosis|dosificacion|como tomar|cuanto tomar|embaraz|presion|diabetes|medicamento|contraindic|efecto secundario|enfermedad|lesion/.test(normal);
 }
 
+function _waCategoriaConsulta(normal) {
+  if (/\b(proteina|proteinas|protein|proteins|whey|wh3y|isolate|isolada|caseina)\b/.test(normal)) return 'proteina';
+  if (/\b(creatina|creatinas|creatine)\b/.test(normal)) return 'creatina';
+  if (/\b(gainer|ganador|ganadores)\b|\bmass\b/.test(normal)) return 'gainer';
+  if (/\b(aminoacido|aminoacidos|amino|bcaa|eaa|glutamina|glutamine)\b/.test(normal)) return 'aminoacido';
+  if (/\b(preworkout|preentreno|pre-entreno)\b|pre entreno/.test(normal)) return 'preworkout';
+  if (/\b(colageno|colagenos|collagen)\b/.test(normal)) return 'colageno';
+  if (/\b(quemador|quemadores|termogenico|termogenicos)\b/.test(normal)) return 'quemador';
+  if (/\b(vitamina|vitaminas|mineral|minerales)\b/.test(normal)) return 'vitamin';
+  if (/\b(hidratacion|isotonico|isotonicos|electrolito|electrolitos)\b/.test(normal)) return 'hidratacion';
+  if (/\b(barra|barras|snack|snacks)\b/.test(normal)) return 'barra';
+  if (/\b(shaker|shakers|vaso|vasos|botella|botellas)\b/.test(normal)) return 'shaker';
+  if (/\b(accesorio|accesorios)\b/.test(normal)) return 'accesorio';
+  return '';
+}
+
+function _waCategoriaProducto(p) {
+  var categoria = _waNormalizar(p && p.categoria || '');
+  var aliases = {
+    proteinas:'proteina', protein:'proteina', proteins:'proteina',
+    creatinas:'creatina', creatine:'creatina',
+    aminoacidos:'aminoacido', amino:'aminoacido',
+    preentreno:'preworkout', 'pre entreno':'preworkout',
+    colagenos:'colageno', collagen:'colageno',
+    quemadores:'quemador', termogenico:'quemador', termogenicos:'quemador',
+    vitamina:'vitamin', vitaminas:'vitamin', minerales:'vitamin',
+    isotonico:'hidratacion', isotonicos:'hidratacion',
+    barras:'barra', snacks:'barra',
+    shakers:'shaker', vasos:'shaker', botellas:'shaker',
+    accesorios:'accesorio'
+  };
+  categoria = aliases[categoria] || categoria;
+  if (categoria && categoria !== 'otros') return categoria;
+  return inferirCat(String(p && p.nombre || ''));
+}
+
+function _waTokenGenericoCategoria(token, categoria) {
+  var genericos = {
+    proteina:{proteina:1,proteinas:1,protein:1,proteins:1},
+    creatina:{creatina:1,creatinas:1,creatine:1},
+    gainer:{gainer:1,ganador:1,ganadores:1},
+    aminoacido:{aminoacido:1,aminoacidos:1,amino:1},
+    preworkout:{preworkout:1,preentreno:1},
+    colageno:{colageno:1,colagenos:1,collagen:1},
+    quemador:{quemador:1,quemadores:1,termogenico:1,termogenicos:1},
+    vitamin:{vitamina:1,vitaminas:1,mineral:1,minerales:1},
+    hidratacion:{hidratacion:1,isotonico:1,isotonicos:1,electrolito:1,electrolitos:1},
+    barra:{barra:1,barras:1,snack:1,snacks:1},
+    shaker:{shaker:1,shakers:1,vaso:1,vasos:1,botella:1,botellas:1},
+    accesorio:{accesorio:1,accesorios:1}
+  };
+  return !!(genericos[categoria] && genericos[categoria][token]);
+}
+
 function _waBuscarProductos(telefono, consulta, silencioso) {
   var normal = _waNormalizar(consulta);
   var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1 };
-  var tokens = normal.split(' ').filter(function(t) { return t.length > 1 && !stop[t]; });
-  if (!tokens.length) return silencioso?'':'Escribi el nombre o la marca del producto que buscas.';
+  var categoriaConsulta = _waCategoriaConsulta(normal);
+  var tokens = normal.split(' ').filter(function(t) {
+    return t.length > 1 && !stop[t] && !_waTokenGenericoCategoria(t, categoriaConsulta);
+  });
+  // "pre entreno" se reconoce como categoría aunque sus palabras se separen.
+  if (categoriaConsulta === 'preworkout') tokens = tokens.filter(function(t){ return t !== 'pre' && t !== 'entreno'; });
+  if (!tokens.length && !categoriaConsulta) return silencioso?'':'Escribi el nombre o la marca del producto que buscas.';
 
   var catalogo = getCatalogo();
   var productos = catalogo.productos || [];
@@ -3968,30 +1251,36 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
   productos.forEach(function(p) {
     var hay = Number(p.stock || 0);
     if (hay <= 0) return;
+    if (categoriaConsulta && _waCategoriaProducto(p) !== categoriaConsulta) return;
     var base = _waNormalizar(String(p.marca || '') + ' ' + String(p.nombre || ''));
+    // Todos los términos específicos deben coincidir. Así "proteína STAR"
+    // exige categoría proteína + marca/nombre STAR y nunca mezcla creatinas.
+    var coincideTodo = tokens.every(function(t) { return base.indexOf(t) >= 0; });
+    if (!coincideTodo) return;
     var puntaje = 0;
     tokens.forEach(function(t) {
       if (base.indexOf(t) >= 0) puntaje += (base === t ? 4 : 1);
     });
     if (base.indexOf(normal) >= 0) puntaje += 3;
-    if (puntaje > 0) coincidencias.push({ p: p, puntaje: puntaje });
+    if (categoriaConsulta) puntaje += 5;
+    coincidencias.push({ p: p, puntaje: puntaje });
   });
 
   coincidencias.sort(function(a, b) {
     if (b.puntaje !== a.puntaje) return b.puntaje - a.puntaje;
     return Number(b.p.stock || 0) - Number(a.p.stock || 0);
   });
-  coincidencias = coincidencias.slice(0, 5);
-
   if (!coincidencias.length) {
     return silencioso?'':'No encontre stock para *' + String(consulta).slice(0, 80) + '*. Proba con otra marca o escribi *5* para consultar a una persona.';
   }
 
   if(coincidencias.length===1) return _waDetalleProducto(coincidencias[0].p);
-  _waGuardarResultadosProductos(telefono,coincidencias);
+  var totalCoincidencias = coincidencias.length;
+  var visibles = coincidencias.slice(0,30);
+  _waGuardarResultadosProductos(telefono,visibles);
 
-  var salida = ['Encontre estas opciones con stock:'];
-  coincidencias.forEach(function(item, i) {
+  var salida = ['Tengo *' + totalCoincidencias + '* opciones con stock' + (categoriaConsulta ? ' de ' + categoriaConsulta : '') + ':'];
+  visibles.forEach(function(item, i) {
     var p = item.p;
     var contado = Number(p.precio_venta || 0);
     var linea = '\n*' + (i + 1) + '. ' + String(p.marca || '') + ' - ' + String(p.nombre || '') + '*'
@@ -3999,6 +1288,7 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
       + ' · Stock: ' + Number(p.stock || 0);
     salida.push(linea);
   });
+  if(totalCoincidencias>visibles.length) salida.push('\nHay ' + (totalCoincidencias-visibles.length) + ' opciones más. Escribí una marca o sabor para afinar la búsqueda.');
   salida.push('\nRespondé con el número para ver qué es, sus beneficios, precio completo y cuotas. También podés escribir otro producto o enviar *menu*.');
   return salida.join('\n');
 }
@@ -4049,22 +1339,91 @@ function _enviarWhatsAppTexto(telefono, texto) {
   if (!cfg.WA_ACCESS_TOKEN || !cfg.WA_PHONE_ID) throw new Error('WhatsApp aun no esta configurado');
   var version = String(cfg.WA_GRAPH_VERSION || 'v26.0').replace(/[^v0-9.]/g, '');
   var url = 'https://graph.facebook.com/' + version + '/' + cfg.WA_PHONE_ID + '/messages';
-  var response = UrlFetchApp.fetch(url, {
-    method: 'post',
-    contentType: 'application/json',
-    headers: { Authorization: 'Bearer ' + cfg.WA_ACCESS_TOKEN },
-    payload: JSON.stringify({
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
-      to: String(telefono).replace(/\D/g, ''),
-      type: 'text',
-      text: { preview_url: false, body: String(texto || '').slice(0, 3900) }
-    }),
-    muteHttpExceptions: true
-  });
-  var status = response.getResponseCode();
-  if (status < 200 || status >= 300) throw new Error('Meta respondio con estado ' + status);
-  return true;
+  var destinos = _waVariantesTelefonoDestino(telefono);
+  var ultimoError = '';
+
+  for (var i = 0; i < destinos.length; i++) {
+    var response = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { Authorization: 'Bearer ' + cfg.WA_ACCESS_TOKEN },
+      payload: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: destinos[i],
+        type: 'text',
+        text: { preview_url: false, body: String(texto || '').slice(0, 3900) }
+      }),
+      muteHttpExceptions: true
+    });
+    var status = response.getResponseCode();
+    var respuestaMeta = String(response.getContentText() || '');
+    if (status >= 200 && status < 300) {
+      _waRegistrarDiagnostico('RESPUESTA_ENVIADA', telefono, 'Meta acepto la respuesta del asistente (estado ' + status + ', variante ' + (i + 1) + ').');
+      return true;
+    }
+
+    ultimoError = 'Meta respondio con estado ' + status + ': ' + respuestaMeta.slice(0, 1200);
+    // Solo probamos otra escritura del mismo numero ante el error de lista autorizada.
+    // Otros errores (token, permisos, contenido) no se resuelven cambiando el telefono.
+    if (respuestaMeta.indexOf('131030') < 0) break;
+  }
+
+  throw new Error(ultimoError || 'Meta no acepto el mensaje');
+}
+
+// Devuelve primero el WhatsApp ID original y luego variantes argentinas.
+// El panel de prueba de Meta puede autorizar +54 11 15... aunque WhatsApp
+// entregue el mismo movil como +54 9 11... o +54 11...
+function _waVariantesTelefonoDestino(telefono) {
+  var original = String(telefono || '').replace(/\D/g, '');
+  var variantes = [];
+  function agregar(valor) {
+    if (valor && variantes.indexOf(valor) < 0) variantes.push(valor);
+  }
+  agregar(original);
+
+  var restoBuenosAires = '';
+  if (/^54911\d{8}$/.test(original)) restoBuenosAires = original.slice(5);
+  else if (/^5411\d{8}$/.test(original)) restoBuenosAires = original.slice(4);
+
+  if (restoBuenosAires) {
+    agregar('54911' + restoBuenosAires);
+    agregar('541115' + restoBuenosAires);
+  }
+  return variantes;
+}
+
+function _waFormatearTelefonoDestino(telefono) {
+  return _waVariantesTelefonoDestino(telefono)[0] || '';
+}
+
+// Guarda un diagnostico legible en el Sheets sin exponer tokens ni el telefono completo.
+// Asi se pueden resolver errores de Meta aunque Apps Script no muestre los registros del doPost.
+function _waRegistrarDiagnostico(etapa, telefono, detalle) {
+  try {
+    var cfg = _getConfig();
+    var texto = String(detalle || '');
+    if (cfg.WA_ACCESS_TOKEN) texto = texto.split(String(cfg.WA_ACCESS_TOKEN)).join('[TOKEN OCULTO]');
+
+    var digitos = String(telefono || '').replace(/\D/g, '');
+    var telefonoSeguro = digitos ? '***' + digitos.slice(-4) : '';
+    var ss = _getSS();
+    var hoja = ss.getSheetByName('WA_DIAGNOSTICO');
+    if (!hoja) hoja = ss.insertSheet('WA_DIAGNOSTICO');
+    if (hoja.getLastRow() === 0) {
+      hoja.appendRow(['Fecha y hora', 'Etapa', 'Telefono', 'Detalle']);
+      hoja.setFrozenRows(1);
+    }
+    hoja.appendRow([new Date(), String(etapa || ''), telefonoSeguro, texto.slice(0, 1500)]);
+    hoja.autoResizeColumns(1, 4);
+
+    // Conserva solamente los ultimos 100 eventos para que la hoja siga siendo liviana.
+    var excedentes = hoja.getLastRow() - 101;
+    if (excedentes > 0) hoja.deleteRows(2, excedentes);
+  } catch (errorDiagnostico) {
+    Logger.log('WhatsApp diagnostico: ' + errorDiagnostico.message);
+  }
 }
 
 // Prueba desde el editor sin enviar mensajes ni consumir la API de Meta.
@@ -4076,3 +1435,4 @@ function pruebaAsistenteWhatsApp(texto) {
     respuesta: _resolverAsistenteWhatsApp(telefonoPrueba, texto || 'menu')
   };
 }
+
