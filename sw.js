@@ -1,5 +1,5 @@
 // MAXUP Service Worker — Cache & Offline
-const CACHE_NAME = 'maxup-v21-consulta-con-marca';
+const CACHE_NAME = 'maxup-v22-max-whatsapp';
 // OJO: si un asset de esta lista no existe (404), addAll falla y NO se cachea nada.
 // mantenimiento.webp se descarga solo si el mantenimiento se activa.
 const ASSETS = [
@@ -7,7 +7,7 @@ const ASSETS = [
   './index.html',
   './privacidad.html',
   './styles.css?v=20260803-club-maxup',
-  './app.js?v=20260810-consulta-con-marca',
+  './app.js?v=20260825-max-whatsapp',
   './logo.png',
   './logo-transparent.png',
   './favicon.png',
