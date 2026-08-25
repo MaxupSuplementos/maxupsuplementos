@@ -3655,7 +3655,7 @@ function getPuntosCliente(telefono) {
 // ============================================================
 //  ASISTENTE DE WHATSAPP (PRUEBA GRATUITA POR REGLAS)
 // ============================================================
-// Usa el WhatsApp oficial 387-5104606 mediante Cloud API de Meta. No consume
+// Usa el WhatsApp oficial 387-6233406 mediante Cloud API de Meta. No consume
 // servicios de IA pagos y no modifica los pedidos ni el stock.
 var WA_TTL_ESTADO = 21600; // 6 horas, maximo de CacheService
 var WA_RESPUESTAS_HEADERS = ['Tema','Palabras clave','Respuesta de MAXUP','Activo','Prioridad'];
@@ -3791,14 +3791,14 @@ function _waNormalizar(texto) {
 }
 
 function _waMenu() {
-  return 'Hola! Soy el *asistente automatico de MAXUP*.\n\n'
+  return 'Hola! Soy *Max*, el asistente virtual de *MAXUP*.\n\n'
     + 'Puedo ayudarte con:\n'
     + '*1* - Buscar producto, beneficios, stock y precio\n'
     + '*2* - Consultar el estado de un pedido\n'
     + '*3* - Medios de pago y 3 cuotas\n'
     + '*4* - Envios y retiro\n'
     + '*5* - Hablar con una persona\n\n'
-    + 'Responde con un numero. En cualquier momento escribi *menu*.';
+    + 'Responde con un numero. En cualquier momento escribi *menu* para volver a este menu principal.';
 }
 
 function _waClaveEstado(telefono) {
@@ -4041,7 +4041,7 @@ function _waDerivarHumano(telefono, motivo) {
   try {
     _notificarTelegram('🙋 WhatsApp solicita atencion humana\nTelefono: +' + telefono + '\nMotivo: ' + String(motivo || 'consulta'));
   } catch (e) {}
-  return 'Listo, deje avisado al equipo de MAXUP. Una persona va a continuar por este mismo chat.';
+  return 'Listo, deje avisado al equipo de MAXUP. Una persona va a contactarte para continuar la atencion.';
 }
 
 function _enviarWhatsAppTexto(telefono, texto) {

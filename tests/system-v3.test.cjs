@@ -58,7 +58,7 @@ assert(api.includes('WA_MSG_'), 'El webhook debe ignorar mensajes repetidos');
 assert(api.includes("getSheetByName('ASISTENTE_RESPUESTAS')"), 'Las respuestas comerciales del asistente deben ser editables desde Sheets');
 assert(api.includes('p.beneficios_publicacion'), 'El asistente debe reutilizar los beneficios precisos de cada ficha');
 assert(api.includes('WA_RESULTS_'), 'El asistente debe recordar las opciones de producto mostradas');
-assert(app.includes("const WA_DEFAULT = '5493875104606'"), 'La tienda debe enviar consultas al WhatsApp oficial 387');
+assert(app.includes("const WA_DEFAULT = '5493876233406'"), 'La tienda debe enviar consultas al WhatsApp oficial de Max');
 assert(!app.includes('5491168461457'), 'La tienda no debe enviar clientes al numero personal');
 assert(!index.includes('5491168461457'), 'La portada no debe publicar el numero personal');
 assert(!api.includes("WA_TELEFONO_HUMANO = '5491168461457'"), 'El asistente no debe revelar el numero personal al derivar');
@@ -195,7 +195,8 @@ assert.strictEqual(
 
 const waSandbox = {};
 vm.runInNewContext(api, waSandbox);
-assert(waSandbox._waMenu().includes('asistente automatico de MAXUP'), 'El asistente debe identificarse claramente');
+assert(waSandbox._waMenu().includes('Soy *Max*'), 'El asistente debe presentarse como Max');
+assert(waSandbox._waMenu().includes('volver a este menu principal'), 'El menu debe explicar para que sirve escribir menu');
 assert.strictEqual(waSandbox._waNormalizar('¿Tenés CREATÍNA?'), 'tenes creatina', 'La busqueda debe tolerar tildes y signos');
 assert(waSandbox._waRespuestaPagos().includes('1 a 3 cuotas'), 'La respuesta debe explicar las cuotas');
 assert(waSandbox._waRespuestaEntregas().includes('Calixto Gauna 1045'), 'La respuesta debe informar el retiro');
