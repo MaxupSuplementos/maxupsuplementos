@@ -36,7 +36,9 @@ function _fichaPublicacionBase(producto) {
 
   function crear(queEs, beneficios) {
     return {
-      queEs: descripcionCatalogo || _limpiarTextoFicha(queEs, 220),
+      // La regla específica describe para qué sirve el producto. La descripción
+      // del catálogo se conserva solo como respaldo cuando no existe una regla.
+      queEs: _limpiarTextoFicha(queEs || descripcionCatalogo, 220),
       beneficios: beneficios.map(function(item) { return _limpiarTextoFicha(item, 115); }).slice(0, 5)
     };
   }
@@ -110,17 +112,54 @@ function _fichaPublicacionBase(producto) {
     ]);
   }
 
-  if (/bcaa|\beaa\b|aminoacid|leucina/.test(texto)) {
+  if (/beta alan/.test(texto)) {
     return crear(
-      /bcaa/.test(texto)
-        ? 'Fórmula de aminoácidos de cadena ramificada: leucina, isoleucina y valina.'
-        : 'Mezcla de aminoácidos diseñada para complementar el aporte proveniente de las proteínas.',
+      'Beta-alanina, aminoácido precursor de la carnosina muscular, sustancia que ayuda a amortiguar la acidez durante esfuerzos intensos.',
       [
-        'Aporta aminoácidos que forman parte de las proteínas musculares.',
-        'La leucina participa en la síntesis de proteína muscular.',
-        'Es fácil de incorporar alrededor del entrenamiento.',
-        'Puede ser útil cuando la alimentación aporta poca proteína.',
-        'No reemplaza una fuente completa de proteína.'
+        'Ayuda a elevar la carnosina disponible dentro del músculo.',
+        'Puede retrasar la fatiga en esfuerzos intensos de uno a varios minutos.',
+        'Resulta útil en series largas, intervalos y entrenamientos de alta intensidad.',
+        'No reemplaza una proteína: su función principal no es aportar aminoácidos esenciales.',
+        'Puede producir hormigueo transitorio, especialmente con porciones altas.'
+      ]
+    );
+  }
+
+  if (/\beaa\b|aminoacidos esenciales/.test(texto)) {
+    return crear(
+      'Mezcla de aminoácidos esenciales (EAA): reúne los aminoácidos que el cuerpo no fabrica y necesita obtener de la alimentación.',
+      [
+        'Aporta el conjunto esencial necesario para fabricar nuevas proteínas.',
+        'Ofrece un perfil más completo que una fórmula compuesta solo por BCAA.',
+        'Puede complementar comidas con poca cantidad o calidad de proteína.',
+        'Es una opción práctica alrededor del entrenamiento o entre comidas.',
+        'No sustituye una alimentación con suficiente proteína completa.'
+      ]
+    );
+  }
+
+  if (/bcaa|leucina/.test(texto)) {
+    return crear(
+      'BCAA: combinación específica de tres aminoácidos de cadena ramificada, leucina, isoleucina y valina.',
+      [
+        'La leucina actúa como una señal vinculada a la síntesis de proteína muscular.',
+        'Isoleucina y valina también pueden utilizarse como energía durante el ejercicio.',
+        'Se incorpora fácilmente antes, durante o después del entrenamiento.',
+        'Se diferencia de los EAA porque contiene tres aminoácidos, no los nueve esenciales.',
+        'No reemplaza una proteína completa ni corrige por sí solo una ingesta insuficiente.'
+      ]
+    );
+  }
+
+  if (/arginin|oxido nitrico|nitrico/.test(texto)) {
+    return crear(
+      'L-arginina, aminoácido que el organismo utiliza como precursor del óxido nítrico, molécula vinculada a la dilatación de los vasos sanguíneos.',
+      [
+        'Participa en la ruta metabólica que produce óxido nítrico.',
+        'Se utiliza en fórmulas orientadas al flujo sanguíneo y la congestión muscular.',
+        'Su función es distinta a la de BCAA, EAA o glutamina.',
+        'La respuesta sobre el rendimiento puede variar entre personas.',
+        'Conviene respetar la porción y consultar si se usan medicamentos cardiovasculares.'
       ]
     );
   }
@@ -219,7 +258,7 @@ function _fichaPublicacionBase(producto) {
     );
   }
 
-  if (/pre work|pre entren|prework|pump|tnt|dynamite|oxido nitrico|nitrico|beta alan/.test(texto)) {
+  if (/pre work|pre entren|prework|pump|tnt|dynamite/.test(texto)) {
     return crear(
       'Fórmula preentrenamiento diseñada para utilizar antes de una sesión exigente; sus efectos dependen de los ingredientes.',
       [
@@ -269,6 +308,109 @@ function _fichaPublicacionBase(producto) {
         'Conviene revisar ingredientes y valores nutricionales.'
       ]
     );
+  }
+
+  if (/mamushka|3 en 1|tres en uno/.test(texto) && /botella|vaso|quencher|mamushka/.test(texto)) {
+    return crear('Set de hidratación con tres recipientes de distinto tamaño que se guardan uno dentro de otro para ocupar menos espacio.', [
+      'Incluye tres capacidades para elegir según la bebida o el momento del día.',
+      'Los recipientes se encastran entre sí y simplifican el guardado y transporte.',
+      'Permite separar agua u otras bebidas en envases independientes.',
+      'El vaso grande con asa facilita beber y llevar una mayor cantidad.',
+      'Es un set de botellas reutilizables: no licúa ni tritura alimentos.'
+    ]);
+  }
+
+  if (/mini licuadora|licuadora portatil|portable blender/.test(texto)) {
+    return crear('Licuadora portátil con motor integrado, diseñada para preparar batidos y bebidas directamente en su propio vaso.', [
+      'Mezcla suplementos en polvo con agua o leche sin usar una licuadora grande.',
+      'Puede procesar frutas blandas en porciones adecuadas a su capacidad.',
+      'El mismo recipiente permite preparar y beber el batido.',
+      'Su formato compacto facilita llevarla al trabajo, gimnasio o viaje.',
+      'A diferencia de una botella, incorpora cuchillas y motor; no debe usarse fuera de sus límites.'
+    ]);
+  }
+
+  if (/mini batidora|batidora a pilas|mezclador electrico/.test(texto)) {
+    return crear('Batidor eléctrico compacto para mezclar suplementos en un vaso, sin necesidad de agitar manualmente.', [
+      'Ayuda a disolver proteína, leche en polvo y otras mezclas livianas.',
+      'Funciona dentro del vaso que ya utilizás y ocupa poco espacio.',
+      'Es práctico para cocina, oficina o viajes.',
+      'Reduce grumos en preparaciones líquidas sencillas.',
+      'No es una licuadora: no está diseñado para cortar fruta, hielo ni alimentos duros.'
+    ]);
+  }
+
+  if (/shaker/.test(texto) && /compart|doble|gold/.test(texto)) {
+    return crear('Shaker con compartimento adicional para transportar por separado el polvo, cápsulas o una segunda preparación.', [
+      'Mantiene el suplemento separado del líquido hasta el momento de usarlo.',
+      'Evita llevar otro recipiente para la porción de polvo.',
+      'Permite preparar el batido justo antes de consumirlo.',
+      'Ayuda a organizar suplementos dentro del bolso del gimnasio.',
+      'Mezcla por agitación y no necesita motor ni electricidad.'
+    ]);
+  }
+
+  if (/botella sport|botella deportiva|\bbidon\b|botellon/.test(texto)) {
+    return crear('Botella deportiva reutilizable pensada para tener agua o bebida preparada al alcance durante la actividad y el día.', [
+      'Facilita controlar y sostener la hidratación cotidiana.',
+      'Su formato permite transportarla al gimnasio, trabajo o aire libre.',
+      'Reduce la necesidad de comprar botellas descartables.',
+      'Permite beber con rapidez durante las pausas del entrenamiento.',
+      'Es un recipiente para líquidos: no mezcla ni licúa como un equipo con motor.'
+    ]);
+  }
+
+  if (/hand grip|ejercitador.*dedos|fortalecedor.*mano/.test(texto)) {
+    var esDedos = /dedos/.test(texto);
+    return crear(esDedos
+      ? 'Ejercitador específico para trabajar apertura, control y resistencia individual de los dedos.'
+      : 'Ejercitador de agarre para fortalecer mano y antebrazo mediante repeticiones de cierre contra resistencia.', [
+      esDedos ? 'Trabaja la extensión y coordinación de los dedos.' : 'Desarrolla fuerza de agarre para pesas y tareas cotidianas.',
+      'Fortalece musculatura de la mano y el antebrazo de forma progresiva.',
+      'Permite realizar sesiones cortas en casa, oficina o viaje.',
+      /regulable/.test(texto) ? 'La resistencia regulable permite aumentar la dificultad gradualmente.' : 'La dificultad se adapta variando repeticiones y tiempo de trabajo.',
+      'Complementa el entrenamiento, pero no reemplaza la rehabilitación indicada.'
+    ]);
+  }
+
+  if (/banda circular|mini band|banda elastica|power band/.test(texto)) {
+    return crear('Banda elástica de resistencia que agrega tensión progresiva a ejercicios de fuerza, activación y movilidad.', [
+      'Permite activar glúteos, piernas, hombros u otros grupos según el ejercicio.',
+      'La tensión aumenta a medida que la banda se estira.',
+      'Sirve para calentamiento, técnica, movilidad y trabajo de fuerza.',
+      'Es liviana y fácil de usar en casa, gimnasio o viaje.',
+      'El nivel, largo y anclaje determinan qué ejercicios permite realizar.'
+    ]);
+  }
+
+  if (/strap/.test(texto)) {
+    return crear('Correas de agarre que conectan la mano con la barra para reducir cuánto limita el antebrazo en tirones pesados.', [
+      'Refuerzan la sujeción en peso muerto, remos y otros ejercicios de tirón.',
+      'Permiten concentrar el esfuerzo en espalda o cadena posterior.',
+      'Son útiles cuando el agarre se fatiga antes que el músculo objetivo.',
+      'Se enrollan alrededor de la barra y ocupan muy poco espacio.',
+      'No sustituyen el entrenamiento de agarre ni una técnica segura.'
+    ]);
+  }
+
+  if (/callera/.test(texto)) {
+    return crear('Protector de palma para mejorar el contacto con barras y reducir el roce directo durante el entrenamiento.', [
+      'Protege la palma en dominadas, barras y movimientos repetidos.',
+      'Reduce fricción, pellizcos y formación excesiva de callos.',
+      'Conserva mayor contacto directo que un guante completo.',
+      'Es práctica para calistenia, cross training y gimnasio.',
+      'Debe ajustarse a la mano sin limitar el cierre del agarre.'
+    ]);
+  }
+
+  if (/guante/.test(texto)) {
+    return crear('Guantes de entrenamiento que cubren la palma para mejorar comodidad y protección al sujetar pesas y máquinas.', [
+      'Reducen el roce directo de barras y mancuernas sobre la piel.',
+      'Ayudan a mantener un contacto más cómodo durante la rutina.',
+      'Protegen la palma en ejercicios repetidos con carga.',
+      'Son útiles para musculación, máquinas y entrenamiento general.',
+      'El talle correcto evita pliegues y pérdida de sensibilidad.'
+    ]);
   }
 
   if (categoria === 'shaker') {
@@ -323,7 +465,8 @@ function _leerFichasPublicaciones(ss) {
     var ficha = {
       queEs: _limpiarTextoFicha(filas[i][4], 220),
       beneficios: filas[i].slice(5, 10).map(function(v) { return _limpiarTextoFicha(v, 115); }).filter(Boolean),
-      estado: String(filas[i][10] || '').trim()
+      estado: String(filas[i][10] || '').trim(),
+      fila: i + 1
     };
     fichas[_claveFichaPublicacion(marca, nombre, sku)] = ficha;
     fichas[_claveNombreFichaPublicacion(marca, nombre)] = ficha;
@@ -338,8 +481,9 @@ function _aplicarFichasPublicaciones(productos, ss) {
     var automatica = _fichaPublicacionBase(producto);
     var ficha = fichas[_claveFichaPublicacion(producto.marca, producto.nombre, producto.sku || producto.id)] ||
       fichas[_claveNombreFichaPublicacion(producto.marca, producto.nombre)];
-    producto.descripcion_publicacion = ficha && ficha.queEs ? ficha.queEs : automatica.queEs;
-    producto.beneficios_publicacion = ficha && ficha.beneficios.length ? ficha.beneficios.slice(0, 5) : automatica.beneficios;
+    var revisada = ficha && _normalizarTextoFicha(ficha.estado) === 'revisado';
+    producto.descripcion_publicacion = revisada && ficha.queEs ? ficha.queEs : automatica.queEs;
+    producto.beneficios_publicacion = revisada && ficha.beneficios.length ? ficha.beneficios.slice(0, 5) : automatica.beneficios;
     producto.ficha_publicacion_estado = ficha ? ficha.estado : 'BORRADOR AUTOMATICO';
   });
   return productos;
@@ -369,12 +513,28 @@ function sincronizarFichasPublicaciones(productosBase) {
 
   var existentes = _leerFichasPublicaciones(ss);
   var nuevas = [];
+  var actualizadasAutomaticas = 0;
+  var filasAutomaticas = hoja.getLastRow() > 1
+    ? hoja.getRange(2, 1, hoja.getLastRow() - 1, _HEADERS_FICHAS_PUBLICACIONES.length).getValues()
+    : [];
   var ahora = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
   productos.forEach(function(producto) {
     var claveSku = _claveFichaPublicacion(producto.marca, producto.nombre, producto.sku || producto.id);
     var claveNombre = _claveNombreFichaPublicacion(producto.marca, producto.nombre);
-    if (existentes[claveSku] || existentes[claveNombre]) return;
+    var existente = existentes[claveSku] || existentes[claveNombre];
     var ficha = _fichaPublicacionBase(producto);
+    if (existente) {
+      if (_normalizarTextoFicha(existente.estado) === 'borrador automatico' && existente.fila) {
+        filasAutomaticas[existente.fila - 2] = [
+          String(producto.sku || producto.id || ''), String(producto.marca || ''), String(producto.nombre || ''),
+          String(producto.categoria || 'otros'), ficha.queEs,
+          ficha.beneficios[0] || '', ficha.beneficios[1] || '', ficha.beneficios[2] || '',
+          ficha.beneficios[3] || '', ficha.beneficios[4] || '', 'BORRADOR AUTOMATICO', ahora
+        ];
+        actualizadasAutomaticas++;
+      }
+      return;
+    }
     nuevas.push([
       String(producto.sku || producto.id || ''), String(producto.marca || ''), String(producto.nombre || ''),
       String(producto.categoria || 'otros'), ficha.queEs,
@@ -382,6 +542,10 @@ function sincronizarFichasPublicaciones(productosBase) {
       ficha.beneficios[3] || '', ficha.beneficios[4] || '', 'BORRADOR AUTOMATICO', ahora
     ]);
   });
+
+  if (actualizadasAutomaticas && filasAutomaticas.length) {
+    hoja.getRange(2, 1, filasAutomaticas.length, _HEADERS_FICHAS_PUBLICACIONES.length).setValues(filasAutomaticas);
+  }
 
   if (nuevas.length) {
     hoja.getRange(hoja.getLastRow() + 1, 1, nuevas.length, _HEADERS_FICHAS_PUBLICACIONES.length).setValues(nuevas);
@@ -402,9 +566,11 @@ function sincronizarFichasPublicaciones(productosBase) {
     hoja.setColumnWidth(index + 1, ancho);
   });
 
-  return { ok: true, hoja: _HOJA_FICHAS_PUBLICACIONES, creada: creada, agregadas: nuevas.length, totalCatalogo: productos.length };
+  return { ok: true, hoja: _HOJA_FICHAS_PUBLICACIONES, creada: creada, agregadas: nuevas.length,
+    actualizadasAutomaticas: actualizadasAutomaticas, totalCatalogo: productos.length };
 }
 
 function configurarFichasPublicaciones() {
   return sincronizarFichasPublicaciones();
 }
+
