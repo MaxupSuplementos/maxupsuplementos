@@ -58,7 +58,11 @@ assert(api.includes('WA_MSG_'), 'El webhook debe ignorar mensajes repetidos');
 assert(api.includes("getSheetByName('ASISTENTE_RESPUESTAS')"), 'Las respuestas comerciales del asistente deben ser editables desde Sheets');
 assert(api.includes('p.beneficios_publicacion'), 'El asistente debe reutilizar los beneficios precisos de cada ficha');
 assert(api.includes('WA_RESULTS_'), 'El asistente debe recordar las opciones de producto mostradas');
+assert(api.includes('_waEsConsultaGeneralCatalogo'), 'Max debe reconocer el mensaje general enviado por la tienda');
+assert(api.includes('_waRespuestaCatalogoGeneral'), 'Max debe orientar por categorías en vez de buscar una oración completa');
+assert(api.indexOf('_waEsConsultaGeneralCatalogo(normal)') < api.indexOf("if (estado.paso === 'PRODUCTO')"), 'La consulta general debe resolverse antes de buscar productos');
 assert(app.includes("const WA_DEFAULT = '5493876233406'"), 'La tienda debe enviar consultas al WhatsApp oficial de Max');
+assert(index.includes('Quiero%20asesoramiento%20general%20sobre%20los%20productos%20y%20precios'), 'El botón de WhatsApp debe enviar una intención general clara');
 assert(!app.includes('5491168461457'), 'La tienda no debe enviar clientes al numero personal');
 assert(!index.includes('5491168461457'), 'La portada no debe publicar el numero personal');
 assert(!api.includes("WA_TELEFONO_HUMANO = '5491168461457'"), 'El asistente no debe revelar el numero personal al derivar');
@@ -212,3 +216,4 @@ assert(detalleAsistente.includes('Ayuda a reparar el musculo'), 'El detalle debe
 assert(detalleAsistente.includes('3 x $4.000'), 'El detalle debe informar el estimado de cuotas');
 
 console.log('OK - contratos principales del sistema v3 verificados');
+
