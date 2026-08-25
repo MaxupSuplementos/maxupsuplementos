@@ -11,7 +11,7 @@ function read(name) {
 
 test('el generador diario selecciona cinco productos publicables y variados', () => {
   const source = read('Api.gs');
-  const block = source.match(/function _seleccionarProductosEstadosDiarios[\s\S]*?(?=function generarContenidoRedes\()/);
+  const block = source.match(/var HOJA_HISTORIAL_PUBLICACIONES[\s\S]*?(?=function generarContenidoRedes\()/);
   assert.ok(block, 'No se encontraron las funciones de estados diarios');
 
   const products = [
@@ -25,6 +25,8 @@ test('el generador diario selecciona cinco productos publicables y variados', ()
     { id: 'h', nombre: 'Sin stock', marca: 'M8', categoria: 'otros', precio_venta: 800, stock: 0, imagen_url: 'https://img/h' }
     ,{ id: 'i', nombre: 'Bidon I', marca: 'M9', categoria: 'accesorio', precio_venta: 900, stock: 10, imagen_url: 'https://img/i' }
     ,{ id: 'j', nombre: 'Barra J', marca: 'M10', categoria: 'barra', precio_venta: 1000, stock: 2, imagen_url: 'https://img/j' }
+    ,{ id: 'k', nombre: 'Guantes K', marca: 'M11', categoria: 'accesorio', precio_venta: 1100, stock: 12, imagen_url: 'https://img/k' }
+    ,{ id: 'l', nombre: 'Magnesio L', marca: 'M12', categoria: 'mineral', precio_venta: 1200, stock: 4, imagen_url: 'https://img/l' }
   ];
   const ventasRows = [
     ['Fecha', 'Producto', 'Marca', 'Cantidad'],
@@ -57,24 +59,97 @@ test('el generador diario selecciona cinco productos publicables y variados', ()
       getDataRange: () => ({ getValues: () => analisisRows })
     }
   };
+  const makeHistorySheet = () => ({
+    rows: [['Tipo', 'Clave producto', 'Firma publicación', 'Fecha', 'Producto']],
+    getLastRow() { return this.rows.length; },
+    getRange(row, column, numRows) {
+      return {
+        getValues: () => this.rows.slice(row - 1, row - 1 + numRows),
+        setValues: values => { this.rows.push(...values); return this; },
+        setFontWeight: () => this
+      };
+    },
+    hideSheet() {}
+  });
+  const ss = {
+    getSheetByName: name => sheets[name] || null,
+    insertSheet: name => { sheets[name] = makeHistorySheet(); return sheets[name]; }
+  };
   const result = run(
     Utilities,
     () => ({ productos: products }),
     message => { telegramMessage = message; return true; },
     { log() {} },
-    () => ({ getSheetByName: name => sheets[name] || null }),
+    () => ss,
     () => {}
   );
 
   assert.equal(result.productos.length, 5);
-  assert.deepEqual(result.productos.map(p => p.id), ['d', 'b', 'i', 'e', 'j']);
+  assert.deepEqual(result.productos.map(p => p.id), ['k', 'i', 'e', 'l', 'j']);
   assert.ok(result.productos.every(p => p.stock > 0 && p.imagen_url && p.categoria !== 'quimicos'));
   assert.ok(!result.productos.some(p => p.id === 'c'), 'No debe promocionar productos vencidos');
   assert.ok(!result.productos.some(p => p.id === 'a'), 'Debe postergar el producto con más ventas');
+  assert.ok(!result.productos.some(p => p.id === 'b' || p.id === 'd'), 'No debe repetir urgentes ya publicados antes de instalar la rotación');
   assert.match(result.aviso.enlace, /promo\.html\?modo=diario/);
   assert.match(telegramMessage, /5 ESTADOS LISTOS/);
-  assert.match(telegramMessage, /vence en 15 días/);
   assert.match(telegramMessage, /sin ventas en 30 días/);
+});
+
+test('un producto próximo a vencer reaparece únicamente cuando cambia el descuento', () => {
+  const source = read('Api.gs');
+  const block = source.match(/var HOJA_HISTORIAL_PUBLICACIONES[\s\S]*?(?=function generarContenidoRedes\()/);
+  assert.ok(block, 'No se encontraron las funciones de rotación diaria');
+
+  const products = [
+    { id: 'w', nombre: 'Whey Star', marca: 'Star', categoria: 'proteina', precio_venta: 100, stock: 5, imagen_url: 'https://img/w' },
+    { id: 'a', nombre: 'Creatina A', marca: 'M1', categoria: 'creatina', precio_venta: 100, stock: 4, imagen_url: 'https://img/a' },
+    { id: 'b', nombre: 'Shaker B', marca: 'M2', categoria: 'accesorio', precio_venta: 100, stock: 3, imagen_url: 'https://img/b' },
+    { id: 'c', nombre: 'Barra C', marca: 'M3', categoria: 'barra', precio_venta: 100, stock: 2, imagen_url: 'https://img/c' },
+    { id: 'd', nombre: 'Magnesio D', marca: 'M4', categoria: 'mineral', precio_venta: 100, stock: 1, imagen_url: 'https://img/d' },
+    { id: 'e', nombre: 'Bidon E', marca: 'M5', categoria: 'accesorio', precio_venta: 100, stock: 1, imagen_url: 'https://img/e' }
+  ];
+  const historyRows = [
+    ['Tipo', 'Clave producto', 'Firma publicación', 'Fecha', 'Producto'],
+    ['ESTADO', 'star||whey star', 'URGENCIA-10', new Date('2026-08-01T12:00:00Z'), 'Whey Star']
+  ];
+  const historySheet = {
+    getLastRow: () => historyRows.length,
+    getRange(row, column, numRows) {
+      return {
+        getValues: () => historyRows.slice(row - 1, row - 1 + numRows),
+        setValues: values => { historyRows.push(...values); },
+        setFontWeight() {}
+      };
+    },
+    hideSheet() {}
+  };
+  const analisisRows = [
+    ['Lote / Producto', 'Marca', 'Stock Lote', 'Vencimiento', 'Días Restantes'],
+    ['Whey Star [Vence: 10/09/26]', 'Star', 5, new Date('2026-09-10T12:00:00Z'), 29]
+  ];
+  const sheets = {
+    _HISTORIAL_PUBLICACIONES: historySheet,
+    VentasDiarias: { getLastRow: () => 1, getDataRange: () => ({ getValues: () => [] }) },
+    ANALISIS_OFERTAS: { getLastRow: () => analisisRows.length, getDataRange: () => ({ getValues: () => analisisRows }) }
+  };
+  const Utilities = { formatDate: (date, zone, format) => ({ yyyyMMdd: '20260819', 'yyyy-MM-dd': '2026-08-19', 'dd/MM': '19/08' }[format] || '') };
+  const run = new Function(
+    'Utilities', 'getCatalogo', '_notificarTelegram', 'Logger', '_getSS', 'actualizarAnalisisOfertas',
+    block[0] + '\nvar fecha = new Date("2026-08-19T12:00:00Z"); return _enviarEnlaceEstadosDiarios(fecha);'
+  );
+  let message = '';
+  const result = run(
+    Utilities,
+    () => ({ productos: products }),
+    value => { message = value; return true; },
+    { log() {} },
+    () => ({ getSheetByName: name => sheets[name] || null }),
+    () => {}
+  );
+
+  assert.equal(result.productos[0].id, 'w', 'Debe volver a elegir el producto al pasar de 10% a 15%');
+  assert.match(message, /Whey Star -15%/);
+  assert.match(message, /desc=15/);
 });
 
 test('las fichas automáticas generan textos específicos y cinco puntos editables', () => {
@@ -84,7 +159,13 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
   const run = new Function(block[0] + `
     return {
       whey: _fichaPublicacionBase({ nombre: 'Whey Protein Isolate 2 Lb', marca: 'MAXUP', categoria: 'proteina' }),
-      glutamina: _fichaPublicacionBase({ nombre: 'L-Glutamina 300g', marca: 'MAXUP', categoria: 'aminoacido' })
+      glutamina: _fichaPublicacionBase({ nombre: 'L-Glutamina 300g', marca: 'MAXUP', categoria: 'aminoacido' }),
+      bcaa: _fichaPublicacionBase({ nombre: 'BCAA 2:1:1', marca: 'MAXUP', categoria: 'aminoacido' }),
+      eaa: _fichaPublicacionBase({ nombre: "EAA's Aminoácidos", marca: 'ENA', categoria: 'aminoacido' }),
+      beta: _fichaPublicacionBase({ nombre: 'Beta Alanina 300g', marca: 'MAXUP', categoria: 'aminoacido' }),
+      arginina: _fichaPublicacionBase({ nombre: 'L-Arginina 150g', marca: 'MAXUP', categoria: 'aminoacido' }),
+      mamushka: _fichaPublicacionBase({ nombre: 'Botella Mamushka 3 en 1', marca: 'MAXUP', categoria: 'accesorio', descripcion: 'Accesorio práctico' }),
+      licuadora: _fichaPublicacionBase({ nombre: 'Mini Licuadora Portátil', marca: 'MAXUP', categoria: 'accesorio', descripcion: 'Accesorio práctico' })
     };
   `);
   const result = run();
@@ -94,8 +175,20 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
   assert.match(result.whey.beneficios.join(' '), /reparar el músculo/);
   assert.match(result.glutamina.queEs, /Aminoácido/);
   assert.doesNotMatch(result.glutamina.beneficios.join(' '), /prebiótico|estreñ/i);
+  assert.match(result.bcaa.queEs, /leucina, isoleucina y valina/i);
+  assert.match(result.eaa.queEs, /aminoácidos esenciales/i);
+  assert.notEqual(result.bcaa.queEs, result.eaa.queEs);
+  assert.match(result.beta.queEs, /carnosina/i);
+  assert.match(result.arginina.queEs, /óxido nítrico/i);
+  assert.match(result.mamushka.queEs, /tres recipientes|uno dentro de otro/i);
+  assert.match(result.mamushka.beneficios.join(' '), /encastran/i);
+  assert.match(result.licuadora.queEs, /motor integrado/i);
+  assert.notEqual(result.mamushka.queEs, result.licuadora.queEs);
+  assert.doesNotMatch(result.mamushka.queEs, /Accesorio práctico/);
   assert.match(source, /FICHAS_PUBLICACIONES/);
   assert.match(source, /BORRADOR AUTOMATICO/);
+  assert.match(source, /actualizadasAutomaticas/);
+  assert.match(source, /_normalizarTextoFicha\(ficha\.estado\) === 'revisado'/);
 });
 
 test('Promo Express conserva el modo oferta y agrega el modo diario de cinco placas', () => {
@@ -111,6 +204,8 @@ test('Promo Express conserva el modo oferta y agrega el modo diario de cinco pla
   assert.match(html, /creatina:\[/);
   assert.match(html, /function drawDailyBenefitList/);
   assert.match(html, /dailyBenefits\(p\)\.slice\(0,5\)/);
+  assert.match(html, /Math\.max\(35,Math\.min\(40/);
+  assert.match(html, /benefitY\+86,W-190,41/);
   assert.match(html, /const DAILY_EXPLAINERS=/);
   assert.match(html, /5 PUNTOS CLAVE/);
   assert.match(html, /pubDesc:pr\.descripcion_publicacion/);
@@ -119,3 +214,4 @@ test('Promo Express conserva el modo oferta y agrega el modo diario de cinco pla
   assert.doesNotMatch(html, /solidText\(ctx,fmt\(Number\(p\.p\)/);
   assert.match(html, /async function genPost/);
 });
+
