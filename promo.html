@@ -247,8 +247,8 @@ function drawDailyBenefitList(ctx,p,startY,endY){
   const rowHeight=Math.max(54,Math.floor((endY-startY)/Math.max(items.length,1)));
   // El flyer se comparte principalmente desde el teléfono: aprovechamos la
   // altura disponible para que los beneficios se lean sin tener que ampliar.
-  const fontSize=Math.max(30,Math.min(36,Math.floor(rowHeight*.45)));
-  const lineHeight=fontSize+7;
+  const fontSize=Math.max(35,Math.min(40,Math.floor(rowHeight*.47)));
+  const lineHeight=fontSize+5;
   ctx.save();ctx.font=`600 ${fontSize}px 'Rajdhani',sans-serif`;ctx.textAlign='left';ctx.textBaseline='alphabetic';
   items.forEach((item,index)=>{
     const y=startY+(index*rowHeight);
@@ -317,15 +317,15 @@ async function drawDailyStory(canvas,p,index,total){
   const brandY=Math.min(nameEnd+48,1080);
   solidText(ctx,String(p.b||'MAXUP'),W/2,brandY,'#00C8FF',"600 28px 'Rajdhani',sans-serif");
 
-  const benefitY=Math.max(1095,brandY+30),benefitBottom=1705;
+  const benefitY=Math.max(1095,brandY+30),benefitBottom=1715;
   rr(ctx,70,benefitY,W-140,benefitBottom-benefitY,18);ctx.fillStyle='rgba(153,51,255,.10)';ctx.fill();
   ctx.strokeStyle='rgba(153,51,255,.35)';ctx.lineWidth=2;ctx.stroke();
   solidText(ctx,'QUÉ ES',W/2,benefitY+42,'#FF0099',"bold 30px 'Rajdhani',sans-serif");
-  const descriptionEnd=wrapSolid(ctx,dailyExplainer(p),W/2,benefitY+84,W-190,38,'#eee',"600 31px 'Rajdhani',sans-serif");
-  const separatorY=descriptionEnd+24;
+  const descriptionEnd=wrapSolid(ctx,dailyExplainer(p),W/2,benefitY+86,W-190,41,'#eee',"600 34px 'Rajdhani',sans-serif");
+  const separatorY=descriptionEnd+20;
   ctx.strokeStyle='rgba(0,200,255,.25)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(115,separatorY);ctx.lineTo(W-115,separatorY);ctx.stroke();
   solidText(ctx,'5 PUNTOS CLAVE',W/2,separatorY+42,'#00C8FF',"bold 30px 'Rajdhani',sans-serif");
-  drawDailyBenefitList(ctx,p,separatorY+66,benefitBottom-18);
+  drawDailyBenefitList(ctx,p,separatorY+60,benefitBottom-14);
 
   rr(ctx,W/2-235,1730,470,72,36);ctx.fillStyle=g;ctx.fill();
   solidText(ctx,'PEDILO EN NUESTRA WEB',W/2,1778,'#fff',"bold 29px 'Rajdhani',sans-serif");
@@ -563,4 +563,5 @@ function dl(){
 </script>
 </body>
 </html>
+
 
