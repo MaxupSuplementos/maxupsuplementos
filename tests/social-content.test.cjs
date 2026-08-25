@@ -164,6 +164,17 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
       eaa: _fichaPublicacionBase({ nombre: "EAA's Aminoácidos", marca: 'ENA', categoria: 'aminoacido' }),
       beta: _fichaPublicacionBase({ nombre: 'Beta Alanina 300g', marca: 'MAXUP', categoria: 'aminoacido' }),
       arginina: _fichaPublicacionBase({ nombre: 'L-Arginina 150g', marca: 'MAXUP', categoria: 'aminoacido' }),
+      citrato: _fichaPublicacionBase({ nombre: 'Citrato de Magnesio 144G', marca: 'GRANGER', categoria: 'vitamin' }),
+      bisglicinato: _fichaPublicacionBase({ nombre: 'Bisglicinato de Magnesio 60Comp', marca: 'LAPPIEL', categoria: 'vitamin' }),
+      zma: _fichaPublicacionBase({ nombre: 'Zma X60 Cap', marca: 'GOLD NUTRITION', categoria: 'vitamin' }),
+      omega369: _fichaPublicacionBase({ nombre: 'Omega 3 con omega 6 y 9', marca: 'LAPPIEL', categoria: 'vitamin' }),
+      biotina: _fichaPublicacionBase({ nombre: 'Biotina con Vitamina C', marca: 'LAPPIEL', categoria: 'vitamin' }),
+      pump: _fichaPublicacionBase({ nombre: 'Pump V8 X285G', marca: 'STAR NUTRITION', categoria: 'preworkout' }),
+      collagenSport: _fichaPublicacionBase({ nombre: 'Collagen Sport Naranja X 360 Grs', marca: 'STAR NUTRITION', categoria: 'colageno' }),
+      gel: _fichaPublicacionBase({ nombre: 'Energy Gel 42g - Limon', marca: 'NUTREMAX', categoria: 'hidratacion' }),
+      recovery: _fichaPublicacionBase({ nombre: 'Recovery Drink 540G', marca: 'NUTREMAX', categoria: 'hidratacion' }),
+      cla: _fichaPublicacionBase({ nombre: 'Cla 1000 90cap', marca: 'STAR NUTRITION', categoria: 'quemador' }),
+      stanozolol: _fichaPublicacionBase({ nombre: 'Stanozoland 10Mg 100Comp', marca: 'LANDERLAN', categoria: 'quimicos' }),
       mamushka: _fichaPublicacionBase({ nombre: 'Botella Mamushka 3 en 1', marca: 'MAXUP', categoria: 'accesorio', descripcion: 'Accesorio práctico' }),
       licuadora: _fichaPublicacionBase({ nombre: 'Mini Licuadora Portátil', marca: 'MAXUP', categoria: 'accesorio', descripcion: 'Accesorio práctico' })
     };
@@ -173,13 +184,30 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
   assert.equal(result.glutamina.beneficios.length, 5);
   assert.match(result.whey.queEs, /Proteína aislada/);
   assert.match(result.whey.beneficios.join(' '), /reparar el músculo/);
-  assert.match(result.glutamina.queEs, /Aminoácido/);
-  assert.doesNotMatch(result.glutamina.beneficios.join(' '), /prebiótico|estreñ/i);
+  assert.match(result.glutamina.queEs, /aminoácido/i);
+  assert.match(result.glutamina.beneficios.join(' '), /no está demostrado.*prebiótico.*estreñimiento/i);
   assert.match(result.bcaa.queEs, /leucina, isoleucina y valina/i);
   assert.match(result.eaa.queEs, /aminoácidos esenciales/i);
   assert.notEqual(result.bcaa.queEs, result.eaa.queEs);
   assert.match(result.beta.queEs, /carnosina/i);
   assert.match(result.arginina.queEs, /óxido nítrico/i);
+  assert.match(result.citrato.queEs, /ácido cítrico|forma soluble/i);
+  assert.match(result.citrato.beneficios.join(' '), /relajación y el descanso/i);
+  assert.match(result.citrato.beneficios.join(' '), /estreñimiento ocasional/i);
+  assert.match(result.citrato.beneficios.join(' '), /calambres.*ingesta baja/i);
+  assert.notEqual(result.citrato.queEs, result.bisglicinato.queEs);
+  assert.match(result.bisglicinato.queEs, /tolerancia digestiva|forma quelada/i);
+  assert.doesNotMatch(result.bisglicinato.beneficios.join(' '), /estreñimiento/i);
+  assert.match(result.zma.beneficios.join(' '), /no está demostrado que aumente testosterona/i);
+  assert.match(result.omega369.beneficios.join(' '), /no equivale a un omega 3 concentrado/i);
+  assert.match(result.biotina.beneficios.join(' '), /evidencia.*limitada|análisis/i);
+  assert.match(result.pump.queEs, /cafeína y guaraná.*beta-alanina/i);
+  assert.match(result.collagenSport.queEs, /200 mg de cafeína/i);
+  assert.match(result.gel.queEs, /no aportan cafeína/i);
+  assert.match(result.recovery.queEs, /carbohidratos, whey, electrolitos/i);
+  assert.match(result.cla.queEs + ' ' + result.cla.beneficios.join(' '), /efectos promedio pequeños e inconsistentes/i);
+  assert.match(result.stanozolol.queEs, /esteroide anabólico/i);
+  assert.match(result.stanozolol.beneficios.join(' '), /daño hepático|prohibido/i);
   assert.match(result.mamushka.queEs, /tres recipientes|uno dentro de otro/i);
   assert.match(result.mamushka.beneficios.join(' '), /encastran/i);
   assert.match(result.licuadora.queEs, /motor integrado/i);
@@ -214,4 +242,3 @@ test('Promo Express conserva el modo oferta y agrega el modo diario de cinco pla
   assert.doesNotMatch(html, /solidText\(ctx,fmt\(Number\(p\.p\)/);
   assert.match(html, /async function genPost/);
 });
-
