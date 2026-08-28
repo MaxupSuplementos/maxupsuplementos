@@ -67,6 +67,7 @@ function _stockObjPrecargarEjemplos(productos, configuracion) {
 
 function crearControlStockObjetivo() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var separadorFormula = /^en(?:_|$)/i.test(String(ss.getSpreadsheetLocale() || '')) ? ',' : ';';
   var suplementos = ss.getSheetByName('SUPLEMENTOS');
   if (!suplementos) throw new Error('No se encontró la hoja SUPLEMENTOS.');
 
@@ -119,10 +120,10 @@ function crearControlStockObjetivo() {
   hoja.getRange('E2').setFormula('=SUM(I7:I)');
   hoja.getRange('H2').setFormula('=SUM(J7:J)');
   hoja.getRange('K2').setFormula('=SUM(K7:K)');
-  hoja.getRange('B3').setFormula('=COUNTIF(E7:E,">0")');
+  hoja.getRange('B3').setFormula('=COUNTIF(E7:E' + separadorFormula + '">0")');
   hoja.getRange('E3').setFormula('=SUM(E7:E)');
-  hoja.getRange('H3').setFormula('=COUNTIF(D7:D,">0")');
-  hoja.getRange('K3').setFormula('=COUNTIFS(E7:E,">0",F7:F,"")');
+  hoja.getRange('H3').setFormula('=COUNTIF(D7:D' + separadorFormula + '">0")');
+  hoja.getRange('K3').setFormula('=COUNTIFS(E7:E' + separadorFormula + '">0"' + separadorFormula + 'F7:F' + separadorFormula + '"")');
   ['A2','D2','G2','J2','A3','D3','G3','J3'].forEach(function(a1) {
     hoja.getRange(a1).setFontWeight('bold').setFontColor('#333333');
   });
@@ -147,14 +148,14 @@ function crearControlStockObjetivo() {
       p.marca,
       "='SUPLEMENTOS'!D" + p.filaSuplementos,
       Math.max(0, Number(cfg.objetivo) || 0),
-      '=MAX(0,D' + fila + '-C' + fila + ')',
+      '=MAX(0' + separadorFormula + 'D' + fila + '-C' + fila + ')',
       Number(cfg.costo) > 0 ? Number(cfg.costo) : '',
       '=E' + fila + '*F' + fila,
       "='SUPLEMENTOS'!B" + p.filaSuplementos,
       '=C' + fila + '*F' + fila,
       '=C' + fila + '*H' + fila,
-      '=IF(F' + fila + '="","",C' + fila + '*(H' + fila + '-F' + fila + '))',
-      '=IF(D' + fila + '=0,"⚪ SIN OBJETIVO",IF(E' + fila + '>0,IF(F' + fila + '="","🟠 COMPRAR "&E' + fila + '&" · CARGAR COSTO","🔴 COMPRAR "&E' + fila + '),"🟢 OBJETIVO CUBIERTO"))'
+      '=IF(F' + fila + '=""' + separadorFormula + '""' + separadorFormula + 'C' + fila + '*(H' + fila + '-F' + fila + '))',
+      '=IF(D' + fila + '=0' + separadorFormula + '"⚪ SIN OBJETIVO"' + separadorFormula + 'IF(E' + fila + '>0' + separadorFormula + 'IF(F' + fila + '=""' + separadorFormula + '"🟠 COMPRAR "&E' + fila + '&" · CARGAR COSTO"' + separadorFormula + '"🔴 COMPRAR "&E' + fila + ')' + separadorFormula + '"🟢 OBJETIVO CUBIERTO"))'
     ];
   });
 
@@ -206,6 +207,5 @@ function instalarControlStockObjetivo() {
     ScriptApp.newTrigger('agregarMenuStockObjetivo')
       .forSpreadsheet(SpreadsheetApp.getActiveSpreadsheet()).onOpen().create();
   }
-  agregarMenuStockObjetivo();
   return resultado;
 }
