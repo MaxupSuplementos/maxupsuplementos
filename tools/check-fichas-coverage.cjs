@@ -23,12 +23,17 @@ async function main() {
   const genericos = [];
   const incompletos = [];
   const textosCortados = [];
+  const noPromocionales = [];
+  const patronNoPromocional = /consult|revis|compar|anticoagul|cirugía programada|medicación|puede causar|no reemplaza|no equivale|no significa|no está demostrado|resultados variables|efecto adverso|contraindicación/i;
 
   for (const producto of productos) {
     const resultado = ficha(producto);
     if (/^Producto pensado para complementar/i.test(resultado.queEs)) genericos.push(producto);
     if (!resultado.queEs || !Array.isArray(resultado.beneficios) || resultado.beneficios.length !== 5) incompletos.push(producto);
     resultado.beneficios.forEach((beneficio, index) => {
+      if (patronNoPromocional.test(beneficio)) {
+        noPromocionales.push(`${producto.marca} | ${producto.nombre} | B${index + 1}: ${beneficio}`);
+      }
       if (beneficio.length === 115 && !/[.!?]$/.test(beneficio)) {
         textosCortados.push(`${producto.marca} | ${producto.nombre} | B${index + 1}: ${beneficio}`);
       }
@@ -39,9 +44,10 @@ async function main() {
     activosRevisados: productos.length,
     genericos: genericos.map(p => `${p.marca} | ${p.nombre}`),
     incompletos: incompletos.map(p => `${p.marca} | ${p.nombre}`),
-    textosCortados
+    textosCortados,
+    noPromocionales
   }, null, 2));
-  if (genericos.length || incompletos.length || textosCortados.length) process.exitCode = 1;
+  if (genericos.length || incompletos.length || textosCortados.length || noPromocionales.length) process.exitCode = 1;
 }
 
 main().catch(error => {

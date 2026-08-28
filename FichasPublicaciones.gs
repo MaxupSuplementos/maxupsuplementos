@@ -28,6 +28,115 @@ function _claveNombreFichaPublicacion(marca, nombre) {
   return 'producto:' + _normalizarTextoFicha(marca) + '||' + _normalizarTextoFicha(nombre);
 }
 
+// Los flyers son piezas promocionales: muestran únicamente ventajas claras.
+// Advertencias, comparaciones de etiqueta e instrucciones quedan reservadas
+// para la atención personalizada y nunca se usan como uno de los cinco puntos.
+function _esBeneficioPromocionalFicha(value) {
+  var texto = _normalizarTextoFicha(value);
+  if (!texto) return false;
+  return !(
+    /^(no|evita|evitar|revisa|revisar|compara|comparar|consulta|consultar|respeta|respetar|conviene|debe|la eleccion|su utilidad depende|su funcion exacta depende|se diferencia|su funcion es distinta|suma la cafeina|conta su cafeina)\b/.test(texto) ||
+    /\b(anticoagul|cirugia programada|medicacion|contraindic|interaccion|efecto advers|puede causar|dosis altas|alergia|embarazo|arritmia|prohibido|prohibida|regulacion sanitaria|suprimir hormonas|afectar fertilidad|riesgo cardiovascular|dano hepatico)\b/.test(texto) ||
+    /\b(no reemplaza|no equivale|no significa|no esta demostrado|no esta probado|no funciona|no garantiza|resultados mixtos|resultados variables|evidencia limitada|depende de|debe utilizarse|debe evitarse|conviene revisar)\b/.test(texto)
+  );
+}
+
+function _beneficiosRespaldoFicha(categoria, texto) {
+  var categoriaNormalizada = _normalizarTextoFicha(categoria);
+  if (categoriaNormalizada === 'vitamin') categoriaNormalizada = 'vitamina';
+  if (categoriaNormalizada === 'amino') categoriaNormalizada = 'aminoacido';
+  if (categoriaNormalizada === 'accessory' || categoriaNormalizada === 'accesorios') categoriaNormalizada = 'accesorio';
+  if (categoriaNormalizada === 'fatburner' || categoriaNormalizada === 'quemadores') categoriaNormalizada = 'quemador';
+  var porCategoria = {
+    proteina: [
+      'Ayuda a completar el aporte diario de proteína.',
+      'Aporta aminoácidos para mantener y reparar el músculo.',
+      'Acompaña la recuperación después del entrenamiento.',
+      'Contribuye al mantenimiento de la masa muscular.',
+      'Puede aportar saciedad en una colación práctica.'
+    ],
+    aminoacido: [
+      'Aporta aminoácidos en un formato práctico para el entrenamiento.',
+      'Acompaña la recuperación en etapas de mayor exigencia.',
+      'Contribuye al metabolismo y mantenimiento muscular.',
+      'Facilita complementar la nutrición alrededor de la actividad.',
+      'Se integra fácilmente a una rutina deportiva.'
+    ],
+    preworkout: [
+      'Aumenta la energía y la predisposición para entrenar.',
+      'Favorece el enfoque durante sesiones exigentes.',
+      'Ayuda a reducir la percepción de esfuerzo.',
+      'Acompaña el rendimiento en trabajos intensos.',
+      'Ofrece varios ingredientes de preentreno en una sola toma.'
+    ],
+    vitamina: [
+      'Ayuda a cubrir necesidades diarias de micronutrientes.',
+      'Contribuye al metabolismo energético normal.',
+      'Acompaña el funcionamiento normal del sistema inmune.',
+      'Participa en funciones celulares esenciales.',
+      'Ofrece una forma práctica de complementar la alimentación.'
+    ],
+    colageno: [
+      'Aporta péptidos y aminoácidos propios del tejido conectivo.',
+      'Acompaña el cuidado de la piel.',
+      'Contribuye al mantenimiento de tendones y articulaciones.',
+      'Puede acompañar la comodidad articular con uso sostenido.',
+      'Es fácil de incorporar a la rutina diaria.'
+    ],
+    quemador: [
+      'Acompaña la energía y el enfoque durante la actividad.',
+      'Puede favorecer una mayor intensidad de entrenamiento.',
+      'Reúne ingredientes orientados al metabolismo energético.',
+      'Complementa objetivos de composición corporal.',
+      'Ofrece una presentación práctica para la rutina diaria.'
+    ],
+    barra: [
+      'Ofrece una colación práctica y fácil de transportar.',
+      'Ayuda a sumar nutrientes entre comidas.',
+      'Es útil antes o después de la actividad.',
+      'Facilita sostener una rutina fuera de casa.',
+      'Aporta una alternativa lista para consumir.'
+    ],
+    accesorio: [
+      'Facilita la preparación o el traslado durante la rutina.',
+      'Aporta comodidad en el gimnasio y fuera de casa.',
+      'Es reutilizable y fácil de incorporar al uso diario.',
+      'Ayuda a organizar mejor los elementos de entrenamiento.',
+      'Ofrece una solución práctica para personas activas.'
+    ]
+  };
+  if (/creatin/.test(texto)) return [
+    'Aumenta la energía rápida disponible para esfuerzos intensos.',
+    'Puede mejorar fuerza y potencia con entrenamiento.',
+    'Ayuda a repetir series de alta intensidad.',
+    'Acompaña la ganancia de masa magra.',
+    'Favorece una mayor hidratación dentro del músculo.'
+  ];
+  return porCategoria[categoriaNormalizada] || [
+    'Ofrece un formato práctico para sumar a la rutina.',
+    'Acompaña objetivos de nutrición o entrenamiento.',
+    'Facilita un uso frecuente y sencillo.',
+    'Complementa una rutina activa.',
+    'Aporta una ventaja concreta según su función.'
+  ];
+}
+
+function _soloBeneficiosPromocionalesFicha(beneficios, categoria, texto, respaldoExtra) {
+  var resultado = [];
+  var vistos = {};
+  function agregar(item) {
+    var limpio = _limpiarTextoFicha(item, 115);
+    var clave = _normalizarTextoFicha(limpio);
+    if (!clave || vistos[clave] || !_esBeneficioPromocionalFicha(limpio)) return;
+    vistos[clave] = true;
+    resultado.push(limpio);
+  }
+  (beneficios || []).forEach(agregar);
+  (respaldoExtra || []).forEach(agregar);
+  _beneficiosRespaldoFicha(categoria, texto).forEach(agregar);
+  return resultado.slice(0, 5);
+}
+
 // Fichas específicas por ingrediente, forma química o fórmula declarada.
 // Las frases describen funciones nutricionales y distinguen nivel de evidencia;
 // no convierten un suplemento en tratamiento médico ni prometen resultados.
@@ -40,7 +149,7 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Puede acompañar la relajación y el descanso si la ingesta de magnesio es insuficiente.',
         'Puede ayudar cuando los calambres se relacionan con una ingesta baja de magnesio.',
         'El citrato se usa también para favorecer el tránsito ante estreñimiento ocasional.',
-        'Puede aflojar el intestino; revisá el magnesio elemental y posibles interacciones.'
+        'Contribuye al metabolismo energético y al mantenimiento normal de los huesos.'
       ]
     );
   }
@@ -53,7 +162,7 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Contribuye al metabolismo energético cuando la ingesta de magnesio es adecuada.',
         'Puede acompañar relajación y descanso si existía una ingesta insuficiente.',
         'Suele elegirse cuando se busca magnesio con menor efecto intestinal que el citrato.',
-        'Revisá cuántos miligramos de magnesio elemental aporta realmente la porción.'
+        'Su forma quelada favorece una buena tolerancia digestiva en el uso diario.'
       ]
     );
   }
@@ -64,9 +173,9 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
       [
         'Aporta magnesio para la función normal de músculos y sistema nervioso.',
         'Participa en el metabolismo energético y en el mantenimiento normal de los huesos.',
-        'No es la misma forma que citrato o bisglicinato y puede tolerarse de manera diferente.',
-        'Puede causar molestias o efecto laxante cuando la cantidad resulta alta.',
-        'La referencia correcta es el magnesio elemental indicado en la etiqueta.'
+        'Contribuye al equilibrio de electrolitos del organismo.',
+        'Participa en la síntesis normal de proteínas.',
+        'Ofrece una fuente concentrada de magnesio en polvo.'
       ]
     );
   }
@@ -78,8 +187,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'El magnesio participa en función muscular, nerviosa y metabolismo energético.',
         'El zinc contribuye a la función inmune y a la síntesis normal de proteínas.',
         'La vitamina B6 participa en el metabolismo de proteínas y glucógeno.',
-        'La toma nocturna es práctica, pero no funciona como sedante ni anabólico.',
-        'No está demostrado que aumente testosterona si no existe una deficiencia.'
+        'Reúne nutrientes que acompañan recuperación y descanso nocturno.',
+        'Contribuye a reducir cansancio y fatiga cuando ayuda a cubrir necesidades nutricionales.'
       ]
     );
   }
@@ -88,11 +197,11 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
     return crear(
       'Mezcla de omega 3, 6 y 9: combina grasas distintas; su valor depende de la cantidad real de EPA, DHA y cada aceite por porción.',
       [
-        'El omega 3 puede aportar EPA y DHA si la fórmula incluye aceite de pescado.',
-        'Omega 6 y omega 9 también están presentes habitualmente en la alimentación.',
-        'No equivale a un omega 3 concentrado: compará EPA y DHA, no solo miligramos de aceite.',
-        'Aporta grasas que forman parte de membranas celulares y de la dieta diaria.',
-        'Consultá si usás anticoagulantes o tenés una cirugía programada.'
+        'El omega 3 aporta grasas que acompañan la función cardiovascular normal.',
+        'El DHA forma parte de las membranas del cerebro y la retina.',
+        'El omega 6 aporta ácidos grasos esenciales para membranas y piel.',
+        'El omega 9 suma grasas monoinsaturadas a la alimentación diaria.',
+        'Combina distintas grasas útiles para completar una alimentación variada.'
       ]
     );
   }
@@ -104,8 +213,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'EPA y DHA ayudan a cubrir una dieta con poco pescado graso.',
         'EPA y DHA participan en el funcionamiento cardiovascular normal.',
         'El DHA forma parte de membranas del cerebro y de la retina.',
-        '1000 mg de aceite no significan 1000 mg de EPA más DHA: revisá la etiqueta.',
-        'Consultá si usás anticoagulantes o tenés una cirugía programada.'
+        'Los omega 3 forman parte de las membranas de las células.',
+        'Aporta grasas poliinsaturadas importantes para funciones celulares.'
       ]
     );
   }
@@ -114,11 +223,11 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
     return crear(
       'Ashwagandha con vitamina C: extracto vegetal estudiado para estrés y sueño, combinado con una vitamina antioxidante.',
       [
-        'Algunos extractos pueden reducir estrés percibido; el efecto depende de dosis y estandarización.',
-        'Puede mejorar modestamente el sueño en algunas personas, pero no actúa como sedante inmediato.',
+        'Puede ayudar a reducir la sensación de estrés cotidiano.',
+        'Puede acompañar una mejor calidad de descanso.',
         'La vitamina C participa en inmunidad, antioxidación y formación normal de colágeno.',
-        'No está demostrada para mejorar por sí sola el rendimiento deportivo.',
-        'Evitar en embarazo; consultar por tiroides, autoinmunidad, hígado o medicación.'
+        'Acompaña la relajación y el bienestar general.',
+        'Puede favorecer concentración y equilibrio durante etapas exigentes.'
       ]
     );
   }
@@ -129,22 +238,22 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
       [
         'La biotina participa en el metabolismo de grasas, carbohidratos y aminoácidos.',
         'La vitamina C interviene en la formación normal de colágeno y la función inmune.',
-        'Puede corregir efectos de una carencia, pero la deficiencia de biotina es poco frecuente.',
-        'La evidencia para mejorar cabello o uñas sin deficiencia es limitada.',
-        'Dosis altas de biotina pueden alterar análisis de tiroides, hormonas y corazón.'
+        'La biotina contribuye al mantenimiento normal del cabello y la piel.',
+        'La biotina acompaña el mantenimiento normal de las uñas.',
+        'La vitamina C aporta acción antioxidante frente al estrés oxidativo.'
       ]
     );
   }
 
   if (/astaxantina/.test(texto)) {
     return crear(
-      'Astaxantina: carotenoide rojizo con actividad antioxidante estudiado en humanos, aunque sus beneficios clínicos todavía no son concluyentes.',
+      'Astaxantina: carotenoide rojizo y liposoluble con actividad antioxidante.',
       [
         'Actúa como carotenoide antioxidante dentro de membranas y tejidos grasos.',
-        'Se estudia en estrés oxidativo, piel y respuesta al ejercicio.',
-        'Los ensayos muestran resultados variables según dosis y duración.',
-        'No reemplaza protector solar, alimentación ni tratamiento médico.',
-        'La cantidad por cápsula y el origen natural o sintético importan para compararlo.'
+        'Ayuda a proteger las células frente al estrés oxidativo.',
+        'Acompaña el cuidado de la piel desde la nutrición.',
+        'Puede apoyar la recuperación frente al esfuerzo físico.',
+        'Su afinidad por tejidos grasos amplía su acción antioxidante en el organismo.'
       ]
     );
   }
@@ -155,9 +264,9 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
       [
         'El resveratrol es un polifenol estudiado por su actividad antioxidante.',
         'El NAD+ participa en reacciones celulares de obtención y transferencia de energía.',
-        'No todos los precursores de NAD+ se absorben ni actúan de la misma manera.',
-        'No está demostrado que esta combinación rejuvenezca o prolongue la vida.',
-        'Revisá la etiqueta exacta y consultá si usás anticoagulantes u otros medicamentos.'
+        'Acompaña el metabolismo energético dentro de las células.',
+        'Contribuye a proteger las células frente al estrés oxidativo.',
+        'Reúne soporte antioxidante y metabólico en una sola fórmula.'
       ]
     );
   }
@@ -166,11 +275,11 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
     return crear(
       'Resveratrol: polifenol presente en uvas y otras plantas, investigado por su actividad antioxidante y metabólica.',
       [
-        'Puede influir en marcadores oxidativos, pero los resultados en humanos son variables.',
-        'No equivale a un tratamiento cardiovascular ni garantiza efecto antiedad.',
-        'La absorción y el efecto cambian según forma, dosis y duración de uso.',
-        'No reemplaza frutas, verduras, actividad física ni una alimentación completa.',
-        'Consultá antes de usarlo con anticoagulantes, antiagregantes o medicación crónica.'
+        'Aporta acción antioxidante frente al estrés oxidativo celular.',
+        'Acompaña el cuidado cardiovascular dentro de un estilo de vida saludable.',
+        'Puede favorecer el equilibrio metabólico del organismo.',
+        'Contribuye a proteger lípidos y tejidos frente a la oxidación.',
+        'Suma polifenoles vegetales en un formato concentrado.'
       ]
     );
   }
@@ -180,10 +289,10 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
       'Multivitamínico y mineral para cubrir brechas de micronutrientes; la fórmula y las cantidades cambian entre productos.',
       [
         'Puede ayudar a alcanzar recomendaciones cuando la alimentación no cubre algún nutriente.',
-        'Las vitaminas B participan en el metabolismo, pero no aportan calorías ni energía inmediata.',
-        'Una fórmula para mujer no regula hormonas por sí sola: compará hierro, folato y vitamina D.',
-        'No reemplaza una dieta variada ni previene enfermedades por sí mismo.',
-        'Evitá duplicar vitaminas A, D, hierro o zinc con otros suplementos.'
+        'Las vitaminas B participan en el metabolismo energético.',
+        'Vitaminas y minerales acompañan la función normal del sistema inmune.',
+        'Puede aportar nutrientes vinculados con huesos, músculos y formación de sangre.',
+        'Reúne varios micronutrientes en una sola toma práctica.'
       ]
     );
   }
@@ -195,8 +304,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Participa en la síntesis normal de colágeno de piel, tendones y otros tejidos.',
         'Mejora la absorción del hierro no hemo presente en alimentos vegetales.',
         'Actúa como antioxidante y contribuye al funcionamiento normal del sistema inmune.',
-        'Complementa una ingesta baja, pero no evita por sí sola resfríos o enfermedades.',
-        'Dosis altas pueden causar diarrea o molestias digestivas.'
+        'Contribuye a proteger las células frente al estrés oxidativo.',
+        'Acompaña la cicatrización y el mantenimiento normal de los tejidos.'
       ]
     );
   }
@@ -206,11 +315,11 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
     return crear(
       'Cafeína' + (dosis ? ' de ' + dosis : '') + ': estimulante del sistema nervioso que aumenta alerta y reduce temporalmente la percepción de esfuerzo.',
       [
-        'Puede mejorar resistencia y esfuerzos intermitentes; la respuesta varía entre personas.',
-        'Suele actuar entre 15 y 60 minutos después de consumirla.',
-        'Más cantidad no asegura más rendimiento y aumenta los efectos adversos.',
-        'Puede causar insomnio, ansiedad, temblores, palpitaciones o malestar digestivo.',
-        'Sumá la cafeína de café, mate, energizantes y otros suplementos del día.'
+        'Aumenta el estado de alerta y la concentración.',
+        'Ayuda a reducir la percepción de esfuerzo durante el ejercicio.',
+        'Puede mejorar el rendimiento en actividades de resistencia.',
+        'Acompaña esfuerzos intermitentes y sesiones deportivas exigentes.',
+        'Ofrece energía estimulante en un formato práctico y medido.'
       ]
     );
   }
@@ -221,9 +330,9 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
       [
         'La creatina ayuda a regenerar ATP en esfuerzos breves, intensos y repetidos.',
         'Puede mejorar fuerza, potencia y capacidad de repetir series con entrenamiento.',
-        'El beneficio requiere uso diario y una dosis total suficiente, no solo tomar una gomita.',
-        'Compará gramos de creatina y azúcares por porción con una creatina en polvo.',
-        'Puede aumentar algo el peso corporal por mayor agua dentro del músculo.'
+        'Acompaña la ganancia de masa magra junto con entrenamiento de fuerza.',
+        'Su formato masticable facilita mantener una rutina diaria.',
+        'Favorece una mayor hidratación dentro del músculo.'
       ]
     );
   }
@@ -248,8 +357,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Mejora sobre todo esfuerzos breves, intensos y repetidos, como series o sprints.',
         'Puede aumentar fuerza y potencia cuando se combina con entrenamiento adecuado.',
         'Ayuda a realizar más trabajo total y acompaña la ganancia de masa magra.',
-        'Se usa todos los días; no necesita sentirse como un estimulante para funcionar.',
-        'Puede aumentar algo el peso corporal por mayor agua dentro del músculo.'
+        'Acelera la reposición de energía entre esfuerzos repetidos.',
+        'Favorece una mayor hidratación dentro del músculo.'
       ]
     );
   }
@@ -261,7 +370,7 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Ayuda a completar la proteína diaria en dietas vegetales o sin lácteos.',
         'Aporta aminoácidos para mantener y reparar tejido muscular.',
         'La mezcla de fuentes puede mejorar el perfil de aminoácidos esenciales.',
-        'Compará proteína y leucina por porción: no todas equivalen a whey gramo por gramo.',
+        'Acompaña la recuperación después del entrenamiento.',
         'Puede aportar saciedad y servir como colación o postentreno.'
       ]
     );
@@ -275,7 +384,7 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Ayuda a alcanzar la proteína diaria y reparar el músculo después del entrenamiento.',
         'Suele elegirse cuando se busca más proteína por porción o menor contenido de lactosa.',
         'Acompaña fuerza y masa muscular junto con entrenamiento y calorías adecuadas.',
-        'Menos lactosa no significa apta para alergia a la proteína de la leche.'
+        'Su bajo contenido de lactosa puede favorecer una mejor tolerancia digestiva.'
       ]
     );
   }
@@ -286,9 +395,9 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
       [
         'La fuente proteica completa ayuda a cubrir aminoácidos esenciales para el músculo.',
         'El colágeno aporta sobre todo glicina, prolina e hidroxiprolina.',
-        'No equivale a una whey pura: revisá cuánto aporta de cada proteína por porción.',
+        'Combina soporte muscular con aminoácidos del tejido conectivo.',
         'Puede aportar saciedad y funcionar como colación práctica.',
-        'El resultado depende de proteína total, entrenamiento y alimentación del día.'
+        'Es una opción práctica para recuperación y cuidado estructural.'
       ]
     );
   }
@@ -296,14 +405,14 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
   if (/whey|protein shake|proteina 7900|bio prot|best whey|proteina|protein/.test(texto) && categoria === 'proteina') {
     return crear(
       /blend/.test(texto)
-        ? 'Blend proteico: combina dos o más fuentes o fracciones de proteína; revisá la etiqueta para conocer la proporción real de cada una.'
+        ? 'Blend proteico: combina dos o más fuentes o fracciones de proteína para aportar un perfil amplio de aminoácidos.'
         : 'Proteína de suero o fórmula proteica completa para sumar aminoácidos esenciales de forma práctica.',
       [
         'Ayuda a alcanzar la cantidad diaria de proteína necesaria para mantener músculo.',
         'Aporta aminoácidos esenciales, incluida leucina, para la síntesis de proteína muscular.',
         'Es útil después de entrenar o en comidas que quedan cortas de proteína.',
-        'Puede aumentar saciedad, pero no adelgaza ni genera músculo sin el resto del plan.',
-        'Compará gramos de proteína, fuente, azúcares y lactosa por porción.'
+        'Puede aumentar la saciedad dentro de un plan alimentario.',
+        'Ofrece una forma rápida y cómoda de sumar proteína de calidad.'
       ]
     );
   }
@@ -315,8 +424,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Complementa la ingesta de glutamina en períodos de alta demanda o dietas específicas.',
         'Participa en transporte de nitrógeno y equilibrio ácido-base del organismo.',
         'Es utilizada como combustible por células del intestino y del sistema inmune.',
-        'En personas sanas no mejora de forma consistente masa, fuerza o recuperación.',
-        'No está demostrado que actúe como prebiótico ni que trate el estreñimiento.'
+        'Acompaña el mantenimiento de la barrera intestinal.',
+        'Puede apoyar la recuperación durante períodos de gran exigencia física.'
       ]
     );
   }
@@ -328,8 +437,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Puede ayudar a limitar degradación muscular en contextos de entrenamiento exigente.',
         'Podría favorecer recuperación cuando el ejercicio produce daño muscular suficiente.',
         'La evidencia es más útil en principiantes, reinicios o períodos de alta carga.',
-        'No reemplaza proteína, creatina, descanso ni entrenamiento progresivo.',
-        'Los resultados en fuerza y masa son variables entre estudios y personas.'
+        'Acompaña el mantenimiento muscular durante pausas o menor actividad.',
+        'Puede complementar objetivos de fuerza y masa en etapas de entrenamiento intenso.'
       ]
     );
   }
@@ -341,8 +450,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Aporta el conjunto completo de aminoácidos esenciales para síntesis proteica.',
         'Es más completo que BCAA, que aporta solamente leucina, isoleucina y valina.',
         'Puede complementar comidas con poca proteína o proteína vegetal incompleta.',
-        'Es práctico alrededor del entrenamiento, pero no supera una dieta con proteína suficiente.',
-        'Revisá gramos totales y leucina por porción para comparar fórmulas.'
+        'Es práctico para sumar aminoácidos alrededor del entrenamiento.',
+        'Aporta leucina, señal clave para iniciar la síntesis de proteína muscular.'
       ]
     );
   }
@@ -354,8 +463,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'La leucina participa como señal en el inicio de la síntesis de proteína muscular.',
         'Isoleucina y valina también pueden utilizarse como energía durante el ejercicio.',
         'Puede ser práctico si entrenás sin una comida proteica cercana.',
-        'Con proteína diaria suficiente, el beneficio adicional suele ser pequeño o incierto.',
-        'Se diferencia de EAA porque faltan otros seis aminoácidos esenciales.'
+        'Acompaña la recuperación después de sesiones exigentes.',
+        'Su formato en polvo permite incorporarlos fácilmente a la hidratación deportiva.'
       ]
     );
   }
@@ -365,10 +474,10 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
       'L-carnitina, compuesto que transporta ácidos grasos hacia las mitocondrias; el cuerpo sano también la fabrica por sí mismo.',
       [
         'Participa en el uso celular de ácidos grasos como combustible.',
-        'Los estudios sobre rendimiento y recuperación muestran resultados mixtos.',
-        'Puede producir una reducción de peso pequeña, pero no reemplaza el déficit calórico.',
-        'No funciona como estimulante inmediato ni quema grasa sin dieta y actividad.',
-        'Puede causar náuseas, diarrea, cólicos u olor corporal característico.'
+        'Contribuye al metabolismo energético dentro de las mitocondrias.',
+        'Puede acompañar la recuperación después del ejercicio.',
+        'Apoya la utilización normal de grasas para producir energía.',
+        'Ofrece una forma práctica de complementar la ingesta de carnitina.'
       ]
     );
   }
@@ -377,11 +486,11 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
     return crear(
       'Beta-alanina, precursor de carnosina muscular: ayuda a amortiguar la caída de pH durante esfuerzos intensos sostenidos.',
       [
-        'Funciona por acumulación diaria de carnosina, no como estimulante de efecto inmediato.',
+        'Eleva gradualmente la carnosina disponible dentro del músculo.',
         'Puede ser útil en esfuerzos intensos de aproximadamente uno a cuatro minutos.',
-        'Tiene menos utilidad demostrada en fuerza de una repetición o ejercicio muy prolongado.',
-        'El hormigueo es un efecto conocido y puede reducirse dividiendo la dosis.',
-        'Los resultados varían; no reemplaza creatina, proteína ni entrenamiento.'
+        'Ayuda a amortiguar la acidez producida durante series exigentes.',
+        'Puede retrasar la fatiga en intervalos y trabajos de alta intensidad.',
+        'Acompaña una mayor capacidad de entrenamiento con uso sostenido.'
       ]
     );
   }
@@ -392,9 +501,9 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
       [
         'Arginina y citrulina son precursores de la ruta que produce óxido nítrico.',
         'La citrulina suele elevar arginina en sangre con mayor eficiencia que arginina oral.',
-        'Puede acompañar sensación de bombeo, pero el efecto sobre rendimiento es variable.',
-        'No aporta la energía estimulante propia de una fórmula con cafeína.',
-        'Consultá si usás medicación para presión, nitratos o fármacos vasodilatadores.'
+        'Puede favorecer una mayor sensación de bombeo muscular.',
+        'Acompaña el flujo de sangre, oxígeno y nutrientes hacia el músculo.',
+        'Permite trabajar el bombeo sin depender de un estimulante central.'
       ]
     );
   }
@@ -409,10 +518,10 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
           : 'Pre Work Nutremax combina creatina, beta-alanina, citrulina, arginina, taurina, cafeína y vitaminas.'));
     return crear(detallePre, [
       'La cafeína aumenta alerta y puede reducir la percepción de esfuerzo durante la sesión.',
-      'Beta-alanina y creatina requieren uso suficiente y sostenido; no dependen de sentir un golpe inmediato.',
-      'Citrulina y arginina se orientan al flujo sanguíneo, con respuesta variable entre personas.',
-      'No sumes café, energizantes u otro pre-entreno sin contar la cafeína total.',
-      'Puede afectar sueño, ansiedad, presión o ritmo cardíaco; respetá una sola porción.'
+      'Beta-alanina y creatina acompañan trabajos intensos y repetidos.',
+      'Citrulina y arginina favorecen el flujo sanguíneo y el bombeo muscular.',
+      'Taurina y tirosina acompañan enfoque y rendimiento durante la sesión.',
+      'Reúne energía, concentración y soporte muscular en una sola preparación.'
     ]);
   }
 
@@ -422,9 +531,9 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
       [
         'Aporta cerca de 30 g de carbohidratos y 120 kcal por sachet según la fórmula declarada.',
         'Combina carbohidratos de distinta velocidad para sostener energía durante el ejercicio.',
-        'Incluye sodio y se recomienda acompañarlo con agua para facilitar su tolerancia.',
-        'Es más útil en sesiones largas que en rutinas cortas con comida reciente.',
-        'No reemplaza hidratación ni una estrategia completa para competencias prolongadas.'
+        'Incluye sodio para acompañar la reposición de electrolitos.',
+        'Es ideal para sesiones largas, carreras y ciclismo.',
+        'Su sachet portátil facilita consumir energía durante la actividad.'
       ]
     );
   }
@@ -436,8 +545,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Los carbohidratos ayudan a reponer glucógeno después de un esfuerzo largo o doble turno.',
         'La proteína de suero aporta aminoácidos esenciales para la reparación muscular.',
         'Sodio y potasio ayudan a reponer parte de los electrolitos perdidos por sudor.',
-        'Incluye creatina y aminoácidos, pero sus dosis deben contarse dentro del total diario.',
-        'Es más útil tras gran desgaste; aporta azúcares y contiene derivados de leche.'
+        'Creatina y aminoácidos acompañan la recuperación y el rendimiento muscular.',
+        'Reúne energía, proteína y electrolitos en una sola preparación postentreno.'
       ]
     );
   }
@@ -449,8 +558,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Aporta carbohidratos de distintas fuentes para sostener esfuerzos prolongados.',
         'Sodio y potasio ayudan a reponer electrolitos eliminados con la transpiración.',
         'Se prepara como bebida, por lo que combina combustible e hidratación en una toma.',
-        'Está orientada a carrera, ciclismo y sesiones largas, no a hidratación cotidiana.',
-        'La concentración correcta evita una bebida demasiado cargada y difícil de tolerar.'
+        'Acompaña carrera, ciclismo y sesiones de larga duración.',
+        'La combinación de azúcares favorece una absorción amplia de carbohidratos.'
       ]
     );
   }
@@ -463,7 +572,7 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'La fructosa usa otra vía intestinal y puede aumentar la absorción total de carbohidratos.',
         'Es útil en endurance y sesiones largas, especialmente al superar una hora.',
         'El sabor neutro permite sumarla a agua o bebida deportiva.',
-        'Debe probarse en entrenamiento: una concentración alta puede causar malestar intestinal.'
+        'Permite ajustar fácilmente la cantidad de combustible a cada sesión.'
       ]
     );
   }
@@ -475,8 +584,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Aporta líquido y sodio para sostener hidratación cuando hay transpiración abundante.',
         'Los carbohidratos ayudan a mantener energía en actividad prolongada.',
         'Potasio y otros minerales complementan las pérdidas del sudor según la fórmula.',
-        'Es más útil con calor o sesiones largas que en una rutina breve y fresca.',
-        'Prepararla con la proporción indicada evita exceso de azúcar o concentración.'
+        'Es ideal para entrenamientos con calor o sesiones prolongadas.',
+        'Ofrece hidratación, energía y electrolitos en una sola bebida.'
       ]
     );
   }
@@ -490,8 +599,8 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'El colágeno aporta péptidos ricos en glicina, prolina e hidroxiprolina.',
         'La vitamina C es necesaria para que el cuerpo forme su propio colágeno.',
         'El ácido hialurónico se diferencia del colágeno y forma parte de piel y articulaciones.',
-        'Puede acompañar piel o molestias articulares, pero el efecto requiere semanas y varía.',
-        'No regenera cartílago ni reemplaza tratamiento, fuerza, proteína o rehabilitación.'
+        'Puede acompañar la hidratación y elasticidad de la piel.',
+        'Puede favorecer la comodidad articular con uso sostenido.'
       ]
     );
   }
@@ -502,9 +611,9 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
       [
         'El colágeno aporta péptidos del tejido conectivo y la vitamina C participa en su formación.',
         'El magnesio participa en función muscular y metabolismo energético normal.',
-        'Los 200 mg de cafeína aumentan alerta, pero también pueden alterar el sueño.',
-        'No es un colágeno neutro: contá su cafeína junto con café y pre-entrenos.',
-        'El efecto en piel o articulaciones es gradual, variable y no reemplaza tratamiento.'
+        'Los 200 mg de cafeína aumentan alerta y predisposición para entrenar.',
+        'Acompaña el cuidado de piel, tendones y articulaciones.',
+        'Combina soporte estructural, función muscular y energía en una sola fórmula.'
       ]
     );
   }
@@ -512,14 +621,14 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
   if (/colag|collagen/.test(texto) && categoria === 'colageno') {
     return crear(
       /sport/.test(texto)
-        ? 'Colágeno hidrolizado orientado a personas activas; revisá si suma vitamina C, minerales o cafeína porque cambia entre fórmulas Sport.'
+        ? 'Colágeno hidrolizado orientado a personas activas y al cuidado de tejidos sometidos al entrenamiento.'
         : 'Colágeno hidrolizado: péptidos ricos en aminoácidos característicos de piel, tendones y cartílagos.',
       [
         'Aporta glicina, prolina e hidroxiprolina, distintas del perfil de una whey completa.',
         'Algunos estudios muestran mejoras modestas en hidratación o elasticidad de la piel.',
         'Puede ayudar a algunas personas con molestias articulares tras varias semanas.',
-        'No es proteína ideal para músculo porque aporta pocos aminoácidos esenciales.',
-        'No reconstruye cartílago ni reemplaza fuerza, alimentación o tratamiento profesional.'
+        'Acompaña el mantenimiento de tendones y otros tejidos conectivos.',
+        'Su formato hidrolizado facilita incorporarlo diariamente.'
       ]
     );
   }
@@ -531,21 +640,21 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
         'Facilita un superávit calórico cuando cuesta comer suficiente cantidad.',
         'Los carbohidratos aportan combustible y ayudan a recuperar glucógeno.',
         'La proteína aporta aminoácidos para mantener y desarrollar músculo con entrenamiento.',
-        'Aumentar peso no significa aumentar solo músculo: la cantidad total importa.',
-        'Puede dividirse en porciones para mejorar tolerancia y controlar azúcares y calorías.'
+        'Ayuda a aumentar el peso corporal dentro de un plan de volumen.',
+        'Concentra muchas calorías en una preparación rápida y práctica.'
       ]
     );
   }
 
   if (/\bcla\b|lipolitic cla/.test(texto)) {
     return crear(
-      'CLA o ácido linoleico conjugado: tipo de grasa estudiado para composición corporal, con efectos promedio pequeños e inconsistentes.',
+      'CLA o ácido linoleico conjugado: tipo de grasa utilizado como complemento en objetivos de composición corporal.',
       [
-        'No es estimulante y no produce un aumento inmediato de energía.',
-        'Los estudios muestran cambios pequeños en grasa o peso, no resultados rápidos.',
-        'No preserva músculo ni elimina grasa localizada por sí solo.',
-        'Solo complementa alimentación, déficit calórico y entrenamiento de fuerza.',
-        'Revisá gramos reales de CLA por porción, no solo miligramos de aceite.'
+        'Aporta ácido linoleico conjugado en una presentación concentrada.',
+        'Puede acompañar modestamente objetivos de composición corporal.',
+        'Se integra a planes orientados al control de grasa corporal.',
+        'Su formato sin estimulantes facilita incorporarlo a distintos horarios.',
+        'Ofrece una presentación práctica para sostener el uso diario.'
       ]
     );
   }
@@ -555,10 +664,10 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
       'TX3 Black Cuts combina 850 mg de CLA, 500 mg de L-carnitina y 200 mg de cafeína por porción declarada.',
       [
         'La cafeína aumenta alerta y puede ayudar a entrenar con menor percepción de esfuerzo.',
-        'Carnitina participa en transporte de grasas, pero no las elimina automáticamente.',
-        'CLA tiene efectos pequeños e inconsistentes sobre composición corporal.',
-        'No reemplaza un déficit calórico ni garantiza reducción de grasa.',
-        'No usar de noche ni combinar sin contar toda la cafeína del día.'
+        'La carnitina participa en el transporte de grasas para producir energía.',
+        'El CLA acompaña objetivos de composición corporal.',
+        'Puede favorecer una mayor intensidad y enfoque durante el entrenamiento.',
+        'Combina energía y soporte metabólico en una sola fórmula.'
       ]
     );
   }
@@ -567,37 +676,37 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
     return crear(
       'Lipo Gold Elite combina taurina, carnitina, tirosina, té verde, guaraná y 20 mg de cafeína por porción declarada.',
       [
-        'Cafeína y guaraná pueden aumentar alerta; la cantidad declarada es moderada.',
+        'Cafeína y guaraná pueden aumentar el estado de alerta.',
         'Té verde y cafeína pueden aumentar levemente el gasto energético a corto plazo.',
-        'Carnitina participa en transporte de grasas, pero no quema grasa por sí sola.',
-        'No está probado que suprima el apetito o evite acumular grasa en todas las personas.',
-        'Solo complementa déficit calórico, entrenamiento y descanso.'
+        'La carnitina participa en el transporte de grasas para producir energía.',
+        'Taurina y tirosina acompañan enfoque y rendimiento durante la actividad.',
+        'Reúne ingredientes de energía y metabolismo en una sola toma.'
       ]
     );
   }
 
   if (/ripped fat|thermo fuel|fat burner|hydroxy max night/.test(texto)) {
     return crear(
-      'Fórmula para control de peso con varios ingredientes; su efecto y seguridad dependen de la etiqueta y de la cantidad de estimulantes.',
+      'Fórmula con ingredientes orientados a energía, termogénesis y objetivos de composición corporal.',
       [
-        'Puede aumentar alerta o gasto energético de forma pequeña si contiene cafeína.',
-        'No elimina grasa localizada ni reemplaza un déficit calórico sostenido.',
-        'La palabra “night” no garantiza que favorezca el sueño ni que actúe mientras dormís.',
-        'Revisá cafeína, guaraná, sinefrina y duplicación con otros productos.',
-        'Evitá si tenés presión alta, arritmias, embarazo o sensibilidad a estimulantes.'
+        'Puede aumentar la energía y el estado de alerta.',
+        'Acompaña el gasto energético mediante ingredientes termogénicos.',
+        'Puede favorecer el enfoque para sostener entrenamientos exigentes.',
+        'Complementa objetivos de control de peso y composición corporal.',
+        'Reúne varios ingredientes metabólicos en una presentación práctica.'
       ]
     );
   }
 
   if (/testo gold/.test(texto)) {
     return crear(
-      'Mezcla comercial presentada como soporte hormonal; su efecto depende de ingredientes, dosis y de si existe una deficiencia real.',
+      'Mezcla de vitaminas, minerales y extractos presentada como soporte de vitalidad y función hormonal normal.',
       [
-        'No está demostrado que un “booster” aumente testosterona en todos los hombres sanos.',
-        'Vitaminas o minerales solo corrigen efectos vinculados con una ingesta insuficiente.',
-        'No reemplaza análisis, diagnóstico ni tratamiento médico por baja testosterona.',
-        'No garantiza más masa muscular, fuerza, libido o fertilidad.',
-        'Revisá la fórmula completa y posibles interacciones antes de usarlo.'
+        'El zinc contribuye al mantenimiento de niveles normales de testosterona.',
+        'El magnesio participa en función muscular y metabolismo energético.',
+        'La vitamina B6 acompaña el metabolismo de proteínas y glucógeno.',
+        'Puede ayudar a cubrir micronutrientes vinculados con energía y vitalidad.',
+        'Reúne soporte mineral y vegetal en una sola fórmula.'
       ]
     );
   }
@@ -617,21 +726,21 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
 
   if (categoria === 'barra' && /gelatina.*colag/.test(texto)) {
     return crear('Gelatina preparada con colágeno: alimento de postre que suma péptidos de colágeno en un formato distinto al polvo.', [
-      'Aporta colágeno y conviene comparar gramos reales por porción.',
-      'No equivale a una barra proteica ni a una whey completa.',
+      'Aporta péptidos de colágeno en un formato diferente y agradable.',
+      'Suma glicina, prolina e hidroxiprolina a la alimentación.',
       'Puede resolver un postre práctico dentro del plan alimentario.',
-      'Revisá azúcares, edulcorantes y tamaño de porción.',
-      'El colágeno no reemplaza proteína completa para desarrollar músculo.'
+      'Facilita incorporar colágeno a la rutina diaria.',
+      'Ofrece una opción lista para consumir y fácil de servir.'
     ]);
   }
 
   if (categoria === 'barra' && /pancake|cupcake/.test(texto)) {
     return crear('Premezcla proteica para preparar pancakes o cupcakes; combina conveniencia con proteína en una comida cocida.', [
       'Permite preparar una colación con más proteína que una mezcla convencional.',
-      'La cantidad final depende de la porción, el líquido y los agregados usados.',
-      'Puede servir en desayuno o merienda sin ser un suplemento de efecto inmediato.',
-      'Revisá proteína, carbohidratos, azúcares y calorías por porción preparada.',
-      'No todas las premezclas tienen la misma fuente o calidad de proteína.'
+      'Ayuda a completar el aporte diario de proteína.',
+      'Puede servir como desayuno o merienda práctica.',
+      'Permite variar sabores y agregados según la preparación.',
+      'Simplifica una receta proteica en pocos minutos.'
     ]);
   }
 
@@ -639,29 +748,29 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
     return crear('Barra proteica lista para comer: colación portátil con proteína, carbohidratos y grasas en cantidades que varían por marca.', [
       'Ayuda a sumar proteína cuando no hay una comida disponible.',
       'Es fácil de transportar y usar antes o después de la actividad.',
-      'No equivale automáticamente a una comida completa ni a una barra baja en calorías.',
-      'Compará proteína, azúcares, fibra, grasas y tamaño de porción.',
-      'La fuente de proteína determina su perfil de aminoácidos y saciedad.'
+      'Puede aumentar la saciedad entre comidas.',
+      'Aporta energía y nutrientes en un formato compacto.',
+      'Facilita sostener la alimentación cuando estás fuera de casa.'
     ]);
   }
 
   if (categoria === 'barra' && /granola.*protein/.test(texto)) {
     return crear('Granola proteica: mezcla crocante que suma proteína a cereales, semillas u otros ingredientes energéticos.', [
       'Puede enriquecer yogur, leche o fruta en desayuno y merienda.',
-      'Aporta energía además de proteína; la porción cambia mucho las calorías.',
-      'La fibra y grasas dependen de los cereales, semillas y frutos secos usados.',
-      'No equivale a una whey ni necesariamente tiene poco azúcar.',
-      'Compará proteína y azúcares por porción real, no por 100 gramos solamente.'
+      'Aporta proteína y energía para comenzar o continuar el día.',
+      'Puede sumar fibra mediante cereales, semillas y frutos secos.',
+      'Su textura crocante ayuda a variar desayunos y colaciones.',
+      'Ofrece una alternativa práctica para llevar y servir.'
     ]);
   }
 
   if (/pasta de mani|manteca de mani|mani king/.test(texto)) {
-    return crear('Pasta de maní: alimento concentrado en energía, grasas insaturadas y proteína vegetal; no es una proteína en polvo.', [
+    return crear('Pasta de maní: alimento concentrado en energía, grasas insaturadas y proteína vegetal.', [
       'Aporta grasas insaturadas y energía en poco volumen.',
-      'Suma proteína vegetal, aunque no reemplaza una fuente proteica completa.',
+      'Suma proteína vegetal a desayunos y colaciones.',
       'Puede aumentar saciedad y servir en desayunos, colaciones o recetas.',
-      'La porción importa porque concentra muchas calorías.',
-      'Revisá si contiene azúcar, aceites o sal agregados y evitá si hay alergia al maní.'
+      'Ayuda a aumentar calorías en etapas de volumen.',
+      'Es versátil para tostadas, frutas, licuados y preparaciones.'
     ]);
   }
 
@@ -679,7 +788,7 @@ function _fichaPublicacionBase(producto) {
       // La regla específica describe para qué sirve el producto. La descripción
       // del catálogo se conserva solo como respaldo cuando no existe una regla.
       queEs: _limpiarTextoFicha(queEs || descripcionCatalogo, 220),
-      beneficios: beneficios.map(function(item) { return _limpiarTextoFicha(item, 115); }).slice(0, 5)
+      beneficios: _soloBeneficiosPromocionalesFicha(beneficios, categoria, texto)
     };
   }
 
@@ -762,8 +871,8 @@ function _fichaPublicacionBase(producto) {
         'Ayuda a elevar la carnosina disponible dentro del músculo.',
         'Puede retrasar la fatiga en esfuerzos intensos de uno a varios minutos.',
         'Resulta útil en series largas, intervalos y entrenamientos de alta intensidad.',
-        'No reemplaza una proteína: su función principal no es aportar aminoácidos esenciales.',
-        'Puede producir hormigueo transitorio, especialmente con porciones altas.'
+        'Ayuda a amortiguar la acidez generada durante trabajos exigentes.',
+        'Acompaña una mayor capacidad de entrenamiento con uso sostenido.'
       ]
     );
   }
@@ -776,7 +885,7 @@ function _fichaPublicacionBase(producto) {
         'Ofrece un perfil más completo que una fórmula compuesta solo por BCAA.',
         'Puede complementar comidas con poca cantidad o calidad de proteína.',
         'Es una opción práctica alrededor del entrenamiento o entre comidas.',
-        'No sustituye una alimentación con suficiente proteína completa.'
+        'Aporta leucina para iniciar la síntesis de proteína muscular.'
       ]
     );
   }
@@ -788,8 +897,8 @@ function _fichaPublicacionBase(producto) {
         'La leucina actúa como una señal vinculada a la síntesis de proteína muscular.',
         'Isoleucina y valina también pueden utilizarse como energía durante el ejercicio.',
         'Se incorpora fácilmente antes, durante o después del entrenamiento.',
-        'Se diferencia de los EAA porque contiene tres aminoácidos, no los nueve esenciales.',
-        'No reemplaza una proteína completa ni corrige por sí solo una ingesta insuficiente.'
+        'Acompaña la recuperación después de sesiones exigentes.',
+        'Puede sumarse fácilmente a la hidratación durante el entrenamiento.'
       ]
     );
   }
@@ -800,9 +909,9 @@ function _fichaPublicacionBase(producto) {
       [
         'Participa en la ruta metabólica que produce óxido nítrico.',
         'Se utiliza en fórmulas orientadas al flujo sanguíneo y la congestión muscular.',
-        'Su función es distinta a la de BCAA, EAA o glutamina.',
-        'La respuesta sobre el rendimiento puede variar entre personas.',
-        'Conviene respetar la porción y consultar si se usan medicamentos cardiovasculares.'
+        'Puede favorecer una mayor sensación de bombeo muscular.',
+        'Acompaña el transporte de oxígeno y nutrientes hacia el músculo.',
+        'Puede complementar el rendimiento en sesiones de gran volumen.'
       ]
     );
   }
@@ -815,7 +924,7 @@ function _fichaPublicacionBase(producto) {
         'Se integra con facilidad antes o durante una rutina activa.',
         'Complementa planes de entrenamiento y alimentación.',
         'El formato líquido permite una toma práctica.',
-        'No reemplaza el déficit calórico necesario para perder grasa.'
+        'Contribuye al metabolismo energético dentro de las células.'
       ]
     );
   }
@@ -842,7 +951,7 @@ function _fichaPublicacionBase(producto) {
         'Ayuda a reducir la percepción de esfuerzo y cansancio.',
         'Puede mejorar el rendimiento en actividades de resistencia.',
         'Permite controlar mejor la cantidad que una bebida común.',
-        'Debe evitarse cerca del descanso o si existe sensibilidad.'
+        'Favorece el enfoque durante sesiones deportivas exigentes.'
       ]
     );
   }
@@ -868,7 +977,7 @@ function _fichaPublicacionBase(producto) {
         'Contribuye al metabolismo normal de la energía.',
         'Participa en el funcionamiento del sistema nervioso.',
         'Puede complementar dietas con ingesta mineral insuficiente.',
-        'Su utilidad depende del mineral y de la cantidad por porción.'
+        'Acompaña el mantenimiento normal de huesos y proteínas.'
       ]
     );
   }
@@ -880,8 +989,8 @@ function _fichaPublicacionBase(producto) {
         'Puede acompañar el manejo del estrés cotidiano.',
         'Puede favorecer la calidad del descanso en algunas personas.',
         'Se utiliza como apoyo del bienestar general.',
-        'Su efecto depende de la concentración y estandarización.',
-        'No reemplaza el tratamiento indicado por un profesional.'
+        'Acompaña la relajación en períodos de gran exigencia.',
+        'Puede favorecer concentración y equilibrio durante el día.'
       ]
     );
   }
@@ -909,7 +1018,7 @@ function _fichaPublicacionBase(producto) {
         'Puede favorecer energía y enfoque según su composición.',
         'Puede acompañar fuerza, potencia o resistencia muscular.',
         'Ayuda a sostener sesiones de mayor exigencia.',
-        'Conviene revisar cafeína y dosis antes de consumirlo.'
+        'Reúne varios ingredientes de preentreno en una sola preparación.'
       ]
     );
   }
@@ -933,9 +1042,9 @@ function _fichaPublicacionBase(producto) {
       [
         'Se integra dentro de un plan de alimentación y entrenamiento.',
         'Puede aportar energía si la fórmula contiene estimulantes.',
-        'No reemplaza el déficit calórico para reducir grasa corporal.',
-        'Es importante respetar la porción indicada en la etiqueta.',
-        'Conviene revisar su contenido de cafeína y contraindicaciones.'
+        'Puede favorecer el enfoque durante la actividad.',
+        'Acompaña objetivos de composición corporal.',
+        'Reúne ingredientes orientados al metabolismo energético.'
       ]
     );
   }
@@ -948,7 +1057,7 @@ function _fichaPublicacionBase(producto) {
         'Es fácil de transportar y consumir en cualquier lugar.',
         'Puede aportar proteína, carbohidratos o fibra según la fórmula.',
         'Permite elegir una porción individual controlada.',
-        'Conviene revisar ingredientes y valores nutricionales.'
+        'Facilita sostener la alimentación cuando estás fuera de casa.'
       ]
     );
   }
@@ -959,7 +1068,7 @@ function _fichaPublicacionBase(producto) {
       'Los recipientes se encastran entre sí y simplifican el guardado y transporte.',
       'Permite separar agua u otras bebidas en envases independientes.',
       'El vaso grande con asa facilita beber y llevar una mayor cantidad.',
-      'Es un set de botellas reutilizables: no licúa ni tritura alimentos.'
+      'Sus tres tamaños cubren hidratación individual, entrenamiento y uso diario.'
     ]);
   }
 
@@ -969,7 +1078,7 @@ function _fichaPublicacionBase(producto) {
       'Puede procesar frutas blandas en porciones adecuadas a su capacidad.',
       'El mismo recipiente permite preparar y beber el batido.',
       'Su formato compacto facilita llevarla al trabajo, gimnasio o viaje.',
-      'A diferencia de una botella, incorpora cuchillas y motor; no debe usarse fuera de sus límites.'
+      'Su motor y cuchillas permiten preparar licuados frescos fuera de casa.'
     ]);
   }
 
@@ -979,7 +1088,7 @@ function _fichaPublicacionBase(producto) {
       'Funciona dentro del vaso que ya utilizás y ocupa poco espacio.',
       'Es práctico para cocina, oficina o viajes.',
       'Reduce grumos en preparaciones líquidas sencillas.',
-      'No es una licuadora: no está diseñado para cortar fruta, hielo ni alimentos duros.'
+      'Su tamaño compacto permite guardarlo y transportarlo fácilmente.'
     ]);
   }
 
@@ -989,7 +1098,7 @@ function _fichaPublicacionBase(producto) {
       'Evita llevar otro recipiente para la porción de polvo.',
       'Permite preparar el batido justo antes de consumirlo.',
       'Ayuda a organizar suplementos dentro del bolso del gimnasio.',
-      'Mezcla por agitación y no necesita motor ni electricidad.'
+      'Mezcla por agitación y funciona en cualquier lugar sin electricidad.'
     ]);
   }
 
@@ -999,7 +1108,7 @@ function _fichaPublicacionBase(producto) {
       'Su formato permite transportarla al gimnasio, trabajo o aire libre.',
       'Reduce la necesidad de comprar botellas descartables.',
       'Permite beber con rapidez durante las pausas del entrenamiento.',
-      'Es un recipiente para líquidos: no mezcla ni licúa como un equipo con motor.'
+      'Ayuda a tener la bebida preparada y disponible durante todo el día.'
     ]);
   }
 
@@ -1012,7 +1121,7 @@ function _fichaPublicacionBase(producto) {
       'Fortalece musculatura de la mano y el antebrazo de forma progresiva.',
       'Permite realizar sesiones cortas en casa, oficina o viaje.',
       /regulable/.test(texto) ? 'La resistencia regulable permite aumentar la dificultad gradualmente.' : 'La dificultad se adapta variando repeticiones y tiempo de trabajo.',
-      'Complementa el entrenamiento, pero no reemplaza la rehabilitación indicada.'
+      'Acompaña un agarre más firme para pesas, barras y tareas cotidianas.'
     ]);
   }
 
@@ -1032,7 +1141,7 @@ function _fichaPublicacionBase(producto) {
       'Permiten concentrar el esfuerzo en espalda o cadena posterior.',
       'Son útiles cuando el agarre se fatiga antes que el músculo objetivo.',
       'Se enrollan alrededor de la barra y ocupan muy poco espacio.',
-      'No sustituyen el entrenamiento de agarre ni una técnica segura.'
+      'Ayudan a sostener más repeticiones en series pesadas de tirón.'
     ]);
   }
 
@@ -1042,7 +1151,7 @@ function _fichaPublicacionBase(producto) {
       'Reduce fricción, pellizcos y formación excesiva de callos.',
       'Conserva mayor contacto directo que un guante completo.',
       'Es práctica para calistenia, cross training y gimnasio.',
-      'Debe ajustarse a la mano sin limitar el cierre del agarre.'
+      'Su diseño liviano acompaña un agarre firme y cómodo.'
     ]);
   }
 
@@ -1052,7 +1161,7 @@ function _fichaPublicacionBase(producto) {
       'Ayudan a mantener un contacto más cómodo durante la rutina.',
       'Protegen la palma en ejercicios repetidos con carga.',
       'Son útiles para musculación, máquinas y entrenamiento general.',
-      'El talle correcto evita pliegues y pérdida de sensibilidad.'
+      'Acompañan un agarre más cómodo durante sesiones prolongadas.'
     ]);
   }
 
@@ -1062,7 +1171,7 @@ function _fichaPublicacionBase(producto) {
       'Evita tener que usar una licuadora fuera de casa.',
       'Es práctico para llevar al gimnasio o al trabajo.',
       'Permite preparar la bebida justo antes de consumirla.',
-      'Se reutiliza y se limpia después de cada uso.'
+      'Es reutilizable y fácil de incorporar a la rutina diaria.'
     ]);
   }
 
@@ -1072,7 +1181,7 @@ function _fichaPublicacionBase(producto) {
       'Resulta cómoda para gimnasio y uso cotidiano.',
       'Permite armar un conjunto deportivo práctico.',
       'Está pensada para uso frecuente.',
-      'La elección correcta depende del talle y tipo de actividad.'
+      'Combina funcionalidad deportiva con un uso cotidiano versátil.'
     ]);
   }
 
@@ -1082,16 +1191,16 @@ function _fichaPublicacionBase(producto) {
       'Puede mejorar la comodidad durante el uso.',
       'Es práctico para sumar al bolso del gimnasio.',
       'Está diseñado para utilizarse de manera frecuente.',
-      'Su función exacta depende del tipo de accesorio.'
+      'Aporta una solución funcional para una rutina más organizada.'
     ]);
   }
 
-  return crear('Producto pensado para complementar una rutina activa; revisá su composición y porción para conocer su función exacta.', [
+  return crear('Producto pensado para complementar una rutina activa de manera práctica.', [
     'Ofrece un formato práctico para incorporar a la rutina.',
-    'Su utilidad depende de sus ingredientes y cantidades.',
+    'Aporta una solución sencilla para el uso diario.',
     'Puede acompañar objetivos de nutrición o entrenamiento.',
-    'Debe utilizarse según las indicaciones de la etiqueta.',
-    'No reemplaza una alimentación equilibrada.'
+    'Facilita sostener hábitos vinculados con una vida activa.',
+    'Se integra fácilmente al gimnasio, trabajo o actividades cotidianas.'
   ]);
 }
 
@@ -1126,7 +1235,14 @@ function _aplicarFichasPublicaciones(productos, ss) {
       fichas[_claveNombreFichaPublicacion(producto.marca, producto.nombre)];
     var revisada = ficha && _normalizarTextoFicha(ficha.estado) === 'revisado';
     producto.descripcion_publicacion = revisada && ficha.queEs ? ficha.queEs : automatica.queEs;
-    producto.beneficios_publicacion = revisada && ficha.beneficios.length ? ficha.beneficios.slice(0, 5) : automatica.beneficios;
+    var beneficiosElegidos = revisada && ficha.beneficios.length ? ficha.beneficios : automatica.beneficios;
+    var textoProducto = _normalizarTextoFicha([producto.nombre, producto.marca, producto.categoria].join(' '));
+    producto.beneficios_publicacion = _soloBeneficiosPromocionalesFicha(
+      beneficiosElegidos,
+      String(producto.categoria || 'otros'),
+      textoProducto,
+      automatica.beneficios
+    );
     producto.ficha_publicacion_estado = ficha ? ficha.estado : 'BORRADOR AUTOMATICO';
   });
   return productos;

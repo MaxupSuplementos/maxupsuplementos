@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const api = read('Api.gs');
 const system = read('SystemV3.gs');
+const stockObjetivo = read('StockObjetivo.gs');
 const admin = read('admin.html');
 const mayorista = read('mayorista.html');
 const app = read('app.js');
@@ -16,7 +17,7 @@ const index = read('index.html');
 const privacy = read('privacidad.html');
 const transparentLogo = fs.readFileSync(path.join(root, 'logo-transparent.png'));
 
-for (const file of ['Api.gs', 'SystemV3.gs', 'Ventas.gs', 'app.js']) {
+for (const file of ['Api.gs', 'SystemV3.gs', 'Ventas.gs', 'StockObjetivo.gs', 'app.js']) {
   assert.doesNotThrow(() => new Function(read(file)), `${file} debe tener sintaxis JavaScript valida`);
 }
 assert.doesNotThrow(() => new Function(admin.match(/<script>([\s\S]*?)<\/script>/)[1]), 'admin.html debe tener sintaxis JavaScript valida');
@@ -31,6 +32,14 @@ assert(!/login_mayorista[^'"\s]*password=/.test(mayorista), 'La clave mayorista 
 assert(api.includes("notification_url: _getConfig().API_URL_SELF"), 'Mercado Pago debe tener webhook');
 assert(system.includes('procesarWebhookMercadoPago'), 'Debe verificarse el pago con Mercado Pago');
 assert(system.includes('MOVIMIENTOS_STOCK'), 'Debe existir historial de movimientos de stock');
+assert(stockObjetivo.includes('CONTROL DE STOCK OBJETIVO Y CAPITAL'), 'El control debe mostrar stock objetivo y capital');
+assert(stockObjetivo.includes('Costo compra unitario'), 'El control debe conservar el costo real de compra');
+assert(stockObjetivo.includes('Reinversión necesaria'), 'El control debe calcular la reinversion necesaria');
+assert(stockObjetivo.includes("}, 15);"), 'Debe precargar 15 creatinas Star como objetivo inicial');
+assert(stockObjetivo.includes("}, 6);"), 'Debe precargar 6 Collagen Sport Star como objetivo inicial');
+assert(stockObjetivo.includes("}, 3);"), 'Debe precargar 3 glutaminas como objetivo inicial');
+assert(stockObjetivo.includes("='SUPLEMENTOS'!D"), 'El stock actual debe actualizarse solo desde SUPLEMENTOS');
+assert(stockObjetivo.includes('instalarControlStockObjetivo'), 'Debe poder instalarse el control y su menú');
 assert(api.includes("return { ok: false, errores:"), 'El stock insuficiente debe bloquear la operacion');
 assert(app.includes("sku:      i.sku || ''"), 'Los pedidos web deben enviar SKU');
 assert(system.includes('backupDiarioMaxup'), 'Debe existir backup automatico');
@@ -216,4 +225,3 @@ assert(detalleAsistente.includes('Ayuda a reparar el musculo'), 'El detalle debe
 assert(detalleAsistente.includes('3 x $4.000'), 'El detalle debe informar el estimado de cuotas');
 
 console.log('OK - contratos principales del sistema v3 verificados');
-

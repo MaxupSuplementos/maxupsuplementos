@@ -161,20 +161,21 @@ function smokeGlow(ctx,cx,cy,radius){
 }
 
 const DAILY_BENEFITS={
-  creatina:['Contribuye a mejorar fuerza y potencia.','Acompaña el rendimiento en series intensas.','Uso diario, simple de sumar a tu rutina.'],
-  proteina:['Ayuda a completar tu proteína diaria.','Acompaña la recuperación muscular.','Práctica para después de entrenar.'],
-  preworkout:['Energía para empezar el entrenamiento.','Más enfoque en sesiones exigentes.','Ideal para tomar antes de tu rutina.'],
-  aminoacido:['Acompaña la recuperación muscular.','Práctico para usar antes o después.','Complementa una rutina activa.'],
-  colageno:['Acompaña el cuidado de articulaciones.','Complementa el bienestar de piel y tendones.','Fácil de incorporar todos los días.'],
-  vitamin:['Complementa la alimentación diaria.','Acompaña energía y bienestar general.','Formato práctico y fácil de incorporar.'],
-  gainer:['Aporta calorías en forma práctica.','Incluye proteínas y carbohidratos.','Ideal para objetivos de aumento de masa.'],
-  hidratacion:['Ayuda a reponer líquidos y minerales.','Acompaña el rendimiento durante la actividad.','Práctico para entrenamientos intensos.'],
-  barra:['Colación práctica para cualquier momento.','Fácil de llevar al trabajo o al gimnasio.','Una opción rica para resolver el día.'],
-  shaker:['Mezclá tus suplementos con facilidad.','Cómodo para llevar al gimnasio.','Reutilizable y simple de limpiar.'],
-  accesorio:['Más comodidad durante el entrenamiento.','Práctico para sumar a tu rutina.','Diseñado para uso frecuente.'],
-  indumentaria:['Comodidad para entrenar y moverte.','Diseñada para acompañar tu actividad.','Estilo deportivo para todos los días.'],
-  quemador:['Pensado para etapas de definición.','Complementa entrenamiento y alimentación.','Uso práctico dentro de una rutina activa.'],
-  otros:['Un aliado práctico para tu rutina.','Fácil de incorporar todos los días.','Pensado para acompañar tus objetivos.']
+  creatina:['Contribuye a mejorar fuerza y potencia.','Acompaña el rendimiento en series intensas.','Favorece una mayor capacidad de trabajo.','Apoya la recuperación entre esfuerzos.','Acompaña el desarrollo de masa magra.'],
+  proteina:['Ayuda a completar tu proteína diaria.','Acompaña la recuperación muscular.','Favorece el mantenimiento de masa muscular.','Apoya el desarrollo de masa magra.','Aporta saciedad y nutrición práctica.'],
+  preworkout:['Aporta energía para entrenar.','Favorece el enfoque en sesiones exigentes.','Acompaña la potencia y el rendimiento.','Ayuda a sostener la intensidad.','Contribuye a una rutina más activa.'],
+  cafeina:['Aumenta el estado de alerta.','Ayuda a reducir la percepción de esfuerzo.','Favorece el tiempo de reacción.','Favorece el enfoque y la concentración.','Acompaña el rendimiento en sesiones intensas.'],
+  aminoacido:['Acompaña la recuperación muscular.','Ayuda a proteger la masa muscular.','Favorece la síntesis de proteínas.','Acompaña el rendimiento deportivo.','Contribuye al mantenimiento muscular.'],
+  colageno:['Acompaña el cuidado de articulaciones.','Contribuye al bienestar de tendones.','Favorece la elasticidad de la piel.','Apoya la salud de huesos y cartílagos.','Complementa el cuidado diario del tejido conectivo.'],
+  vitamin:['Complementa la alimentación diaria.','Acompaña el metabolismo energético.','Contribuye al funcionamiento del organismo.','Apoya las defensas naturales.','Favorece el bienestar general.'],
+  gainer:['Aporta calorías de forma práctica.','Combina proteínas y carbohidratos.','Acompaña objetivos de aumento de masa.','Favorece la recuperación energética.','Ayuda a completar una alimentación exigente.'],
+  hidratacion:['Ayuda a reponer líquidos y minerales.','Acompaña el rendimiento durante la actividad.','Favorece la hidratación sostenida.','Contribuye al equilibrio de electrolitos.','Ayuda a sostener entrenamientos intensos.'],
+  barra:['Aporta energía de forma práctica.','Ayuda a resolver una colación.','Es fácil de transportar.','Brinda una opción rica y conveniente.','Acompaña días y entrenamientos activos.'],
+  shaker:['Logra mezclas más uniformes.','Facilita transportar tus suplementos.','Reduce derrames con cierre seguro.','Es reutilizable y fácil de limpiar.','Aporta comodidad dentro y fuera del gimnasio.'],
+  accesorio:['Aporta mayor comodidad al entrenar.','Mejora el soporte durante la actividad.','Facilita una rutina más práctica.','Está pensado para uso frecuente.','Complementa tu equipamiento deportivo.'],
+  indumentaria:['Brinda comodidad para moverte.','Acompaña el entrenamiento diario.','Ofrece libertad de movimiento.','Combina funcionalidad y estilo deportivo.','Es versátil para entrenar o usar todos los días.'],
+  quemador:['Acompaña objetivos de definición.','Favorece una rutina más activa.','Complementa el gasto energético.','Ayuda a sostener el enfoque.','Acompaña entrenamiento y alimentación.'],
+  otros:['Aporta practicidad a tu rutina.','Acompaña tus objetivos diarios.','Complementa un estilo de vida activo.','Ofrece una solución cómoda y funcional.','Suma valor a tu entrenamiento o bienestar.']
 };
 
 const DAILY_EXPLAINERS={
@@ -197,9 +198,23 @@ const DAILY_EXPLAINERS={
 function dailyBenefits(p){
   const cat=dailyCategory(p);
   const fallback=DAILY_BENEFITS[cat]||DAILY_BENEFITS.otros;
-  const custom=Array.isArray(p.pubBenefits)?p.pubBenefits.map(v=>String(v||'').trim()).filter(Boolean):[];
-  const extras=['Revisá la porción indicada para conocer su aporte.','Complementa una alimentación acorde a tus objetivos.'];
+  const custom=Array.isArray(p.pubBenefits)?p.pubBenefits.map(sanitizeDailyPromotionalBenefit).filter(Boolean):[];
+  const extras=['Aporta practicidad a una rutina activa.','Acompaña tus objetivos de nutrición o entrenamiento.'];
   return [...new Set(custom.concat(fallback,extras))].slice(0,5);
+}
+
+function isDailyPromotionalBenefit(value){
+  const text=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if(!text)return false;
+  return !/(consulta|consultar|revisa la etiqueta|no significa|puede causar|efectos adversos|anticoagul|cirugia|contraindic|dosis|suele actuar|no asegura|respuesta varia|evita mezclar|no reemplaza|suma la cafeina|combina con cafe|tomalo|tomar antes|tomar despues)/.test(text);
+}
+
+function sanitizeDailyPromotionalBenefit(value){
+  let text=String(value||'').trim();
+  if(!text)return '';
+  const partes=text.split(';');
+  if(partes.length>1&&!isDailyPromotionalBenefit(partes.slice(1).join(';')))text=partes[0].trim();
+  return isDailyPromotionalBenefit(text)?text:'';
 }
 
 function dailyExplainer(p){
@@ -209,10 +224,11 @@ function dailyExplainer(p){
 }
 
 function dailyCategory(p){
-  const raw=String(p.cat||'otros').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const raw=String((p.cat||'otros')+' '+(p.n||'')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   if(raw.includes('creatina'))return 'creatina';
   if(raw.includes('prote'))return 'proteina';
   if(raw.includes('pre')&&raw.includes('entren'))return 'preworkout';
+  if(raw.includes('cafeina')||raw.includes('caffeine'))return 'cafeina';
   if(raw.includes('amino')||raw.includes('glutamina')||raw.includes('carnitina'))return 'aminoacido';
   if(raw.includes('colag'))return 'colageno';
   if(raw.includes('vitamin')||raw.includes('mineral'))return 'vitamin';
@@ -245,19 +261,25 @@ function wrapCanvasLines(ctx,text,maxWidth,maxLines){
 function drawDailyBenefitList(ctx,p,startY,endY){
   const items=dailyBenefits(p).slice(0,5);
   const rowHeight=Math.max(54,Math.floor((endY-startY)/Math.max(items.length,1)));
+  const benefitPalette=[
+    {dot:'#00C8FF',text:'#DDF8FF',back:'rgba(0,200,255,.055)'},
+    {dot:'#C996FF',text:'#F4E6FF',back:'rgba(201,150,255,.055)'}
+  ];
   // El flyer se comparte principalmente desde el teléfono: aprovechamos la
-  // altura disponible para que los beneficios se lean sin tener que ampliar.
-  const fontSize=Math.max(35,Math.min(40,Math.floor(rowHeight*.47)));
+  // altura disponible y alternamos dos tonos suaves para separar cada punto.
+  const fontSize=Math.max(38,Math.min(43,Math.floor(rowHeight*.51)));
   const lineHeight=fontSize+5;
   ctx.save();ctx.font=`600 ${fontSize}px 'Rajdhani',sans-serif`;ctx.textAlign='left';ctx.textBaseline='alphabetic';
   items.forEach((item,index)=>{
     const y=startY+(index*rowHeight);
+    const palette=benefitPalette[index%benefitPalette.length];
     const lines=wrapCanvasLines(ctx,item,800,2);
-    ctx.beginPath();ctx.arc(124,y+12,10,0,Math.PI*2);ctx.fillStyle='#00C8FF';ctx.fill();
+    rr(ctx,100,y-12,870,rowHeight-6,12);ctx.fillStyle=palette.back;ctx.fill();
+    ctx.beginPath();ctx.arc(124,y+12,10,0,Math.PI*2);ctx.fillStyle=palette.dot;ctx.fill();
     lines.forEach((line,lineIndex)=>{
       const lineY=y+fontSize-8+(lineIndex*lineHeight);
       ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillText(line,152,lineY+2);
-      ctx.fillStyle='#eee';ctx.fillText(line,150,lineY);
+      ctx.fillStyle=palette.text;ctx.fillText(line,150,lineY);
     });
   });
   ctx.restore();
@@ -324,7 +346,7 @@ async function drawDailyStory(canvas,p,index,total){
   const descriptionEnd=wrapSolid(ctx,dailyExplainer(p),W/2,benefitY+86,W-190,41,'#eee',"600 34px 'Rajdhani',sans-serif");
   const separatorY=descriptionEnd+20;
   ctx.strokeStyle='rgba(0,200,255,.25)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(115,separatorY);ctx.lineTo(W-115,separatorY);ctx.stroke();
-  solidText(ctx,'5 PUNTOS CLAVE',W/2,separatorY+42,'#00C8FF',"bold 30px 'Rajdhani',sans-serif");
+  solidText(ctx,'5 BENEFICIOS',W/2,separatorY+42,'#00C8FF',"bold 32px 'Rajdhani',sans-serif");
   drawDailyBenefitList(ctx,p,separatorY+60,benefitBottom-14);
 
   rr(ctx,W/2-235,1730,470,72,36);ctx.fillStyle=g;ctx.fill();
@@ -563,5 +585,4 @@ function dl(){
 </script>
 </body>
 </html>
-
 
