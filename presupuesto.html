@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MAXUP — Generar Presupuesto</title>
+<title>MAXUP — Caja y comprobantes</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--cyan:#00C8FF;--pink:#FF00AA;--dark:#0a0a1a;--card:#12122a}
@@ -21,7 +21,10 @@ body{font-family:'Segoe UI',sans-serif;background:var(--dark);color:#e0e0e0;min-
 .form-group label{display:block;font-size:.75rem;color:#888;margin-bottom:4px}
 .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px;background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:.85rem}
 .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--cyan)}
-textarea{resize:vertical;min-height:60px}
+textarea{width:100%;resize:vertical;min-height:76px;padding:10px;background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font:inherit}
+textarea:focus{outline:none;border-color:var(--cyan)}
+.choice-note{font-size:.74rem;color:#9aa0b4;line-height:1.45;margin-top:6px}
+.fiscal-note{padding:10px 12px;border:1px solid rgba(255,193,7,.35);border-radius:8px;background:rgba(255,193,7,.07);color:#e5cf83;font-size:.76rem;line-height:1.45}
 
 /* Buscador productos */
 .prod-search-wrap{position:relative}
@@ -60,7 +63,8 @@ textarea{resize:vertical;min-height:60px}
 .btn-clear{background:none;border:1px solid rgba(255,255,255,.15);color:#888}
 .btn-clear:hover{color:#f44;border-color:#f44}
 
-/* ── PRESUPUESTO IMPRIMIBLE ── */
+/* ── COMPROBANTE IMPRIMIBLE ── */
+@page{margin:8mm}
 @media print{
   body{background:#fff!important;color:#000!important}
   .editor,.actions,.no-print{display:none!important}
@@ -89,13 +93,56 @@ textarea{resize:vertical;min-height:60px}
 .doc-obs{font-size:.8rem;color:#555;margin-top:20px;padding-top:12px;border-top:1px solid #ddd}
 .doc-footer{margin-top:40px;text-align:center;font-size:.7rem;color:#aaa;border-top:1px solid #eee;padding-top:12px}
 .doc-stamp{font-size:.65rem;color:#999;text-align:center;margin-top:8px}
+
+/* Ticket para impresora térmica de 80 mm */
+.print-doc.thermal{width:76mm;max-width:76mm;padding:4mm;font-family:Arial,sans-serif}
+.print-doc.thermal .doc-header{display:block;text-align:center;margin-bottom:12px;padding-bottom:10px}
+.print-doc.thermal .doc-logo img{height:58px}
+.print-doc.thermal .doc-logo .doc-biz{font-size:8pt}
+.print-doc.thermal .doc-title{text-align:center;margin-top:8px}
+.print-doc.thermal .doc-title h2{font-size:15pt}
+.print-doc.thermal .doc-title .doc-meta{font-size:8pt}
+.print-doc.thermal .doc-section{margin-bottom:10px}
+.print-doc.thermal .doc-table th,.print-doc.thermal .doc-table td{padding:5px 2px;font-size:7.5pt}
+.print-doc.thermal .doc-table th:nth-child(3),.print-doc.thermal .doc-table td:nth-child(3){display:none}
+.print-doc.thermal .doc-client,.print-doc.thermal .doc-obs{font-size:8pt}
+.print-doc.thermal .doc-footer{margin-top:16px;font-size:7pt}
+.print-doc.thermal .doc-stamp{font-size:6.5pt}
 </style>
 </head>
 <body>
 
 <!-- ── EDITOR ── -->
 <div class="editor no-print">
-  <h1>📄 Generar Presupuesto — MAXUP</h1>
+  <h1>🧾 Caja y comprobantes — MAXUP</h1>
+
+  <div class="section">
+    <h3>Tipo de operación</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Documento</label>
+        <select id="tipoDocumento" onchange="actualizarDocumento()">
+          <option value="PRESUPUESTO">Presupuesto</option>
+          <option value="RECIBO DE COMPRA">Recibo de compra</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Forma de pago</label>
+        <select id="formaPago" onchange="cambiarFormaPago()">
+          <option value="contado">Efectivo</option>
+          <option value="transferencia">Transferencia</option>
+          <option value="debito">Tarjeta de débito</option>
+          <option value="tarjeta">Tarjeta de crédito</option>
+        </select>
+        <div class="choice-note">Efectivo, transferencia y débito usan el precio de contado. Crédito usa el precio de lista.</div>
+      </div>
+      <div class="form-group"><label>Formato de impresión</label>
+        <select id="formatoImpresion">
+          <option value="a4">Hoja A4 / Guardar PDF</option>
+          <option value="thermal">Ticket térmico 80 mm</option>
+        </select>
+      </div>
+    </div>
+    <div class="fiscal-note">El recibo de esta pantalla es un comprobante interno detallado. No reemplaza una factura fiscal de ARCA.</div>
+  </div>
 
   <!-- DATOS NEGOCIO -->
   <div class="section">
@@ -163,12 +210,12 @@ textarea{resize:vertical;min-height:60px}
   <!-- OBSERVACIONES -->
   <div class="section">
     <h3>Observaciones</h3>
-    <textarea id="obsText" placeholder="Notas adicionales, formas de pago, validez del presupuesto...">Presupuesto válido por 5 días. Precios sujetos a modificación sin previo aviso. Efectivo o transferencia.</textarea>
+    <textarea id="obsText" placeholder="Notas adicionales...">Presupuesto válido por 5 días. Precios sujetos a modificación sin previo aviso.</textarea>
   </div>
 
   <!-- ACCIONES -->
   <div class="actions">
-    <button class="btn btn-print" onclick="generarPDF()">🖨️ Generar PDF</button>
+    <button class="btn btn-print" onclick="generarPDF()">🖨️ Imprimir / Guardar PDF</button>
     <button class="btn btn-wa" onclick="enviarWA()">📲 Enviar por WhatsApp</button>
     <button class="btn btn-clear" onclick="limpiarTodo()">🗑 Limpiar todo</button>
   </div>
@@ -182,7 +229,7 @@ textarea{resize:vertical;min-height:60px}
       <div class="doc-biz" id="printBiz"></div>
     </div>
     <div class="doc-title">
-      <h2>PRESUPUESTO</h2>
+      <h2 id="printTitle">PRESUPUESTO</h2>
       <div class="doc-meta" id="printMeta"></div>
     </div>
   </div>
@@ -214,7 +261,8 @@ textarea{resize:vertical;min-height:60px}
   </div>
 
   <div class="doc-obs" id="printObs"></div>
-  <div class="doc-footer">Documento no válido como factura — Presupuesto informativo</div>
+  <div class="doc-obs"><strong>Forma de pago:</strong> <span id="printPayment"></span></div>
+  <div class="doc-footer" id="printFooter">Documento no válido como factura — Presupuesto informativo</div>
   <div class="doc-stamp" id="printStamp"></div>
 </div>
 
@@ -230,7 +278,7 @@ async function cargarCatalogo(){
     var r=await fetch(API+'?accion=catalogo');
     var d=await r.json();
     if(d.productos)CATALOGO=d.productos.map(function(p){
-      return{nombre:p.nombre,marca:p.marca||'',precio:p.precio_venta||p.precio_lista||0,stock:p.stock||0};
+      return{nombre:p.nombre,marca:p.marca||'',precioContado:p.precio_venta||p.precio_lista||0,precioLista:p.precio_lista||p.precio_venta||0,stock:p.stock||0};
     });
   }catch(e){}
   // También cargar indumentaria
@@ -238,7 +286,7 @@ async function cargarCatalogo(){
     var r2=await fetch(API+'?accion=indumentaria');
     var d2=await r2.json();
     if(d2.ok&&d2.prendas)d2.prendas.forEach(function(p){
-      CATALOGO.push({nombre:p.nombre+(p.codigo?' (#'+p.codigo+')':''),marca:p.marca||'',precio:p.precio||0,stock:p.stock||0,tipo:'indum'});
+      CATALOGO.push({nombre:p.nombre+(p.codigo?' (#'+p.codigo+')':''),marca:p.marca||'',precioContado:p.precio||p.precio_lista||0,precioLista:p.precio_lista||p.precio||0,stock:p.stock||0,tipo:'indum'});
     });
   }catch(e){}
   // Cargar número de presupuesto
@@ -249,6 +297,21 @@ cargarCatalogo();
 // Buscador
 var searchEl=document.getElementById('prodSearch');
 var resultsEl=document.getElementById('prodResults');
+function usaPrecioLista(){return document.getElementById('formaPago').value==='tarjeta';}
+function precioProducto(p){return Number(usaPrecioLista()?p.precioLista:p.precioContado)||0;}
+function etiquetaPago(){
+  var etiquetas={contado:'Efectivo',transferencia:'Transferencia',debito:'Tarjeta de débito',tarjeta:'Tarjeta de crédito'};
+  return etiquetas[document.getElementById('formaPago').value]||'Efectivo';
+}
+function cambiarFormaPago(){
+  ITEMS.forEach(function(item){item.price=usaPrecioLista()?item.precioLista:item.precioContado;});
+  renderItems();
+  if(searchEl.value.trim().length>=2)searchEl.dispatchEvent(new Event('input'));
+}
+function actualizarDocumento(){
+  var recibo=document.getElementById('tipoDocumento').value==='RECIBO DE COMPRA';
+  document.getElementById('obsText').value=recibo?'Gracias por tu compra. Conservá este comprobante.':'Presupuesto válido por 5 días. Precios sujetos a modificación sin previo aviso.';
+}
 searchEl.addEventListener('input',function(){
   var q=this.value.toLowerCase().trim();
   if(q.length<2){resultsEl.style.display='none';return;}
@@ -259,7 +322,7 @@ searchEl.addEventListener('input',function(){
   resultsEl.innerHTML=matches.map(function(p,i){
     return '<div class="prod-result" data-idx="'+i+'" onclick="addFromSearch('+CATALOGO.indexOf(p)+')">'
       +'<span class="pr-brand">'+p.marca+'</span> '+p.nombre
-      +'<span class="pr-price">$'+p.precio.toLocaleString('es-AR')+' <span style="color:'+(p.stock<=3?'#FFA500':'#0f8')+';font-size:.6rem">('+p.stock+' disp.)</span></span></div>';
+      +'<span class="pr-price">$'+precioProducto(p).toLocaleString('es-AR')+' <span style="color:'+(p.stock<=3?'#FFA500':'#0f8')+';font-size:.6rem">('+p.stock+' disp.)</span></span></div>';
   }).join('');
   resultsEl.style.display='block';
 });
@@ -267,7 +330,10 @@ document.addEventListener('click',function(e){if(!e.target.closest('.prod-search
 
 function addFromSearch(idx){
   var p=CATALOGO[idx];
-  ITEMS.push({desc:(p.marca?p.marca+' — ':'')+p.nombre,qty:1,price:p.precio});
+  var desc=(p.marca?p.marca+' — ':'')+p.nombre;
+  var existente=ITEMS.find(function(item){return item.desc===desc;});
+  if(existente){existente.qty++;}
+  else ITEMS.push({desc:desc,qty:1,precioContado:Number(p.precioContado)||0,precioLista:Number(p.precioLista)||0,price:precioProducto(p)});
   renderItems();
   searchEl.value='';
   resultsEl.style.display='none';
@@ -301,6 +367,15 @@ function fmt(n){return '$'+n.toLocaleString('es-AR',{minimumFractionDigits:2,max
 function generarPDF(){
   if(!ITEMS.length){alert('Agregá al menos un producto');return;}
 
+  var tipo=document.getElementById('tipoDocumento').value;
+  var formato=document.getElementById('formatoImpresion').value;
+  document.getElementById('printTitle').textContent=tipo;
+  document.getElementById('printPayment').textContent=etiquetaPago();
+  document.getElementById('printFooter').textContent=tipo==='RECIBO DE COMPRA'
+    ?'Comprobante interno — No válido como factura fiscal'
+    :'Documento no válido como factura — Presupuesto informativo';
+  document.getElementById('printDoc').classList.toggle('thermal',formato==='thermal');
+
   // Número de presupuesto
   var num=String(presupuestoNum).padStart(4,'0');
   localStorage.setItem('maxup_presup_num',presupuestoNum);
@@ -320,7 +395,7 @@ function generarPDF(){
   document.getElementById('printMeta').innerHTML=
     '<strong>N°:</strong> 0000-'+num+'<br>'
     +'<strong>Fecha:</strong> '+fecha+'<br>'
-    +'<strong>Fecha Vto:</strong> '+vto;
+    +(tipo==='PRESUPUESTO'?'<strong>Fecha Vto:</strong> '+vto:'<strong>Pago:</strong> '+etiquetaPago());
 
   // Cliente
   var cliName=document.getElementById('cliName').value||'CONSUMIDOR FINAL';
@@ -367,10 +442,12 @@ function enviarWA(){
   var total=ITEMS.reduce(function(s,i){return s+i.qty*i.price;},0);
   var cliName=document.getElementById('cliName').value||'Cliente';
   var cliPhone=document.getElementById('cliPhone').value||'';
+  var tipo=document.getElementById('tipoDocumento').value;
 
-  var msg='📄 *PRESUPUESTO — MAXUP Suplementos*\n\n';
+  var msg='📄 *'+tipo+' — MAXUP Suplementos*\n\n';
   msg+='👤 Cliente: '+cliName+'\n';
   msg+='📅 Fecha: '+new Date().toLocaleDateString('es-AR')+'\n\n';
+  msg+='💳 Forma de pago: '+etiquetaPago()+'\n\n';
   msg+='*DETALLE:*\n';
   ITEMS.forEach(function(item,i){
     msg+=(i+1)+'. '+item.desc+'\n';

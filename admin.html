@@ -53,6 +53,12 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
 .header-refresh{color:var(--gray);font-size:.8rem;cursor:pointer;background:none;border:none;
   font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:.05em;transition:color .2s;margin-left:8px}
 .header-refresh:hover{color:var(--cyan)}
+.header-tool{color:var(--cyan);font-size:.8rem;text-decoration:none;padding:5px 10px;
+  border:1px solid rgba(0,200,255,.3);border-radius:6px;font-weight:700;background:rgba(0,200,255,.06);
+  font-family:'Rajdhani',sans-serif;cursor:pointer;white-space:nowrap}
+.header-tool:hover{background:rgba(0,200,255,.16)}
+@keyframes pedidoPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,0,153,0)}50%{box-shadow:0 0 0 7px rgba(255,0,153,.22)}}
+.badge.nuevo{animation:pedidoPulse .75s ease-in-out 8}
 
 /* TABS */
 .tabs{display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.06);
@@ -209,6 +215,8 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <span class="header-badge">ADMIN</span>
     <button class="header-refresh" onclick="recargarTab()">⟳ Actualizar</button>
     <span id="autoRefreshStatus" style="font-size:.7rem;color:var(--green);letter-spacing:.04em" title="Se actualiza cada 30s">● LIVE</span>
+    <a class="header-tool" href="presupuesto.html" target="_blank" rel="noopener">🧾 Caja y comprobantes</a>
+    <button class="header-tool" id="btnAlertas" onclick="activarAlertas()">🔔 Activar alertas</button>
     <a class="header-analytics" href="https://analytics.google.com/analytics/web/" target="_blank" rel="noopener" style="margin-left:auto;color:var(--green);font-size:.8rem;text-decoration:none;padding:4px 12px;border:1px solid rgba(0,230,118,.3);border-radius:6px;font-weight:600;transition:all .2s" onmouseover="this.style.background='rgba(0,230,118,.1)'" onmouseout="this.style.background='none'">📈 Visitas web</a>
     <a class="header-store" href="index.html" style="color:var(--cyan);font-size:.8rem;text-decoration:none;padding:4px 12px;border:1px solid rgba(0,200,255,.3);border-radius:6px;font-weight:600;transition:all .2s" onmouseover="this.style.background='rgba(0,200,255,.1)'" onmouseout="this.style.background='none'">🏪 Ir a la tienda</a>
     <button class="header-logout" onclick="logout()">Salir</button>
@@ -258,6 +266,8 @@ let filtroEstado = 'todos';
 let busquedaPedido = '';
 let _lastPedidoCount = -1;
 let _autoRefreshTimer = null;
+let _titleAlertTimer = null;
+const _tituloNormal = document.title;
 const POLITICA_DESCUENTOS_20260803 = '[{"minimo":500000,"pct":0.15,"label":"15% off por compra desde $500.000"},{"minimo":300000,"pct":0.08,"label":"8% off por compra desde $300.000"}]';
 
 // POST simple y sin credenciales de terceros: evita fallas de inicio de sesión
@@ -310,6 +320,7 @@ function login() {
         document.getElementById('app').style.display = 'block';
         cargarResumen();
         iniciarAutoRefresh();
+        actualizarBotonAlertas();
         _chequearMant();
         aplicarPoliticaComercial20260803();
         logActivity('Login exitoso', 'Acceso al panel de administración');
@@ -355,6 +366,57 @@ function _beep() {
   } catch(e){}
 }
 
+function actualizarBotonAlertas() {
+  var btn = document.getElementById('btnAlertas');
+  if (!btn) return;
+  if (!('Notification' in window)) {
+    btn.textContent = '🔕 Sin alertas del navegador';
+    btn.disabled = true;
+    return;
+  }
+  btn.textContent = Notification.permission === 'granted' ? '🔔 Alertas activas' : '🔔 Activar alertas';
+}
+
+function activarAlertas() {
+  if (!('Notification' in window)) {
+    showToast('Este navegador no permite notificaciones.');
+    return;
+  }
+  Notification.requestPermission().then(function(permiso) {
+    actualizarBotonAlertas();
+    showToast(permiso === 'granted' ? '🔔 Alertas del navegador activadas' : 'No se activaron las alertas');
+  });
+}
+
+function alertarPedidoNuevo(pedido) {
+  _beep();
+  showToast('🔔 ¡Nuevo pedido recibido!');
+  var badge = document.getElementById('badgePedidos');
+  if (badge) {
+    badge.classList.remove('nuevo');
+    void badge.offsetWidth;
+    badge.classList.add('nuevo');
+  }
+  if (_titleAlertTimer) clearInterval(_titleAlertTimer);
+  var alternar = false;
+  _titleAlertTimer = setInterval(function() {
+    alternar = !alternar;
+    document.title = alternar ? '🔔 NUEVO PEDIDO — MAXUP' : _tituloNormal;
+  }, 700);
+  setTimeout(function() {
+    if (_titleAlertTimer) clearInterval(_titleAlertTimer);
+    _titleAlertTimer = null;
+    document.title = _tituloNormal;
+  }, 12000);
+  if ('Notification' in window && Notification.permission === 'granted') {
+    var detalle = pedido ? ((pedido.cliente || 'Cliente') + (pedido.total ? ' · ' + pedido.total : '')) : 'Abrí el panel de pedidos';
+    try {
+      var aviso = new Notification('Nuevo pedido en MAXUP', { body: detalle, icon: 'favicon.png', tag: 'maxup-pedido' });
+      aviso.onclick = function() { window.focus(); };
+    } catch(e) {}
+  }
+}
+
 function iniciarAutoRefresh() {
   detenerAutoRefresh();
   _autoRefreshTimer = setInterval(function() {
@@ -372,8 +434,7 @@ function iniciarAutoRefresh() {
 
         // Si hay más pedidos que antes → pedido nuevo!
         if (_lastPedidoCount >= 0 && pedidos.length > _lastPedidoCount) {
-          _beep();
-          showToast('🔔 ¡Nuevo pedido recibido!');
+          alertarPedidoNuevo(pedidos[0] || null);
           // Si estás en la pestaña de pedidos, actualizar la lista
           if (tabActual === 'pedidos') {
             window._pedidosCache = pedidos;
