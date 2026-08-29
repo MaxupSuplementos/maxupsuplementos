@@ -65,6 +65,45 @@ function _stockObjPrecargarEjemplos(productos, configuracion) {
   }, 3);
 }
 
+function _stockObjLeerReposicion(ss) {
+  var resultado = { porClave: {}, ultimaActualizacion: '' };
+  var hoja = ss.getSheetByName('REPOSICION');
+  if (!hoja || hoja.getLastRow() < 2) return resultado;
+
+  var datos = hoja.getDataRange().getDisplayValues();
+  var encabezados = datos[0].map(_stockObjNorm);
+
+  function buscarColumna(opciones) {
+    for (var i = 0; i < encabezados.length; i++) {
+      for (var j = 0; j < opciones.length; j++) {
+        if (encabezados[i].indexOf(opciones[j]) >= 0) return i;
+      }
+    }
+    return -1;
+  }
+
+  var colProducto = buscarColumna(['producto']);
+  var colMarca = buscarColumna(['marca']);
+  var colEstado = buscarColumna(['estado']);
+  var colVendidos = buscarColumna(['vendidos 30', 'ventas 30', 'vendido']);
+  var colActualizacion = buscarColumna(['ultima actualizacion', 'actualizacion']);
+  if (colProducto < 0) return resultado;
+
+  for (var fila = 1; fila < datos.length; fila++) {
+    var producto = String(datos[fila][colProducto] || '').trim();
+    var marca = colMarca >= 0 ? String(datos[fila][colMarca] || '').trim() : '';
+    if (!producto) continue;
+    var actualizacion = colActualizacion >= 0 ? String(datos[fila][colActualizacion] || '').trim() : '';
+    resultado.porClave[_stockObjClave(marca, producto)] = {
+      estado: colEstado >= 0 ? String(datos[fila][colEstado] || '').trim() : '',
+      vendidos30: colVendidos >= 0 ? Number(String(datos[fila][colVendidos] || '').replace(',', '.')) || 0 : '',
+      actualizacion: actualizacion
+    };
+    if (actualizacion) resultado.ultimaActualizacion = actualizacion;
+  }
+  return resultado;
+}
+
 function crearControlStockObjetivo() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var separadorFormula = /^en(?:_|$)/i.test(String(ss.getSpreadsheetLocale() || '')) ? ',' : ';';
@@ -74,6 +113,7 @@ function crearControlStockObjetivo() {
   var hoja = ss.getSheetByName('STOCK_OBJETIVO');
   if (!hoja) hoja = ss.insertSheet('STOCK_OBJETIVO');
   var configuracion = _stockObjLeerConfiguracion(hoja);
+  var reposicion = _stockObjLeerReposicion(ss);
   var datos = suplementos.getDataRange().getValues();
   var productos = [];
   var marcaActual = '';
@@ -108,7 +148,7 @@ function crearControlStockObjetivo() {
   hoja.clearFormats();
   hoja.setConditionalFormatRules([]);
 
-  hoja.getRange('A1:L1').merge().setValue('CONTROL DE STOCK OBJETIVO Y CAPITAL')
+  hoja.getRange('A1:O1').merge().setValue('CONTROL DE STOCK OBJETIVO Y CAPITAL')
     .setBackground('#1a1a2e').setFontColor('#00C8FF').setFontWeight('bold')
     .setFontSize(15).setHorizontalAlignment('center');
 
@@ -130,11 +170,12 @@ function crearControlStockObjetivo() {
   hoja.getRangeList(['B2','E2','H2','K2']).setNumberFormat('$#,##0').setFontWeight('bold');
   hoja.getRangeList(['B3','E3','H3','K3']).setNumberFormat('0').setFontWeight('bold');
 
-  hoja.getRange('A5:L5').merge().setValue(
-    'Completá solo las columnas amarillas: Stock objetivo y Costo compra unitario. El resto cambia solo cuando cambia el stock de SUPLEMENTOS.'
+  hoja.getRange('A5:O5').merge().setValue(
+    'Completá solo las columnas amarillas: Stock objetivo y Costo compra unitario. El stock cambia solo con SUPLEMENTOS; las columnas de reposición se renuevan al usar “Actualizar lista y análisis”.' +
+    (reposicion.ultimaActualizacion ? ' Último análisis: ' + reposicion.ultimaActualizacion + '.' : '')
   ).setBackground('#FFF4CC').setFontColor('#6B4E00').setFontWeight('bold').setWrap(true);
 
-  var headers = [['Producto','Marca','Stock actual','Stock objetivo','Comprar','Costo compra unitario','Reinversión necesaria','Precio de venta','Capital invertido actual','Venta potencial','Ganancia bruta potencial','Estado']];
+  var headers = [['Producto','Marca','Stock actual','Stock objetivo','Comprar','Costo compra unitario','Reinversión necesaria','Precio de venta','Capital invertido actual','Venta potencial','Ganancia bruta potencial','Estado objetivo','Estado de reposición','Vendidos 30 días','Actualización reposición']];
   hoja.getRange(6, 1, 1, headers[0].length).setValues(headers)
     .setBackground('#1a1a2e').setFontColor('#FFFFFF').setFontWeight('bold').setWrap(true);
   hoja.getRange('D6').setNote('Cantidad que querés mantener siempre disponible.');
@@ -143,6 +184,7 @@ function crearControlStockObjetivo() {
   var filas = productos.map(function(p, indice) {
     var fila = indice + 7;
     var cfg = configuracion[p.clave] || { objetivo: 0, costo: 0 };
+    var rep = reposicion.porClave[p.clave] || { estado: '', vendidos30: '', actualizacion: '' };
     return [
       p.nombre,
       p.marca,
@@ -155,7 +197,10 @@ function crearControlStockObjetivo() {
       '=C' + fila + '*F' + fila,
       '=C' + fila + '*H' + fila,
       '=IF(F' + fila + '=""' + separadorFormula + '""' + separadorFormula + 'C' + fila + '*(H' + fila + '-F' + fila + '))',
-      '=IF(D' + fila + '=0' + separadorFormula + '"⚪ SIN OBJETIVO"' + separadorFormula + 'IF(E' + fila + '>0' + separadorFormula + 'IF(F' + fila + '=""' + separadorFormula + '"🟠 COMPRAR "&E' + fila + '&" · CARGAR COSTO"' + separadorFormula + '"🔴 COMPRAR "&E' + fila + ')' + separadorFormula + '"🟢 OBJETIVO CUBIERTO"))'
+      '=IF(D' + fila + '=0' + separadorFormula + '"⚪ SIN OBJETIVO"' + separadorFormula + 'IF(E' + fila + '>0' + separadorFormula + 'IF(F' + fila + '=""' + separadorFormula + '"🟠 COMPRAR "&E' + fila + '&" · CARGAR COSTO"' + separadorFormula + '"🔴 COMPRAR "&E' + fila + ')' + separadorFormula + '"🟢 OBJETIVO CUBIERTO"))',
+      rep.estado,
+      rep.vendidos30,
+      rep.actualizacion
     ];
   });
 
@@ -165,6 +210,7 @@ function crearControlStockObjetivo() {
     hoja.getRange(7, 6, filas.length, 1).setBackground('#FFF8D6');
     hoja.getRange(7, 3, filas.length, 3).setNumberFormat('0');
     hoja.getRange(7, 6, filas.length, 6).setNumberFormat('$#,##0');
+    hoja.getRange(7, 14, filas.length, 1).setNumberFormat('0');
     hoja.getRange(6, 1, filas.length + 1, headers[0].length).createFilter();
 
     var reglaNumero = SpreadsheetApp.newDataValidation()
@@ -183,7 +229,7 @@ function crearControlStockObjetivo() {
 
   hoja.setFrozenRows(6);
   hoja.setTabColor('#00C8FF');
-  [280,145,90,100,75,120,125,105,125,110,125,190].forEach(function(ancho, indice) {
+  [280,145,90,100,75,120,125,105,125,110,125,190,150,105,150].forEach(function(ancho, indice) {
     hoja.setColumnWidth(indice + 1, ancho);
   });
   hoja.getRange(1, 1, Math.max(6, filas.length + 6), headers[0].length).setVerticalAlignment('middle');
@@ -194,7 +240,10 @@ function crearControlStockObjetivo() {
 
 function agregarMenuStockObjetivo() {
   SpreadsheetApp.getUi().createMenu('📦 STOCK OBJETIVO')
-    .addItem('Actualizar lista de productos', 'crearControlStockObjetivo')
+    .addItem('Actualizar lista y análisis', 'crearControlStockObjetivo')
+    .addItem('Ir al panel INICIO', 'abrirInicioMaxup')
+    .addSeparator()
+    .addItem('Reordenar y organizar pestañas', 'organizarPlanillaMaxup')
     .addToUi();
 }
 
