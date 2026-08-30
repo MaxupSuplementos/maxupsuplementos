@@ -29,6 +29,9 @@ const NOMBRES_MESES = [
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('🛒 MAXUP')
+    .addItem('🧾 Abrir Caja rápida', 'abrirCajaMaxup')
+    .addItem('⚙️ Activar/desactivar Caja al abrir', 'alternarCajaAutomaticaMaxup')
+    .addSeparator()
     .addItem('Registrar Venta (formulario)', 'abrirFormularioVenta')
     .addItem('Nuevo Cliente', 'abrirFormularioCliente')
     .addItem('Resumen del Día', 'mostrarResumenDia')
@@ -50,6 +53,15 @@ function onOpen() {
     .addItem('🧪 Probar salud del sistema', 'pruebaSaludSistema')
     .addItem('💾 Crear backup ahora', 'backupDiarioMaxup')
     .addToUi();
+
+  // La Caja queda lista al abrir la planilla. Se puede desactivar desde el menú MAXUP.
+  try {
+    if (typeof cajaAutomaticaMaxupActiva === 'function' && cajaAutomaticaMaxupActiva()) {
+      abrirCajaMaxup();
+    }
+  } catch (eCaja) {
+    Logger.log('No se pudo abrir la Caja rápida: ' + eCaja.message);
+  }
 }
 
 // Busca las columnas por el texto de sus encabezados. De esta forma el sistema

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    *{box-sizing:border-box} :root{--cyan:#00c8ff;--pink:#ff0099;--green:#16c784;--ink:#101428;--card:#171b33;--muted:#9aa2bd}
+    body{margin:0;background:#0b0e1c;color:#f4f6ff;font:13px Arial,sans-serif}
+    .app{padding:12px}.top{display:flex;align-items:center;gap:10px;margin-bottom:12px}.top img{width:46px;height:46px;object-fit:contain}
+    h1{font-size:18px;margin:0;color:var(--cyan)}.sub{font-size:11px;color:var(--muted);margin-top:3px}
+    .card{background:var(--card);border:1px solid #282e50;border-radius:12px;padding:12px;margin-bottom:10px}
+    .title{font-size:11px;font-weight:800;color:var(--cyan);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+    label{display:block;color:var(--muted);font-size:11px;margin:7px 0 4px}
+    input,select,textarea{width:100%;padding:9px 10px;border-radius:8px;border:1px solid #353c61;background:#0f1328;color:#fff;font:13px Arial}
+    input:focus,select:focus{outline:none;border-color:var(--cyan)}
+    .results{display:none;max-height:210px;overflow:auto;border:1px solid #354064;border-radius:8px;margin-top:4px;background:#10152c}
+    .result{padding:9px;border-bottom:1px solid #252b49;cursor:pointer}.result:last-child{border-bottom:0}.result:hover{background:#192144}
+    .result b{display:block;font-size:12px}.meta{font-size:10px;color:var(--muted);margin-top:3px}.price{color:var(--cyan);font-weight:700}
+    .selected{border:1px solid rgba(22,199,132,.45);background:rgba(22,199,132,.08);padding:9px;border-radius:8px;margin-top:7px}
+    .selected strong{color:#8ff0c6}.promo{color:#ffd166;font-size:11px;margin-top:4px;line-height:1.35}
+    .row{display:flex;gap:7px}.row>*{flex:1}.mini{font-size:10px;color:var(--muted);line-height:1.4;margin-top:5px}
+    button{border:0;border-radius:8px;padding:9px 11px;font-weight:800;cursor:pointer;font-size:12px}
+    .btn-ghost{background:#202743;color:#d8ddf4;border:1px solid #353d61}.btn-add{background:var(--cyan);color:#051018}
+    .btn-sale{background:linear-gradient(135deg,var(--green),#00d9a3);color:#04150f;width:100%;font-size:14px;padding:12px}
+    .btn-print{background:linear-gradient(135deg,var(--cyan),var(--pink));color:#071018;width:100%;font-size:13px}
+    .btn-danger{background:#3a2030;color:#ff9bcf}.btn-new{background:#25304e;color:#fff;width:100%}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions .wide{grid-column:1/-1}
+    .cart-empty{text-align:center;color:#77809e;padding:15px 5px}.item{padding:9px 0;border-bottom:1px solid #292f4c}.item:last-child{border-bottom:0}
+    .item-head{display:flex;gap:6px;align-items:start}.item-name{flex:1;font-weight:700;font-size:12px}.item-brand{font-size:9px;color:var(--cyan);margin-bottom:2px}
+    .item-controls{display:grid;grid-template-columns:74px 1fr auto;gap:6px;align-items:center;margin-top:7px}.item-controls input{padding:7px}
+    .item-total{text-align:right;color:var(--cyan);font-weight:800}.x{background:none;color:#ff7caf;padding:4px}
+    .summary{margin-top:8px;border-top:1px solid #303757;padding-top:7px}.sumline{display:flex;justify-content:space-between;padding:3px 0;color:#c8cee2}
+    .sumline.discount{color:#8ff0c6}.sumline.total{font-size:17px;color:var(--cyan);font-weight:900;border-top:1px solid #3a4267;margin-top:5px;padding-top:8px}
+    .ok{display:none;background:rgba(22,199,132,.12);border:1px solid rgba(22,199,132,.5);border-radius:10px;padding:12px;margin-bottom:10px;color:#b6f6dc;line-height:1.5}
+    .warning{font-size:10px;color:#e7ca72;line-height:1.4;margin-top:8px}
+    .loading{position:fixed;inset:0;background:rgba(5,8,18,.88);display:flex;align-items:center;justify-content:center;z-index:20;color:var(--cyan);font-weight:800;text-align:center;padding:20px}
+    .new-client{display:none;margin-top:8px;padding-top:8px;border-top:1px solid #303755}
+    #printArea{display:none;background:#fff;color:#000;font:11px Arial,sans-serif}.receipt{padding:7mm;max-width:190mm;margin:auto}.receipt.thermal{width:76mm;padding:3mm}
+    .r-head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:8px}.r-head img{height:65px}.thermal .r-head img{height:45px}.r-head h2{margin:4px 0;font-size:20px}.thermal .r-head h2{font-size:15px}
+    .r-meta{font-size:10px;line-height:1.45}.r-table{width:100%;border-collapse:collapse;margin:9px 0}.r-table th,.r-table td{padding:5px 3px;border-bottom:1px solid #ddd;text-align:left}.r-table .num{text-align:right}.thermal .r-table{font-size:8px}.thermal .hide-thermal{display:none}
+    .r-total{font-size:18px;font-weight:900;text-align:right;border-top:2px solid #111;padding-top:6px}.thermal .r-total{font-size:14px}.r-foot{text-align:center;color:#555;font-size:8px;margin-top:15px;border-top:1px solid #ddd;padding-top:7px}
+    @media print{body{background:#fff}.app,.loading{display:none!important}#printArea{display:block!important}.receipt{max-width:none}.receipt.thermal{width:76mm;margin:0}}
+  </style>
+</head>
+<body>
+<div class="loading" id="loading">Cargando productos, clientes y promociones…</div>
+<div class="app">
+  <div class="top"><img src="https://maxupsuplementos.com.ar/logo.png" alt="MAXUP"><div><h1>Caja rápida</h1><div class="sub">Presupuestá y aplicá la venta desde Sheets</div></div></div>
+  <div class="ok" id="okBox"></div>
+
+  <div class="card">
+    <div class="title">1 · Cliente</div>
+    <input id="clientSearch" placeholder="Buscar por nombre, código o teléfono" autocomplete="off">
+    <div class="results" id="clientResults"></div>
+    <div class="selected" id="clientSelected" style="display:none"></div>
+    <div class="row" style="margin-top:7px">
+      <button class="btn-ghost" onclick="seleccionarConsumidor()">Consumidor final</button>
+      <button class="btn-ghost" onclick="mostrarNuevoCliente()">+ Nuevo cliente</button>
+    </div>
+    <div class="new-client" id="newClient">
+      <input id="newName" placeholder="Nombre completo">
+      <input id="newPhone" placeholder="Teléfono" style="margin-top:6px">
+      <button class="btn-add" onclick="crearCliente()" style="width:100%;margin-top:6px">Guardar y seleccionar</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title">2 · Forma de pago</div>
+    <select id="payment" onchange="renderCart()">
+      <option value="contado">Efectivo — precio contado</option>
+      <option value="transferencia">Transferencia — precio contado</option>
+      <option value="debito">Débito — precio contado</option>
+      <option value="tarjeta">Crédito — precio de lista</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="title">3 · Agregar productos</div>
+    <input id="productSearch" placeholder="Buscar suplemento, marca, prenda, talle o código" autocomplete="off">
+    <div class="results" id="productResults"></div>
+    <div class="mini">Solo aparecen productos con stock. En indumentaria se elige la variante exacta para descontar el talle y color correctos.</div>
+  </div>
+
+  <div class="card">
+    <div class="title">4 · Carrito</div>
+    <div id="cart"></div>
+    <div class="summary" id="summary" style="display:none">
+      <div class="sumline"><span>Subtotal</span><span id="subTxt"></span></div>
+      <div class="sumline discount" id="amountRow" style="display:none"><span id="amountLabel"></span><span id="amountTxt"></span></div>
+      <div class="sumline discount" id="loyaltyRow" style="display:none"><span id="loyaltyLabel"></span><span id="loyaltyTxt"></span></div>
+      <div class="sumline total"><span>TOTAL</span><span id="totalTxt"></span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title">Comprobante</div>
+    <select id="printFormat"><option value="a4">Hoja A4 / PDF</option><option value="thermal">Ticket térmico 80 mm</option></select>
+    <label>Observaciones</label>
+    <textarea id="notes" rows="2" placeholder="Opcional"></textarea>
+    <div class="warning">El presupuesto no modifica nada. “Aplicar venta” descuenta stock, registra VentasDiarias y suma la compra al cliente seleccionado.</div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-print" onclick="imprimirComprobante('PRESUPUESTO')">🖨 Presupuesto</button>
+    <button class="btn-ghost" id="receiptBtn" onclick="imprimirUltimaVenta()" disabled>🧾 Recibo</button>
+    <button class="btn-sale wide" id="saleBtn" onclick="aplicarVenta()">✅ APLICAR VENTA</button>
+    <button class="btn-new wide" onclick="nuevaVenta()">＋ Nueva venta</button>
+  </div>
+</div>
+
+<div id="printArea"><div class="receipt" id="receipt"></div></div>
+
+<script>
+var DATA={productos:[],clientes:[],descuentosMonto:[],fidelidadPct:.10};
+var CLIENTE=null, CART=[], CALCULO=null, ULTIMA=null, APLICANDO=false;
+var OPERACION=nuevaOperacion();
+
+function nuevaOperacion(){return 'V'+Date.now()+'_'+Math.random().toString(36).slice(2,8);}
+function norm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();}
+function money(v){return '$'+Math.round(Number(v)||0).toLocaleString('es-AR');}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function byId(id){return document.getElementById(id);}
+
+google.script.run.withSuccessHandler(function(data){
+  if(!data||!data.ok){fallo({message:'No se pudieron cargar los datos'});return;}
+  DATA=data; byId('loading').style.display='none'; renderCart();
+}).withFailureHandler(fallo).obtenerDatosCajaMaxup();
+
+function fallo(err){
+  APLICANDO=false; byId('saleBtn').disabled=false; byId('loading').style.display='none';
+  alert('Error: '+(err&&err.message?err.message:err));
+}
+
+byId('clientSearch').addEventListener('input',function(){
+  var q=norm(this.value), box=byId('clientResults');
+  if(q.length<1){box.style.display='none';return;}
+  var arr=DATA.clientes.filter(function(c){return norm(c.nombre+' '+c.codigo+' '+c.telefono).indexOf(q)>=0;}).slice(0,15);
+  box.innerHTML=arr.length?arr.map(function(c){
+    return '<div class="result" onclick="seleccionarCliente(\''+esc(c.codigo)+'\')"><b>#'+esc(c.codigo)+' · '+esc(c.nombre)+'</b><div class="meta">'+(c.telefono?'📱 '+esc(c.telefono)+' · ':'')+(c.fidelidad?'🎁 10% fidelidad activo':'Sin descuento de fidelidad activo')+'</div></div>';
+  }).join(''):'<div class="result"><span class="meta">No se encontró el cliente</span></div>';
+  box.style.display='block';
+});
+
+function seleccionarCliente(codigo){
+  CLIENTE=DATA.clientes.find(function(c){return String(c.codigo)===String(codigo);})||null;
+  if(!CLIENTE)return;
+  byId('clientSearch').value='';byId('clientResults').style.display='none';
+  var meses=(CLIENTE.meses||[]).map(function(m){return m.mes+': '+money(m.monto)+(m.cumple?' ✓':'');}).join(' · ');
+  byId('clientSelected').innerHTML='<strong>#'+esc(CLIENTE.codigo)+' · '+esc(CLIENTE.nombre)+'</strong>'+(CLIENTE.telefono?'<div class="meta">📱 '+esc(CLIENTE.telefono)+'</div>':'')+'<div class="promo">'+(CLIENTE.fidelidad?'🎁 Tiene activo el 10% por 3 meses consecutivos.':'Todavía no tiene activo el descuento de fidelidad.')+'</div><div class="mini">'+esc(meses)+'</div>';
+  byId('clientSelected').style.display='block';renderCart();
+}
+
+function seleccionarConsumidor(){
+  CLIENTE={codigo:'',nombre:'Consumidor final',telefono:'',fidelidad:false,meses:[]};
+  byId('clientSelected').innerHTML='<strong>Consumidor final</strong><div class="mini">La venta se registra, pero no se acumula en la ficha de un cliente.</div>';
+  byId('clientSelected').style.display='block';byId('clientResults').style.display='none';renderCart();
+}
+function mostrarNuevoCliente(){byId('newClient').style.display=byId('newClient').style.display==='block'?'none':'block';}
+function crearCliente(){
+  var nombre=byId('newName').value.trim(),telefono=byId('newPhone').value.trim();
+  if(!nombre){alert('Escribí el nombre del cliente');return;}
+  byId('loading').style.display='flex';byId('loading').textContent='Guardando cliente…';
+  google.script.run.withSuccessHandler(function(){
+    google.script.run.withSuccessHandler(function(data){
+      DATA=data;byId('loading').style.display='none';byId('newClient').style.display='none';
+      var creado=DATA.clientes.slice().reverse().find(function(c){return norm(c.nombre)===norm(nombre);});
+      if(creado)seleccionarCliente(creado.codigo);
+    }).withFailureHandler(fallo).obtenerDatosCajaMaxup();
+  }).withFailureHandler(fallo).agregarCliente({nombre:nombre,telefono:telefono});
+}
+
+byId('productSearch').addEventListener('input',function(){
+  var q=norm(this.value),box=byId('productResults');
+  if(q.length<2){box.style.display='none';return;}
+  var arr=DATA.productos.filter(function(p){return p.stock>0&&norm(p.marca+' '+p.detalle+' '+p.sku).indexOf(q)>=0;}).slice(0,20);
+  box.innerHTML=arr.length?arr.map(function(p){
+    return '<div class="result" onclick="agregarProducto(\''+esc(p.id)+'\')"><b>'+esc(p.detalle)+'</b><div class="meta">'+esc(p.marca)+' · Stock '+p.stock+' · <span class="price">'+money(precio(p))+'</span> '+(p.tipo==='IND'?'· Indumentaria':'')+'</div></div>';
+  }).join(''):'<div class="result"><span class="meta">No se encontraron productos con stock</span></div>';
+  box.style.display='block';
+});
+document.addEventListener('click',function(e){if(!e.target.closest('#productSearch')&&!e.target.closest('#productResults'))byId('productResults').style.display='none';});
+function precio(p){return byId('payment').value==='tarjeta'?Number(p.precioLista):Number(p.precioContado);}
+function agregarProducto(id){
+  var p=DATA.productos.find(function(x){return x.id===id;});if(!p)return;
+  var item=CART.find(function(x){return x.id===id;});
+  if(item){if(item.cantidad>=p.stock){alert('No hay más stock disponible');return;}item.cantidad++;}
+  else CART.push({id:p.id,cantidad:1});
+  byId('productSearch').value='';byId('productResults').style.display='none';renderCart();
+}
+function cantidad(id,valor){var item=CART.find(function(x){return x.id===id;}),p=DATA.productos.find(function(x){return x.id===id;});if(!item||!p)return;item.cantidad=Math.max(1,Math.min(p.stock,Math.floor(Number(valor)||1)));renderCart();}
+function quitar(id){CART=CART.filter(function(x){return x.id!==id;});renderCart();}
+
+function calcular(){
+  var base=0;
+  CART.forEach(function(item){var p=DATA.productos.find(function(x){return x.id===item.id;});if(p)base+=precio(p)*item.cantidad;});
+  var escala=null;
+  (DATA.descuentosMonto||[]).slice().sort(function(a,b){return b.minimo-a.minimo;}).some(function(d){if(base>=Number(d.minimo)){escala=d;return true;}return false;});
+  var despues=escala?Math.round(base*(1-Number(escala.pct))):base;
+  var fidelidad=!!(CLIENTE&&CLIENTE.codigo&&CLIENTE.fidelidad);
+  var total=fidelidad?Math.round(despues*(1-Number(DATA.fidelidadPct||.10))):despues;
+  return{subtotal:base,escala:escala,descuentoMonto:base-despues,fidelidad:fidelidad,descuentoFidelidad:despues-total,total:total};
+}
+function renderCart(){
+  var box=byId('cart');
+  if(!CART.length){box.innerHTML='<div class="cart-empty">Todavía no agregaste productos</div>';byId('summary').style.display='none';CALCULO=calcular();return;}
+  box.innerHTML=CART.map(function(item){var p=DATA.productos.find(function(x){return x.id===item.id;});if(!p)return'';return '<div class="item"><div class="item-head"><div class="item-name"><div class="item-brand">'+esc(p.marca)+'</div>'+esc(p.detalle)+'</div><button class="x" onclick="quitar(\''+esc(item.id)+'\')">✕</button></div><div class="item-controls"><input type="number" min="1" max="'+p.stock+'" value="'+item.cantidad+'" onchange="cantidad(\''+esc(item.id)+'\',this.value)"><div class="meta">'+money(precio(p))+' c/u · Stock '+p.stock+'</div><div class="item-total">'+money(precio(p)*item.cantidad)+'</div></div></div>';}).join('');
+  CALCULO=calcular();byId('summary').style.display='block';byId('subTxt').textContent=money(CALCULO.subtotal);
+  byId('amountRow').style.display=CALCULO.escala?'flex':'none';if(CALCULO.escala){byId('amountLabel').textContent=CALCULO.escala.label||'Descuento por monto';byId('amountTxt').textContent='− '+money(CALCULO.descuentoMonto);}
+  byId('loyaltyRow').style.display=CALCULO.fidelidad?'flex':'none';if(CALCULO.fidelidad){byId('loyaltyLabel').textContent=Math.round((DATA.fidelidadPct||.10)*100)+'% fidelidad';byId('loyaltyTxt').textContent='− '+money(CALCULO.descuentoFidelidad);}
+  byId('totalTxt').textContent=money(CALCULO.total);
+}
+
+function aplicarVenta(){
+  if(APLICANDO)return;if(!CLIENTE){alert('Primero buscá un cliente o elegí Consumidor final');return;}if(!CART.length){alert('Agregá al menos un producto');return;}
+  CALCULO=calcular();
+  if(!confirm('¿Aplicar la venta de '+CLIENTE.nombre+' por '+money(CALCULO.total)+'?\n\nEsto descontará stock y registrará la compra.'))return;
+  APLICANDO=true;byId('saleBtn').disabled=true;byId('loading').style.display='flex';byId('loading').textContent='Aplicando venta y actualizando stock…';
+  google.script.run.withSuccessHandler(function(r){
+    APLICANDO=false;byId('loading').style.display='none';
+    if(!r||!r.ok){fallo({message:(r&&r.error)||'No se pudo aplicar la venta'});return;}
+    ULTIMA=r;byId('receiptBtn').disabled=!!r.duplicado;byId('saleBtn').disabled=true;
+    byId('okBox').style.display='block';byId('okBox').innerHTML='<strong>✅ '+esc(r.mensaje||'Venta aplicada')+'</strong>'+(r.total!=null?'<br>'+esc(CLIENTE.nombre)+' · '+money(r.total)+' · '+esc(r.pago):'');
+    window.scrollTo(0,0);
+  }).withFailureHandler(fallo).registrarVentaCajaMaxup({operacion:OPERACION,clienteCodigo:CLIENTE.codigo,pago:byId('payment').value,notas:byId('notes').value,items:CART});
+}
+
+function imprimirUltimaVenta(){if(!ULTIMA||ULTIMA.duplicado){alert('Primero aplicá una venta nueva');return;}imprimirComprobante('RECIBO DE COMPRA',ULTIMA);}
+function imprimirComprobante(tipo,venta){
+  if(!CLIENTE){alert('Primero buscá un cliente o elegí Consumidor final');return;}if(!CART.length){alert('Agregá productos');return;}
+  var calc=venta||calcular();
+  var lineas=venta&&venta.lineas?venta.lineas:CART.map(function(item){var p=DATA.productos.find(function(x){return x.id===item.id;});return{nombre:p.detalle,marca:p.marca,cantidad:item.cantidad,precio:precio(p),subtotal:precio(p)*item.cantidad};});
+  var fecha=new Date(venta&&venta.fecha?venta.fecha:Date.now());var formato=byId('printFormat').value;
+  var html='<div class="r-head"><img src="https://maxupsuplementos.com.ar/logo.png"><h2>'+esc(tipo)+'</h2><div class="r-meta">MAXUP Suplementos<br>General Güemes, Salta · 3876233406<br>'+fecha.toLocaleString('es-AR')+(venta?'<br>Operación: '+esc(venta.operacion):'')+'</div></div>';
+  html+='<div class="r-meta"><b>Cliente:</b> '+esc(CLIENTE.nombre)+(CLIENTE.codigo?'<br><b>Código:</b> '+esc(CLIENTE.codigo):'')+'<br><b>Pago:</b> '+esc(venta?venta.pago:byId('payment').options[byId('payment').selectedIndex].text.split(' — ')[0])+'</div>';
+  html+='<table class="r-table"><thead><tr><th>Producto</th><th class="num">Cant.</th><th class="num hide-thermal">P. unit.</th><th class="num">Total</th></tr></thead><tbody>';
+  lineas.forEach(function(l){html+='<tr><td>'+esc((l.marca?l.marca+' · ':'')+l.nombre)+'</td><td class="num">'+l.cantidad+'</td><td class="num hide-thermal">'+money(l.precio)+'</td><td class="num">'+money(l.subtotal!=null?l.subtotal:l.ingreso)+'</td></tr>';});
+  html+='</tbody></table><div class="r-meta">Subtotal: '+money(calc.subtotal);if(calc.descuentoMonto)html+='<br>Descuento por monto: − '+money(calc.descuentoMonto);if(calc.descuentoFidelidad)html+='<br>Descuento fidelidad: − '+money(calc.descuentoFidelidad);html+='</div><div class="r-total">TOTAL: '+money(calc.total)+'</div>';
+  var notas=byId('notes').value.trim();if(notas)html+='<div class="r-meta" style="margin-top:8px"><b>Observaciones:</b> '+esc(notas)+'</div>';
+  html+='<div class="r-foot">Comprobante interno no válido como factura fiscal · Gracias por elegir MAXUP</div>';
+  byId('receipt').className='receipt'+(formato==='thermal'?' thermal':'');byId('receipt').innerHTML=html;
+  setTimeout(function(){window.print();},100);
+}
+
+function nuevaVenta(){
+  CLIENTE=null;CART=[];CALCULO=null;ULTIMA=null;APLICANDO=false;OPERACION=nuevaOperacion();
+  byId('clientSelected').style.display='none';byId('clientSearch').value='';byId('productSearch').value='';byId('notes').value='';
+  byId('okBox').style.display='none';byId('receiptBtn').disabled=true;byId('saleBtn').disabled=false;renderCart();
+  byId('loading').style.display='flex';byId('loading').textContent='Actualizando stock y clientes…';
+  google.script.run.withSuccessHandler(function(data){DATA=data;byId('loading').style.display='none';renderCart();}).withFailureHandler(fallo).obtenerDatosCajaMaxup();
+}
+</script>
+</body>
+</html>
