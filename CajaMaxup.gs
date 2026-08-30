@@ -20,8 +20,10 @@ function alternarCajaAutomaticaMaxup() {
 
 function abrirCajaMaxup() {
   var html = HtmlService.createHtmlOutputFromFile('CajaMaxup')
-    .setTitle('MAXUP · Caja rápida');
-  SpreadsheetApp.getUi().showSidebar(html);
+    .setTitle('MAXUP · Caja rápida')
+    .setWidth(980)
+    .setHeight(720);
+  SpreadsheetApp.getUi().showModelessDialog(html, 'MAXUP · Caja rápida');
 }
 
 function _cajaNorm_(valor) {

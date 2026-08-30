@@ -6,40 +6,42 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     *{box-sizing:border-box} :root{--cyan:#00c8ff;--pink:#ff0099;--green:#16c784;--ink:#101428;--card:#171b33;--muted:#9aa2bd}
-    body{margin:0;background:#0b0e1c;color:#f4f6ff;font:13px Arial,sans-serif}
-    .app{padding:12px}.top{display:flex;align-items:center;gap:10px;margin-bottom:12px}.top img{width:46px;height:46px;object-fit:contain}
-    h1{font-size:18px;margin:0;color:var(--cyan)}.sub{font-size:11px;color:var(--muted);margin-top:3px}
-    .card{background:var(--card);border:1px solid #282e50;border-radius:12px;padding:12px;margin-bottom:10px}
-    .title{font-size:11px;font-weight:800;color:var(--cyan);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
-    label{display:block;color:var(--muted);font-size:11px;margin:7px 0 4px}
-    input,select,textarea{width:100%;padding:9px 10px;border-radius:8px;border:1px solid #353c61;background:#0f1328;color:#fff;font:13px Arial}
+    body{margin:0;background:#0b0e1c;color:#f4f6ff;font:16px Arial,sans-serif}
+    .app{padding:18px}.top{display:flex;align-items:center;gap:14px;margin-bottom:14px}.top img{width:58px;height:58px;object-fit:contain}
+    h1{font-size:25px;margin:0;color:var(--cyan)}.sub{font-size:14px;color:var(--muted);margin-top:4px}
+    .workspace{display:grid;grid-template-columns:minmax(320px,1fr) minmax(390px,1.15fr);gap:14px;align-items:start}.column{min-width:0}
+    .card{background:var(--card);border:1px solid #282e50;border-radius:14px;padding:16px;margin-bottom:12px}
+    .title{font-size:14px;font-weight:800;color:var(--cyan);text-transform:uppercase;letter-spacing:.06em;margin-bottom:11px}
+    label{display:block;color:var(--muted);font-size:14px;margin:9px 0 5px}
+    input,select,textarea{width:100%;padding:12px;border-radius:9px;border:1px solid #353c61;background:#0f1328;color:#fff;font:16px Arial}
     input:focus,select:focus{outline:none;border-color:var(--cyan)}
-    .results{display:none;max-height:210px;overflow:auto;border:1px solid #354064;border-radius:8px;margin-top:4px;background:#10152c}
-    .result{padding:9px;border-bottom:1px solid #252b49;cursor:pointer}.result:last-child{border-bottom:0}.result:hover{background:#192144}
-    .result b{display:block;font-size:12px}.meta{font-size:10px;color:var(--muted);margin-top:3px}.price{color:var(--cyan);font-weight:700}
-    .selected{border:1px solid rgba(22,199,132,.45);background:rgba(22,199,132,.08);padding:9px;border-radius:8px;margin-top:7px}
-    .selected strong{color:#8ff0c6}.promo{color:#ffd166;font-size:11px;margin-top:4px;line-height:1.35}
-    .row{display:flex;gap:7px}.row>*{flex:1}.mini{font-size:10px;color:var(--muted);line-height:1.4;margin-top:5px}
-    button{border:0;border-radius:8px;padding:9px 11px;font-weight:800;cursor:pointer;font-size:12px}
+    .results{display:none;max-height:260px;overflow:auto;border:1px solid #354064;border-radius:9px;margin-top:5px;background:#10152c}
+    .result{padding:12px;border-bottom:1px solid #252b49;cursor:pointer}.result:last-child{border-bottom:0}.result:hover{background:#192144}
+    .result b{display:block;font-size:15px}.meta{font-size:13px;color:var(--muted);margin-top:4px}.price{color:var(--cyan);font-weight:700}
+    .selected{border:1px solid rgba(22,199,132,.45);background:rgba(22,199,132,.08);padding:12px;border-radius:9px;margin-top:8px}
+    .selected strong{color:#8ff0c6}.promo{color:#ffd166;font-size:14px;margin-top:5px;line-height:1.4}
+    .row{display:flex;gap:9px}.row>*{flex:1}.mini{font-size:13px;color:var(--muted);line-height:1.45;margin-top:6px}
+    button{border:0;border-radius:9px;padding:12px 14px;font-weight:800;cursor:pointer;font-size:15px}
     .btn-ghost{background:#202743;color:#d8ddf4;border:1px solid #353d61}.btn-add{background:var(--cyan);color:#051018}
-    .btn-sale{background:linear-gradient(135deg,var(--green),#00d9a3);color:#04150f;width:100%;font-size:14px;padding:12px}
-    .btn-print{background:linear-gradient(135deg,var(--cyan),var(--pink));color:#071018;width:100%;font-size:13px}
+    .btn-sale{background:linear-gradient(135deg,var(--green),#00d9a3);color:#04150f;width:100%;font-size:17px;padding:15px}
+    .btn-print{background:linear-gradient(135deg,var(--cyan),var(--pink));color:#071018;width:100%;font-size:16px}
     .btn-danger{background:#3a2030;color:#ff9bcf}.btn-new{background:#25304e;color:#fff;width:100%}
     .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions .wide{grid-column:1/-1}
-    .cart-empty{text-align:center;color:#77809e;padding:15px 5px}.item{padding:9px 0;border-bottom:1px solid #292f4c}.item:last-child{border-bottom:0}
-    .item-head{display:flex;gap:6px;align-items:start}.item-name{flex:1;font-weight:700;font-size:12px}.item-brand{font-size:9px;color:var(--cyan);margin-bottom:2px}
-    .item-controls{display:grid;grid-template-columns:74px 1fr auto;gap:6px;align-items:center;margin-top:7px}.item-controls input{padding:7px}
+    .cart-empty{text-align:center;color:#77809e;padding:20px 5px}.item{padding:12px 0;border-bottom:1px solid #292f4c}.item:last-child{border-bottom:0}
+    .item-head{display:flex;gap:8px;align-items:start}.item-name{flex:1;font-weight:700;font-size:16px}.item-brand{font-size:12px;color:var(--cyan);margin-bottom:3px}
+    .item-controls{display:grid;grid-template-columns:88px 1fr auto;gap:8px;align-items:center;margin-top:9px}.item-controls input{padding:9px}
     .item-total{text-align:right;color:var(--cyan);font-weight:800}.x{background:none;color:#ff7caf;padding:4px}
     .summary{margin-top:8px;border-top:1px solid #303757;padding-top:7px}.sumline{display:flex;justify-content:space-between;padding:3px 0;color:#c8cee2}
-    .sumline.discount{color:#8ff0c6}.sumline.total{font-size:17px;color:var(--cyan);font-weight:900;border-top:1px solid #3a4267;margin-top:5px;padding-top:8px}
+    .sumline.discount{color:#8ff0c6}.sumline.total{font-size:22px;color:var(--cyan);font-weight:900;border-top:1px solid #3a4267;margin-top:7px;padding-top:10px}
     .ok{display:none;background:rgba(22,199,132,.12);border:1px solid rgba(22,199,132,.5);border-radius:10px;padding:12px;margin-bottom:10px;color:#b6f6dc;line-height:1.5}
-    .warning{font-size:10px;color:#e7ca72;line-height:1.4;margin-top:8px}
+    .warning{font-size:13px;color:#e7ca72;line-height:1.45;margin-top:9px}
     .loading{position:fixed;inset:0;background:rgba(5,8,18,.88);display:flex;align-items:center;justify-content:center;z-index:20;color:var(--cyan);font-weight:800;text-align:center;padding:20px}
     .new-client{display:none;margin-top:8px;padding-top:8px;border-top:1px solid #303755}
     #printArea{display:none;background:#fff;color:#000;font:11px Arial,sans-serif}.receipt{padding:7mm;max-width:190mm;margin:auto}.receipt.thermal{width:76mm;padding:3mm}
     .r-head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:8px}.r-head img{height:65px}.thermal .r-head img{height:45px}.r-head h2{margin:4px 0;font-size:20px}.thermal .r-head h2{font-size:15px}
     .r-meta{font-size:10px;line-height:1.45}.r-table{width:100%;border-collapse:collapse;margin:9px 0}.r-table th,.r-table td{padding:5px 3px;border-bottom:1px solid #ddd;text-align:left}.r-table .num{text-align:right}.thermal .r-table{font-size:8px}.thermal .hide-thermal{display:none}
     .r-total{font-size:18px;font-weight:900;text-align:right;border-top:2px solid #111;padding-top:6px}.thermal .r-total{font-size:14px}.r-foot{text-align:center;color:#555;font-size:8px;margin-top:15px;border-top:1px solid #ddd;padding-top:7px}
+    @media(max-width:760px){.workspace{grid-template-columns:1fr}.app{padding:12px}}
     @media print{body{background:#fff}.app,.loading{display:none!important}#printArea{display:block!important}.receipt{max-width:none}.receipt.thermal{width:76mm;margin:0}}
   </style>
 </head>
@@ -48,6 +50,9 @@
 <div class="app">
   <div class="top"><img src="https://maxupsuplementos.com.ar/logo.png" alt="MAXUP"><div><h1>Caja rápida</h1><div class="sub">Presupuestá y aplicá la venta desde Sheets</div></div></div>
   <div class="ok" id="okBox"></div>
+
+  <div class="workspace">
+  <div class="column">
 
   <div class="card">
     <div class="title">1 · Cliente</div>
@@ -61,7 +66,7 @@
     <div class="new-client" id="newClient">
       <input id="newName" placeholder="Nombre completo">
       <input id="newPhone" placeholder="Teléfono" style="margin-top:6px">
-      <button class="btn-add" onclick="crearCliente()" style="width:100%;margin-top:6px">Guardar y seleccionar</button>
+      <button class="btn-add" onclick="crearCliente()" style="width:100%;margin-top:6px">Usar en esta venta</button>
     </div>
   </div>
 
@@ -81,6 +86,9 @@
     <div class="results" id="productResults"></div>
     <div class="mini">Solo aparecen productos con stock. En indumentaria se elige la variante exacta para descontar el talle y color correctos.</div>
   </div>
+
+  </div>
+  <div class="column">
 
   <div class="card">
     <div class="title">4 · Carrito</div>
@@ -106,6 +114,8 @@
     <button class="btn-ghost" id="receiptBtn" onclick="imprimirUltimaVenta()" disabled>🧾 Recibo</button>
     <button class="btn-sale wide" id="saleBtn" onclick="aplicarVenta()">✅ APLICAR VENTA</button>
     <button class="btn-new wide" onclick="nuevaVenta()">＋ Nueva venta</button>
+  </div>
+  </div>
   </div>
 </div>
 
