@@ -263,6 +263,23 @@ function _cajaBuscarCliente_(codigo) {
   return null;
 }
 
+function _cajaCrearCliente_(datos) {
+  datos = datos || {};
+  var nombre = String(datos.nombre || '').trim().slice(0, 120);
+  var telefono = String(datos.telefono || '').trim().slice(0, 40);
+  if (!nombre) throw new Error('Escribí el nombre del nuevo cliente');
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CLIENTES');
+  if (!hoja) throw new Error('Hoja CLIENTES no encontrada');
+  var rows = hoja.getDataRange().getValues();
+  var codigos = rows.slice(1).map(function(row) { return Number(row[0]); })
+    .filter(function(codigo) { return isFinite(codigo) && codigo > 0; });
+  var codigo = codigos.length ? Math.max.apply(null, codigos) + 1 : 101;
+  hoja.appendRow([codigo, nombre, telefono]);
+  var fila = hoja.getLastRow();
+  hoja.getRange(fila, 1, 1, 3).setBackground(null).setFontColor(null);
+  return { codigo: String(codigo), nombre: nombre, telefono: telefono, fila: fila, nuevo: true };
+}
+
 function registrarVentaCajaMaxup(datos) {
   datos = datos || {};
   var operacion = String(datos.operacion || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
@@ -272,6 +289,11 @@ function registrarVentaCajaMaxup(datos) {
   var clienteCodigo = String(datos.clienteCodigo || '').trim();
   var cliente = clienteCodigo ? _cajaBuscarCliente_(clienteCodigo) : null;
   if (clienteCodigo && !cliente) throw new Error('El cliente seleccionado ya no existe');
+  var nuevoCliente = !clienteCodigo && datos.nuevoCliente ? {
+    nombre: String(datos.nuevoCliente.nombre || '').trim(),
+    telefono: String(datos.nuevoCliente.telefono || '').trim()
+  } : null;
+  if (nuevoCliente && !nuevoCliente.nombre) throw new Error('Falta el nombre del nuevo cliente');
   var pedidos = Array.isArray(datos.items) ? datos.items : [];
   if (!pedidos.length) throw new Error('Agregá al menos un producto');
 
@@ -319,6 +341,12 @@ function registrarVentaCajaMaxup(datos) {
 
     var calculo = _cajaCalcular_(items, clienteCodigo);
     if (calculo.total <= 0) throw new Error('El total de la venta no es válido');
+    // El cliente nuevo se crea recién al confirmar una venta válida. Así no
+    // quedan fichas vacías si se abandona un presupuesto.
+    if (!cliente && nuevoCliente) {
+      cliente = _cajaCrearCliente_(nuevoCliente);
+      clienteCodigo = cliente.codigo;
+    }
     var pagoLabel = { contado:'Efectivo', transferencia:'Transferencia', debito:'Tarjeta de débito', tarjeta:'Tarjeta de crédito' }[pago];
     var partesDesc = [];
     if (calculo.escala) partesDesc.push(calculo.escala.label || (Math.round(calculo.escala.pct * 100) + '% por monto'));

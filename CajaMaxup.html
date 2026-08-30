@@ -160,14 +160,13 @@ function mostrarNuevoCliente(){byId('newClient').style.display=byId('newClient')
 function crearCliente(){
   var nombre=byId('newName').value.trim(),telefono=byId('newPhone').value.trim();
   if(!nombre){alert('Escribí el nombre del cliente');return;}
-  byId('loading').style.display='flex';byId('loading').textContent='Guardando cliente…';
-  google.script.run.withSuccessHandler(function(){
-    google.script.run.withSuccessHandler(function(data){
-      DATA=data;byId('loading').style.display='none';byId('newClient').style.display='none';
-      var creado=DATA.clientes.slice().reverse().find(function(c){return norm(c.nombre)===norm(nombre);});
-      if(creado)seleccionarCliente(creado.codigo);
-    }).withFailureHandler(fallo).obtenerDatosCajaMaxup();
-  }).withFailureHandler(fallo).agregarCliente({nombre:nombre,telefono:telefono});
+  var telNorm=telefono.replace(/\D/g,'');
+  var existente=telNorm?DATA.clientes.find(function(c){return String(c.telefono||'').replace(/\D/g,'')===telNorm;}):null;
+  if(existente){seleccionarCliente(existente.codigo);byId('newClient').style.display='none';alert('Ese teléfono ya pertenece a '+existente.nombre+'. Lo seleccioné para evitar duplicarlo.');return;}
+  CLIENTE={codigo:'',nombre:nombre,telefono:telefono,fidelidad:false,meses:[],nuevo:true};
+  byId('clientSelected').innerHTML='<strong>Nuevo cliente · '+esc(nombre)+'</strong>'+(telefono?'<div class="meta">📱 '+esc(telefono)+'</div>':'')+'<div class="promo">Se guardará en CLIENTES cuando apliques la venta.</div>';
+  byId('clientSelected').style.display='block';byId('newClient').style.display='none';
+  byId('newName').value='';byId('newPhone').value='';renderCart();
 }
 
 byId('productSearch').addEventListener('input',function(){
@@ -219,10 +218,10 @@ function aplicarVenta(){
   google.script.run.withSuccessHandler(function(r){
     APLICANDO=false;byId('loading').style.display='none';
     if(!r||!r.ok){fallo({message:(r&&r.error)||'No se pudo aplicar la venta'});return;}
-    ULTIMA=r;byId('receiptBtn').disabled=!!r.duplicado;byId('saleBtn').disabled=true;
+    ULTIMA=r;if(r.cliente){CLIENTE.codigo=String(r.cliente.codigo||CLIENTE.codigo);CLIENTE.nombre=r.cliente.nombre||CLIENTE.nombre;CLIENTE.nuevo=false;}byId('receiptBtn').disabled=!!r.duplicado;byId('saleBtn').disabled=true;
     byId('okBox').style.display='block';byId('okBox').innerHTML='<strong>✅ '+esc(r.mensaje||'Venta aplicada')+'</strong>'+(r.total!=null?'<br>'+esc(CLIENTE.nombre)+' · '+money(r.total)+' · '+esc(r.pago):'');
     window.scrollTo(0,0);
-  }).withFailureHandler(fallo).registrarVentaCajaMaxup({operacion:OPERACION,clienteCodigo:CLIENTE.codigo,pago:byId('payment').value,notas:byId('notes').value,items:CART});
+  }).withFailureHandler(fallo).registrarVentaCajaMaxup({operacion:OPERACION,clienteCodigo:CLIENTE.codigo,nuevoCliente:CLIENTE.nuevo?{nombre:CLIENTE.nombre,telefono:CLIENTE.telefono}:null,pago:byId('payment').value,notas:byId('notes').value,items:CART});
 }
 
 function imprimirUltimaVenta(){if(!ULTIMA||ULTIMA.duplicado){alert('Primero aplicá una venta nueva');return;}imprimirComprobante('RECIBO DE COMPRA',ULTIMA);}
