@@ -2650,6 +2650,137 @@ var DURACIONES_PRODUCTO = {
   'gainer': 20, 'mass': 20, 'hidratacion': 20, 'electrolit': 20
 };
 
+var HOJA_CONFIG_RECOMPRA = 'CONFIG_RECOMPRA';
+var HOJA_HISTORIAL_RECOMPRA = 'HISTORIAL_RECOMPRA';
+var HEADERS_CONFIG_RECOMPRA = [
+  'CLAVE', 'PRESENTACION_G', 'DOSIS_DIARIA_G', 'DIAS_ESTIMADOS',
+  'AVISAR_DIAS_ANTES', 'AVISAR_DIAS_DESPUES', 'ACTIVO', 'NOTAS'
+];
+var HEADERS_HISTORIAL_RECOMPRA = [
+  'ID_AVISO', 'FECHA_AVISO', 'CLIENTE', 'TELEFONO', 'PRODUCTO', 'FECHA_COMPRA',
+  'CANTIDAD', 'DIAS_ESTIMADOS', 'DIAS_TRANSCURRIDOS', 'CANAL', 'RESULTADO'
+];
+
+function _normalizarRecompra(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function _validarHeadersRecompra(hoja, esperados) {
+  var actuales = hoja.getRange(1, 1, 1, esperados.length).getValues()[0];
+  for (var i = 0; i < esperados.length; i++) {
+    if (String(actuales[i] || '').trim() !== esperados[i]) {
+      throw new Error('La hoja ' + hoja.getName() + ' tiene encabezados distintos. No se modificó para proteger tus datos.');
+    }
+  }
+}
+
+function _asegurarConfigRecompra() {
+  var ss = _getSS();
+  var hoja = ss.getSheetByName(HOJA_CONFIG_RECOMPRA);
+  if (!hoja) {
+    hoja = ss.insertSheet(HOJA_CONFIG_RECOMPRA);
+    hoja.getRange(1, 1, 1, HEADERS_CONFIG_RECOMPRA.length).setValues([HEADERS_CONFIG_RECOMPRA]);
+    var filas = [
+      ['creatina', 250, 5, '=ROUND(B2/C2,0)', 5, 5, 'SI', 'Una unidad de 250 g'],
+      ['creatina', 300, 5, '=ROUND(B3/C3,0)', 5, 5, 'SI', 'Una unidad de 300 g'],
+      ['creatina', 500, 5, '=ROUND(B4/C4,0)', 5, 5, 'SI', 'Una unidad de 500 g'],
+      ['creatina', 1000, 5, '=ROUND(B5/C5,0)', 5, 5, 'SI', 'Una unidad de 1 kg'],
+      ['creatina', '', 5, 60, 5, 5, 'SI', 'Valor de respaldo si el nombre no indica gramos'],
+      ['whey', '', '', 25, 5, 5, 'SI', 'Proteína whey'],
+      ['proteina', '', '', 25, 5, 5, 'SI', 'Proteínas en general'],
+      ['isolate', '', '', 25, 5, 5, 'SI', 'Proteína aislada'],
+      ['blend', '', '', 25, 5, 5, 'SI', 'Mezcla de proteínas'],
+      ['bcaa', '', '', 30, 5, 5, 'SI', 'Aminoácidos BCAA'],
+      ['glutamina', '', '', 30, 5, 5, 'SI', 'Glutamina'],
+      ['aminoacido', '', '', 30, 5, 5, 'SI', 'Aminoácidos'],
+      ['pre entreno', '', '', 30, 5, 5, 'SI', 'Pre entrenos'],
+      ['pre-entreno', '', '', 30, 5, 5, 'SI', 'Pre entrenos con guion'],
+      ['colageno', '', '', 30, 5, 5, 'SI', 'Colágeno'],
+      ['omega', '', '', 45, 5, 5, 'SI', 'Omega'],
+      ['vitamina', '', '', 45, 5, 5, 'SI', 'Vitaminas'],
+      ['magnesio', '', '', 45, 5, 5, 'SI', 'Magnesio'],
+      ['multivitaminico', '', '', 60, 5, 5, 'SI', 'Multivitamínicos'],
+      ['quemador', '', '', 30, 5, 5, 'SI', 'Quemadores'],
+      ['carnitina', '', '', 30, 5, 5, 'SI', 'Carnitina'],
+      ['gainer', '', '', 20, 5, 5, 'SI', 'Ganadores de peso'],
+      ['mass', '', '', 20, 5, 5, 'SI', 'Ganadores con Mass en el nombre'],
+      ['hidratacion', '', '', 20, 5, 5, 'SI', 'Hidratación'],
+      ['electrolit', '', '', 20, 5, 5, 'SI', 'Electrolitos']
+    ];
+    hoja.getRange(2, 1, filas.length, HEADERS_CONFIG_RECOMPRA.length).setValues(filas);
+    hoja.setFrozenRows(1);
+    hoja.getRange(1, 1, 1, HEADERS_CONFIG_RECOMPRA.length)
+      .setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
+    hoja.getRange(2, 1, filas.length, HEADERS_CONFIG_RECOMPRA.length)
+      .setWrap(true).setVerticalAlignment('middle');
+    hoja.getRange(2, 7, Math.max(1, hoja.getMaxRows() - 1), 1).setDataValidation(
+      SpreadsheetApp.newDataValidation().requireValueInList(['SI', 'NO'], true).setAllowInvalid(false).build()
+    );
+    [150, 135, 135, 145, 150, 170, 90, 320].forEach(function(ancho, index) {
+      hoja.setColumnWidth(index + 1, ancho);
+    });
+    if (!hoja.getFilter()) hoja.getRange(1, 1, hoja.getLastRow(), HEADERS_CONFIG_RECOMPRA.length).createFilter();
+  } else {
+    _validarHeadersRecompra(hoja, HEADERS_CONFIG_RECOMPRA);
+  }
+  return hoja;
+}
+
+function _asegurarHistorialRecompra() {
+  var ss = _getSS();
+  var hoja = ss.getSheetByName(HOJA_HISTORIAL_RECOMPRA);
+  if (!hoja) {
+    hoja = ss.insertSheet(HOJA_HISTORIAL_RECOMPRA);
+    hoja.getRange(1, 1, 1, HEADERS_HISTORIAL_RECOMPRA.length).setValues([HEADERS_HISTORIAL_RECOMPRA]);
+    hoja.setFrozenRows(1);
+    hoja.getRange(1, 1, 1, HEADERS_HISTORIAL_RECOMPRA.length)
+      .setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
+    [280, 150, 190, 145, 320, 145, 90, 135, 155, 150, 230].forEach(function(ancho, index) {
+      hoja.setColumnWidth(index + 1, ancho);
+    });
+  } else {
+    _validarHeadersRecompra(hoja, HEADERS_HISTORIAL_RECOMPRA);
+  }
+  if (hoja.getLastRow() > 1 && !hoja.getFilter()) {
+    hoja.getRange(1, 1, hoja.getLastRow(), HEADERS_HISTORIAL_RECOMPRA.length).createFilter();
+  }
+  return hoja;
+}
+
+function configurarRecordatoriosRecompra() {
+  var config = _asegurarConfigRecompra();
+  var historial = _asegurarHistorialRecompra();
+  try {
+    SpreadsheetApp.getUi().alert(
+      'Recordatorios listos',
+      'Se crearon o verificaron las hojas ' + config.getName() + ' y ' + historial.getName() + '. Podés cambiar días, dosis y márgenes desde CONFIG_RECOMPRA.',
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+  } catch (e) {}
+  return { ok: true, config: config.getName(), historial: historial.getName() };
+}
+
+function _leerConfigRecompra() {
+  var hoja = _asegurarConfigRecompra();
+  var filas = hoja.getDataRange().getValues();
+  var config = [];
+  for (var i = 1; i < filas.length; i++) {
+    var clave = _normalizarRecompra(filas[i][0]);
+    if (!clave) continue;
+    config.push({
+      clave: clave,
+      presentacion: Number(filas[i][1]) || 0,
+      dosis: Number(filas[i][2]) || 0,
+      dias: Number(filas[i][3]) || 0,
+      antes: Math.max(0, Number(filas[i][4]) || 0),
+      despues: Math.max(0, Number(filas[i][5]) || 0),
+      activo: String(filas[i][6] || 'SI').trim().toUpperCase() !== 'NO'
+    });
+  }
+  return config;
+}
+
 function _extraerGramosCreatina(nombreProducto) {
   var n = String(nombreProducto || '').toLowerCase().replace(',', '.');
   var match = n.match(/(\d+(?:\.\d+)?)\s*(kg|kilogramos?|kilos?|gr(?:amos?|s)?|g)\b/);
@@ -2659,30 +2790,77 @@ function _extraerGramosCreatina(nombreProducto) {
   return /^(kg|kilogram|kilo)/.test(match[2]) ? Math.round(cantidad * 1000) : Math.round(cantidad);
 }
 
-function _estimarDuracion(nombreProducto, cantidadComprada) {
-  var n = String(nombreProducto).toLowerCase();
+function _resolverDuracionRecompra(nombreProducto, cantidadComprada, config) {
+  var n = _normalizarRecompra(nombreProducto);
+  var unidades = Math.max(1, Math.round(Number(cantidadComprada) || 1));
+  var tieneConfig = Array.isArray(config);
+  var filas = tieneConfig ? config : [];
   if (n.indexOf('creatin') >= 0) {
-    // Una porción diaria habitual de creatina son 5 g. Si la venta incluye
-    // más de una unidad, se estima la duración total de lo comprado.
-    var unidades = Math.max(1, Math.round(Number(cantidadComprada) || 1));
-    return Math.max(1, Math.round((_extraerGramosCreatina(nombreProducto) * unidades) / 5));
+    var gramos = _extraerGramosCreatina(nombreProducto);
+    var exacta = null, respaldo = null;
+    for (var i = 0; i < filas.length; i++) {
+      if (filas[i].clave !== 'creatina') continue;
+      if (filas[i].presentacion === gramos) exacta = filas[i];
+      if (!filas[i].presentacion) respaldo = filas[i];
+    }
+    if (exacta && !exacta.activo) return { clave: 'creatina', dias: 0, antes: 0, despues: 0 };
+    if (!exacta && respaldo && !respaldo.activo) return { clave: 'creatina', dias: 0, antes: 0, despues: 0 };
+    if (tieneConfig && !exacta && !respaldo) return { clave: 'creatina', dias: 0, antes: 0, despues: 0 };
+    var elegida = exacta || respaldo || { dosis: 5, dias: 60, antes: 5, despues: 5, activo: true };
+    var diasUnidad = exacta && exacta.dias
+      ? exacta.dias
+      : (elegida.dosis ? Math.round(gramos / elegida.dosis) : (elegida.dias || 60));
+    return {
+      clave: 'creatina', dias: Math.max(1, diasUnidad * unidades),
+      antes: elegida.antes || 0, despues: elegida.despues || 0,
+      gramos: gramos, dosis: elegida.dosis || 5
+    };
   }
+  for (var c = 0; c < filas.length; c++) {
+    if (n.indexOf(filas[c].clave) >= 0) {
+      if (!filas[c].activo || filas[c].dias <= 0) return { clave: filas[c].clave, dias: 0, antes: 0, despues: 0 };
+      return { clave: filas[c].clave, dias: filas[c].dias, antes: filas[c].antes, despues: filas[c].despues };
+    }
+  }
+  if (tieneConfig) return { clave: '', dias: 0, antes: 0, despues: 0 };
   for (var key in DURACIONES_PRODUCTO) {
-    if (n.indexOf(key) >= 0) return DURACIONES_PRODUCTO[key];
+    if (n.indexOf(key) >= 0) return { clave: key, dias: DURACIONES_PRODUCTO[key], antes: 5, despues: 5 };
   }
-  return 0;
+  return { clave: '', dias: 0, antes: 0, despues: 0 };
 }
 
-function recordatoriosRecompra() {
+function _estimarDuracion(nombreProducto, cantidadComprada, config) {
+  return _resolverDuracionRecompra(nombreProducto, cantidadComprada, config).dias;
+}
+
+function _idsHistorialRecompra(hoja) {
+  var ids = {};
+  if (hoja.getLastRow() < 2) return ids;
+  hoja.getRange(2, 1, hoja.getLastRow() - 1, 1).getValues().forEach(function(fila) {
+    var id = String(fila[0] || '').trim();
+    if (id) ids[id] = true;
+  });
+  return ids;
+}
+
+function _idAvisoRecompra(rec, zona) {
+  return [rec.telefono, rec.familia,
+    Utilities.formatDate(rec.fechaVenta, zona, 'yyyyMMddHHmmss'), rec.cantidad].join('|');
+}
+
+function _obtenerRecordatoriosRecompra(modoPrueba) {
   var ss = _getSS();
   var hojaVD  = ss.getSheetByName('VentasDiarias');
   var hojaCli = ss.getSheetByName('CLIENTES');
-  if (!hojaVD || !hojaCli) return;
+  if (!hojaVD || !hojaCli) return [];
 
   var ventas   = hojaVD.getDataRange().getValues();
   var clientes = hojaCli.getDataRange().getValues();
   var hoy = new Date();
   var zona = 'America/Argentina/Buenos_Aires';
+  var config = _leerConfigRecompra();
+  var historial = _asegurarHistorialRecompra();
+  var idsAvisados = _idsHistorialRecompra(historial);
 
   var clienteMap = {};
   for (var c = 1; c < clientes.length; c++) {
@@ -2695,9 +2873,8 @@ function recordatoriosRecompra() {
     };
   }
   var clienteNombreMap = {};
-  for (var k in clienteMap) clienteNombreMap[clienteMap[k].nombre.toLowerCase()] = k;
-
-  var recordatorios = [];
+  for (var k in clienteMap) clienteNombreMap[_normalizarRecompra(clienteMap[k].nombre)] = k;
+  var ultimasCompras = {};
 
   for (var i = 1; i < ventas.length; i++) {
     var row = ventas[i];
@@ -2711,70 +2888,159 @@ function recordatoriosRecompra() {
     if (!producto || !clienteNombre) continue;
 
     var cantidadComprada = Math.max(1, Math.round(Number(row[3]) || 1));
-    var duracion = _estimarDuracion(producto, cantidadComprada);
-    if (duracion === 0) continue;
-
-    var diasDesdeCompra = Math.floor((hoy - fechaVenta) / 86400000);
-    // Avisar cerca de la fecha estimada de reposición, no semanas antes.
-    var margen = Math.max(1, duracion - 5);
-    if (diasDesdeCompra < margen || diasDesdeCompra > duracion + 5) continue;
-
-    var codCli = clienteNombreMap[clienteNombre.toLowerCase()] || '';
+    var duracion = _resolverDuracionRecompra(producto, cantidadComprada, config);
+    if (!duracion.dias) continue;
+    var codCli = clienteNombreMap[_normalizarRecompra(clienteNombre)] || '';
     var info = codCli ? clienteMap[codCli] : null;
     if (!info || !info.telefono) continue;
-
-    var yaExiste = recordatorios.some(function(r) {
-      return r.telefono === info.telefono && r.producto === producto;
-    });
-    if (yaExiste) continue;
-
-    recordatorios.push({
+    var familia = duracion.clave === 'creatina'
+      ? 'creatina'
+      : duracion.clave + '|' + _normalizarRecompra(producto);
+    var claveCompra = info.telefono + '||' + familia;
+    var compra = {
       nombre: info.nombre || clienteNombre,
       telefono: info.telefono,
       email: info.email,
       producto: producto,
       cantidad: cantidadComprada,
-      dias: diasDesdeCompra,
-      duracion: duracion
-    });
+      fechaVenta: fechaVenta,
+      familia: familia,
+      duracion: duracion.dias,
+      antes: duracion.antes,
+      despues: duracion.despues,
+      gramos: duracion.gramos || 0,
+      dosis: duracion.dosis || 0
+    };
+    if (!ultimasCompras[claveCompra] || fechaVenta.getTime() >= ultimasCompras[claveCompra].fechaVenta.getTime()) {
+      ultimasCompras[claveCompra] = compra;
+    }
   }
 
-  if (recordatorios.length === 0) return;
+  var recordatorios = [];
+  for (var clave in ultimasCompras) {
+    var rec = ultimasCompras[clave];
+    rec.dias = Math.floor((hoy - rec.fechaVenta) / 86400000);
+    rec.faltan = rec.duracion - rec.dias;
+    rec.id = _idAvisoRecompra(rec, zona);
+    rec.yaAvisado = !!idsAvisados[rec.id];
+    var estaEnVentana = rec.dias >= Math.max(1, rec.duracion - rec.antes) && rec.dias <= rec.duracion + rec.despues;
+    if (modoPrueba || (estaEnVentana && !rec.yaAvisado)) recordatorios.push(rec);
+  }
+  recordatorios.sort(function(a, b) {
+    var aOrden = a.faltan < 0 ? Math.abs(a.faltan) + 100000 : a.faltan;
+    var bOrden = b.faltan < 0 ? Math.abs(b.faltan) + 100000 : b.faltan;
+    return aOrden - bOrden;
+  });
+  return modoPrueba ? recordatorios.slice(0, 10) : recordatorios;
+}
 
-  var msgTelegram = '🔄 RECORDATORIOS DE RECOMPRA\n' +
+function _textoEstadoRecompra(rec) {
+  if (rec.faltan > 0) return 'faltan aproximadamente ' + rec.faltan + ' días';
+  if (rec.faltan < 0) return 'pasaron aproximadamente ' + Math.abs(rec.faltan) + ' días del momento estimado';
+  return 'la reposición estimada es hoy';
+}
+
+function _telefonoLinkRecompra(telefono) {
+  var digitos = String(telefono || '').replace(/\D/g, '').replace(/^0+/, '');
+  if (/^549/.test(digitos)) return digitos;
+  if (/^54/.test(digitos)) return '549' + digitos.slice(2).replace(/^0+/, '');
+  return digitos ? '549' + digitos : '';
+}
+
+function _registrarHistorialRecompra(recordatorios, resultados) {
+  if (!recordatorios.length) return;
+  var hoja = _asegurarHistorialRecompra();
+  var ahora = new Date();
+  var filas = recordatorios.map(function(rec, index) {
+    var resultado = resultados[index] || {};
+    return [rec.id, ahora, rec.nombre, rec.telefono, rec.producto, rec.fechaVenta,
+      rec.cantidad, rec.duracion, rec.dias, resultado.canal || 'TELEGRAM', resultado.estado || 'OK'];
+  });
+  hoja.getRange(hoja.getLastRow() + 1, 1, filas.length, HEADERS_HISTORIAL_RECOMPRA.length).setValues(filas);
+  var inicio = hoja.getLastRow() - filas.length + 1;
+  hoja.getRange(inicio, 2, filas.length, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  hoja.getRange(inicio, 6, filas.length, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  hoja.getRange(inicio, 1, filas.length, HEADERS_HISTORIAL_RECOMPRA.length).setVerticalAlignment('middle');
+  if (!hoja.getFilter()) hoja.getRange(1, 1, hoja.getLastRow(), HEADERS_HISTORIAL_RECOMPRA.length).createFilter();
+}
+
+function _procesarRecordatoriosRecompra(modoPrueba) {
+  var hoy = new Date();
+  var zona = 'America/Argentina/Buenos_Aires';
+  var recordatorios = _obtenerRecordatoriosRecompra(!!modoPrueba);
+  if (!recordatorios.length) {
+    if (modoPrueba) _notificarTelegram('🧪 PRUEBA DE RECOMPRA\n\nNo hay compras configuradas para mostrar. No se enviaron correos a clientes.');
+    return { ok: true, prueba: !!modoPrueba, cantidad: 0 };
+  }
+
+  var msgTelegram = (modoPrueba ? '🧪 VISTA PREVIA — RECOMPRA\n' : '🔄 RECORDATORIOS DE RECOMPRA\n') +
     Utilities.formatDate(hoy, zona, 'dd/MM/yyyy') + '\n\n' +
-    recordatorios.length + ' cliente(s) para contactar:\n\n';
+    recordatorios.length + ' cliente(s) ' + (modoPrueba ? 'próximos o recientes' : 'para contactar') + ':\n\n';
 
   for (var r = 0; r < recordatorios.length; r++) {
     var rec = recordatorios[r];
     var msgWA = 'Hola ' + rec.nombre.split(' ')[0] + '! Soy de MAXUP 💪\n\n' +
       'Hace ' + rec.dias + ' días compraste ' + rec.producto + ' y calculamos que se te debe estar terminando.\n\n' +
       '¿Querés que te reserve uno? Te lo tenemos listo 🚀';
-    var linkWA = 'https://wa.me/54' + rec.telefono + '?text=' + encodeURIComponent(msgWA);
+    var linkWA = 'https://wa.me/' + _telefonoLinkRecompra(rec.telefono) + '?text=' + encodeURIComponent(msgWA);
 
     msgTelegram += '👤 ' + rec.nombre + '\n';
     msgTelegram += '📦 ' + rec.producto + ' (hace ' + rec.dias + ' días)\n';
-    msgTelegram += '⏳ Reposición estimada: ' + rec.duracion + ' días\n';
+    msgTelegram += '⏳ Duración estimada: ' + rec.duracion + ' días; ' + _textoEstadoRecompra(rec) + '\n';
+    if (rec.yaAvisado) msgTelegram += '✅ Este aviso ya fue enviado anteriormente\n';
     msgTelegram += '📱 Click para enviar: ' + linkWA + '\n\n';
+  }
 
-    if (rec.email) {
+  if (modoPrueba) msgTelegram += 'MODO PRUEBA: no se enviaron correos y no se marcó ningún aviso como realizado.';
+  var telegramOk = _notificarTelegram(msgTelegram);
+  if (!telegramOk) return { ok: false, prueba: !!modoPrueba, cantidad: recordatorios.length, error: 'Telegram no pudo recibir la vista o el aviso.' };
+  if (modoPrueba) return { ok: true, prueba: true, cantidad: recordatorios.length };
+
+  var resultados = [];
+  for (var e = 0; e < recordatorios.length; e++) {
+    var recordatorio = recordatorios[e];
+    var emailEstado = recordatorio.email ? 'Email pendiente' : 'Sin email';
+    var canal = 'TELEGRAM';
+    var recEmail = recordatorio;
+    if (recEmail.email) {
       try {
         MailApp.sendEmail({
-          to: rec.email,
-          subject: '¿Se te terminó ' + rec.producto + '? — MAXUP',
+          to: recEmail.email,
+          subject: '¿Se te terminó ' + recEmail.producto + '? — MAXUP',
           htmlBody: '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px">' +
-            '<h2 style="color:#00C8FF">¡Hola ' + rec.nombre.split(' ')[0] + '! 💪</h2>' +
-            '<p>Hace <strong>' + rec.dias + ' días</strong> compraste <strong>' + rec.producto + '</strong> y calculamos que se te debe estar terminando.</p>' +
+            '<h2 style="color:#00C8FF">¡Hola ' + recEmail.nombre.split(' ')[0] + '! 💪</h2>' +
+            '<p>Hace <strong>' + recEmail.dias + ' días</strong> compraste <strong>' + recEmail.producto + '</strong> y calculamos que se te debe estar terminando.</p>' +
             '<p>¿Querés que te reservemos uno? Escribinos y te lo tenemos listo:</p>' +
-            '<a href="' + linkWA + '" style="display:inline-block;background:#25D366;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0">📲 Escribinos por WhatsApp</a>' +
+            '<a href="https://wa.me/' + _telefonoLinkRecompra(recEmail.telefono) + '" style="display:inline-block;background:#25D366;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0">📲 Escribinos por WhatsApp</a>' +
             '<p style="color:#888;font-size:12px;margin-top:24px">MAXUP Suplementos — maxupsuplementos.com.ar</p>' +
             '</div>'
         });
-      } catch(e) { Logger.log('Error email recompra: ' + e.message); }
+        emailEstado = 'Email OK';
+        canal = 'TELEGRAM + EMAIL';
+      } catch(errorEmail) {
+        emailEstado = 'Error email: ' + errorEmail.message;
+        Logger.log('Error email recompra: ' + errorEmail.message);
+      }
     }
+    resultados.push({ canal: canal, estado: 'Telegram OK · ' + emailEstado });
   }
+  _registrarHistorialRecompra(recordatorios, resultados);
+  return { ok: true, prueba: false, cantidad: recordatorios.length };
+}
 
-  _notificarTelegram(msgTelegram);
+function recordatoriosRecompra() {
+  return _procesarRecordatoriosRecompra(false);
+}
+
+function probarRecordatoriosRecompra() {
+  var resultado = _procesarRecordatoriosRecompra(true);
+  try {
+    SpreadsheetApp.getActive().toast(
+      resultado.ok ? 'Vista previa enviada a Telegram. No se enviaron correos.' : resultado.error,
+      'MAXUP — Recompra', 8
+    );
+  } catch (e) {}
+  return resultado;
 }
 
 // ════════════════════════════════════════════════════════════
