@@ -111,7 +111,7 @@
 
   <div class="actions">
     <button class="btn-print" onclick="imprimirComprobante('PRESUPUESTO')">🖨 Presupuesto</button>
-    <button class="btn-ghost" id="receiptBtn" onclick="imprimirUltimaVenta()" disabled>🧾 Recibo</button>
+    <button class="btn-ghost" id="receiptBtn" onclick="imprimirUltimaVenta()" disabled>🧾 Imprimir recibo</button>
     <button class="btn-sale wide" id="saleBtn" onclick="aplicarVenta()">✅ APLICAR VENTA</button>
     <button class="btn-new wide" onclick="nuevaVenta()">＋ Nueva venta</button>
   </div>
@@ -229,7 +229,7 @@ function aplicarVenta(){
     APLICANDO=false;byId('loading').style.display='none';
     if(!r||!r.ok){fallo({message:(r&&r.error)||'No se pudo aplicar la venta'});return;}
     ULTIMA=r;if(r.cliente){CLIENTE.codigo=String(r.cliente.codigo||CLIENTE.codigo);CLIENTE.nombre=r.cliente.nombre||CLIENTE.nombre;CLIENTE.nuevo=false;}byId('receiptBtn').disabled=!!r.duplicado;byId('saleBtn').disabled=true;
-    byId('okBox').style.display='block';byId('okBox').innerHTML='<strong>✅ '+esc(r.mensaje||'Venta aplicada')+'</strong>'+(r.total!=null?'<br>'+esc(CLIENTE.nombre)+' · '+money(r.total)+' · '+esc(r.pago):'');
+    byId('okBox').style.display='block';byId('okBox').innerHTML='<strong>✅ '+esc(r.mensaje||'Venta aplicada')+'</strong>'+(r.total!=null?'<br>'+esc(CLIENTE.nombre)+' · '+money(r.total)+' · '+esc(r.pago):'')+(r.duplicado?'':'<button class="btn-print" style="margin-top:10px" onclick="imprimirUltimaVenta()">🧾 Imprimir recibo ahora</button>');
     window.scrollTo(0,0);
   }).withFailureHandler(fallo).registrarVentaCajaMaxup({operacion:OPERACION,clienteCodigo:CLIENTE.codigo,nuevoCliente:CLIENTE.nuevo?{nombre:CLIENTE.nombre,telefono:CLIENTE.telefono}:null,pago:byId('payment').value,notas:byId('notes').value,items:CART});
 }
