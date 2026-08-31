@@ -48,7 +48,7 @@
 <body>
 <div class="loading" id="loading">Cargando productos, clientes y promociones…</div>
 <div class="app">
-  <div class="top"><img src="https://maxupsuplementos.com.ar/logo.png" alt="MAXUP"><div><h1>Caja rápida</h1><div class="sub">Presupuestá y aplicá la venta desde Sheets</div></div></div>
+  <div class="top"><img src="https://maxupsuplementos.com.ar/logo-transparent.png" alt="MAXUP"><div><h1>Caja rápida</h1><div class="sub">Presupuestá y aplicá la venta desde Sheets</div></div></div>
   <div class="ok" id="okBox"></div>
 
   <div class="workspace">
@@ -245,7 +245,7 @@ function imprimirComprobante(tipo,venta){
   var clienteComprobante=venta&&venta.clienteRecibo?venta.clienteRecibo:CLIENTE;
   var lineas=venta&&venta.lineas?venta.lineas:CART.map(function(item){var p=DATA.productos.find(function(x){return x.id===item.id;});return{nombre:p.detalle,marca:p.marca,cantidad:item.cantidad,precio:precio(p),subtotal:precio(p)*item.cantidad};});
   var fecha=new Date(venta&&venta.fecha?venta.fecha:Date.now());var formato=byId('printFormat').value;
-  var html='<div class="r-head"><img src="https://maxupsuplementos.com.ar/logo.png"><h2>'+esc(tipo)+'</h2><div class="r-meta">MAXUP Suplementos<br>General Güemes, Salta · 3876233406<br>'+fecha.toLocaleString('es-AR')+(venta?'<br>Operación: '+esc(venta.operacion):'')+'</div></div>';
+  var html='<div class="r-head"><img src="https://maxupsuplementos.com.ar/logo-transparent.png"><h2>'+esc(tipo)+'</h2><div class="r-meta">MAXUP Suplementos<br>General Güemes, Salta · 3876233406<br>'+fecha.toLocaleString('es-AR')+(venta?'<br>Operación: '+esc(venta.operacion):'')+'</div></div>';
   html+='<div class="r-meta"><b>Cliente:</b> '+esc(clienteComprobante.nombre)+(clienteComprobante.codigo?'<br><b>Código:</b> '+esc(clienteComprobante.codigo):'')+'<br><b>Pago:</b> '+esc(venta?venta.pago:byId('payment').options[byId('payment').selectedIndex].text.split(' — ')[0])+'</div>';
   html+='<table class="r-table"><thead><tr><th>Producto</th><th class="num">Cant.</th><th class="num hide-thermal">P. unit.</th><th class="num">Total</th></tr></thead><tbody>';
   lineas.forEach(function(l){html+='<tr><td>'+esc((l.marca?l.marca+' · ':'')+l.nombre)+'</td><td class="num">'+l.cantidad+'</td><td class="num hide-thermal">'+money(l.precio)+'</td><td class="num">'+money(l.subtotal!=null?l.subtotal:l.ingreso)+'</td></tr>';});
