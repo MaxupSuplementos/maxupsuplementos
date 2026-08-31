@@ -2643,15 +2643,30 @@ function jsonResp(obj) {
 // ════════════════════════════════════════════════════════════
 
 var DURACIONES_PRODUCTO = {
-  'creatina': 30, 'whey': 25, 'proteina': 25, 'isolate': 25, 'blend': 25,
+  'creatina': 60, 'whey': 25, 'proteina': 25, 'isolate': 25, 'blend': 25,
   'bcaa': 30, 'glutamina': 30, 'aminoacido': 30, 'pre entreno': 30,
   'pre-entreno': 30, 'colageno': 30, 'omega': 45, 'vitamina': 45,
   'magnesio': 45, 'multivitaminico': 60, 'quemador': 30, 'carnitina': 30,
   'gainer': 20, 'mass': 20, 'hidratacion': 20, 'electrolit': 20
 };
 
-function _estimarDuracion(nombreProducto) {
+function _extraerGramosCreatina(nombreProducto) {
+  var n = String(nombreProducto || '').toLowerCase().replace(',', '.');
+  var match = n.match(/(\d+(?:\.\d+)?)\s*(kg|kilogramos?|kilos?|gr(?:amos?|s)?|g)\b/);
+  if (!match) return 300;
+  var cantidad = Number(match[1]);
+  if (!isFinite(cantidad) || cantidad <= 0) return 300;
+  return /^(kg|kilogram|kilo)/.test(match[2]) ? Math.round(cantidad * 1000) : Math.round(cantidad);
+}
+
+function _estimarDuracion(nombreProducto, cantidadComprada) {
   var n = String(nombreProducto).toLowerCase();
+  if (n.indexOf('creatin') >= 0) {
+    // Una porción diaria habitual de creatina son 5 g. Si la venta incluye
+    // más de una unidad, se estima la duración total de lo comprado.
+    var unidades = Math.max(1, Math.round(Number(cantidadComprada) || 1));
+    return Math.max(1, Math.round((_extraerGramosCreatina(nombreProducto) * unidades) / 5));
+  }
   for (var key in DURACIONES_PRODUCTO) {
     if (n.indexOf(key) >= 0) return DURACIONES_PRODUCTO[key];
   }
@@ -2695,11 +2710,13 @@ function recordatoriosRecompra() {
     var clienteNombre = String(row[6] || '').trim();
     if (!producto || !clienteNombre) continue;
 
-    var duracion = _estimarDuracion(producto);
+    var cantidadComprada = Math.max(1, Math.round(Number(row[3]) || 1));
+    var duracion = _estimarDuracion(producto, cantidadComprada);
     if (duracion === 0) continue;
 
     var diasDesdeCompra = Math.floor((hoy - fechaVenta) / 86400000);
-    var margen = Math.floor(duracion * 0.85);
+    // Avisar cerca de la fecha estimada de reposición, no semanas antes.
+    var margen = Math.max(1, duracion - 5);
     if (diasDesdeCompra < margen || diasDesdeCompra > duracion + 5) continue;
 
     var codCli = clienteNombreMap[clienteNombre.toLowerCase()] || '';
@@ -2716,6 +2733,7 @@ function recordatoriosRecompra() {
       telefono: info.telefono,
       email: info.email,
       producto: producto,
+      cantidad: cantidadComprada,
       dias: diasDesdeCompra,
       duracion: duracion
     });
@@ -2736,6 +2754,7 @@ function recordatoriosRecompra() {
 
     msgTelegram += '👤 ' + rec.nombre + '\n';
     msgTelegram += '📦 ' + rec.producto + ' (hace ' + rec.dias + ' días)\n';
+    msgTelegram += '⏳ Reposición estimada: ' + rec.duracion + ' días\n';
     msgTelegram += '📱 Click para enviar: ' + linkWA + '\n\n';
 
     if (rec.email) {
