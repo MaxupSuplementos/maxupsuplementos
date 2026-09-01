@@ -1,0 +1,37 @@
+{
+  "fecha": "2026-09-01",
+  "generado": "2026-09-01T13:23:21.083Z",
+  "cantidad": 5,
+  "items": [
+    {
+      "orden": 1,
+      "titulo": "Mtor Bcaa  X 270 Grs. - Limon",
+      "file": "generated/daily/current/01.jpg",
+      "caption": "Mtor Bcaa  X 270 Grs. - Limon\n\nMAXUP Suplementos\nmaxupsuplementos.com.ar"
+    },
+    {
+      "orden": 2,
+      "titulo": "Whey Protein Truemade X 2,05 Lb - Cookies",
+      "file": "generated/daily/current/02.jpg",
+      "caption": "Whey Protein Truemade X 2,05 Lb - Cookies\n\nMAXUP Suplementos\nmaxupsuplementos.com.ar"
+    },
+    {
+      "orden": 3,
+      "titulo": "Citrato De Magnesio 60 Cap",
+      "file": "generated/daily/current/03.jpg",
+      "caption": "Citrato De Magnesio 60 Cap\n\nMAXUP Suplementos\nmaxupsuplementos.com.ar"
+    },
+    {
+      "orden": 4,
+      "titulo": "Colageno Hidrolizado 200Gr Pote",
+      "file": "generated/daily/current/04.jpg",
+      "caption": "Colageno Hidrolizado 200Gr Pote\n\nMAXUP Suplementos\nmaxupsuplementos.com.ar"
+    },
+    {
+      "orden": 5,
+      "titulo": "Nox 3000 Oxido Nitrico 60comp",
+      "file": "generated/daily/current/05.jpg",
+      "caption": "Nox 3000 Oxido Nitrico 60comp\n\nMAXUP Suplementos\nmaxupsuplementos.com.ar"
+    }
+  ]
+}
