@@ -36,6 +36,10 @@
     .ok{display:none;background:rgba(22,199,132,.12);border:1px solid rgba(22,199,132,.5);border-radius:10px;padding:12px;margin-bottom:10px;color:#b6f6dc;line-height:1.5}
     .warning{font-size:13px;color:#e7ca72;line-height:1.45;margin-top:9px}
     .loading{position:fixed;inset:0;background:rgba(5,8,18,.88);display:flex;align-items:center;justify-content:center;z-index:20;color:var(--cyan);font-weight:800;text-align:center;padding:20px}
+    .login-screen{position:fixed;inset:0;z-index:30;background:radial-gradient(circle at top,#1a2043,#080b16 68%);display:none;align-items:center;justify-content:center;padding:20px}
+    .login-card{width:min(430px,100%);background:var(--card);border:1px solid #30385e;border-radius:20px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.45);text-align:center}
+    .login-card img{width:100px;height:100px;object-fit:contain}.login-card h2{color:var(--cyan);margin:8px 0}.login-card p{color:var(--muted);line-height:1.5}.login-error{display:none;color:#ff9bcf;margin-top:10px}
+    .logout{display:none;margin-left:auto;background:#202743;color:#d8ddf4;border:1px solid #353d61;padding:9px 12px}
     .new-client{display:none;margin-top:8px;padding-top:8px;border-top:1px solid #303755}
     #printArea{display:none;background:#fff;color:#000;font:11px Arial,sans-serif}.receipt{padding:7mm;max-width:190mm;margin:auto}.receipt.thermal{width:76mm;padding:3mm}
     .r-head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:8px}.r-head img{height:65px}.thermal .r-head img{height:45px}.r-head h2{margin:4px 0;font-size:20px}.thermal .r-head h2{font-size:15px}
@@ -46,9 +50,19 @@
   </style>
 </head>
 <body>
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <img src="https://maxupsuplementos.com.ar/logo-transparent.png" alt="MAXUP">
+    <h2>Caja Rápida</h2>
+    <p>Ingresá con la clave de administración de MAXUP.</p>
+    <input id="loginKey" type="password" placeholder="Clave de administración" autocomplete="current-password" onkeydown="if(event.key==='Enter')ingresarCaja()">
+    <button class="btn-sale" id="loginBtn" onclick="ingresarCaja()" style="margin-top:12px">Entrar a la Caja</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
 <div class="loading" id="loading">Cargando productos, clientes y promociones…</div>
 <div class="app">
-  <div class="top"><img src="https://maxupsuplementos.com.ar/logo-transparent.png" alt="MAXUP"><div><h1>Caja rápida</h1><div class="sub">Presupuestá y aplicá la venta desde Sheets</div></div></div>
+  <div class="top"><img src="https://maxupsuplementos.com.ar/logo-transparent.png" alt="MAXUP"><div><h1>Caja rápida</h1><div class="sub">Presupuestá, registrá e imprimí sin abrir Sheets</div></div><button class="logout" id="logoutBtn" onclick="salirCaja()">Cerrar sesión</button></div>
   <div class="ok" id="okBox"></div>
 
   <div class="workspace">
@@ -122,6 +136,8 @@
 <div id="printArea"><div class="receipt" id="receipt"></div></div>
 
 <script>
+var MODO_WEB=<?!= JSON.stringify(!!modoWeb) ?>;
+var SESION_CAJA=<?!= JSON.stringify(String(sesionCaja||'')) ?>;
 var DATA={productos:[],clientes:[],descuentosMonto:[],fidelidadPct:.10};
 var CLIENTE=null, CART=[], CALCULO=null, ULTIMA=null, APLICANDO=false;
 var OPERACION=nuevaOperacion();
@@ -132,14 +148,45 @@ function money(v){return '$'+Math.round(Number(v)||0).toLocaleString('es-AR');}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function byId(id){return document.getElementById(id);}
 
-google.script.run.withSuccessHandler(function(data){
-  if(!data||!data.ok){fallo({message:'No se pudieron cargar los datos'});return;}
-  DATA=data; byId('loading').style.display='none'; renderCart();
-}).withFailureHandler(fallo).obtenerDatosCajaMaxup();
+function cargarDatosCaja(){
+  byId('loading').style.display='flex';byId('loading').textContent='Cargando productos, clientes y promociones…';
+  google.script.run.withSuccessHandler(function(data){
+    if(!data||!data.ok){fallo({message:'No se pudieron cargar los datos'});return;}
+    DATA=data;byId('loading').style.display='none';renderCart();
+  }).withFailureHandler(fallo).obtenerDatosCajaMaxup(SESION_CAJA);
+}
+
+function iniciarCaja(){
+  if(MODO_WEB&&!SESION_CAJA){try{SESION_CAJA=sessionStorage.getItem('maxupCajaSesion')||'';}catch(e){}}
+  if(MODO_WEB&&!SESION_CAJA){byId('loading').style.display='none';byId('loginScreen').style.display='flex';return;}
+  if(MODO_WEB)byId('logoutBtn').style.display='block';
+  cargarDatosCaja();
+}
+
+function ingresarCaja(){
+  var clave=byId('loginKey').value,boton=byId('loginBtn');if(!clave){byId('loginError').textContent='Escribí la clave.';byId('loginError').style.display='block';return;}
+  boton.disabled=true;boton.textContent='Ingresando…';byId('loginError').style.display='none';
+  google.script.run.withSuccessHandler(function(r){
+    boton.disabled=false;boton.textContent='Entrar a la Caja';
+    if(!r||!r.ok){byId('loginError').textContent=(r&&r.error)||'No se pudo iniciar sesión.';byId('loginError').style.display='block';return;}
+    SESION_CAJA=r.sesion;try{sessionStorage.setItem('maxupCajaSesion',SESION_CAJA);}catch(e){}
+    byId('loginKey').value='';byId('loginScreen').style.display='none';byId('logoutBtn').style.display='block';cargarDatosCaja();
+  }).withFailureHandler(function(err){boton.disabled=false;boton.textContent='Entrar a la Caja';byId('loginError').textContent=(err&&err.message)||String(err);byId('loginError').style.display='block';}).cajaLoginMaxup(clave);
+}
+
+function salirCaja(){
+  var anterior=SESION_CAJA;SESION_CAJA='';try{sessionStorage.removeItem('maxupCajaSesion');}catch(e){}
+  byId('logoutBtn').style.display='none';byId('loginScreen').style.display='flex';
+  google.script.run.cajaLogoutMaxup(anterior);
+}
+
+iniciarCaja();
 
 function fallo(err){
   APLICANDO=false; byId('saleBtn').disabled=false; byId('loading').style.display='none';
-  alert('Error: '+(err&&err.message?err.message:err));
+  var mensaje=String(err&&err.message?err.message:err);
+  if(MODO_WEB&&/sesión|sesion|session/i.test(mensaje)){SESION_CAJA='';try{sessionStorage.removeItem('maxupCajaSesion');}catch(e){}byId('logoutBtn').style.display='none';byId('loginScreen').style.display='flex';byId('loginError').textContent='La sesión venció. Volvé a ingresar.';byId('loginError').style.display='block';return;}
+  alert('Error: '+mensaje);
 }
 
 byId('clientSearch').addEventListener('input',function(){
@@ -235,7 +282,7 @@ function aplicarVenta(){
     byId('okBox').style.display='block';byId('okBox').innerHTML='<strong>✅ '+esc(r.mensaje||'Venta aplicada')+'</strong>'+(r.total!=null?'<br>'+esc(nombreVenta)+' · '+money(r.total)+' · '+esc(r.pago):'')+(r.duplicado?'':'<button class="btn-print" style="margin-top:10px" onclick="imprimirUltimaVenta()">🧾 Imprimir recibo ahora</button>');
     prepararSiguienteVenta();
     window.scrollTo(0,0);
-  }).withFailureHandler(fallo).registrarVentaCajaMaxup({operacion:OPERACION,clienteCodigo:CLIENTE.codigo,nuevoCliente:CLIENTE.nuevo?{nombre:CLIENTE.nombre,telefono:CLIENTE.telefono}:null,pago:byId('payment').value,notas:byId('notes').value,items:CART});
+  }).withFailureHandler(fallo).registrarVentaCajaMaxup({operacion:OPERACION,clienteCodigo:CLIENTE.codigo,nuevoCliente:CLIENTE.nuevo?{nombre:CLIENTE.nombre,telefono:CLIENTE.telefono}:null,pago:byId('payment').value,notas:byId('notes').value,items:CART},SESION_CAJA);
 }
 
 function imprimirUltimaVenta(){if(!ULTIMA||ULTIMA.duplicado){alert('Primero aplicá una venta nueva');return;}imprimirComprobante('RECIBO DE COMPRA',ULTIMA);}
@@ -263,7 +310,7 @@ function prepararSiguienteVenta(){
   byId('productSearch').value='';byId('productResults').style.display='none';byId('notes').value='';byId('payment').value='contado';
   byId('receiptBtn').disabled=!ULTIMA||!!ULTIMA.duplicado;byId('saleBtn').disabled=false;renderCart();
   byId('loading').style.display='flex';byId('loading').textContent='Preparando la caja para la siguiente venta…';
-  google.script.run.withSuccessHandler(function(data){DATA=data;byId('loading').style.display='none';renderCart();}).withFailureHandler(fallo).obtenerDatosCajaMaxup();
+  google.script.run.withSuccessHandler(function(data){DATA=data;byId('loading').style.display='none';renderCart();}).withFailureHandler(fallo).obtenerDatosCajaMaxup(SESION_CAJA);
 }
 
 function nuevaVenta(){
@@ -271,7 +318,7 @@ function nuevaVenta(){
   byId('clientSelected').style.display='none';byId('clientSearch').value='';byId('productSearch').value='';byId('notes').value='';
   byId('okBox').style.display='none';byId('receiptBtn').disabled=true;byId('saleBtn').disabled=false;renderCart();
   byId('loading').style.display='flex';byId('loading').textContent='Actualizando stock y clientes…';
-  google.script.run.withSuccessHandler(function(data){DATA=data;byId('loading').style.display='none';renderCart();}).withFailureHandler(fallo).obtenerDatosCajaMaxup();
+  google.script.run.withSuccessHandler(function(data){DATA=data;byId('loading').style.display='none';renderCart();}).withFailureHandler(fallo).obtenerDatosCajaMaxup(SESION_CAJA);
 }
 </script>
 </body>

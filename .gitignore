@@ -4,3 +4,4 @@ _material_diseno/
 .claude/
 # Servidor local de pruebas
 server.ps1
+node_modules/

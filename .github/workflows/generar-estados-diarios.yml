@@ -1,0 +1,56 @@
+name: Generar estados diarios MAXUP
+
+on:
+  schedule:
+    - cron: "30 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: estados-diarios-maxup
+  cancel-in-progress: false
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Descargar el sitio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Instalar el generador
+        run: npm install --ignore-scripts
+
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Generar las cinco placas
+        run: npm run generar-estados
+
+      - name: Guardar las placas publicadas
+        run: |
+          git config user.name "MAXUP Automatizaciones"
+          git config user.email "actions@users.noreply.github.com"
+          git add generated/daily
+          if git diff --cached --quiet; then
+            echo "Las placas ya estaban actualizadas."
+          else
+            git commit -m "Actualizar estados diarios"
+            git push
+          fi
+
+      - name: Publicar en Meta cuando esté autorizado
+        env:
+          META_AUTOPUBLISH: ${{ vars.META_AUTOPUBLISH }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          META_GRAPH_VERSION: v26.0
+        run: npm run publicar-meta

@@ -161,6 +161,15 @@ function doGet(e) {
   }
   var accion = (e && e.parameter && e.parameter.accion) ? e.parameter.accion : 'catalogo';
 
+  if (accion === 'caja') {
+    var plantillaCaja = HtmlService.createTemplateFromFile('CajaMaxup');
+    plantillaCaja.modoWeb = true;
+    plantillaCaja.sesionCaja = '';
+    return plantillaCaja.evaluate()
+      .setTitle('MAXUP · Caja rápida')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DEFAULT);
+  }
+
   if (accion === 'aprobar_mayorista')  return aprobarMayorista(e.parameter);
   if (accion === 'rechazar_mayorista') return rechazarMayorista(e.parameter);
 
@@ -2666,6 +2675,33 @@ function _normalizarRecompra(value) {
     .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+function _notificarFotoTelegram(fotoUrl, texto) {
+  var cfg = _getConfig();
+  if (!cfg.TELEGRAM_TOKEN || !cfg.TELEGRAM_CHAT_ID || !fotoUrl) return false;
+  var url = 'https://api.telegram.org/bot' + cfg.TELEGRAM_TOKEN + '/sendPhoto';
+  try {
+    var respuesta = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({
+        chat_id: cfg.TELEGRAM_CHAT_ID,
+        photo: String(fotoUrl),
+        caption: String(texto || '').slice(0, 1000)
+      }),
+      muteHttpExceptions: true
+    });
+    var codigo = respuesta.getResponseCode();
+    if (codigo < 200 || codigo >= 300) {
+      Logger.log('Error Telegram sendPhoto HTTP ' + codigo + ': ' + respuesta.getContentText().slice(0, 300));
+      return false;
+    }
+    return true;
+  } catch(e) {
+    Logger.log('Error Telegram sendPhoto: ' + e.message);
+    return false;
+  }
+}
+
 function _validarHeadersRecompra(hoja, esperados) {
   var actuales = hoja.getRange(1, 1, 1, esperados.length).getValues()[0];
   for (var i = 0; i < esperados.length; i++) {
@@ -3565,6 +3601,51 @@ function _enviarEnlaceEstadosDiarios(fecha) {
   }
 }
 
+function publicarEstadosTelegramAutomaticos(fecha, forzar) {
+  var zona = 'America/Argentina/Buenos_Aires';
+  var hoy = Utilities.formatDate(fecha || new Date(), zona, 'yyyy-MM-dd');
+  var props = PropertiesService.getScriptProperties();
+  if (!forzar && props.getProperty('TELEGRAM_ESTADOS_ULTIMA_FECHA') === hoy) {
+    return { ok: true, fecha: hoy, enviados: 0, omitido: true };
+  }
+  var manifestUrl = 'https://maxupsuplementos.github.io/maxupsuplementos/generated/daily/latest.json?v=' + new Date().getTime();
+  try {
+    var respuesta = UrlFetchApp.fetch(manifestUrl, { muteHttpExceptions: true, followRedirects: true });
+    if (respuesta.getResponseCode() !== 200) {
+      return { ok: false, fecha: hoy, enviados: 0, error: 'Las placas todavía no están disponibles.' };
+    }
+    var manifest = JSON.parse(respuesta.getContentText());
+    if (String(manifest.fecha || '') !== hoy || !Array.isArray(manifest.items) || manifest.items.length < 1) {
+      return { ok: false, fecha: hoy, enviados: 0, error: 'GitHub todavía no generó las placas de hoy.' };
+    }
+    var base = 'https://maxupsuplementos.github.io/maxupsuplementos/';
+    var enviados = 0;
+    for (var i = 0; i < manifest.items.length; i++) {
+      var item = manifest.items[i] || {};
+      var claveItem = 'TELEGRAM_ESTADO_ITEM_' + (i + 1);
+      var firmaItem = hoy + '|' + String(item.file || '');
+      if (!forzar && props.getProperty(claveItem) === firmaItem) continue;
+      var foto = base + String(item.file || '').replace(/^\/+/, '') + '?v=' + encodeURIComponent(manifest.generado || hoy);
+      var caption = '📸 ' + (i + 1) + '/' + manifest.items.length + ' · ' + String(item.titulo || 'MAXUP') + '\n\n' +
+        'MAXUP Suplementos\n🌐 maxupsuplementos.com.ar';
+      if (!_notificarFotoTelegram(foto, caption)) {
+        return { ok: false, fecha: hoy, enviados: enviados, error: 'Telegram no pudo recibir la placa ' + (i + 1) + '.' };
+      }
+      props.setProperty(claveItem, firmaItem);
+      enviados++;
+    }
+    props.setProperty('TELEGRAM_ESTADOS_ULTIMA_FECHA', hoy);
+    return { ok: true, fecha: hoy, enviados: enviados, cantidad: manifest.items.length };
+  } catch(e) {
+    Logger.log('Publicación automática Telegram: ' + e.message);
+    return { ok: false, fecha: hoy, enviados: 0, error: e.message };
+  }
+}
+
+function probarEstadosTelegramAutomaticos() {
+  return publicarEstadosTelegramAutomaticos(new Date(), true);
+}
+
 function generarContenidoRedes() {
   var ss = _getSS();
   var hoy = new Date();
@@ -3576,6 +3657,7 @@ function generarContenidoRedes() {
 
   var posts = [];
   _enviarEnlaceEstadosDiarios(hoy);
+  publicarEstadosTelegramAutomaticos(hoy, false);
 
   // ── TIPO 1: OFERTAS POR VENCIMIENTO (Lunes y Jueves)
   if (diaSemana === 1 || diaSemana === 4) {

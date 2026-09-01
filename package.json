@@ -1,0 +1,12 @@
+{
+  "name": "maxup-publicaciones-automaticas",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generar-estados": "node tools/generate-daily-social.mjs",
+    "publicar-meta": "node tools/publish-meta-social.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

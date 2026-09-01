@@ -1,7 +1,35 @@
 // ============================================================
-// MAXUP — Caja rápida dentro de Google Sheets
+// MAXUP — Caja rápida dentro de Google Sheets y como aplicación web
 // Presupuesto, carrito, clientes, descuentos y aplicación de ventas.
 // ============================================================
+
+var CAJA_SESSION_TTL = 21600;
+
+function _crearSesionCajaInterna_() {
+  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  CacheService.getScriptCache().put('CAJA_INTERNA_' + _hashSeguro(token), _adminVersionSesion(), CAJA_SESSION_TTL);
+  return token;
+}
+
+function _validarSesionCaja_(sesion) {
+  sesion = String(sesion || '');
+  if (!sesion) throw new Error('Sesión de Caja requerida');
+  var cache = CacheService.getScriptCache();
+  var keyInterna = 'CAJA_INTERNA_' + _hashSeguro(sesion);
+  if (cache.get(keyInterna) === _adminVersionSesion()) {
+    cache.put(keyInterna, _adminVersionSesion(), CAJA_SESSION_TTL);
+    return true;
+  }
+  return _validarSesionAdmin(sesion);
+}
+
+function cajaLoginMaxup(clave) {
+  return adminLogin(clave);
+}
+
+function cajaLogoutMaxup(sesion) {
+  return adminLogout(sesion);
+}
 
 function cajaAutomaticaMaxupActiva() {
   return PropertiesService.getUserProperties().getProperty('MAXUP_CAJA_AUTO') !== '0';
@@ -19,7 +47,10 @@ function alternarCajaAutomaticaMaxup() {
 }
 
 function abrirCajaMaxup() {
-  var html = HtmlService.createHtmlOutputFromFile('CajaMaxup')
+  var plantilla = HtmlService.createTemplateFromFile('CajaMaxup');
+  plantilla.modoWeb = false;
+  plantilla.sesionCaja = _crearSesionCajaInterna_();
+  var html = plantilla.evaluate()
     .setTitle('MAXUP · Caja rápida')
     .setWidth(980)
     .setHeight(720);
@@ -83,7 +114,7 @@ function _cajaMesesCliente_(fila, headers) {
 }
 
 function _cajaClientes_() {
-  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CLIENTES');
+  var hoja = _getSS().getSheetByName('CLIENTES');
   if (!hoja || hoja.getLastRow() < 2) return [];
   var rows = hoja.getDataRange().getValues();
   var headers = rows[0];
@@ -198,11 +229,12 @@ function _cajaCatalogoIndumentaria_(ss) {
 }
 
 function _cajaCatalogo_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = _getSS();
   return _cajaCatalogoSuplementos_(ss).concat(_cajaCatalogoIndumentaria_(ss));
 }
 
-function obtenerDatosCajaMaxup() {
+function obtenerDatosCajaMaxup(sesionCaja) {
+  _validarSesionCaja_(sesionCaja);
   var fidelidadPct = (typeof _configNumeroMaxup === 'function')
     ? _configNumeroMaxup('PROMO_DESCUENTO', PROMO_DESCUENTO) : PROMO_DESCUENTO;
   var promoMinimo = (typeof _configNumeroMaxup === 'function')
@@ -231,7 +263,7 @@ function _cajaCalcular_(items, clienteCodigo) {
   var despuesMonto = escala ? Math.round(base * (1 - escala.pct)) : base;
   var fidelidad = false;
   if (clienteCodigo) {
-    var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CLIENTES');
+    var hoja = _getSS().getSheetByName('CLIENTES');
     if (hoja && hoja.getLastRow() > 1) {
       var rows = hoja.getDataRange().getValues();
       fidelidad = _cajaFidelidadDesdeRows_(clienteCodigo, rows, rows[0]);
@@ -254,7 +286,7 @@ function _cajaCalcular_(items, clienteCodigo) {
 
 function _cajaBuscarCliente_(codigo) {
   if (!codigo) return null;
-  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CLIENTES');
+  var hoja = _getSS().getSheetByName('CLIENTES');
   if (!hoja || hoja.getLastRow() < 2) return null;
   var rows = hoja.getDataRange().getValues();
   for (var i = 1; i < rows.length; i++) {
@@ -270,7 +302,7 @@ function _cajaCrearCliente_(datos) {
   var nombre = String(datos.nombre || '').trim().slice(0, 120);
   var telefono = String(datos.telefono || '').trim().slice(0, 40);
   if (!nombre) throw new Error('Escribí el nombre del nuevo cliente');
-  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CLIENTES');
+  var hoja = _getSS().getSheetByName('CLIENTES');
   if (!hoja) throw new Error('Hoja CLIENTES no encontrada');
   var rows = hoja.getDataRange().getValues();
   var codigos = rows.slice(1).map(function(row) { return Number(row[0]); })
@@ -282,7 +314,8 @@ function _cajaCrearCliente_(datos) {
   return { codigo: String(codigo), nombre: nombre, telefono: telefono, fila: fila, nuevo: true };
 }
 
-function registrarVentaCajaMaxup(datos) {
+function registrarVentaCajaMaxup(datos, sesionCaja) {
+  _validarSesionCaja_(sesionCaja);
   datos = datos || {};
   var operacion = String(datos.operacion || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
   if (!operacion) throw new Error('Falta el identificador de la venta');
@@ -302,7 +335,7 @@ function registrarVentaCajaMaxup(datos) {
   var lock = LockService.getScriptLock();
   try { lock.waitLock(20000); } catch (eLock) { throw new Error('La caja está ocupada. Reintentá en unos segundos.'); }
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = _getSS();
     var hojaVD = ss.getSheetByName('VentasDiarias');
     var hojaSup = ss.getSheetByName('SUPLEMENTOS');
     var hojaInd = ss.getSheetByName('INDUMENTARIA');
