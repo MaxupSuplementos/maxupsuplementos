@@ -10,6 +10,8 @@ const token = process.env.META_ACCESS_TOKEN || '';
 const igUserId = process.env.META_IG_USER_ID || '';
 const pageId = process.env.META_PAGE_ID || '';
 const graphVersion = process.env.META_GRAPH_VERSION || 'v26.0';
+const skipInstagramCount = Number.parseInt(process.env.META_SKIP_INSTAGRAM_COUNT || '0', 10) || 0;
+const skipFacebookCount = Number.parseInt(process.env.META_SKIP_FACEBOOK_COUNT || '0', 10) || 0;
 if (!token || (!igUserId && !pageId)) throw new Error('Faltan las credenciales de Meta para publicar.');
 
 const manifest = JSON.parse(await fs.readFile('generated/daily/latest.json', 'utf8'));
@@ -19,17 +21,17 @@ const baseRaw = `https://raw.githubusercontent.com/${repository}/${revision}/`;
 
 const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 
-async function graph(path, payload) {
+async function graph(path, payload, authToken = token) {
   const response = await fetch(`https://graph.facebook.com/${graphVersion}/${path}`, {
-    method: 'POST', body: new URLSearchParams({ ...payload, access_token: token })
+    method: 'POST', body: new URLSearchParams({ ...payload, access_token: authToken })
   });
   const data = await response.json();
   if (!response.ok || data.error) throw new Error(JSON.stringify(data.error || data));
   return data;
 }
 
-async function graphGet(path, query = {}) {
-  const params = new URLSearchParams({ ...query, access_token: token });
+async function graphGet(path, query = {}, authToken = token) {
+  const params = new URLSearchParams({ ...query, access_token: authToken });
   const response = await fetch(`https://graph.facebook.com/${graphVersion}/${path}?${params}`);
   const data = await response.json();
   if (!response.ok || data.error) throw new Error(JSON.stringify(data.error || data));
@@ -49,16 +51,27 @@ async function waitForInstagramContainer(containerId) {
   throw new Error('Instagram demoró demasiado en preparar el flyer.');
 }
 
-for (const item of manifest.items) {
+let pageToken = '';
+if (pageId) {
+  const pageCredentials = await graphGet(pageId, { fields: 'access_token' });
+  pageToken = pageCredentials.access_token || '';
+  if (!pageToken) throw new Error('Meta no entregó la credencial específica de la página de Facebook.');
+}
+
+for (const [index, item] of manifest.items.entries()) {
   const imageUrl = baseRaw + item.file;
-  if (igUserId) {
+  if (igUserId && index >= skipInstagramCount) {
     const container = await graph(`${igUserId}/media`, { image_url: imageUrl, media_type: 'STORIES' });
     await waitForInstagramContainer(container.id);
     await graph(`${igUserId}/media_publish`, { creation_id: container.id });
     console.log(`Historia de Instagram publicada: ${item.titulo}`);
+  } else if (igUserId) {
+    console.log(`Historia de Instagram omitida para evitar duplicados: ${item.titulo}`);
   }
-  if (pageId) {
-    await graph(`${pageId}/photos`, { url: imageUrl, caption: item.caption, published: 'true' });
+  if (pageId && index >= skipFacebookCount) {
+    await graph(`${pageId}/photos`, { url: imageUrl, caption: item.caption, published: 'true' }, pageToken);
     console.log(`Publicación de Facebook publicada: ${item.titulo}`);
+  } else if (pageId) {
+    console.log(`Publicación de Facebook omitida para evitar duplicados: ${item.titulo}`);
   }
 }
