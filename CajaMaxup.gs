@@ -90,25 +90,36 @@ function _cajaFidelidadDesdeRows_(codigo, rows, headers) {
     if (String(rows[i][0]) === String(codigo)) { fila = rows[i]; break; }
   }
   if (!fila) return false;
+  return _cajaFidelidadFila_(fila, headers);
+}
+
+function _cajaReglasFidelidad_(headers) {
   var meses = (typeof _configNumeroMaxup === 'function') ? _configNumeroMaxup('PROMO_MESES', PROMO_MESES) : PROMO_MESES;
   var minimo = (typeof _configNumeroMaxup === 'function') ? _configNumeroMaxup('PROMO_MINIMO', PROMO_MINIMO) : PROMO_MINIMO;
+  var columnas = [];
   for (var m = 0; m < meses; m++) {
     var fecha = new Date(new Date().getFullYear(), new Date().getMonth() - m, 1);
-    var col = _buscarColumnaMes(headers, fecha);
-    if (col < 0 || (Number(fila[col]) || 0) < minimo) return false;
+    columnas.push({ mes: _getMesHeader(fecha), col: _buscarColumnaMes(headers, fecha) });
+  }
+  return { cantidad: meses, minimo: minimo, columnas: columnas };
+}
+
+function _cajaFidelidadFila_(fila, headers, reglas) {
+  reglas = reglas || _cajaReglasFidelidad_(headers);
+  for (var m = 0; m < reglas.columnas.length; m++) {
+    var col = reglas.columnas[m].col;
+    if (col < 0 || (Number(fila[col]) || 0) < reglas.minimo) return false;
   }
   return true;
 }
 
-function _cajaMesesCliente_(fila, headers) {
+function _cajaMesesCliente_(fila, headers, reglas) {
   var meses = [];
-  var cantidad = (typeof _configNumeroMaxup === 'function') ? _configNumeroMaxup('PROMO_MESES', PROMO_MESES) : PROMO_MESES;
-  var minimo = (typeof _configNumeroMaxup === 'function') ? _configNumeroMaxup('PROMO_MINIMO', PROMO_MINIMO) : PROMO_MINIMO;
-  for (var m = 0; m < cantidad; m++) {
-    var fecha = new Date(new Date().getFullYear(), new Date().getMonth() - m, 1);
-    var col = _buscarColumnaMes(headers, fecha);
+  reglas = reglas || _cajaReglasFidelidad_(headers);
+  for (var m = 0; m < reglas.columnas.length; m++) {
+    var col = reglas.columnas[m].col;
     var monto = col >= 0 ? (Number(fila[col]) || 0) : 0;
-    meses.push({ mes: _getMesHeader(fecha), monto: monto, cumple: monto >= minimo });
+    meses.push({ mes: reglas.columnas[m].mes, monto: monto, cumple: monto >= reglas.minimo });
   }
   return meses;
 }
@@ -126,6 +137,9 @@ function _cajaClientes_() {
     return false;
   });
   var clientes = [];
+  // Calcular las columnas y reglas una sola vez. Antes se recorría toda la
+  // hoja CLIENTES otra vez por cada persona, lo que hacía lenta la caja.
+  var reglasFidelidad = _cajaReglasFidelidad_(headers);
   for (var i = 1; i < rows.length; i++) {
     var codigo = rows[i][0];
     var nombre = String(rows[i][1] || '').trim();
@@ -134,8 +148,8 @@ function _cajaClientes_() {
       codigo: String(codigo),
       nombre: nombre,
       telefono: colTel >= 0 ? String(rows[i][colTel] || '') : '',
-      fidelidad: _cajaFidelidadDesdeRows_(codigo, rows, headers),
-      meses: _cajaMesesCliente_(rows[i], headers)
+      fidelidad: _cajaFidelidadFila_(rows[i], headers, reglasFidelidad),
+      meses: _cajaMesesCliente_(rows[i], headers, reglasFidelidad)
     });
   }
   return clientes;
@@ -314,6 +328,105 @@ function _cajaCrearCliente_(datos) {
   return { codigo: String(codigo), nombre: nombre, telefono: telefono, fila: fila, nuevo: true };
 }
 
+function _cajaAplicarFormatoFilasVenta_(hojaVD, filaInicio, cantidad) {
+  if (cantidad <= 0) return;
+  hojaVD.getRange(filaInicio, 1, cantidad, 9)
+    .setBackground('#ffffff').setFontColor('#000000')
+    .setFontWeight('normal').setFontStyle('normal').setFontFamily('Arial')
+    .setFontSize(10).setVerticalAlignment('middle').setWrap(false)
+    .setBorder(false, false, false, false, false, false);
+  hojaVD.getRange(filaInicio, 1, cantidad, 1)
+    .setNumberFormat('dd/MM/yyyy HH:mm:ss').setHorizontalAlignment('right');
+  hojaVD.getRange(filaInicio, 2, cantidad, 2)
+    .setNumberFormat('@').setHorizontalAlignment('left');
+  hojaVD.getRange(filaInicio, 4, cantidad, 3)
+    .setNumberFormat('0').setHorizontalAlignment('right');
+  hojaVD.getRange(filaInicio, 7, cantidad, 3)
+    .setNumberFormat('@').setHorizontalAlignment('left');
+}
+
+// Inserta todas las líneas de una compra juntas y actualiza el total con una
+// sola lectura de VentasDiarias. Es especialmente importante en compras de
+// varios artículos.
+function _cajaInsertarVentaBatch_(hojaVD, filas, fechaStr, totalVenta) {
+  if (!filas.length) return;
+  var lastRow = hojaVD.getLastRow();
+  var rows = lastRow > 0 ? hojaVD.getRange(1, 1, lastRow, 6).getValues() : [];
+  var totalLabel = 'TOTAL ' + fechaStr;
+  var idxTotal = -1;
+  var totalAnterior = 0;
+  for (var r = 0; r < rows.length; r++) {
+    var primera = rows[r][0];
+    if (String(primera).indexOf(totalLabel) === 0) idxTotal = r;
+    if (!primera || typeof primera === 'string') continue;
+    try {
+      var fechaFila = Utilities.formatDate(new Date(primera), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
+      if (fechaFila === fechaStr) totalAnterior += Number(rows[r][5]) || 0;
+    } catch (eFecha) {}
+  }
+
+  var filaInicio;
+  var filaTotal;
+  if (idxTotal >= 0) {
+    filaInicio = idxTotal + 1;
+    hojaVD.insertRowsBefore(filaInicio, filas.length);
+    filaTotal = filaInicio + filas.length;
+  } else {
+    filaInicio = Math.max(lastRow + 1, 2);
+    filaTotal = filaInicio + filas.length;
+  }
+  hojaVD.getRange(filaInicio, 1, filas.length, 9).setValues(filas);
+  _cajaAplicarFormatoFilasVenta_(hojaVD, filaInicio, filas.length);
+
+  if (idxTotal >= 0) {
+    hojaVD.getRange(filaTotal, 6).setValue(totalAnterior + totalVenta);
+    _aplicarFormatoFilaTotal(hojaVD, filaTotal);
+  } else {
+    hojaVD.getRange(filaTotal, 1, 1, 9)
+      .setValues([[totalLabel, '', '', '', '', totalAnterior + totalVenta, '', '', '']]);
+    _aplicarFormatoFilaTotal(hojaVD, filaTotal);
+  }
+}
+
+function _cajaDescontarStockDetalladoBatch_(items) {
+  var suplementos = items.filter(function(item) { return item.tipo === 'SUP'; });
+  if (!suplementos.length || typeof _normNombreSD !== 'function') return;
+  var hoja = _getSS().getSheetByName('STOCK_DETALLADO');
+  if (!hoja || hoja.getLastRow() < 2) return;
+  var datos = hoja.getDataRange().getValues();
+  suplementos.forEach(function(item) {
+    var nombre = _normNombreSD(item.nombre);
+    var marca = _normNombreSD(item.marca);
+    if (!nombre || !marca) return;
+    var lotes = [];
+    for (var i = 1; i < datos.length; i++) {
+      if (_normNombreSD(datos[i][0]) !== nombre || _normNombreSD(datos[i][1]) !== marca) continue;
+      var stock = Number(datos[i][4]) || 0;
+      if (stock > 0) lotes.push({ indice: i, stock: stock, venc: datos[i][2] });
+    }
+    lotes.sort(function(a, b) { return new Date(a.venc) - new Date(b.venc); });
+    var pendiente = item.cantidad;
+    for (var l = 0; l < lotes.length && pendiente > 0; l++) {
+      var descuento = Math.min(lotes[l].stock, pendiente);
+      datos[lotes[l].indice][4] = lotes[l].stock - descuento;
+      pendiente -= descuento;
+    }
+  });
+  hoja.getRange(2, 5, datos.length - 1, 1).setValues(datos.slice(1).map(function(row) { return [row[4]]; }));
+}
+
+function _cajaRegistrarMovimientosBatch_(movimientos) {
+  if (!movimientos.length || typeof _asegurarHojaMovimientosStock !== 'function') return;
+  var hoja = _asegurarHojaMovimientosStock();
+  hoja.getRange(hoja.getLastRow() + 1, 1, movimientos.length, 10).setValues(movimientos);
+}
+
+function actualizarDerivadosCajaMaxup(sesionCaja) {
+  _validarSesionCaja_(sesionCaja);
+  try { actualizarHojaReposicion(); } catch (eRepo) { Logger.log('Reposición diferida: ' + eRepo.message); }
+  return { ok: true };
+}
+
 function registrarVentaCajaMaxup(datos, sesionCaja) {
   _validarSesionCaja_(sesionCaja);
   datos = datos || {};
@@ -391,6 +504,7 @@ function registrarVentaCajaMaxup(datos, sesionCaja) {
     if (notaUsuario) notaBase += ' | ' + notaUsuario;
 
     // Primero se validó todo; recién ahora se aplican los movimientos de stock.
+    var movimientosStock = [];
     items.forEach(function(item) {
       var hoja = item.tipo === 'IND' ? hojaInd : hojaSup;
       if (!hoja) throw new Error('Falta la hoja INDUMENTARIA');
@@ -398,19 +512,17 @@ function registrarVentaCajaMaxup(datos, sesionCaja) {
       if (antes < item.cantidad) throw new Error('El stock cambió para ' + item.detalle + '. Actualizá la caja.');
       var despues = antes - item.cantidad;
       hoja.getRange(item.fila, item.colStock).setValue(despues);
-      if (item.tipo === 'SUP' && typeof descontarStockDetallado === 'function') {
-        descontarStockDetallado(item.nombre, item.cantidad, item.marca);
-      }
-      if (typeof _registrarMovimientoStock === 'function') {
-        _registrarMovimientoStock('SALIDA', item.sku || item.id, item.marca, item.detalle,
-          item.cantidad, antes, despues, operacion, 'caja rápida');
-      }
+      movimientosStock.push([new Date(), 'SALIDA', item.sku || item.id, item.marca, item.detalle,
+        item.cantidad, antes, despues, operacion, 'caja rápida']);
     });
+    _cajaDescontarStockDetalladoBatch_(items);
+    _cajaRegistrarMovimientosBatch_(movimientosStock);
 
     var hoy = new Date();
     var fechaStr = Utilities.formatDate(hoy, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
     var restante = calculo.total;
     var lineas = [];
+    var filasVenta = [];
     items.forEach(function(item, indice) {
       var baseLinea = item.precio * item.cantidad;
       var ingreso = indice === items.length - 1
@@ -418,19 +530,20 @@ function registrarVentaCajaMaxup(datos, sesionCaja) {
         : Math.round(calculo.total * baseLinea / calculo.subtotal);
       restante -= ingreso;
       var precioEfectivo = ingreso / item.cantidad;
-      _insertarFilaVenta(hojaVD, [
+      filasVenta.push([
         hoy, item.detalle, item.marca, item.cantidad,
         precioEfectivo, ingreso, cliente ? cliente.nombre : 'Consumidor final', pagoLabel, notaBase
-      ], fechaStr);
+      ]);
       lineas.push({
         id: item.id, nombre: item.detalle, marca: item.marca, cantidad: item.cantidad,
         precio: item.precio, subtotal: baseLinea, ingreso: ingreso
       });
     });
 
-    _actualizarTotalDia(hojaVD, fechaStr);
+    _cajaInsertarVentaBatch_(hojaVD, filasVenta, fechaStr, calculo.total);
     if (cliente) _actualizarClienteMensual(cliente.codigo, calculo.total);
-    try { actualizarHojaReposicion(); } catch (eRepo) {}
+    // REPOSICION es un informe derivado: se actualiza después desde el
+    // navegador para que el cliente no tenga que esperar ese recálculo.
     try {
       if (typeof _registrarNotificacion === 'function') {
         _registrarNotificacion('💵 VENTA CAJA', (cliente ? cliente.nombre : 'Consumidor final') + ' — ' + _cajaFmt_(calculo.total));

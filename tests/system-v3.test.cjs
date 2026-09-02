@@ -47,10 +47,23 @@ assert(app.includes("'?accion=catalogo&_=' + Date.now()"), 'Cada lectura del cat
 assert(app.includes("document.addEventListener('visibilitychange', _refrescarCatalogoAlVolver_)"), 'La tienda debe actualizar stock al volver a una pestaña abierta');
 assert(app.includes("window.addEventListener('focus', _refrescarCatalogoAlVolver_)"), 'La tienda debe actualizar stock al recuperar el foco');
 const caja = read('CajaMaxup.gs');
+const cajaHtml = read('CajaMaxup.html');
+assert.doesNotThrow(() => new Function(caja), 'CajaMaxup.gs debe tener sintaxis JavaScript valida');
+for (const [i, match] of [...cajaHtml.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].entries()) {
+  if (!match[1].trim()) continue;
+  const scriptCaja = match[1].replace(/<\?[\s\S]*?\?>/g, 'null');
+  assert.doesNotThrow(() => new Function(scriptCaja), `CajaMaxup.html script ${i + 1} debe tener sintaxis JavaScript valida`);
+}
 assert(caja.includes('LockService.getScriptLock()'), 'La caja debe impedir ventas simultáneas que pisen el stock');
 assert(caja.includes("if (antes < item.cantidad) throw new Error('El stock cambió"), 'La caja debe volver a validar el stock justo antes de descontar');
 assert(caja.includes('hoja.getRange(item.fila, item.colStock).setValue(despues)'), 'La caja debe guardar el nuevo stock en la fila exacta vendida');
-assert(caja.indexOf('setValue(despues)') < caja.indexOf('_insertarFilaVenta(hojaVD'), 'El stock debe descontarse antes de confirmar la venta');
+assert(caja.indexOf('setValue(despues)') < caja.lastIndexOf('_cajaInsertarVentaBatch_(hojaVD'), 'El stock debe descontarse antes de confirmar la venta');
+assert(caja.includes('_cajaInsertarVentaBatch_'), 'La caja debe registrar compras de varios productos en bloque');
+assert(caja.includes('_cajaDescontarStockDetalladoBatch_'), 'La caja debe actualizar los lotes en una sola lectura');
+assert(caja.includes('_cajaRegistrarMovimientosBatch_'), 'La caja debe guardar los movimientos de stock en bloque');
+assert(caja.includes('_cajaFidelidadFila_(rows[i], headers, reglasFidelidad)'), 'La carga de clientes no debe recorrer toda la hoja por cada persona');
+assert(cajaHtml.includes('refrescarDatosCajaEnSegundoPlano('), 'La caja debe actualizar sus datos sin bloquear la siguiente venta');
+assert(!cajaHtml.includes("byId('loading').textContent='Preparando la caja para la siguiente venta…'"), 'La siguiente venta no debe esperar la recarga completa');
 assert(system.includes('backupDiarioMaxup'), 'Debe existir backup automatico');
 assert(system.includes('pruebaSaludSistema'), 'Debe existir prueba de salud automatica');
 assert(system.includes("getSheetByName('CUPONES')"), 'Los cupones deben administrarse desde Sheets');
