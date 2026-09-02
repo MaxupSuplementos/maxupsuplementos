@@ -42,6 +42,15 @@ assert(stockObjetivo.includes("='SUPLEMENTOS'!D"), 'El stock actual debe actuali
 assert(stockObjetivo.includes('instalarControlStockObjetivo'), 'Debe poder instalarse el control y su menú');
 assert(api.includes("return { ok: false, errores:"), 'El stock insuficiente debe bloquear la operacion');
 assert(app.includes("sku:      i.sku || ''"), 'Los pedidos web deben enviar SKU');
+assert(app.includes("cache: 'no-store'"), 'El catálogo público no debe reutilizar stock guardado por el navegador');
+assert(app.includes("'?accion=catalogo&_=' + Date.now()"), 'Cada lectura del catálogo debe pedir stock fresco');
+assert(app.includes("document.addEventListener('visibilitychange', _refrescarCatalogoAlVolver_)"), 'La tienda debe actualizar stock al volver a una pestaña abierta');
+assert(app.includes("window.addEventListener('focus', _refrescarCatalogoAlVolver_)"), 'La tienda debe actualizar stock al recuperar el foco');
+const caja = read('CajaMaxup.gs');
+assert(caja.includes('LockService.getScriptLock()'), 'La caja debe impedir ventas simultáneas que pisen el stock');
+assert(caja.includes("if (antes < item.cantidad) throw new Error('El stock cambió"), 'La caja debe volver a validar el stock justo antes de descontar');
+assert(caja.includes('hoja.getRange(item.fila, item.colStock).setValue(despues)'), 'La caja debe guardar el nuevo stock en la fila exacta vendida');
+assert(caja.indexOf('setValue(despues)') < caja.indexOf('_insertarFilaVenta(hojaVD'), 'El stock debe descontarse antes de confirmar la venta');
 assert(system.includes('backupDiarioMaxup'), 'Debe existir backup automatico');
 assert(system.includes('pruebaSaludSistema'), 'Debe existir prueba de salud automatica');
 assert(system.includes("getSheetByName('CUPONES')"), 'Los cupones deben administrarse desde Sheets');

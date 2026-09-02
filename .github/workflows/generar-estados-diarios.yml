@@ -2,7 +2,8 @@ name: Generar estados diarios MAXUP
 
 on:
   schedule:
-    - cron: "30 9 * * *"
+    # 12:00 UTC = 09:00 en Argentina (UTC-3).
+    - cron: "0 12 * * *"
   workflow_dispatch:
 
 permissions:
@@ -55,4 +56,5 @@ jobs:
           META_GRAPH_VERSION: v26.0
           META_SKIP_INSTAGRAM_COUNT: ${{ vars.META_SKIP_INSTAGRAM_COUNT }}
           META_SKIP_FACEBOOK_COUNT: ${{ vars.META_SKIP_FACEBOOK_COUNT }}
+          MAXUP_WEBSITE_URL: https://maxupsuplementos.com.ar/
         run: npm run publicar-meta

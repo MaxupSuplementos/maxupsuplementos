@@ -41,7 +41,7 @@ try {
       orden: placa.orden,
       titulo: placa.titulo,
       file: `generated/daily/current/${archivo}`,
-      caption: `${placa.titulo}\n\nMAXUP Suplementos\nmaxupsuplementos.com.ar`
+      caption: `${placa.titulo}\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/`
     });
   }
   const manifest = { fecha, generado: new Date().toISOString(), cantidad: items.length, items };

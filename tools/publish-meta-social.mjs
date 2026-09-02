@@ -12,6 +12,7 @@ const pageId = process.env.META_PAGE_ID || '';
 const graphVersion = process.env.META_GRAPH_VERSION || 'v26.0';
 const skipInstagramCount = Number.parseInt(process.env.META_SKIP_INSTAGRAM_COUNT || '0', 10) || 0;
 const skipFacebookCount = Number.parseInt(process.env.META_SKIP_FACEBOOK_COUNT || '0', 10) || 0;
+const websiteUrl = process.env.MAXUP_WEBSITE_URL || 'https://maxupsuplementos.com.ar/';
 if (!token || (!igUserId && !pageId)) throw new Error('Faltan las credenciales de Meta para publicar.');
 
 const manifest = JSON.parse(await fs.readFile('generated/daily/latest.json', 'utf8'));
@@ -69,7 +70,11 @@ for (const [index, item] of manifest.items.entries()) {
     console.log(`Historia de Instagram omitida para evitar duplicados: ${item.titulo}`);
   }
   if (pageId && index >= skipFacebookCount) {
-    await graph(`${pageId}/photos`, { url: imageUrl, caption: item.caption, published: 'true' }, pageToken);
+    const captionBase = String(item.caption || item.titulo || '').trim();
+    const caption = captionBase.includes(websiteUrl)
+      ? captionBase
+      : `${captionBase}\n\n🛒 Mirá precios, stock y productos:\n${websiteUrl}`;
+    await graph(`${pageId}/photos`, { url: imageUrl, caption, published: 'true' }, pageToken);
     console.log(`Publicación de Facebook publicada: ${item.titulo}`);
   } else if (pageId) {
     console.log(`Publicación de Facebook omitida para evitar duplicados: ${item.titulo}`);

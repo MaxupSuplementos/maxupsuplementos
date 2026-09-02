@@ -237,7 +237,7 @@ test('Promo Express conserva el modo oferta y agrega el modo diario de cinco pla
   assert.match(html, /creatina:\[/);
   assert.match(html, /function drawDailyBenefitList/);
   assert.match(html, /dailyBenefits\(p\)\.slice\(0,5\)/);
-  assert.match(html, /Math\.max\(38,Math\.min\(43/);
+  assert.match(html, /let fontSize=39,lineHeight=49/);
   assert.match(html, /const benefitPalette=/);
   assert.match(html, /palette\.text/);
   assert.match(html, /benefitY\+86,W-190,41/);
@@ -249,4 +249,15 @@ test('Promo Express conserva el modo oferta y agrega el modo diario de cinco pla
   assert.match(html, /PEDILO EN NUESTRA WEB/);
   assert.doesNotMatch(html, /solidText\(ctx,fmt\(Number\(p\.p\)/);
   assert.match(html, /async function genPost/);
+});
+
+test('las publicaciones automáticas salen a las 9 de Argentina y llevan la web', () => {
+  const workflow = read('.github/workflows/generar-estados-diarios.yml');
+  const publisher = read('tools/publish-meta-social.mjs');
+  const generator = read('tools/generate-daily-social.mjs');
+  assert.match(workflow, /cron: "0 12 \* \* \*"/);
+  assert.match(workflow, /MAXUP_WEBSITE_URL: https:\/\/maxupsuplementos\.com\.ar\//);
+  assert.match(publisher, /Mirá precios, stock y productos/);
+  assert.match(publisher, /websiteUrl/);
+  assert.match(generator, /https:\/\/maxupsuplementos\.com\.ar\//);
 });

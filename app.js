@@ -4939,16 +4939,20 @@ function _optimizarImgUrl(u, w) {
 }
 
 var _catalogoSheetsCargado = false;
+var _catalogoSheetsCargando = false;
+var _catalogoUltimaCargaMs = 0;
 var _RECARGO_LISTA = 0.13;
 var _REDONDEO_LISTA = 500;
 function _precioListaDesdeContado(precio) {
   return Math.ceil((Number(precio || 0) * (1 + _RECARGO_LISTA)) / _REDONDEO_LISTA) * _REDONDEO_LISTA;
 }
 
-async function cargarDesdeSheets() {
+async function cargarDesdeSheets(silencioso) {
+  if (_catalogoSheetsCargando) return;
+  _catalogoSheetsCargando = true;
   // Mostrar loading
   const grid = document.getElementById('productsGrid');
-  if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#aaa"><div style="width:40px;height:40px;border:3px solid rgba(0,200,255,.2);border-top-color:#00C8FF;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px"></div><p>Cargando catálogo...</p></div>';
+  if (grid && !silencioso) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#aaa"><div style="width:40px;height:40px;border:3px solid rgba(0,200,255,.2);border-top-color:#00C8FF;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px"></div><p>Cargando catálogo...</p></div>';
   
   try {
     // Apps Script a veces falla de forma pasajera (404/timeout): reintentar hasta
@@ -4957,7 +4961,10 @@ async function cargarDesdeSheets() {
     for (let intento = 0; intento < 3; intento++) {
       if (intento > 0) await new Promise(r => setTimeout(r, 2000 * intento));
       try {
-        res = await fetch(API_URL + '?accion=catalogo', { method: 'GET' });
+        // El sello horario y no-store impiden que el navegador o un intermediario
+        // reutilicen un catálogo anterior después de una venta.
+        var catalogoUrl = API_URL + '?accion=catalogo&_=' + Date.now();
+        res = await fetch(catalogoUrl, { method: 'GET', cache: 'no-store', credentials: 'omit' });
         if (res.ok) { intentoErr = null; break; }
         intentoErr = new Error('HTTP ' + res.status);
       } catch(eNet) { intentoErr = eNet; }
@@ -5069,6 +5076,7 @@ async function cargarDesdeSheets() {
     });
 
     _catalogoSheetsCargado = true;
+    _catalogoUltimaCargaMs = Date.now();
     renderAll();
     // Solo subir al inicio si el usuario NO scrolleó mientras cargaba
     // (respeta la posición donde dejó la vista) y si no hay anclas (#seccion)
@@ -5086,8 +5094,22 @@ async function cargarDesdeSheets() {
       if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#aaa"><p style="font-size:1.05rem;color:#fff;margin-bottom:8px">No pudimos actualizar el catálogo.</p><p>Revisá tu conexión y recargá la página para ver precios, stock y fotos actuales.</p><button type="button" onclick="location.reload()" style="margin-top:18px;padding:10px 18px;border:0;border-radius:8px;background:#00C8FF;color:#000;font-weight:700;cursor:pointer">RECARGAR</button></div>';
       if (typeof renderNuevosIngresos === 'function') renderNuevosIngresos();
     }
+  } finally {
+    _catalogoSheetsCargando = false;
   }
 }
+
+// Una pestaña que quedó abierta puede conservar stock anterior. Al volver a
+// mirarla, se sincroniza en segundo plano sin borrar el carrito ni mostrar la
+// pantalla de carga. Se evita repetir consultas si se actualizó hace menos de
+// un minuto.
+function _refrescarCatalogoAlVolver_() {
+  if (document.hidden || !_catalogoSheetsCargado || _catalogoSheetsCargando) return;
+  if (Date.now() - _catalogoUltimaCargaMs < 60000) return;
+  cargarDesdeSheets(true);
+}
+document.addEventListener('visibilitychange', _refrescarCatalogoAlVolver_);
+window.addEventListener('focus', _refrescarCatalogoAlVolver_);
 
 function _extraerSabor(nombre) {
   const n = nombre.trim();
