@@ -75,6 +75,14 @@ assert(caja.includes('cerrarJornadaCajaMaxup'), 'El cierre debe registrar las ve
 assert(cajaHtml.includes('⚡ GUARDAR VENTA RÁPIDA'), 'Guardar rápido debe ser la acción principal de la caja');
 assert(cajaHtml.includes('✏️ Editar'), 'Las ventas pendientes deben poder corregirse desde la caja');
 assert(stockObjetivo.includes('actualizarPreciosMayoristasMaxup'), 'Debe poder actualizar costos y precios mayoristas desde proveedores');
+assert(stockObjetivo.includes('actualizarComparativaProveedoresSemanal'), 'Debe existir una comparativa semanal de proveedores');
+assert(stockObjetivo.includes("onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(8)"), 'La comparativa debe actualizarse los lunes por la mañana');
+assert(stockObjetivo.includes("fuente:'AG SUPLEMENTOS'"), 'AG debe formar parte de la comparativa');
+assert(stockObjetivo.includes("fuente:'COLO MAYORISTA'"), 'Colo debe formar parte de la comparativa');
+assert(stockObjetivo.includes("fuente:'ONE FIT'"), 'One Fit debe formar parte de la comparativa');
+assert(stockObjetivo.includes('MAYO_PREFERENCIA_AG = 0.03'), 'AG debe priorizarse cuando la diferencia final es pequeña');
+assert(stockObjetivo.includes("['AG precio','AG puesto local','Colo precio'"), 'El control debe mostrar los costos comparados junto a la reposición');
+assert(stockObjetivo.includes("fletePct: Math.max(0, Number(r[2]) || 0)"), 'El flete estimado debe ser configurable desde la hoja');
 assert(api.includes('MAYO_MINIMO_API     = 400000'), 'El mínimo mayorista debe validarse en el servidor');
 assert(api.includes('desc_mayorista_max'), 'Cada producto debe tener un tope de descuento rentable');
 assert(api.includes('_nivelMayorista_'), 'El servidor debe aplicar descuentos mayoristas por volumen');
