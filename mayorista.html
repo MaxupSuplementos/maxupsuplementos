@@ -248,10 +248,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,8,15,.96);
 <div class="hero">
   <div class="hero-eyebrow">CANAL DE DISTRIBUCIÓN</div>
   <h1>PRECIOS<br>MAYORISTAS</h1>
-  <p>Accedé a precios exclusivos para revendedores, gimnasios y distribuidores. Compra mínima $350.000.</p>
+  <p>Accedé a precios exclusivos para revendedores, gimnasios y distribuidores. Compra mínima $400.000.</p>
   <div class="hero-stats">
     <div class="stat"><div class="stat-num">+170</div><div class="stat-label">PRODUCTOS</div></div>
-    <div class="stat"><div class="stat-num">$350K</div><div class="stat-label">COMPRA MÍNIMA</div></div>
+    <div class="stat"><div class="stat-num">$400K</div><div class="stat-label">COMPRA MÍNIMA</div></div>
     <div class="stat"><div class="stat-num">HASTA 20%</div><div class="stat-label">DESCUENTO</div></div>
     <div class="stat"><div class="stat-num">24/48hs</div><div class="stat-label">DESPACHO</div></div>
   </div>
@@ -359,6 +359,9 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,8,15,.96);
       </div>
       <button class="btn-logout" onclick="logoutMayorista()">Cerrar sesión</button>
     </div>
+    <div style="margin:0 0 14px;padding:10px 12px;border:1px solid rgba(255,184,0,.18);border-radius:10px;color:var(--gray);font-size:.82rem">
+      Niveles de ahorro: Mayorista desde $400.000 · Volumen desde $700.000 · Nivel Distribuidor desde $1.000.000. Cada descuento respeta el margen seguro de cada producto.
+    </div>
 
     <!-- Filtros -->
     <div class="filtros" id="filtrosCat">
@@ -399,12 +402,12 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,8,15,.96);
     <div class="minimo-bar">
       <div class="minimo-label">
         <span>Mínimo mayorista</span>
-        <span id="minimoTexto">$0 / $350.000</span>
+        <span id="minimoTexto">$0 / $400.000</span>
       </div>
       <div class="minimo-progress"><div class="minimo-fill" id="minimoFill" style="width:0%"></div></div>
     </div>
     <div class="cart-totales">
-      <div class="cart-row"><span>Precio lista</span><span id="totalLista">$0</span></div>
+      <div class="cart-row"><span>Precio de venta</span><span id="totalLista">$0</span></div>
       <div class="cart-row ahorro"><span>🏷 Tu ahorro mayorista</span><span id="totalAhorro">$0</span></div>
       <div class="cart-row total"><span>TOTAL MAYORISTA</span><span id="totalMayo">$0</span></div>
     </div>
@@ -412,7 +415,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,8,15,.96);
       Finalizar pedido
     </button>
     <div class="minimo-warning" id="minimoWarning">
-      Te faltan <span id="montoFaltante">$350.000</span> para el mínimo mayorista
+      Te faltan <span id="montoFaltante">$400.000</span> para el mínimo mayorista
     </div>
   </div>
 </div>
@@ -472,7 +475,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,8,15,.96);
 // ══════════════════════════════════════
 var API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
 var WA_NUM  = '5493876233406';
-var MINIMO  = 350000;
+var MINIMO  = 400000;
 
 // ══════════════════════════════════════
 // ESTADO
@@ -661,9 +664,9 @@ function renderProductos(cat) {
     var stockTotal = p.stock || 0;
     var stockClass = stockTotal === 0 ? 'agotado' : stockTotal <= 3 ? 'bajo' : 'ok';
     var stockTxt   = stockTotal === 0 ? 'Sin stock' : stockTotal <= 3 ? 'Últimas ' + stockTotal + ' unidades' : stockTotal + ' en stock';
-    var preciOrig  = p.precio_lista || p.precio;
-    var precioMayo = p.precio_mayorista || Math.round(p.precio * (1 - (p.desc_mayorista||15)/100));
-    var descPct    = p.desc_mayorista || Math.round((1 - precioMayo/preciOrig)*100);
+    var preciOrig  = p.precio;
+    var precioMayo = p.precio_mayorista;
+    var descPct    = p.desc_mayorista;
 
     return '<div class="mayo-card">'
       + '<img class="mayo-img" src="' + (p.img||'') + '" onerror="this.style.display=\'none\'" loading="lazy">'
@@ -693,8 +696,8 @@ function agregarAlCarrito(prodId) {
   if (item) {
     item.qty++;
   } else {
-    var precioOrig = prod.precio_lista || prod.precio;
-    var precioMayo = prod.precio_mayorista || Math.round(prod.precio * (1 - (prod.desc_mayorista||15)/100));
+    var precioOrig = prod.precio;
+    var precioMayo = prod.precio_mayorista;
     carrito.push({ id: prodId, prod: prod, qty: 1, precioMayo: precioMayo, precioOrig: precioOrig });
   }
   actualizarCarrito();
@@ -715,7 +718,27 @@ function cambiarQty(idx, delta) {
   actualizarCarrito();
 }
 
+function nivelMayorista(subtotalBase) {
+  if (subtotalBase >= 1000000) return { nombre:'Distribuidor', extra:4, proximo:0 };
+  if (subtotalBase >= 700000) return { nombre:'Volumen', extra:2, proximo:1000000 };
+  return { nombre:'Mayorista', extra:0, proximo:700000 };
+}
+
+function recalcularPreciosMayoristas() {
+  var subtotalBase = carrito.reduce(function(s,i){ return s + i.qty * i.prod.precio_mayorista; }, 0);
+  var nivel = nivelMayorista(subtotalBase);
+  carrito.forEach(function(item) {
+    var maximo = Number(item.prod.desc_mayorista_max || item.prod.desc_mayorista);
+    var descuento = Math.min(Number(item.prod.desc_mayorista) + nivel.extra, maximo);
+    item.precioOrig = Number(item.prod.precio);
+    item.precioMayo = Math.round(item.precioOrig * (1 - descuento / 100));
+    item.descuento = descuento;
+  });
+  return nivel;
+}
+
 function actualizarCarrito() {
+  var nivel = recalcularPreciosMayoristas();
   var totalItems = carrito.reduce(function(s,i){ return s + i.qty; }, 0);
   var totalMayo  = carrito.reduce(function(s,i){ return s + i.qty * i.precioMayo; }, 0);
   var totalLista = carrito.reduce(function(s,i){ return s + i.qty * i.precioOrig; }, 0);
@@ -727,7 +750,7 @@ function actualizarCarrito() {
   // Progress mínimo
   var pct = Math.min(100, (totalMayo / MINIMO) * 100);
   document.getElementById('minimoFill').style.width = pct + '%';
-  document.getElementById('minimoTexto').textContent = '$' + totalMayo.toLocaleString('es-AR') + ' / $350.000';
+  document.getElementById('minimoTexto').textContent = '$' + totalMayo.toLocaleString('es-AR') + ' / $400.000 · Nivel ' + nivel.nombre;
 
   // Totales
   document.getElementById('totalLista').textContent = '$' + totalLista.toLocaleString('es-AR');
@@ -780,11 +803,12 @@ function toggleCartPanel() {
 // CHECKOUT
 // ══════════════════════════════════════
 function abrirCheckout() {
+  var nivel = recalcularPreciosMayoristas();
   // Resumen
   var totalMayo = carrito.reduce(function(s,i){ return s + i.qty * i.precioMayo; }, 0);
   var resumen = carrito.map(function(i){
     return i.qty + 'x ' + i.prod.name + ' — $' + (i.qty*i.precioMayo).toLocaleString('es-AR');
-  }).join('<br>') + '<br><strong>TOTAL: $' + totalMayo.toLocaleString('es-AR') + '</strong>';
+  }).join('<br>') + '<br><strong>Nivel ' + nivel.nombre + ' · TOTAL: $' + totalMayo.toLocaleString('es-AR') + '</strong>';
   document.getElementById('resumenPedido').innerHTML = resumen;
   document.getElementById('checkoutModal').classList.add('open');
   toggleCartPanel();
@@ -801,33 +825,8 @@ function confirmarPedidoMayorista() {
     return;
   }
 
-  var totalMayo  = carrito.reduce(function(s,i){ return s + i.qty * i.precioMayo; }, 0);
-  var totalLista = carrito.reduce(function(s,i){ return s + i.qty * i.precioOrig; }, 0);
-  var ahorro     = totalLista - totalMayo;
+  recalcularPreciosMayoristas();
   var codigo     = 'MXM-' + Date.now().toString().slice(-4);
-
-  // Construir mensaje WhatsApp
-  var items = carrito.map(function(i){
-    return i.qty + 'x ' + i.prod.name + ' (' + i.prod.brand + ') = $' + (i.qty*i.precioMayo).toLocaleString('es-AR');
-  }).join('\n');
-
-  var wa = 'PEDIDO MAYORISTA MAXUP\n'
-    + 'Código: ' + codigo + '\n'
-    + '─────────────────────\n'
-    + 'Cliente: ' + sesionActual.nombre + '\n'
-    + 'Negocio: ' + (sesionActual.negocio||sesionActual.empresa||'') + '\n'
-    + 'Tel: ' + sesionActual.telefono + '\n'
-    + 'Email: ' + sesionActual.email + '\n'
-    + '─────────────────────\n'
-    + 'PRODUCTOS:\n' + items + '\n'
-    + '─────────────────────\n'
-    + 'Precio lista: $' + totalLista.toLocaleString('es-AR') + '\n'
-    + 'Descuento mayorista: -$' + ahorro.toLocaleString('es-AR') + '\n'
-    + 'TOTAL MAYORISTA: $' + totalMayo.toLocaleString('es-AR') + '\n'
-    + '─────────────────────\n'
-    + 'Entrega: ' + direccion + '\n'
-    + 'Pago: ' + pago + '\n'
-    + (notas ? 'Notas: ' + notas : '');
 
   // Registrar en Sheets y confirmar solo si el servidor valido stock y precios.
   var waWindow = window.open('about:blank', '_blank');
@@ -840,15 +839,33 @@ function confirmarPedidoMayorista() {
       codigo: codigo,
       cliente: sesionActual,
       items: carrito.map(function(i){ return { id:i.id, sku:i.prod.sku||'', nombre:i.prod.name, marca:i.prod.brand, qty:i.qty, precio_mayo:i.precioMayo, precio_orig:i.precioOrig }; }),
-      total_mayorista: totalMayo,
-      total_lista: totalLista,
-      ahorro: ahorro,
       direccion: direccion,
       pago: pago,
       notas: notas
     })
   }).then(function(r){ return r.json(); }).then(function(data){
     if (!data.ok) throw new Error(data.error || 'No se pudo registrar el pedido');
+    var items = (data.items || []).map(function(i){
+      return i.qty + 'x ' + i.nombre + ' (' + i.marca + ') = $' + (i.qty*i.precio_mayo).toLocaleString('es-AR');
+    }).join('\n');
+    var wa = 'PEDIDO MAYORISTA MAXUP\n'
+      + 'Código: ' + (data.codigo || codigo) + '\n'
+      + '─────────────────────\n'
+      + 'Cliente: ' + sesionActual.nombre + '\n'
+      + 'Negocio: ' + (sesionActual.negocio||sesionActual.empresa||'') + '\n'
+      + 'Tel: ' + sesionActual.telefono + '\n'
+      + 'Email: ' + sesionActual.email + '\n'
+      + '─────────────────────\n'
+      + 'PRODUCTOS:\n' + items + '\n'
+      + '─────────────────────\n'
+      + 'Nivel: ' + (data.nivel || 'Mayorista') + '\n'
+      + 'Precio de venta: $' + Number(data.total_lista||0).toLocaleString('es-AR') + '\n'
+      + 'Descuento mayorista: -$' + Number(data.ahorro||0).toLocaleString('es-AR') + '\n'
+      + 'TOTAL MAYORISTA: $' + Number(data.total_mayorista||0).toLocaleString('es-AR') + '\n'
+      + '─────────────────────\n'
+      + 'Entrega: ' + direccion + '\n'
+      + 'Pago: ' + pago + '\n'
+      + (notas ? 'Notas: ' + notas : '');
     if (waWindow) waWindow.location.href = 'https://wa.me/' + WA_NUM + '?text=' + encodeURIComponent(wa);
     document.getElementById('checkoutForm').style.display = 'none';
     var sb = document.getElementById('successBox');

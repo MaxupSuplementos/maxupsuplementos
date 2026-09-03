@@ -35,6 +35,10 @@
     .sumline.discount{color:#8ff0c6}.sumline.total{font-size:22px;color:var(--cyan);font-weight:900;border-top:1px solid #3a4267;margin-top:7px;padding-top:10px}
     .ok{display:none;background:rgba(22,199,132,.12);border:1px solid rgba(22,199,132,.5);border-radius:10px;padding:12px;margin-bottom:10px;color:#b6f6dc;line-height:1.5}
     .warning{font-size:13px;color:#e7ca72;line-height:1.45;margin-top:9px}
+    .pending-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.pending-total{font-size:18px;color:var(--cyan);font-weight:900}
+    .pending-list{max-height:330px;overflow:auto;margin-top:9px}.pending-sale{border-top:1px solid #2b3354;padding:11px 0}.pending-sale:first-child{border-top:0}
+    .pending-sale-top{display:flex;justify-content:space-between;gap:9px}.pending-sale b{color:#fff}.pending-products{font-size:13px;color:#b9c1da;line-height:1.45;margin-top:5px}
+    .pending-actions{display:flex;gap:7px;margin-top:7px}.pending-actions button{padding:7px 10px;font-size:12px}.btn-close-day{background:linear-gradient(135deg,#ffd166,#ff9f1c);color:#201400;width:100%;margin-top:10px}
     .loading{position:fixed;inset:0;background:rgba(5,8,18,.88);display:flex;align-items:center;justify-content:center;z-index:20;color:var(--cyan);font-weight:800;text-align:center;padding:20px}
     .login-screen{position:fixed;inset:0;z-index:30;background:radial-gradient(circle at top,#1a2043,#080b16 68%);display:none;align-items:center;justify-content:center;padding:20px}
     .login-card{width:min(430px,100%);background:var(--card);border:1px solid #30385e;border-radius:20px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.45);text-align:center}
@@ -120,14 +124,22 @@
     <select id="printFormat"><option value="a4">Hoja A4 / PDF</option><option value="thermal">Ticket térmico 80 mm</option></select>
     <label>Observaciones</label>
     <textarea id="notes" rows="2" placeholder="Opcional"></textarea>
-    <div class="warning">El presupuesto no modifica nada. “Aplicar venta” descuenta stock, registra VentasDiarias y suma la compra al cliente seleccionado.</div>
+    <div class="warning">“Guardar rápido” reserva el stock y deja la venta editable. Al cerrar la jornada se registran juntas en VentasDiarias y clientes.</div>
   </div>
 
   <div class="actions">
     <button class="btn-print" onclick="imprimirComprobante('PRESUPUESTO')">🖨 Presupuesto</button>
     <button class="btn-ghost" id="receiptBtn" onclick="imprimirUltimaVenta()" disabled>🧾 Imprimir recibo</button>
-    <button class="btn-sale wide" id="saleBtn" onclick="aplicarVenta()">✅ APLICAR VENTA</button>
+    <button class="btn-sale wide" id="quickBtn" onclick="guardarVentaRapida()">⚡ GUARDAR VENTA RÁPIDA</button>
+    <button class="btn-ghost wide" id="saleBtn" onclick="aplicarVenta()">Aplicar completamente ahora</button>
     <button class="btn-new wide" onclick="nuevaVenta()">＋ Nueva venta</button>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="pending-head"><div class="title" style="margin:0">Ventas pendientes del día</div><div class="pending-total" id="pendingTotal">$0</div></div>
+    <div class="mini" id="pendingSummary">Cargando ventas guardadas…</div>
+    <div class="pending-list" id="pendingList"></div>
+    <button class="btn-close-day" id="closeDayBtn" onclick="cerrarJornada()">🌙 CERRAR JORNADA Y REGISTRAR TODO</button>
   </div>
   </div>
   </div>
@@ -140,6 +152,7 @@ var MODO_WEB=<?!= JSON.stringify(!!modoWeb) ?>;
 var SESION_CAJA=<?!= JSON.stringify(String(sesionCaja||'')) ?>;
 var DATA={productos:[],clientes:[],descuentosMonto:[],fidelidadPct:.10};
 var CLIENTE=null, CART=[], CALCULO=null, ULTIMA=null, APLICANDO=false;
+var PENDIENTES=[],PENDIENTE_EDITANDO='';
 var OPERACION=nuevaOperacion();
 
 function nuevaOperacion(){return 'V'+Date.now()+'_'+Math.random().toString(36).slice(2,8);}
@@ -152,7 +165,7 @@ function cargarDatosCaja(){
   byId('loading').style.display='flex';byId('loading').textContent='Cargando productos, clientes y promociones…';
   google.script.run.withSuccessHandler(function(data){
     if(!data||!data.ok){fallo({message:'No se pudieron cargar los datos'});return;}
-    DATA=data;byId('loading').style.display='none';renderCart();
+    DATA=data;byId('loading').style.display='none';renderCart();cargarPendientesCaja();
   }).withFailureHandler(fallo).obtenerDatosCajaMaxup(SESION_CAJA);
 }
 
@@ -183,7 +196,7 @@ function salirCaja(){
 iniciarCaja();
 
 function fallo(err){
-  APLICANDO=false; byId('saleBtn').disabled=false; byId('loading').style.display='none';
+  APLICANDO=false; byId('saleBtn').disabled=false;byId('quickBtn').disabled=false;byId('closeDayBtn').disabled=false; byId('loading').style.display='none';
   var mensaje=String(err&&err.message?err.message:err);
   if(MODO_WEB&&/sesión|sesion|session/i.test(mensaje)){SESION_CAJA='';try{sessionStorage.removeItem('maxupCajaSesion');}catch(e){}byId('logoutBtn').style.display='none';byId('loginScreen').style.display='flex';byId('loginError').textContent='La sesión venció. Volvé a ingresar.';byId('loginError').style.display='block';return;}
   alert('Error: '+mensaje);
@@ -229,22 +242,27 @@ function crearCliente(){
 byId('productSearch').addEventListener('input',function(){
   var q=norm(this.value),box=byId('productResults');
   if(q.length<2){box.style.display='none';return;}
-  var arr=DATA.productos.filter(function(p){return p.stock>0&&norm(p.marca+' '+p.detalle+' '+p.sku).indexOf(q)>=0;}).slice(0,20);
+  var arr=DATA.productos.filter(function(p){return stockDisponible(p)>0&&norm(p.marca+' '+p.detalle+' '+p.sku).indexOf(q)>=0;}).slice(0,20);
   box.innerHTML=arr.length?arr.map(function(p){
-    return '<div class="result" onclick="agregarProducto(\''+esc(p.id)+'\')"><b>'+esc(p.detalle)+'</b><div class="meta">'+esc(p.marca)+' · Stock '+p.stock+' · <span class="price">'+money(precio(p))+'</span> '+(p.tipo==='IND'?'· Indumentaria':'')+'</div></div>';
+    return '<div class="result" onclick="agregarProducto(\''+esc(p.id)+'\')"><b>'+esc(p.detalle)+'</b><div class="meta">'+esc(p.marca)+' · Stock '+stockDisponible(p)+' · <span class="price">'+money(precio(p))+'</span> '+(p.tipo==='IND'?'· Indumentaria':'')+'</div></div>';
   }).join(''):'<div class="result"><span class="meta">No se encontraron productos con stock</span></div>';
   box.style.display='block';
 });
 document.addEventListener('click',function(e){if(!e.target.closest('#productSearch')&&!e.target.closest('#productResults'))byId('productResults').style.display='none';});
 function precio(p){return byId('payment').value==='tarjeta'?Number(p.precioLista):Number(p.precioContado);}
+function stockDisponible(p){
+  var extra=0;
+  if(PENDIENTE_EDITANDO){var venta=PENDIENTES.find(function(v){return v.id===PENDIENTE_EDITANDO;});var linea=venta&&(venta.lineas||[]).find(function(l){return l.id===p.id;});extra=linea?Number(linea.cantidad)||0:0;}
+  return Math.max(0,Number(p.stock||0)+extra);
+}
 function agregarProducto(id){
   var p=DATA.productos.find(function(x){return x.id===id;});if(!p)return;
   var item=CART.find(function(x){return x.id===id;});
-  if(item){if(item.cantidad>=p.stock){alert('No hay más stock disponible');return;}item.cantidad++;}
+  if(item){if(item.cantidad>=stockDisponible(p)){alert('No hay más stock disponible');return;}item.cantidad++;}
   else CART.push({id:p.id,cantidad:1});
   byId('productSearch').value='';byId('productResults').style.display='none';renderCart();
 }
-function cantidad(id,valor){var item=CART.find(function(x){return x.id===id;}),p=DATA.productos.find(function(x){return x.id===id;});if(!item||!p)return;item.cantidad=Math.max(1,Math.min(p.stock,Math.floor(Number(valor)||1)));renderCart();}
+function cantidad(id,valor){var item=CART.find(function(x){return x.id===id;}),p=DATA.productos.find(function(x){return x.id===id;});if(!item||!p)return;item.cantidad=Math.max(1,Math.min(stockDisponible(p),Math.floor(Number(valor)||1)));renderCart();}
 function quitar(id){CART=CART.filter(function(x){return x.id!==id;});renderCart();}
 
 function calcular(){
@@ -260,15 +278,82 @@ function calcular(){
 function renderCart(){
   var box=byId('cart');
   if(!CART.length){box.innerHTML='<div class="cart-empty">Todavía no agregaste productos</div>';byId('summary').style.display='none';CALCULO=calcular();return;}
-  box.innerHTML=CART.map(function(item){var p=DATA.productos.find(function(x){return x.id===item.id;});if(!p)return'';return '<div class="item"><div class="item-head"><div class="item-name"><div class="item-brand">'+esc(p.marca)+'</div>'+esc(p.detalle)+'</div><button class="x" onclick="quitar(\''+esc(item.id)+'\')">✕</button></div><div class="item-controls"><input type="number" min="1" max="'+p.stock+'" value="'+item.cantidad+'" onchange="cantidad(\''+esc(item.id)+'\',this.value)"><div class="meta">'+money(precio(p))+' c/u · Stock '+p.stock+'</div><div class="item-total">'+money(precio(p)*item.cantidad)+'</div></div></div>';}).join('');
+  box.innerHTML=CART.map(function(item){var p=DATA.productos.find(function(x){return x.id===item.id;});if(!p)return'';var disponible=stockDisponible(p);return '<div class="item"><div class="item-head"><div class="item-name"><div class="item-brand">'+esc(p.marca)+'</div>'+esc(p.detalle)+'</div><button class="x" onclick="quitar(\''+esc(item.id)+'\')">✕</button></div><div class="item-controls"><input type="number" min="1" max="'+disponible+'" value="'+item.cantidad+'" onchange="cantidad(\''+esc(item.id)+'\',this.value)"><div class="meta">'+money(precio(p))+' c/u · Stock '+disponible+'</div><div class="item-total">'+money(precio(p)*item.cantidad)+'</div></div></div>';}).join('');
   CALCULO=calcular();byId('summary').style.display='block';byId('subTxt').textContent=money(CALCULO.subtotal);
   byId('amountRow').style.display=CALCULO.escala?'flex':'none';if(CALCULO.escala){byId('amountLabel').textContent=CALCULO.escala.label||'Descuento por monto';byId('amountTxt').textContent='− '+money(CALCULO.descuentoMonto);}
   byId('loyaltyRow').style.display=CALCULO.fidelidad?'flex':'none';if(CALCULO.fidelidad){byId('loyaltyLabel').textContent=Math.round((DATA.fidelidadPct||.10)*100)+'% fidelidad';byId('loyaltyTxt').textContent='− '+money(CALCULO.descuentoFidelidad);}
   byId('totalTxt').textContent=money(CALCULO.total);
 }
 
-function aplicarVenta(){
+function cargarPendientesCaja(){
+  google.script.run.withSuccessHandler(function(r){
+    if(!r||!r.ok)return;PENDIENTES=r.ventas||[];renderPendientes(r);
+  }).withFailureHandler(function(){}).listarVentasPendientesCajaMaxup(SESION_CAJA);
+}
+
+function renderPendientes(resumen){
+  var total=resumen&&resumen.total!=null?resumen.total:PENDIENTES.reduce(function(s,v){return s+Number(v.total||0);},0);
+  byId('pendingTotal').textContent=money(total);
+  byId('pendingSummary').textContent=PENDIENTES.length?PENDIENTES.length+' venta'+(PENDIENTES.length===1?'':'s')+' reservada'+(PENDIENTES.length===1?'':'s')+'. Podés corregirlas antes del cierre.':'No hay ventas pendientes.';
+  byId('closeDayBtn').disabled=!PENDIENTES.length;
+  byId('pendingList').innerHTML=PENDIENTES.map(function(v){
+    var productos=(v.lineas||[]).map(function(l){return l.cantidad+' × '+l.nombre;}).join(' · ');
+    var hora='';try{hora=new Date(v.fecha).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});}catch(e){}
+    return '<div class="pending-sale"><div class="pending-sale-top"><div><b>'+esc(v.cliente)+'</b><div class="meta">'+esc(hora)+' · '+esc(v.pago)+'</div></div><b class="price">'+money(v.total)+'</b></div><div class="pending-products">'+esc(productos)+'</div><div class="pending-actions"><button class="btn-ghost" onclick="editarPendiente(\''+esc(v.id)+'\')">✏️ Editar</button><button class="btn-danger" onclick="cancelarPendiente(\''+esc(v.id)+'\')">Cancelar</button></div></div>';
+  }).join('');
+}
+
+function datosVentaActual(){
+  return {operacion:OPERACION,pendienteId:PENDIENTE_EDITANDO,clienteCodigo:CLIENTE.codigo,nuevoCliente:CLIENTE.nuevo?{nombre:CLIENTE.nombre,telefono:CLIENTE.telefono}:null,pago:byId('payment').value,notas:byId('notes').value,items:CART};
+}
+
+function guardarVentaRapida(){
   if(APLICANDO)return;if(!CLIENTE){alert('Primero buscá un cliente o elegí Consumidor final');return;}if(!CART.length){alert('Agregá al menos un producto');return;}
+  CALCULO=calcular();var accion=PENDIENTE_EDITANDO?'guardar los cambios':'guardar la venta rápida';
+  if(!confirm('¿'+accion.charAt(0).toUpperCase()+accion.slice(1)+' de '+CLIENTE.nombre+' por '+money(CALCULO.total)+'?\n\nEl stock quedará reservado inmediatamente.'))return;
+  APLICANDO=true;byId('quickBtn').disabled=true;byId('saleBtn').disabled=true;byId('loading').style.display='flex';byId('loading').textContent=PENDIENTE_EDITANDO?'Actualizando la venta pendiente…':'Reservando stock y guardando…';
+  google.script.run.withSuccessHandler(function(r){
+    APLICANDO=false;byId('loading').style.display='none';byId('quickBtn').disabled=false;byId('saleBtn').disabled=false;
+    if(!r||!r.ok){fallo({message:(r&&r.error)||'No se pudo guardar la venta'});return;}
+    if(r.cliente){CLIENTE.codigo=String(r.cliente.codigo||CLIENTE.codigo);CLIENTE.nombre=r.cliente.nombre||CLIENTE.nombre;CLIENTE.nuevo=false;}
+    (r.ajustes||[]).forEach(function(a){var p=DATA.productos.find(function(x){return x.id===a.id;});if(p)p.stock=Number(a.stock);});
+    r.clienteRecibo={codigo:String(CLIENTE.codigo||''),nombre:CLIENTE.nombre||'Consumidor final',telefono:CLIENTE.telefono||''};r.notasRecibo=byId('notes').value.trim();ULTIMA=r;
+    byId('okBox').style.display='block';byId('okBox').innerHTML='<strong>⚡ '+esc(r.mensaje||'Venta rápida guardada')+'</strong><br>'+esc(CLIENTE.nombre)+' · '+money(r.total)+' · stock reservado<button class="btn-print" style="margin-top:10px" onclick="imprimirUltimaVenta()">🧾 Imprimir recibo ahora</button>';
+    prepararSiguienteVenta();cargarPendientesCaja();window.scrollTo(0,0);
+  }).withFailureHandler(fallo).guardarVentaPendienteCajaMaxup(datosVentaActual(),SESION_CAJA);
+}
+
+function editarPendiente(id){
+  var venta=PENDIENTES.find(function(v){return v.id===id;});if(!venta)return;
+  PENDIENTE_EDITANDO=id;OPERACION=id;
+  CLIENTE=DATA.clientes.find(function(c){return String(c.codigo)===String(venta.clienteCodigo);})||{codigo:venta.clienteCodigo||'',nombre:venta.cliente||'Consumidor final',telefono:venta.telefono||'',fidelidad:false,meses:[]};
+  CART=(venta.lineas||[]).map(function(l){return{id:l.id,cantidad:Number(l.cantidad)||1};});
+  byId('payment').value=venta.pagoCodigo||'contado';byId('notes').value=venta.notas||'';
+  byId('clientSelected').innerHTML='<strong>Editando · '+esc(CLIENTE.nombre)+'</strong><div class="promo">El stock ya está reservado. Guardar cambios ajustará solamente la diferencia.</div>';
+  byId('clientSelected').style.display='block';byId('quickBtn').textContent='💾 GUARDAR CAMBIOS';byId('saleBtn').disabled=true;renderCart();window.scrollTo(0,0);
+}
+
+function cancelarPendiente(id){
+  var venta=PENDIENTES.find(function(v){return v.id===id;});if(!venta||!confirm('¿Cancelar la venta de '+venta.cliente+' por '+money(venta.total)+'?\n\nEl stock volverá a quedar disponible.'))return;
+  byId('loading').style.display='flex';byId('loading').textContent='Cancelando y devolviendo stock…';
+  google.script.run.withSuccessHandler(function(r){
+    byId('loading').style.display='none';if(!r||!r.ok){fallo({message:'No se pudo cancelar'});return;}
+    (r.ajustes||[]).forEach(function(a){var p=DATA.productos.find(function(x){return x.id===a.id;});if(p)p.stock=Number(a.stock);});
+    if(PENDIENTE_EDITANDO===id)nuevaVenta();cargarPendientesCaja();byId('okBox').style.display='block';byId('okBox').innerHTML='<strong>↩️ '+esc(r.mensaje)+'</strong>';
+  }).withFailureHandler(fallo).cancelarVentaPendienteCajaMaxup(id,SESION_CAJA);
+}
+
+function cerrarJornada(){
+  if(!PENDIENTES.length)return;if(!confirm('¿Cerrar la jornada y registrar las '+PENDIENTES.length+' ventas pendientes por '+money(PENDIENTES.reduce(function(s,v){return s+Number(v.total||0);},0))+'?\n\nDespués del cierre ya no podrán editarse.'))return;
+  byId('closeDayBtn').disabled=true;byId('loading').style.display='flex';byId('loading').textContent='Registrando toda la jornada…';
+  google.script.run.withSuccessHandler(function(r){
+    byId('loading').style.display='none';byId('closeDayBtn').disabled=false;if(!r||!r.ok){fallo({message:'No se pudo cerrar la jornada'});return;}
+    PENDIENTES=[];renderPendientes({total:0});byId('okBox').style.display='block';byId('okBox').innerHTML='<strong>🌙 '+esc(r.mensaje)+'</strong><br>'+r.cantidad+' ventas registradas · '+money(r.total);refrescarDatosCajaEnSegundoPlano(true);
+  }).withFailureHandler(fallo).cerrarJornadaCajaMaxup(SESION_CAJA);
+}
+
+function aplicarVenta(){
+  if(APLICANDO)return;if(PENDIENTE_EDITANDO){alert('Estás editando una venta pendiente. Guardá los cambios o iniciá una venta nueva.');return;}if(!CLIENTE){alert('Primero buscá un cliente o elegí Consumidor final');return;}if(!CART.length){alert('Agregá al menos un producto');return;}
   CALCULO=calcular();
   if(!confirm('¿Aplicar la venta de '+CLIENTE.nombre+' por '+money(CALCULO.total)+'?\n\nEsto descontará stock y registrará la compra.'))return;
   APLICANDO=true;byId('saleBtn').disabled=true;byId('loading').style.display='flex';byId('loading').textContent='Aplicando venta y actualizando stock…';
@@ -305,11 +390,11 @@ function imprimirComprobante(tipo,venta){
 }
 
 function prepararSiguienteVenta(){
-  CLIENTE=null;CART=[];CALCULO=null;APLICANDO=false;OPERACION=nuevaOperacion();
+  CLIENTE=null;CART=[];CALCULO=null;APLICANDO=false;PENDIENTE_EDITANDO='';OPERACION=nuevaOperacion();
   byId('clientSelected').style.display='none';byId('clientSelected').innerHTML='';byId('clientSearch').value='';byId('clientResults').style.display='none';
   byId('newClient').style.display='none';byId('newName').value='';byId('newPhone').value='';
   byId('productSearch').value='';byId('productResults').style.display='none';byId('notes').value='';byId('payment').value='contado';
-  byId('receiptBtn').disabled=!ULTIMA||!!ULTIMA.duplicado;byId('saleBtn').disabled=false;renderCart();
+  byId('receiptBtn').disabled=!ULTIMA||!!ULTIMA.duplicado;byId('saleBtn').disabled=false;byId('quickBtn').disabled=false;byId('quickBtn').textContent='⚡ GUARDAR VENTA RÁPIDA';renderCart();
   // La caja queda disponible al instante. Stock, clientes y el informe de
   // reposición se sincronizan después sin tapar la pantalla.
   refrescarDatosCajaEnSegundoPlano(true);
@@ -336,9 +421,9 @@ function refrescarDatosCajaEnSegundoPlano(actualizarReposicion){
 }
 
 function nuevaVenta(){
-  CLIENTE=null;CART=[];CALCULO=null;ULTIMA=null;APLICANDO=false;OPERACION=nuevaOperacion();
+  CLIENTE=null;CART=[];CALCULO=null;ULTIMA=null;APLICANDO=false;PENDIENTE_EDITANDO='';OPERACION=nuevaOperacion();
   byId('clientSelected').style.display='none';byId('clientSearch').value='';byId('productSearch').value='';byId('notes').value='';
-  byId('okBox').style.display='none';byId('receiptBtn').disabled=true;byId('saleBtn').disabled=false;renderCart();
+  byId('okBox').style.display='none';byId('receiptBtn').disabled=true;byId('saleBtn').disabled=false;byId('quickBtn').disabled=false;byId('quickBtn').textContent='⚡ GUARDAR VENTA RÁPIDA';renderCart();
   refrescarDatosCajaEnSegundoPlano(false);
 }
 </script>

@@ -21,6 +21,10 @@ for (const file of ['Api.gs', 'SystemV3.gs', 'Ventas.gs', 'StockObjetivo.gs', 'a
   assert.doesNotThrow(() => new Function(read(file)), `${file} debe tener sintaxis JavaScript valida`);
 }
 assert.doesNotThrow(() => new Function(admin.match(/<script>([\s\S]*?)<\/script>/)[1]), 'admin.html debe tener sintaxis JavaScript valida');
+for (const [i, match] of [...mayorista.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].entries()) {
+  if (!match[1].trim()) continue;
+  assert.doesNotThrow(() => new Function(match[1]), `mayorista.html script ${i + 1} debe tener sintaxis JavaScript valida`);
+}
 for (const [i, match] of [...indumentaria.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].entries()) {
   if (!match[1].trim()) continue;
   assert.doesNotThrow(() => new Function(match[1]), `indumentaria.html script ${i + 1} debe tener sintaxis JavaScript valida`);
@@ -64,6 +68,17 @@ assert(caja.includes('_cajaRegistrarMovimientosBatch_'), 'La caja debe guardar l
 assert(caja.includes('_cajaFidelidadFila_(rows[i], headers, reglasFidelidad)'), 'La carga de clientes no debe recorrer toda la hoja por cada persona');
 assert(cajaHtml.includes('refrescarDatosCajaEnSegundoPlano('), 'La caja debe actualizar sus datos sin bloquear la siguiente venta');
 assert(!cajaHtml.includes("byId('loading').textContent='Preparando la caja para la siguiente venta…'"), 'La siguiente venta no debe esperar la recarga completa');
+assert(caja.includes("getSheetByName('VENTAS_PENDIENTES')"), 'La caja rápida debe conservar una bandeja editable antes del cierre');
+assert(caja.includes('guardarVentaPendienteCajaMaxup'), 'La caja debe reservar stock con una venta rápida');
+assert(caja.includes('cancelarVentaPendienteCajaMaxup'), 'Cancelar una pendiente debe devolver el stock');
+assert(caja.includes('cerrarJornadaCajaMaxup'), 'El cierre debe registrar las ventas pendientes en bloque');
+assert(cajaHtml.includes('⚡ GUARDAR VENTA RÁPIDA'), 'Guardar rápido debe ser la acción principal de la caja');
+assert(cajaHtml.includes('✏️ Editar'), 'Las ventas pendientes deben poder corregirse desde la caja');
+assert(stockObjetivo.includes('actualizarPreciosMayoristasMaxup'), 'Debe poder actualizar costos y precios mayoristas desde proveedores');
+assert(api.includes('MAYO_MINIMO_API     = 400000'), 'El mínimo mayorista debe validarse en el servidor');
+assert(api.includes('desc_mayorista_max'), 'Cada producto debe tener un tope de descuento rentable');
+assert(api.includes('_nivelMayorista_'), 'El servidor debe aplicar descuentos mayoristas por volumen');
+assert(mayorista.includes('Nivel Distribuidor'), 'La tienda mayorista debe informar el nivel de volumen');
 assert(system.includes('backupDiarioMaxup'), 'Debe existir backup automatico');
 assert(system.includes('pruebaSaludSistema'), 'Debe existir prueba de salud automatica');
 assert(system.includes("getSheetByName('CUPONES')"), 'Los cupones deben administrarse desde Sheets');
@@ -237,6 +252,9 @@ assert(waSandbox._waRespuestaPagos().includes('1 a 3 cuotas'), 'La respuesta deb
 assert(waSandbox._waRespuestaEntregas().includes('Calixto Gauna 1045'), 'La respuesta debe informar el retiro');
 assert(waSandbox._waEsConsultaSalud('como tomar si tengo diabetes'), 'Las consultas de salud deben derivarse');
 assert.strictEqual(waSandbox._waMoneda(123456), '$123.456', 'Los precios deben tener formato argentino');
+assert.strictEqual(waSandbox._nivelMayorista_(399999).extra, 0, 'Antes del mínimo no debe sumar descuento por volumen');
+assert.strictEqual(waSandbox._nivelMayorista_(700000).extra, 2, 'Desde $700.000 debe sumar dos puntos de descuento');
+assert.strictEqual(waSandbox._nivelMayorista_(1000000).extra, 4, 'Desde $1.000.000 debe sumar cuatro puntos de descuento');
 const detalleAsistente = waSandbox._waDetalleProducto({
   marca: 'MAXUP', nombre: 'Whey Test', precio_venta: 10000, precio_lista: 12000, stock: 3,
   descripcion_publicacion: 'Proteina de suero para complementar la alimentacion.',

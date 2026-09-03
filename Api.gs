@@ -67,6 +67,8 @@ var NOMBRES_MESES_API   = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep'
 var HOJA_MAYORISTAS     = 'MAYORISTAS';
 var HOJA_PEDIDOS_MAYO   = 'PEDIDOS_MAYORISTA';
 var COL_DESC_MAYORISTA  = 11;
+var COL_DESC_MAYO_MAX   = 12;
+var MAYO_MINIMO_API     = 400000;
 
 var ADMIN_SESSION_TTL = 21600; // 6 horas, máximo permitido por CacheService
 var ADMIN_MAX_INTENTOS = 6;
@@ -2203,7 +2205,10 @@ function obtenerCatalogoMayorista() {
       continue;
     }
 
-    var descMayo   = parseFloat(row[COL_DESC_MAYORISTA - 1]) || 15;
+    var descMayo   = Number(row[COL_DESC_MAYORISTA - 1]);
+    if (!isFinite(descMayo) || descMayo <= 0) continue;
+    var descMayoMax = Number(row[COL_DESC_MAYO_MAX - 1]);
+    if (!isFinite(descMayoMax) || descMayoMax < descMayo) descMayoMax = descMayo;
     var precioMayo = Math.round(precio * (1 - descMayo / 100));
     var stock      = parseFloat(row[3]) || 0;
     var img        = row[8] ? row[8].toString() : '';
@@ -2219,10 +2224,18 @@ function obtenerCatalogoMayorista() {
       precio_lista: _calcularPrecioListaTresCuotas(precio),
       precio_mayorista: precioMayo,
       desc_mayorista: descMayo,
+      desc_mayorista_max: descMayoMax,
       stock: stock, img: img, desc: desc
     });
   }
   return prods;
+}
+
+function _nivelMayorista_(subtotalBase) {
+  subtotalBase = Number(subtotalBase) || 0;
+  if (subtotalBase >= 1000000) return { nombre:'Distribuidor', extra:4, proximo:0 };
+  if (subtotalBase >= 700000) return { nombre:'Volumen', extra:2, proximo:1000000 };
+  return { nombre:'Mayorista', extra:0, proximo:700000 };
 }
 
 function pedidoMayorista(body) {
@@ -2231,10 +2244,11 @@ function pedidoMayorista(body) {
     if (!emailSesion || !body.cliente || emailSesion !== String(body.cliente.email || '').toLowerCase()) {
       return jsonResp({ ok: false, error: 'Sesion mayorista vencida o invalida.' });
     }
+    if (!body.items || !body.items.length) return jsonResp({ ok:false, error:'El pedido no tiene productos.' });
     if (body.items && body.items.length) {
       var catalogoMayo = obtenerCatalogoMayorista();
-      var totalMayoSeguro = 0, totalListaSeguro = 0;
-      body.items = body.items.map(function(i) {
+      var subtotalBase = 0, productosSeguros = [];
+      body.items.forEach(function(i) {
         var prod = null;
         for (var pm = 0; pm < catalogoMayo.length; pm++) {
           if ((i.sku && String(catalogoMayo[pm].sku) === String(i.sku)) ||
@@ -2245,14 +2259,27 @@ function pedidoMayorista(body) {
         if (!prod) throw new Error('Producto mayorista no encontrado: ' + i.nombre);
         var qty = Math.max(1, Math.floor(Number(i.qty) || 1));
         if (Number(prod.stock) < qty) throw new Error('Stock insuficiente: ' + prod.name);
-        totalMayoSeguro += Number(prod.precio_mayorista) * qty;
-        totalListaSeguro += Number(prod.precio) * qty;
-        return { id: prod.id, sku: prod.sku, nombre: prod.name, marca: prod.brand, qty: qty,
-          precio_mayo: Number(prod.precio_mayorista), precio_orig: Number(prod.precio) };
+        subtotalBase += Number(prod.precio_mayorista) * qty;
+        productosSeguros.push({ prod:prod, qty:qty });
       });
+      var nivel = _nivelMayorista_(subtotalBase);
+      var totalMayoSeguro = 0, totalListaSeguro = 0;
+      body.items = productosSeguros.map(function(item) {
+        var prod = item.prod, qty = item.qty;
+        var descAplicado = Math.min(Number(prod.desc_mayorista) + nivel.extra, Number(prod.desc_mayorista_max));
+        var precioSeguro = Math.round(Number(prod.precio) * (1 - descAplicado / 100));
+        totalMayoSeguro += precioSeguro * qty;
+        totalListaSeguro += Number(prod.precio) * qty;
+        return { id:prod.id, sku:prod.sku, nombre:prod.name, marca:prod.brand, qty:qty,
+          precio_mayo:precioSeguro, precio_orig:Number(prod.precio), descuento:descAplicado };
+      });
+      if (totalMayoSeguro < MAYO_MINIMO_API) {
+        return jsonResp({ ok:false, error:'El pedido mayorista mínimo es de $' + _formatoPrecio(MAYO_MINIMO_API) + '.' });
+      }
       body.total_mayorista = totalMayoSeguro;
       body.total_lista = totalListaSeguro;
       body.ahorro = totalListaSeguro - totalMayoSeguro;
+      body.nivel_mayorista = nivel.nombre;
       var itemsStock = body.items.map(function(i) { return { sku: i.sku || '', nombre: i.nombre, marca: i.marca || i.brand || '', cantidad: i.qty || 1 }; });
       var stockRes = _descontarStockPedido(itemsStock, body.codigo);
       if (!stockRes.ok) return jsonResp({ ok: false, error: (stockRes.errores || ['Error de stock']).join('; ') });
@@ -2283,7 +2310,9 @@ function pedidoMayorista(body) {
       + '💳 Pago: ' + body.pago;
     _notificarTelegram(msg);
 
-    return jsonResp({ ok: true, codigo: body.codigo });
+    return jsonResp({ ok:true, codigo:body.codigo, items:body.items,
+      total_mayorista:body.total_mayorista, total_lista:body.total_lista,
+      ahorro:body.ahorro, nivel:body.nivel_mayorista });
   } catch(e) {
     return jsonResp({ ok: false, error: e.message });
   }
