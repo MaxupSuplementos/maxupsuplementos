@@ -4419,6 +4419,23 @@ function _waRespuestaCatalogoGeneral() {
     + 'También podés mandarme el nombre o la marca de un producto. Te voy a mostrar solamente opciones disponibles, con precio y beneficios.';
 }
 
+function _waExtraerConsultaProducto_(texto) {
+  return _waNormalizar(texto)
+    .replace(/\b(hola|max|maxup|buenas|buen|dia|tarde|noche|por|favor|me|mi|das|dame|decime|podes|podrias|quisiera|quiero|necesito|saber|consultar|consulta|pregunta|informacion|info|referencia|referencias|detalle|detalles|sobre|acerca|respecto|producto|productos|suplemento|suplementos|buscar|busco|precio|precios|stock|tenes|tienen|hay|beneficio|beneficios|sirve|contiene|composicion|ingrediente|ingredientes|que|cual|cuales|es|son|para|de|del|la|el|los|las|un|una|algun|alguna|mostrar|mostrame)\b/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function _waAyudaBusquedaProducto_() {
+  return 'No pude identificar con seguridad el producto que buscás. No hace falta repetir toda la pregunta.\n\n'
+    + 'Escribime solamente una palabra clave, una marca o el nombre. Por ejemplo:\n'
+    + '• *óxido nítrico*\n'
+    + '• *creatina Star*\n'
+    + '• *magnesio citrato*\n'
+    + '• *proteína ENA*\n\n'
+    + 'También podés elegir una categoría: *proteínas*, *creatinas*, *aminoácidos*, *pre entrenos*, *vitaminas* o *accesorios*.\n'
+    + 'Escribí *menu* para volver al menú principal o *5* para hablar con una persona.';
+}
+
 function _waClaveEstado(telefono) {
   return 'WA_STATE_' + _hashSeguro(telefono);
 }
@@ -4543,11 +4560,11 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
     return _waRespuestaPedido(limpio);
   }
 
-  if (normal === '1' || /buscar|producto|precio|stock|tenes|tienen|beneficio|para que sirve|que es|contiene|composicion|ingrediente/.test(normal)) {
+  if (normal === '1' || /buscar|producto|suplemento|precio|stock|tenes|tienen|beneficio|informacion|\binfo\b|referencia|para que sirve|que es|contiene|composicion|ingrediente/.test(normal)) {
     _waGuardarEstado(telefono, 'PRODUCTO');
-    var consultaDirecta = normal.replace(/\b(buscar|busco|producto|precio|stock|tenes|tienen|hay|beneficio|beneficios|sirve|contiene|composicion|ingrediente|ingredientes|que|es|para|de|del|la|el|los|las|un|una|quiero|necesito)\b/g, ' ').replace(/\s+/g, ' ').trim();
+    var consultaDirecta = _waExtraerConsultaProducto_(normal);
     if (normal === '1' || consultaDirecta.length < 2) {
-      return 'Que producto buscas? Podes escribir, por ejemplo: *creatina ENA* o *whey vainilla*.';
+      return _waAyudaBusquedaProducto_();
     }
     return _waBuscarProductos(telefono,consultaDirecta,false);
   }
@@ -4585,8 +4602,8 @@ function _waCategoriaConsulta(normal) {
   if (/\b(proteina|proteinas|protein|proteins|whey|wh3y|isolate|isolada|caseina)\b/.test(normal)) return 'proteina';
   if (/\b(creatina|creatinas|creatine)\b/.test(normal)) return 'creatina';
   if (/\b(gainer|ganador|ganadores)\b|\bmass\b/.test(normal)) return 'gainer';
-  if (/\b(aminoacido|aminoacidos|amino|bcaa|eaa|glutamina|glutamine)\b/.test(normal)) return 'aminoacido';
-  if (/\b(preworkout|preentreno|pre-entreno)\b|pre entreno/.test(normal)) return 'preworkout';
+  if (/\b(aminoacido|aminoacidos|amino|bcaa|eaa|glutamina|glutamine|arginina|citrulina|agmatina)\b/.test(normal)) return 'aminoacido';
+  if (/\b(preworkout|preentreno|pre-entreno|vasodilatador|vasodilatadores|bombeo|pump|oxido|nitrico)\b|pre entreno|nitric oxide/.test(normal)) return 'preworkout';
   if (/\b(colageno|colagenos|collagen)\b/.test(normal)) return 'colageno';
   if (/\b(quemador|quemadores|termogenico|termogenicos)\b/.test(normal)) return 'quemador';
   if (/\b(vitamina|vitaminas|mineral|minerales)\b/.test(normal)) return 'vitamin';
@@ -4623,7 +4640,7 @@ function _waTokenGenericoCategoria(token, categoria) {
     creatina:{creatina:1,creatinas:1,creatine:1},
     gainer:{gainer:1,ganador:1,ganadores:1},
     aminoacido:{aminoacido:1,aminoacidos:1,amino:1},
-    preworkout:{preworkout:1,preentreno:1},
+    preworkout:{preworkout:1,preentreno:1,vasodilatador:1,vasodilatadores:1,bombeo:1,pump:1},
     colageno:{colageno:1,colagenos:1,collagen:1},
     quemador:{quemador:1,quemadores:1,termogenico:1,termogenicos:1},
     vitamin:{vitamina:1,vitaminas:1,mineral:1,minerales:1},
@@ -4636,15 +4653,16 @@ function _waTokenGenericoCategoria(token, categoria) {
 }
 
 function _waBuscarProductos(telefono, consulta, silencioso) {
-  var normal = _waNormalizar(consulta);
+  var normal = _waExtraerConsultaProducto_(consulta);
   var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1 };
   var categoriaConsulta = _waCategoriaConsulta(normal);
+  var categoriaFlexible = /\boxido\b|\bnitrico\b|nitric oxide/.test(normal);
   var tokens = normal.split(' ').filter(function(t) {
     return t.length > 1 && !stop[t] && !_waTokenGenericoCategoria(t, categoriaConsulta);
   });
   // "pre entreno" se reconoce como categoría aunque sus palabras se separen.
   if (categoriaConsulta === 'preworkout') tokens = tokens.filter(function(t){ return t !== 'pre' && t !== 'entreno'; });
-  if (!tokens.length && !categoriaConsulta) return silencioso?'':'Escribi el nombre o la marca del producto que buscas.';
+  if (!tokens.length && !categoriaConsulta) return silencioso?'':_waAyudaBusquedaProducto_();
 
   var catalogo = getCatalogo();
   var productos = catalogo.productos || [];
@@ -4652,7 +4670,7 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
   productos.forEach(function(p) {
     var hay = Number(p.stock || 0);
     if (hay <= 0) return;
-    if (categoriaConsulta && _waCategoriaProducto(p) !== categoriaConsulta) return;
+    if (categoriaConsulta && !categoriaFlexible && _waCategoriaProducto(p) !== categoriaConsulta) return;
     var base = _waNormalizar(String(p.marca || '') + ' ' + String(p.nombre || ''));
     // Todos los términos específicos deben coincidir. Así "proteína STAR"
     // exige categoría proteína + marca/nombre STAR y nunca mezcla creatinas.
@@ -4672,7 +4690,7 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
     return Number(b.p.stock || 0) - Number(a.p.stock || 0);
   });
   if (!coincidencias.length) {
-    return silencioso?'':'No encontre stock para *' + String(consulta).slice(0, 80) + '*. Proba con otra marca o escribi *5* para consultar a una persona.';
+    return silencioso?'':_waAyudaBusquedaProducto_();
   }
 
   if(coincidencias.length===1) return _waDetalleProducto(coincidencias[0].p);
@@ -4737,6 +4755,12 @@ function _waDerivarHumano(telefono, motivo) {
     + '📲 *Atencion 1:* https://wa.me/' + WA_ATENCION_HUMANA_1 + '?text=' + texto + '\n'
     + '📲 *Atencion 2:* https://wa.me/' + WA_ATENCION_HUMANA_2 + '?text=' + texto + '\n\n'
     + 'Toca el enlace y se abrira el chat con una persona. Si queres volver con Max, escribi *menu*.';
+}
+
+function probarBusquedaOxidoNitricoMax() {
+  var resultado = pruebaAsistenteWhatsApp('Hola Max, ¿me das información sobre óxido nítrico?');
+  Logger.log(JSON.stringify(resultado));
+  return resultado;
 }
 
 function _enviarWhatsAppTexto(telefono, texto) {
