@@ -328,7 +328,36 @@ function _mayoLeerProveedoresManuales_(hoja) {
   return salida;
 }
 
+function _mayoEsAccesorio_(marca) {
+  return /^(accesorios|shakers)$/i.test(String(marca || '').trim());
+}
+
 function _mayoAplicarProveedorManual_(comparacion, manual, producto) {
+  if (_mayoEsAccesorio_(producto.marca)) {
+    var ag = comparacion.porFuente && comparacion.porFuente['AG SUPLEMENTOS'];
+    if (ag) {
+      comparacion.recomendado = ag;
+      comparacion.motivo = 'Proveedor habitual fijo para accesorios: AG SUPLEMENTOS';
+      return comparacion;
+    }
+    manual = manual || {};
+    var costoAg = Number(manual.costo) || 0;
+    comparacion.recomendado = {
+      fuente: 'AG SUPLEMENTOS',
+      producto: producto.nombre,
+      marca: producto.marca,
+      costo: costoAg,
+      puesto: costoAg,
+      prioridad: 1,
+      score: 1,
+      url: manual.url || MAYO_AG_URL,
+      manual: true
+    };
+    comparacion.motivo = costoAg
+      ? 'Proveedor habitual fijo para accesorios: AG SUPLEMENTOS'
+      : 'Proveedor habitual fijo para accesorios: AG SUPLEMENTOS; falta completar el costo';
+    return comparacion;
+  }
   if (comparacion.recomendado || !manual || !manual.proveedor) return comparacion;
   var costo = Number(manual.costo) || 0;
   comparacion.recomendado = {
@@ -347,7 +376,7 @@ function _mayoAplicarProveedorManual_(comparacion, manual, producto) {
 }
 
 function _mayoActualizarFaltantes_(config, filasStock, resultados, manuales) {
-  var hoja = config.hoja, filas = [], ahora = new Date();
+  var hoja = config.hoja, filas = [], sinProveedor = 0, ahora = new Date();
   filasStock.forEach(function(row) {
     var producto = String(row[0] || '').trim(), marca = String(row[1] || '').trim();
     var comprar = Math.max(0, Number(row[3]) - Number(row[2]));
@@ -355,11 +384,18 @@ function _mayoActualizarFaltantes_(config, filasStock, resultados, manuales) {
     var clave = _stockObjClave(marca, producto), info = resultados[clave];
     var automaticos = info && info.comparacion ? Object.keys(info.comparacion.porFuente || {}) : [];
     if (automaticos.length) return;
-    var manual = manuales[clave] || {}, estado = '🔴 SIN PROVEEDOR';
+    var manual = manuales[clave] || {};
+    if (_mayoEsAccesorio_(marca)) manual = {
+      proveedor: 'AG SUPLEMENTOS',
+      costo: manual.costo || 0,
+      url: manual.url || MAYO_AG_URL
+    };
+    var estado = '🔴 SIN PROVEEDOR';
     if (manual.proveedor) estado = manual.costo ? '🟢 PROVEEDOR MANUAL' : '🟡 FALTA COSTO';
+    else sinProveedor++;
     filas.push([
       producto, marca,
-      /^(accesorios|shakers)$/i.test(marca) ? 'ACCESORIO' : 'SUPLEMENTO / ALIMENTO',
+      _mayoEsAccesorio_(marca) ? 'ACCESORIO' : 'SUPLEMENTO / ALIMENTO',
       Number(row[2]) || 0, Number(row[3]) || 0, comprar,
       info ? Number(info.venta) || 0 : 0, estado,
       manual.proveedor || '', manual.costo || '', manual.url || '', ahora
@@ -369,7 +405,7 @@ function _mayoActualizarFaltantes_(config, filasStock, resultados, manuales) {
   var filasLimpiar = Math.max(1, hoja.getMaxRows() - 9);
   if (hoja.getMaxColumns() < 12) hoja.insertColumnsAfter(hoja.getMaxColumns(), 12 - hoja.getMaxColumns());
   hoja.getRange(10, 1, filasLimpiar, 12).breakApart().clearContent().clearFormat();
-  hoja.getRange('A10:L10').merge().setValue('PRODUCTOS POR REPONER SIN COINCIDENCIA AUTOMÁTICA (' + filas.length + ')')
+  hoja.getRange('A10:L10').merge().setValue('PRODUCTOS PARA REVISAR (' + filas.length + ') · SIN PROVEEDOR (' + sinProveedor + ')')
     .setBackground('#8B1E3F').setFontColor('#FFFFFF').setFontWeight('bold').setFontSize(13)
     .setHorizontalAlignment('center');
   hoja.getRange(11, 1, 1, 12).setValues([[
@@ -386,7 +422,7 @@ function _mayoActualizarFaltantes_(config, filasStock, resultados, manuales) {
     hoja.getRange(12, 12, filas.length, 1).setNumberFormat('dd/MM/yyyy HH:mm');
   }
   [300,145,155,90,90,90,115,165,190,120,270,145].forEach(function(ancho, idx){ hoja.setColumnWidth(idx + 1, ancho); });
-  return filas.length;
+  return { revisar:filas.length, sinProveedor:sinProveedor };
 }
 
 function abrirConfiguracionProveedoresMaxup() {
@@ -879,14 +915,15 @@ function actualizarPreciosMayoristasMaxup() {
     hojaObj.getRange(7, 35, comparativas.length, 2).setNumberFormat('$#,##0');
     hojaObj.getRange(7, 39, comparativas.length, 1).setNumberFormat('dd/MM/yyyy HH:mm');
   }
-  var faltantes = _mayoActualizarFaltantes_(config, filasObj, resultados, proveedoresManuales);
+  var auditoria = _mayoActualizarFaltantes_(config, filasObj, resultados, proveedoresManuales);
   [150,320,120,150,95,115,125,125,110,135,140].forEach(function(ancho, idx){ hojaObj.setColumnWidth(16+idx, ancho); });
   [115,125,115,125,115,125,145,85,130,130,170,270,145].forEach(function(ancho, idx){ hojaObj.setColumnWidth(27+idx, ancho); });
   hojaObj.getRange(7, 33, Math.max(1, comparativas.length), 1).setBackground('#E8F4FD').setFontWeight('bold');
   SpreadsheetApp.flush();
-  ss.toast('Comparativa lista: ' + proveedores.length + ' precios leídos; ' + faltantes + ' productos necesitan proveedor.', 'MAXUP', 10);
+  ss.toast('Comparativa lista: ' + proveedores.length + ' precios leídos; ' + auditoria.sinProveedor + ' productos todavía necesitan proveedor.', 'MAXUP', 10);
   return { ok:true, proveedores:proveedores.length, aplicados:aplicados, sinMargen:sinMargen, revisar:revisar,
-    minimo:MAYO_MINIMO_PEDIDO, margenMinimo:MAYO_MARGEN_BRUTO_MINIMO, reposicion:resumen, faltantes:faltantes };
+    minimo:MAYO_MINIMO_PEDIDO, margenMinimo:MAYO_MARGEN_BRUTO_MINIMO, reposicion:resumen,
+    faltantes:auditoria.sinProveedor, revisarProveedores:auditoria.revisar };
 }
 
 function _mayoResumenTelegram_(resultado) {

@@ -124,6 +124,8 @@ assert(api.includes("WA_ATENCION_HUMANA_2 = '5493875104606'"), 'La derivacion de
 assert(api.includes("https://wa.me/' + WA_ATENCION_HUMANA_1"), 'Max debe entregar enlaces directos al pedir una persona');
 assert(stockObjetivo.includes('_mayoActualizarFaltantes_'), 'La comparativa debe listar los productos por reponer sin proveedor');
 assert(stockObjetivo.includes('Proveedor habitual'), 'La hoja de proveedores debe permitir completar proveedores manuales');
+assert(stockObjetivo.includes("fuente: 'AG SUPLEMENTOS'"), 'Todos los accesorios deben quedar asignados a AG SUPLEMENTOS');
+assert(stockObjetivo.includes('Proveedor habitual fijo para accesorios: AG SUPLEMENTOS'), 'AG debe prevalecer como proveedor habitual de accesorios');
 assert(!/EA[A-Za-z0-9_-]{80,}/.test(api), 'No debe haber tokens de acceso de Meta en el codigo');
 assert(app.includes('function getInitialFlavor(p)'), 'Las variantes deben elegir primero una opcion con stock');
 assert(app.includes('Number(f.stock) > 0'), 'Una tarjeta solo debe mostrarse agotada si todas sus variantes lo estan');
