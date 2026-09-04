@@ -281,7 +281,7 @@ function _mayoAsegurarConfig_() {
     hoja.getRange('A1:H1').merge().setValue('COMPARADOR DE PROVEEDORES')
       .setBackground('#1a1a2e').setFontColor('#00C8FF').setFontWeight('bold')
       .setFontSize(15).setHorizontalAlignment('center');
-    hoja.getRange('A2:H2').merge().setValue('El flete es editable. AG se prioriza cuando queda hasta 3% por encima del proveedor más barato, porque no requiere envío.')
+    hoja.getRange('A2:H2').merge().setValue('El flete es editable. AG se prioriza cuando queda hasta 3% por encima del proveedor más barato. Abajo se listan los productos que todavía necesitan un proveedor habitual.')
       .setBackground('#FFF4CC').setFontColor('#6B4E00').setFontWeight('bold').setWrap(true);
     hoja.getRange(4, 1, 1, 8).setValues([['Proveedor','Prioridad','Flete estimado %','Lista usada','Fuente','Último intento','Último éxito','Estado']])
       .setBackground('#1a1a2e').setFontColor('#FFFFFF').setFontWeight('bold').setWrap(true);
@@ -297,6 +297,7 @@ function _mayoAsegurarConfig_() {
     [170,85,125,150,370,145,145,220].forEach(function(ancho, i){ hoja.setColumnWidth(i + 1, ancho); });
     hoja.setTabColor('#F4B400');
   }
+  hoja.getRange('A2').setValue('El flete es editable. AG se prioriza cuando queda hasta 3% por encima del proveedor más barato. Abajo se listan los productos que todavía necesitan un proveedor habitual.');
   var filas = hoja.getRange(5, 1, Math.max(3, hoja.getLastRow() - 4), 8).getValues();
   var config = {};
   filas.forEach(function(r, idx) {
@@ -309,6 +310,83 @@ function _mayoAsegurarConfig_() {
     };
   });
   return { hoja:hoja, fuentes:config };
+}
+
+function _mayoLeerProveedoresManuales_(hoja) {
+  var salida = {};
+  if (!hoja || hoja.getLastRow() < 12) return salida;
+  hoja.getRange(12, 1, hoja.getLastRow() - 11, 11).getValues().forEach(function(row) {
+    var producto = String(row[0] || '').trim(), marca = String(row[1] || '').trim();
+    var proveedor = String(row[8] || '').trim(), costo = _mayoImporte_(row[9]);
+    if (!producto || !marca || !proveedor) return;
+    salida[_stockObjClave(marca, producto)] = {
+      proveedor: proveedor,
+      costo: costo,
+      url: String(row[10] || '').trim()
+    };
+  });
+  return salida;
+}
+
+function _mayoAplicarProveedorManual_(comparacion, manual, producto) {
+  if (comparacion.recomendado || !manual || !manual.proveedor) return comparacion;
+  var costo = Number(manual.costo) || 0;
+  comparacion.recomendado = {
+    fuente: 'MANUAL · ' + manual.proveedor,
+    producto: producto.nombre,
+    marca: producto.marca,
+    costo: costo,
+    puesto: costo,
+    prioridad: 50,
+    score: 1,
+    url: manual.url || '',
+    manual: true
+  };
+  comparacion.motivo = costo ? 'Proveedor habitual cargado manualmente' : 'Proveedor habitual cargado; falta completar el costo';
+  return comparacion;
+}
+
+function _mayoActualizarFaltantes_(config, filasStock, resultados, manuales) {
+  var hoja = config.hoja, filas = [], ahora = new Date();
+  filasStock.forEach(function(row) {
+    var producto = String(row[0] || '').trim(), marca = String(row[1] || '').trim();
+    var comprar = Math.max(0, Number(row[3]) - Number(row[2]));
+    if (!producto || !marca || comprar <= 0) return;
+    var clave = _stockObjClave(marca, producto), info = resultados[clave];
+    var automaticos = info && info.comparacion ? Object.keys(info.comparacion.porFuente || {}) : [];
+    if (automaticos.length) return;
+    var manual = manuales[clave] || {}, estado = '🔴 SIN PROVEEDOR';
+    if (manual.proveedor) estado = manual.costo ? '🟢 PROVEEDOR MANUAL' : '🟡 FALTA COSTO';
+    filas.push([
+      producto, marca,
+      /^(accesorios|shakers)$/i.test(marca) ? 'ACCESORIO' : 'SUPLEMENTO / ALIMENTO',
+      Number(row[2]) || 0, Number(row[3]) || 0, comprar,
+      info ? Number(info.venta) || 0 : 0, estado,
+      manual.proveedor || '', manual.costo || '', manual.url || '', ahora
+    ]);
+  });
+
+  var filasLimpiar = Math.max(1, hoja.getMaxRows() - 9);
+  if (hoja.getMaxColumns() < 12) hoja.insertColumnsAfter(hoja.getMaxColumns(), 12 - hoja.getMaxColumns());
+  hoja.getRange(10, 1, filasLimpiar, 12).breakApart().clearContent().clearFormat();
+  hoja.getRange('A10:L10').merge().setValue('PRODUCTOS POR REPONER SIN COINCIDENCIA AUTOMÁTICA (' + filas.length + ')')
+    .setBackground('#8B1E3F').setFontColor('#FFFFFF').setFontWeight('bold').setFontSize(13)
+    .setHorizontalAlignment('center');
+  hoja.getRange(11, 1, 1, 12).setValues([[
+    'Producto','Marca','Grupo','Stock actual','Objetivo','Comprar','Precio venta','Estado',
+    'Proveedor habitual','Costo unitario','Enlace / contacto','Actualizado'
+  ]]).setBackground('#1a1a2e').setFontColor('#FFFFFF').setFontWeight('bold').setWrap(true);
+  if (filas.length) {
+    if (hoja.getMaxRows() < filas.length + 11) hoja.insertRowsAfter(hoja.getMaxRows(), filas.length + 11 - hoja.getMaxRows());
+    hoja.getRange(12, 1, filas.length, 12).setValues(filas).setVerticalAlignment('middle');
+    hoja.getRange(12, 7, filas.length, 1).setNumberFormat('$#,##0');
+    hoja.getRange(12, 10, filas.length, 1).setNumberFormat('$#,##0').setBackground('#FFF8D6');
+    hoja.getRange(12, 9, filas.length, 1).setBackground('#FFF8D6');
+    hoja.getRange(12, 11, filas.length, 1).setBackground('#FFF8D6');
+    hoja.getRange(12, 12, filas.length, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  }
+  [300,145,155,90,90,90,115,165,190,120,270,145].forEach(function(ancho, idx){ hoja.setColumnWidth(idx + 1, ancho); });
+  return filas.length;
 }
 
 function abrirConfiguracionProveedoresMaxup() {
@@ -701,6 +779,7 @@ function _mayoCompararProveedores_(producto, proveedores, config) {
 function actualizarPreciosMayoristasMaxup() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var config = _mayoAsegurarConfig_();
+  var proveedoresManuales = _mayoLeerProveedoresManuales_(config.hoja);
   var hojaSup = ss.getSheetByName('SUPLEMENTOS');
   if (!hojaSup) throw new Error('No se encontró SUPLEMENTOS.');
   var hojaObj = ss.getSheetByName('STOCK_OBJETIVO');
@@ -725,12 +804,14 @@ function actualizarPreciosMayoristasMaxup() {
     var nombre = String(datos[i][0] || '').trim(), venta = Number(datos[i][1]) || 0;
     if (!nombre) continue;
     if (!venta) { marca = nombre; continue; }
-    var producto = { nombre:nombre, marca:marca }, comparacion = _mayoCompararProveedores_(producto, proveedores, config);
-    var clave = _stockObjClave(marca, nombre), recomendado = comparacion.recomendado;
+    var producto = { nombre:nombre, marca:marca }, clave = _stockObjClave(marca, nombre);
+    var comparacion = _mayoCompararProveedores_(producto, proveedores, config);
+    comparacion = _mayoAplicarProveedorManual_(comparacion, proveedoresManuales[clave], producto);
+    var recomendado = comparacion.recomendado;
     var costo = recomendado ? recomendado.costo : 0, costoPuesto = recomendado ? recomendado.puesto : 0;
     var fuente = recomendado ? recomendado.fuente : '', proveedorNombre = recomendado ? recomendado.producto : '';
-    var maximo = 0, base = 0, estado = recomendado ? 'AUTOMÁTICO' : 'REVISAR';
-    if (estado === 'AUTOMÁTICO' && costoPuesto > 0) {
+    var maximo = 0, base = 0, estado = recomendado ? (recomendado.manual ? 'MANUAL' : 'AUTOMÁTICO') : 'REVISAR';
+    if ((estado === 'AUTOMÁTICO' || estado === 'MANUAL') && costoPuesto > 0) {
       maximo = Math.max(0, Math.min(35, Math.floor((1 - (costoPuesto / (1 - MAYO_MARGEN_BRUTO_MINIMO)) / venta) * 100)));
       base = Math.min(15, maximo);
       if (maximo < 5) { base = 0; estado = 'SIN MARGEN'; sinMargen++; }
@@ -740,7 +821,7 @@ function actualizarPreciosMayoristasMaxup() {
       proveedor:proveedorNombre, proveedorMarca:recomendado ? recomendado.marca : '',
       fuente:fuente, score:recomendado ? recomendado.score : 0, estado:estado, base:base, maximo:maximo,
       comparacion:comparacion };
-    if (estado === 'AUTOMÁTICO') hojaSup.getRange(i + 1, colBase, 1, 2).setValues([[base, maximo]]);
+    if (estado === 'AUTOMÁTICO' || estado === 'MANUAL') hojaSup.getRange(i + 1, colBase, 1, 2).setValues([[base, maximo]]);
     else if (estado === 'SIN MARGEN') hojaSup.getRange(i + 1, colBase, 1, 2).setValues([[0, 0]]);
   }
 
@@ -798,13 +879,14 @@ function actualizarPreciosMayoristasMaxup() {
     hojaObj.getRange(7, 35, comparativas.length, 2).setNumberFormat('$#,##0');
     hojaObj.getRange(7, 39, comparativas.length, 1).setNumberFormat('dd/MM/yyyy HH:mm');
   }
+  var faltantes = _mayoActualizarFaltantes_(config, filasObj, resultados, proveedoresManuales);
   [150,320,120,150,95,115,125,125,110,135,140].forEach(function(ancho, idx){ hojaObj.setColumnWidth(16+idx, ancho); });
   [115,125,115,125,115,125,145,85,130,130,170,270,145].forEach(function(ancho, idx){ hojaObj.setColumnWidth(27+idx, ancho); });
   hojaObj.getRange(7, 33, Math.max(1, comparativas.length), 1).setBackground('#E8F4FD').setFontWeight('bold');
   SpreadsheetApp.flush();
-  ss.toast('Comparativa lista: ' + proveedores.length + ' precios leídos y ' + aplicados + ' precios mayoristas seguros.', 'MAXUP', 10);
+  ss.toast('Comparativa lista: ' + proveedores.length + ' precios leídos; ' + faltantes + ' productos necesitan proveedor.', 'MAXUP', 10);
   return { ok:true, proveedores:proveedores.length, aplicados:aplicados, sinMargen:sinMargen, revisar:revisar,
-    minimo:MAYO_MINIMO_PEDIDO, margenMinimo:MAYO_MARGEN_BRUTO_MINIMO, reposicion:resumen };
+    minimo:MAYO_MINIMO_PEDIDO, margenMinimo:MAYO_MARGEN_BRUTO_MINIMO, reposicion:resumen, faltantes:faltantes };
 }
 
 function _mayoResumenTelegram_(resultado) {

@@ -23,3 +23,21 @@ test('Max reconoce la consulta general enviada desde la tienda', () => {
   assert.doesNotMatch(result.respuesta, /No encontre stock/i);
 });
 
+test('Max deriva a los dos WhatsApp de atención humana', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'Api.gs'), 'utf8');
+  const constants = source.match(/var WA_ATENCION_HUMANA_1[\s\S]*?var WA_ATENCION_HUMANA_2[^;]+;/);
+  const block = source.match(/function _waDerivarHumano[\s\S]*?(?=function _enviarWhatsAppTexto\()/);
+  assert.ok(constants && block, 'No se encontró la derivación humana');
+  const run = new Function(`
+    function _waGuardarEstado() {}
+    function _notificarTelegram() { return false; }
+    ${constants[0]}
+    ${block[0]}
+    return _waDerivarHumano('5491112345678', 'prueba');
+  `);
+  const respuesta = run();
+  assert.match(respuesta, /wa\.me\/5491168461457/);
+  assert.match(respuesta, /wa\.me\/5493875104606/);
+  assert.match(respuesta, /Toca el enlace/);
+});
+

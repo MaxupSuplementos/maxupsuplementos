@@ -119,7 +119,11 @@ assert(app.includes("const WA_DEFAULT = '5493876233406'"), 'La tienda debe envia
 assert(index.includes('Quiero%20asesoramiento%20general%20sobre%20los%20productos%20y%20precios'), 'El botón de WhatsApp debe enviar una intención general clara');
 assert(!app.includes('5491168461457'), 'La tienda no debe enviar clientes al numero personal');
 assert(!index.includes('5491168461457'), 'La portada no debe publicar el numero personal');
-assert(!api.includes("WA_TELEFONO_HUMANO = '5491168461457'"), 'El asistente no debe revelar el numero personal al derivar');
+assert(api.includes("WA_ATENCION_HUMANA_1 = '5491168461457'"), 'La derivacion debe incluir el WhatsApp de atencion 1');
+assert(api.includes("WA_ATENCION_HUMANA_2 = '5493875104606'"), 'La derivacion debe incluir el WhatsApp de atencion 2');
+assert(api.includes("https://wa.me/' + WA_ATENCION_HUMANA_1"), 'Max debe entregar enlaces directos al pedir una persona');
+assert(stockObjetivo.includes('_mayoActualizarFaltantes_'), 'La comparativa debe listar los productos por reponer sin proveedor');
+assert(stockObjetivo.includes('Proveedor habitual'), 'La hoja de proveedores debe permitir completar proveedores manuales');
 assert(!/EA[A-Za-z0-9_-]{80,}/.test(api), 'No debe haber tokens de acceso de Meta en el codigo');
 assert(app.includes('function getInitialFlavor(p)'), 'Las variantes deben elegir primero una opcion con stock');
 assert(app.includes('Number(f.stock) > 0'), 'Una tarjeta solo debe mostrarse agotada si todas sus variantes lo estan');
