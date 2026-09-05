@@ -73,6 +73,11 @@ assert(caja.includes('guardarVentaPendienteCajaMaxup'), 'La caja debe reservar s
 assert(caja.includes('cancelarVentaPendienteCajaMaxup'), 'Cancelar una pendiente debe devolver el stock');
 assert(caja.includes('cerrarJornadaCajaMaxup'), 'El cierre debe registrar las ventas pendientes en bloque');
 assert(cajaHtml.includes('⚡ GUARDAR VENTA RÁPIDA'), 'Guardar rápido debe ser la acción principal de la caja');
+assert(cajaHtml.includes("e.key==='ArrowDown'"), 'El buscador de productos debe navegar hacia abajo con el teclado');
+assert(cajaHtml.includes("e.key==='ArrowUp'"), 'El buscador de productos debe navegar hacia arriba con el teclado');
+assert(cajaHtml.includes("if(e.key==='Enter')"), 'Enter debe agregar el producto resaltado al carrito');
+assert(cajaHtml.includes("(e.ctrlKey||e.metaKey)&&e.key==='Enter'"), 'Ctrl + Enter debe guardar la venta rápida');
+assert(cajaHtml.includes("scrollIntoView({block:'nearest'})"), 'El producto resaltado debe permanecer visible al recorrer resultados');
 assert(cajaHtml.includes('✏️ Editar'), 'Las ventas pendientes deben poder corregirse desde la caja');
 assert(stockObjetivo.includes('actualizarPreciosMayoristasMaxup'), 'Debe poder actualizar costos y precios mayoristas desde proveedores');
 const pricingHelpers = new Function(stockObjetivo + '; return {_mayoDiagnosticoPrecioMinorista_, _mayoEnlaceMercadoLibre_};')();
