@@ -242,7 +242,7 @@ function crearControlStockObjetivo() {
 function agregarMenuStockObjetivo() {
   SpreadsheetApp.getUi().createMenu('📦 STOCK OBJETIVO')
     .addItem('Actualizar lista y análisis', 'crearControlStockObjetivo')
-    .addItem('Actualizar proveedores y comparativa', 'actualizarPreciosMayoristasMaxup')
+    .addItem('Actualizar proveedores, precios y comparativa', 'actualizarPreciosMayoristasMaxup')
     .addItem('Instalar revisión semanal', 'instalarActualizacionSemanalProveedores')
     .addItem('Abrir configuración de proveedores', 'abrirConfiguracionProveedoresMaxup')
     .addItem('Ir al panel INICIO', 'abrirInicioMaxup')
@@ -259,11 +259,55 @@ var MAYO_PROVEEDOR_EXCEL_ID = '1Q7jXYhOTAfV5U0oxaiBXc062HAo5QK0N';
 var MAYO_PROVEEDOR_EXCEL_GID = '1921344810';
 var MAYO_MINIMO_PEDIDO = 400000;
 var MAYO_MARGEN_BRUTO_MINIMO = 0.20;
+var MAYO_MARKUP_MINORISTA_OBJETIVO = 0.30;
+var MAYO_MARGEN_BRUTO_MINORISTA_MINIMO = 0.20;
 var MAYO_HOJA_CONFIG = 'PROVEEDORES';
 var MAYO_HOJA_SNAPSHOT = '_PRECIOS_PROVEEDORES';
 var MAYO_AG_URL = 'https://www.agsuplementos.com/shop/category/suplementos-1';
 var MAYO_COLO_API = 'https://suplementoscolomayorista.com.ar/wp-json/wc/store/v1/products';
 var MAYO_PREFERENCIA_AG = 0.03;
+
+function _mayoRedondearPrecioMinorista_(valor) {
+  var numero = Math.max(0, Number(valor) || 0);
+  if (!numero) return 0;
+  var paso = numero < 20000 ? 500 : 1000;
+  return Math.ceil(numero / paso) * paso;
+}
+
+function _mayoDiagnosticoPrecioMinorista_(precioActual, costoPuesto) {
+  var actual = Math.max(0, Number(precioActual) || 0);
+  var costo = Math.max(0, Number(costoPuesto) || 0);
+  if (!costo) return {
+    sugerido: '', minimo: '', estado: 'SIN COSTO', color: '#E7E6E6',
+    nota: 'Todavía no hay un costo de reposición confiable para calcular este precio.'
+  };
+
+  var sugerido = _mayoRedondearPrecioMinorista_(costo * (1 + MAYO_MARKUP_MINORISTA_OBJETIVO));
+  var minimo = _mayoRedondearPrecioMinorista_(costo / (1 - MAYO_MARGEN_BRUTO_MINORISTA_MINIMO));
+  var estado = '', color = '#FFFFFF';
+  if (Math.abs(actual - sugerido) < 1) {
+    estado = 'SINCRONIZADO';
+  } else if (actual < minimo) {
+    estado = 'RIESGO DE REPOSICIÓN'; color = '#F4CCCC';
+  } else if (actual < sugerido) {
+    estado = 'REVISAR'; color = '#FFF2CC';
+  } else {
+    estado = 'PRECIO PROTEGIDO'; color = '#D9EAD3';
+  }
+  var margen = actual > 0 ? (actual - costo) / actual : 0;
+  return {
+    sugerido: sugerido, minimo: minimo, estado: estado, color: color,
+    nota: estado + '\nCosto puesto local: $' + Math.round(costo).toLocaleString('es-AR') +
+      '\nPrecio mínimo para conservar 20% de margen bruto: $' + Math.round(minimo).toLocaleString('es-AR') +
+      '\nPrecio sugerido: costo + 30%, redondeado: $' + Math.round(sugerido).toLocaleString('es-AR') +
+      '\nMargen bruto del precio actual: ' + Math.round(margen * 1000) / 10 + '%'
+  };
+}
+
+function _mayoEnlaceMercadoLibre_(marca, producto) {
+  var consulta = [marca, producto].filter(function(x){ return String(x || '').trim(); }).join(' ');
+  return consulta ? 'https://listado.mercadolibre.com.ar/?q=' + encodeURIComponent(consulta) : '';
+}
 
 function _mayoFuenteClave_(fuente) {
   var n = _mayoNorm_(fuente);
@@ -818,8 +862,10 @@ function actualizarPreciosMayoristasMaxup() {
   var proveedoresManuales = _mayoLeerProveedoresManuales_(config.hoja);
   var hojaSup = ss.getSheetByName('SUPLEMENTOS');
   if (!hojaSup) throw new Error('No se encontró SUPLEMENTOS.');
+  if (hojaSup.getMaxColumns() < 15) hojaSup.insertColumnsAfter(hojaSup.getMaxColumns(), 15 - hojaSup.getMaxColumns());
   var hojaObj = ss.getSheetByName('STOCK_OBJETIVO');
   if (!hojaObj || hojaObj.getLastRow() < 7) { crearControlStockObjetivo(); hojaObj = ss.getSheetByName('STOCK_OBJETIVO'); }
+  var costosCargados = _stockObjLeerConfiguracion(hojaObj);
   if (hojaObj.getMaxColumns() < 39) hojaObj.insertColumnsAfter(hojaObj.getMaxColumns(), 39 - hojaObj.getMaxColumns());
 
   var datos = hojaSup.getDataRange().getValues(), marca = '', marcasMapa = {};
@@ -830,11 +876,25 @@ function actualizarPreciosMayoristasMaxup() {
   var proveedores = _mayoPrepararProveedores_(Object.keys(marcasMapa), config);
   if (!proveedores.length) throw new Error('No se encontraron precios de proveedores.');
   marca = '';
-  var resultados = {}, aplicados = 0, revisar = 0, sinMargen = 0;
-  var colBase = 11, colMax = 12;
+  var resultados = {}, aplicados = 0, revisar = 0, sinMargen = 0, preciosSugeridos = 0;
+  var colBase = 11, colMax = 12, colPrecioSugerido = 14, colMercadoLibre = 15;
   hojaSup.getRange(2, colBase).setValue('Desc Mayorista Base %').setNote('Calculado para proteger al menos 20% de margen bruto.');
   hojaSup.getRange(2, colMax).setValue('Desc Mayorista Máx %').setNote('Tope seguro para los descuentos por volumen.');
+  hojaSup.getRange(2, colPrecioSugerido).setValue('Precio minorista sugerido').setNote(
+    'Se calcula con el costo puesto local del proveedor recomendado, más 30%, y se redondea a un precio comercial.\n' +
+    'Blanco: coincide con Precio unitario. Rojo: no conserva 20% de margen bruto. Amarillo: cubre el mínimo pero está por debajo del objetivo. Verde: el precio actual supera el objetivo. Gris: falta costo confiable.'
+  );
+  hojaSup.getRange(2, colMercadoLibre).setValue('Comparar Mercado Libre').setNote(
+    'Enlace de búsqueda para revisar manualmente competidores del mismo producto. No modifica el precio sugerido porque una coincidencia incorrecta podría distorsionarlo.'
+  );
   if (datos.length > 2) hojaSup.getRange(3, colBase, datos.length - 2, 2).clearContent();
+  var salidaMinorista = [], notasMinorista = [], fondosMinorista = [], enlacesMercadoLibre = [];
+  for (var pi = 2; pi < datos.length; pi++) {
+    salidaMinorista.push(['']);
+    notasMinorista.push(['']);
+    fondosMinorista.push(['#FFFFFF']);
+    enlacesMercadoLibre.push([SpreadsheetApp.newRichTextValue().setText('').build()]);
+  }
 
   for (var i = 2; i < datos.length; i++) {
     var nombre = String(datos[i][0] || '').trim(), venta = Number(datos[i][1]) || 0;
@@ -857,9 +917,31 @@ function actualizarPreciosMayoristasMaxup() {
       proveedor:proveedorNombre, proveedorMarca:recomendado ? recomendado.marca : '',
       fuente:fuente, score:recomendado ? recomendado.score : 0, estado:estado, base:base, maximo:maximo,
       comparacion:comparacion };
+    var costoManual = costosCargados[clave] ? Number(costosCargados[clave].costo) || 0 : 0;
+    var costoParaMinorista = costoPuesto || costoManual;
+    var diagnosticoMinorista = _mayoDiagnosticoPrecioMinorista_(venta, costoParaMinorista);
+    salidaMinorista[i - 2][0] = diagnosticoMinorista.sugerido;
+    notasMinorista[i - 2][0] = diagnosticoMinorista.nota +
+      (fuente ? '\nProveedor usado: ' + fuente + (proveedorNombre ? ' — ' + proveedorNombre : '') :
+        (costoManual ? '\nCosto usado: costo de compra cargado en STOCK_OBJETIVO.' : ''));
+    fondosMinorista[i - 2][0] = diagnosticoMinorista.color;
+    var enlaceMl = _mayoEnlaceMercadoLibre_(marca, nombre);
+    if (enlaceMl) enlacesMercadoLibre[i - 2][0] = SpreadsheetApp.newRichTextValue()
+      .setText('Ver precios similares').setLinkUrl(enlaceMl).build();
+    if (diagnosticoMinorista.sugerido) preciosSugeridos++;
     if (estado === 'AUTOMÁTICO' || estado === 'MANUAL') hojaSup.getRange(i + 1, colBase, 1, 2).setValues([[base, maximo]]);
     else if (estado === 'SIN MARGEN') hojaSup.getRange(i + 1, colBase, 1, 2).setValues([[0, 0]]);
   }
+
+  if (salidaMinorista.length) {
+    hojaSup.getRange(3, colPrecioSugerido, salidaMinorista.length, 1)
+      .setValues(salidaMinorista).setNotes(notasMinorista).setBackgrounds(fondosMinorista).setNumberFormat('$#,##0');
+    hojaSup.getRange(3, colMercadoLibre, enlacesMercadoLibre.length, 1).setRichTextValues(enlacesMercadoLibre);
+  }
+  hojaSup.getRange(2, colPrecioSugerido, 1, 2)
+    .setBackground('#0B5394').setFontColor('#FFFFFF').setFontWeight('bold').setWrap(true);
+  hojaSup.setColumnWidth(colPrecioSugerido, 185);
+  hojaSup.setColumnWidth(colMercadoLibre, 175);
 
   var headers = [['Proveedor sugerido','Producto del proveedor','Costo proveedor actual','Fuente','Coincidencia',
     'Desc mayorista base %','Desc mayorista máximo %','Precio mayorista base','Margen bruto base','Estado mayorista','Actualizado']];
@@ -922,6 +1004,7 @@ function actualizarPreciosMayoristasMaxup() {
   SpreadsheetApp.flush();
   ss.toast('Comparativa lista: ' + proveedores.length + ' precios leídos; ' + auditoria.sinProveedor + ' productos todavía necesitan proveedor.', 'MAXUP', 10);
   return { ok:true, proveedores:proveedores.length, aplicados:aplicados, sinMargen:sinMargen, revisar:revisar,
+    preciosSugeridos:preciosSugeridos, markupMinorista:MAYO_MARKUP_MINORISTA_OBJETIVO,
     minimo:MAYO_MINIMO_PEDIDO, margenMinimo:MAYO_MARGEN_BRUTO_MINIMO, reposicion:resumen,
     faltantes:auditoria.sinProveedor, revisarProveedores:auditoria.revisar };
 }

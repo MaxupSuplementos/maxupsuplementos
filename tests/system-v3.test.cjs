@@ -75,6 +75,11 @@ assert(caja.includes('cerrarJornadaCajaMaxup'), 'El cierre debe registrar las ve
 assert(cajaHtml.includes('⚡ GUARDAR VENTA RÁPIDA'), 'Guardar rápido debe ser la acción principal de la caja');
 assert(cajaHtml.includes('✏️ Editar'), 'Las ventas pendientes deben poder corregirse desde la caja');
 assert(stockObjetivo.includes('actualizarPreciosMayoristasMaxup'), 'Debe poder actualizar costos y precios mayoristas desde proveedores');
+const pricingHelpers = new Function(stockObjetivo + '; return {_mayoDiagnosticoPrecioMinorista_, _mayoEnlaceMercadoLibre_};')();
+assert.strictEqual(pricingHelpers._mayoDiagnosticoPrecioMinorista_(65000, 50000).estado, 'SINCRONIZADO', 'Costo 50.000 y venta 65.000 deben quedar sincronizados');
+assert.strictEqual(pricingHelpers._mayoDiagnosticoPrecioMinorista_(58000, 50000).estado, 'RIESGO DE REPOSICIÓN', 'Un precio con margen insuficiente debe alertarse');
+assert.strictEqual(pricingHelpers._mayoDiagnosticoPrecioMinorista_(64000, 50000).estado, 'REVISAR', 'Un precio seguro pero inferior al objetivo debe quedar para revisar');
+assert(pricingHelpers._mayoEnlaceMercadoLibre_('Star Nutrition', 'Creatina 300 g').includes('Star%20Nutrition%20Creatina%20300%20g'), 'Cada producto debe tener búsqueda directa en Mercado Libre');
 assert(stockObjetivo.includes('actualizarComparativaProveedoresSemanal'), 'Debe existir una comparativa semanal de proveedores');
 assert(stockObjetivo.includes("onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(8)"), 'La comparativa debe actualizarse los lunes por la mañana');
 assert(stockObjetivo.includes("fuente:'AG SUPLEMENTOS'"), 'AG debe formar parte de la comparativa');
