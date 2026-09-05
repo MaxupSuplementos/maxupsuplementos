@@ -1,37 +1,37 @@
 {
-  "fecha": "2026-09-04",
-  "generado": "2026-09-04T16:03:44.492Z",
+  "fecha": "2026-09-05",
+  "generado": "2026-09-05T14:53:36.038Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
-      "titulo": "Creatina 1 Kg Pote",
+      "titulo": "Vegetal Protein Isolate 2Lb - Vainilla",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Creatina 1 Kg Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Vegetal Protein Isolate 2Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
-      "titulo": "TNT Dynamite 240g",
+      "titulo": "Star Simple",
       "file": "generated/daily/current/02.jpg",
-      "caption": "TNT Dynamite 240g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Star Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
-      "titulo": "Whey Protein TrueMade 2,05 Lb",
+      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Whey Protein TrueMade 2,05 Lb\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
-      "titulo": "Cafeina 200mg 30 Caps",
+      "titulo": "Kit 5 bandas circulares tipo cinta latex c/funda",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Cafeina 200mg 30 Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Kit 5 bandas circulares tipo cinta latex c/funda\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
-      "titulo": "Lipo Gold Elite 60 Caps",
+      "titulo": "Cla 1000 90cap",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Lipo Gold Elite 60 Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Cla 1000 90cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
