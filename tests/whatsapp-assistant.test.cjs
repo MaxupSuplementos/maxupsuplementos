@@ -58,6 +58,9 @@ test('Max extrae óxido nítrico de una pregunta completa y encuentra el product
     function _waCategoriaProducto(p) { return p.categoria; }
     function _waDetalleProducto(p) { return 'ENCONTRADO: ' + p.nombre; }
     function _waGuardarResultadosProductos() {}
+    function _waGuardarProductoSeleccionado_() {}
+    function _waDescripcionCategoria_() { return 'INFORMACION DE LA CATEGORIA'; }
+    function _waDescripcionCortaProducto_() { return ''; }
     function _waMoneda(n) { return '$' + n; }
     function getCatalogo() {
       return { productos: [{ nombre:'Oxido Nitrico 180 Caps', marca:'XTRENGHT', categoria:'aminoacido', stock:3, precio_venta:18000 }] };
@@ -76,5 +79,42 @@ test('Max extrae óxido nítrico de una pregunta completa y encuentra el product
   assert.match(result.respuesta, /ENCONTRADO: Oxido Nitrico 180 Caps/);
   assert.match(result.ayuda, /palabra clave/);
   assert.doesNotMatch(result.ayuda, /No encontre stock para/i);
+});
+
+test('Max entiende quemador de grasa y muestra reseña, precios, cuotas y stock', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'Api.gs'), 'utf8');
+  function take(start, end) {
+    const match = source.match(new RegExp('function ' + start + '[\\s\\S]*?(?=function ' + end + '\\()'));
+    assert.ok(match, 'No se encontró ' + start);
+    return match[0];
+  }
+  const run = new Function(`
+    ${take('_waNormalizar', '_waMenu')}
+    ${take('_waExtraerConsultaProducto_', '_waAyudaBusquedaProducto_')}
+    ${take('_waAyudaBusquedaProducto_', '_waClaveEstado')}
+    ${take('_waCategoriaConsulta', '_waCategoriaProducto')}
+    ${take('_waTokenGenericoCategoria', '_waDescripcionCategoria_')}
+    ${take('_waDescripcionCategoria_', '_waBuscarProductos')}
+    ${take('_waBuscarProductos', '_waMoneda')}
+    function _waCategoriaProducto(p) { return p.categoria; }
+    function _waGuardarResultadosProductos() {}
+    function _waGuardarProductoSeleccionado_() {}
+    function _waDetalleProducto(p) { return p.nombre; }
+    function _waMoneda(n) { return '$' + n; }
+    function getCatalogo() { return {productos:[
+      {nombre:'Thermo Energy',marca:'STAR',categoria:'quemador',stock:3,precio_venta:20000,precio_lista:24000,descripcion:'Fórmula termogénica para acompañar una etapa de definición.'},
+      {nombre:'Lipo Black',marca:'NUTREMAX',categoria:'quemador',stock:2,precio_venta:22000,precio_lista:27000,descripcion:'Combina ingredientes orientados a energía y actividad física.'},
+      {nombre:'Whey Protein',marca:'ENA',categoria:'proteina',stock:5,precio_venta:30000,descripcion:'Proteína de suero.'}
+    ]}; }
+    return _waBuscarProductos('5490000000000','precio del quemador de grasa',false);
+  `);
+  const respuesta = run();
+  assert.match(respuesta, /Sobre los quemadores de grasa/);
+  assert.match(respuesta, /Thermo Energy/);
+  assert.match(respuesta, /Fórmula termogénica/);
+  assert.match(respuesta, /3 cuotas de/);
+  assert.match(respuesta, /Stock: 3 unidades/);
+  assert.match(respuesta, /asesor/);
+  assert.doesNotMatch(respuesta, /Whey Protein/);
 });
 

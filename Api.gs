@@ -4395,7 +4395,7 @@ function _waMenu() {
     + '*2* - Consultar el estado de un pedido\n'
     + '*3* - Medios de pago y 3 cuotas\n'
     + '*4* - Envios y retiro\n'
-    + '*5* - Hablar con una persona\n\n'
+    + '*5* - Hablar con un asesor de MAXUP\n\n'
     + 'Responde con un numero. En cualquier momento escribi *menu* para volver a este menu principal.';
 }
 
@@ -4433,7 +4433,7 @@ function _waAyudaBusquedaProducto_() {
     + '• *magnesio citrato*\n'
     + '• *proteína ENA*\n\n'
     + 'También podés elegir una categoría: *proteínas*, *creatinas*, *aminoácidos*, *pre entrenos*, *vitaminas* o *accesorios*.\n'
-    + 'Escribí *menu* para volver al menú principal o *5* para hablar con una persona.';
+    + 'Escribí *menu* para volver al menú principal o *5* para hablar con un asesor.';
 }
 
 function _waClaveEstado(telefono) {
@@ -4460,6 +4460,7 @@ function _waGuardarEstado(telefono, paso) {
 function _waLimpiarEstado(telefono) {
   CacheService.getScriptCache().remove(_waClaveEstado(telefono));
   CacheService.getScriptCache().remove('WA_RESULTS_' + _hashSeguro(telefono));
+  CacheService.getScriptCache().remove('WA_SELECTED_' + _hashSeguro(telefono));
 }
 
 function _waGuardarResultadosProductos(telefono, coincidencias) {
@@ -4470,19 +4471,41 @@ function _waGuardarResultadosProductos(telefono, coincidencias) {
   CacheService.getScriptCache().put('WA_RESULTS_'+_hashSeguro(telefono),JSON.stringify(referencias),WA_TTL_ESTADO);
 }
 
+function _waGuardarProductoSeleccionado_(telefono, p) {
+  if (!p) return;
+  CacheService.getScriptCache().put('WA_SELECTED_' + _hashSeguro(telefono), JSON.stringify({
+    id:String(p.id||''), sku:String(p.sku||''), marca:String(p.marca||''), nombre:String(p.nombre||'')
+  }), WA_TTL_ESTADO);
+}
+
+function _waResolverReferenciaProducto_(ref) {
+  if (!ref) return null;
+  var productos=(getCatalogo().productos||[]);
+  for(var i=0;i<productos.length;i++){
+    var p=productos[i];
+    if(ref.sku && String(p.sku||'')===String(ref.sku)) return p;
+    if(ref.id && String(p.id||'')===String(ref.id)) return p;
+    if(_waNormalizar(p.marca)===_waNormalizar(ref.marca) && _waNormalizar(p.nombre)===_waNormalizar(ref.nombre)) return p;
+  }
+  return null;
+}
+
+function _waProductoSeleccionado_(telefono) {
+  try {
+    var raw=CacheService.getScriptCache().get('WA_SELECTED_'+_hashSeguro(telefono));
+    return raw?_waResolverReferenciaProducto_(JSON.parse(raw)):null;
+  } catch(e) { return null; }
+}
+
 function _waProductoElegido(telefono, numero) {
   try {
     var raw=CacheService.getScriptCache().get('WA_RESULTS_'+_hashSeguro(telefono));
     var refs=raw?JSON.parse(raw):[];
     var ref=refs[Number(numero)-1];
     if(!ref) return null;
-    var productos=(getCatalogo().productos||[]);
-    for(var i=0;i<productos.length;i++){
-      var p=productos[i];
-      if(ref.sku && String(p.sku||'')===ref.sku) return p;
-      if(ref.id && String(p.id||'')===ref.id) return p;
-      if(_waNormalizar(p.marca)===_waNormalizar(ref.marca) && _waNormalizar(p.nombre)===_waNormalizar(ref.nombre)) return p;
-    }
+    var elegido=_waResolverReferenciaProducto_(ref);
+    if(elegido) _waGuardarProductoSeleccionado_(telefono,elegido);
+    return elegido;
   } catch(e) { Logger.log('Asistente seleccion: '+e.message); }
   return null;
 }
@@ -4502,7 +4525,7 @@ function _waDetalleProducto(p) {
   salida.push('\n*Precio contado:* '+_waMoneda(contado));
   salida.push('*Crédito de 1 a 3 cuotas:* '+_waMoneda(lista)+(lista>0?' (3 x '+_waMoneda(Math.ceil(lista/3))+')':''));
   salida.push('*Stock disponible:* '+stock);
-  salida.push('\nSi querés comprarlo, decime *lo quiero*. Para dosis, contraindicaciones o una situación de salud te comunico con una persona.');
+  salida.push('\nSi querés comprarlo, decime *lo quiero*. Para dosis, contraindicaciones o una situación de salud te comunico con un asesor de MAXUP.');
   return salida.join('\n');
 }
 
@@ -4528,6 +4551,10 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
       + _waDerivarHumano(telefono, 'consulta de salud o dosificacion');
   }
 
+  if (/persona|humano|asesor|vendedor|atencion/.test(normal)) {
+    return _waDerivarHumano(telefono, 'solicitud de un asesor de MAXUP');
+  }
+
   if (estado.paso === 'HUMANO') return '';
 
   // El botón flotante de la web envía una consulta general. No hay que tratar
@@ -4542,11 +4569,18 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
   }
 
   if (estado.paso === 'PRODUCTO') {
+    if (/^(mas info|mas informacion|ampliar|detalle|detalles|descripcion|resena|que hace|para que sirve|beneficio|beneficios|precio|precios|stock|cuotas|cuanto sale)$/.test(normal)) {
+      var seleccionado=_waProductoSeleccionado_(telefono);
+      if(seleccionado) return _waDetalleProducto(seleccionado)
+        + '\n\nPodés decirme *lo quiero*, consultar otro producto o escribir *asesor* para hablar con el equipo de MAXUP.';
+      return 'Primero elegí uno de los productos de la lista enviando su número. También podés escribir otro nombre o *asesor*.';
+    }
     var opcionProducto=normal.match(/^\d{1,2}$/);
     if(opcionProducto){
       var elegido=_waProductoElegido(telefono,Number(opcionProducto[0]));
-      if(elegido) return _waDetalleProducto(elegido);
-      return 'Esa opción ya venció o no está disponible. Escribí nuevamente el producto que buscás.';
+      if(elegido) return _waDetalleProducto(elegido)
+        + '\n\nPodés preguntarme por sus *beneficios*, *precio* o *stock*. Para atención personalizada escribí *asesor*.';
+      return 'Esa opción ya venció o no está disponible. Escribí nuevamente el producto que buscás o *asesor*.';
     }
     _waGuardarEstado(telefono, 'PRODUCTO');
     return _waBuscarProductos(telefono,texto,false);
@@ -4578,7 +4612,7 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
   if (normal === '4' || /envio|entrega|retir|direccion|ubicacion|correo/.test(normal)) {
     return _waRespuestaEntregas();
   }
-  if (normal === '5' || /persona|humano|asesor|vendedor|atencion/.test(normal)) {
+  if (normal === '5') {
     return _waDerivarHumano(telefono, 'solicitud del cliente');
   }
 
@@ -4605,7 +4639,7 @@ function _waCategoriaConsulta(normal) {
   if (/\b(aminoacido|aminoacidos|amino|bcaa|eaa|glutamina|glutamine|arginina|citrulina|agmatina)\b/.test(normal)) return 'aminoacido';
   if (/\b(preworkout|preentreno|pre-entreno|vasodilatador|vasodilatadores|bombeo|pump|oxido|nitrico)\b|pre entreno|nitric oxide/.test(normal)) return 'preworkout';
   if (/\b(colageno|colagenos|collagen)\b/.test(normal)) return 'colageno';
-  if (/\b(quemador|quemadores|termogenico|termogenicos)\b/.test(normal)) return 'quemador';
+  if (/\b(quemador|quemadores|termogenico|termogenicos|lipo|adelgazar)\b|fat burner|quemar grasa|bajar de peso/.test(normal)) return 'quemador';
   if (/\b(vitamina|vitaminas|mineral|minerales)\b/.test(normal)) return 'vitamin';
   if (/\b(hidratacion|isotonico|isotonicos|electrolito|electrolitos)\b/.test(normal)) return 'hidratacion';
   if (/\b(barra|barras|snack|snacks)\b/.test(normal)) return 'barra';
@@ -4642,7 +4676,7 @@ function _waTokenGenericoCategoria(token, categoria) {
     aminoacido:{aminoacido:1,aminoacidos:1,amino:1},
     preworkout:{preworkout:1,preentreno:1,vasodilatador:1,vasodilatadores:1,bombeo:1,pump:1},
     colageno:{colageno:1,colagenos:1,collagen:1},
-    quemador:{quemador:1,quemadores:1,termogenico:1,termogenicos:1},
+    quemador:{quemador:1,quemadores:1,termogenico:1,termogenicos:1,grasa:1,grasas:1,fat:1,burner:1,burners:1,lipo:1,quemar:1,bajar:1,peso:1,adelgazar:1},
     vitamin:{vitamina:1,vitaminas:1,mineral:1,minerales:1},
     hidratacion:{hidratacion:1,isotonico:1,isotonicos:1,electrolito:1,electrolitos:1},
     barra:{barra:1,barras:1,snack:1,snacks:1},
@@ -4650,6 +4684,36 @@ function _waTokenGenericoCategoria(token, categoria) {
     accesorio:{accesorio:1,accesorios:1}
   };
   return !!(genericos[categoria] && genericos[categoria][token]);
+}
+
+function _waDescripcionCategoria_(categoria, normal) {
+  if (/\boxido\b|\bnitrico\b|nitric oxide/.test(normal)) {
+    return '*Sobre el óxido nítrico:* estos suplementos suelen aportar precursores como arginina o citrulina. Están orientados a favorecer el flujo sanguíneo, la congestión muscular y el rendimiento durante el entrenamiento.';
+  }
+  var textos = {
+    proteina:'*Sobre las proteínas:* ayudan a completar el aporte diario de proteína y acompañan la recuperación y el mantenimiento de masa muscular.',
+    creatina:'*Sobre las creatinas:* acompañan la fuerza, la potencia y el rendimiento en esfuerzos intensos y repetidos.',
+    gainer:'*Sobre los ganadores de peso:* aportan calorías, carbohidratos y proteínas para facilitar una alimentación con superávit calórico.',
+    aminoacido:'*Sobre los aminoácidos:* complementan la nutrición deportiva y, según su fórmula, pueden acompañar recuperación, resistencia o rendimiento.',
+    preworkout:'*Sobre los pre entrenos:* están formulados para acompañar energía, enfoque, resistencia o congestión antes de entrenar, según sus ingredientes.',
+    colageno:'*Sobre los colágenos:* aportan péptidos o nutrientes orientados al cuidado de articulaciones, piel y tejidos conectivos, según la fórmula.',
+    quemador:'*Sobre los quemadores de grasa:* son fórmulas termogénicas que suelen aportar estimulantes y otros ingredientes para acompañar energía, actividad física y una etapa de definición.',
+    vitamin:'*Sobre vitaminas y minerales:* ayudan a complementar micronutrientes específicos de la alimentación, según la composición de cada producto.',
+    hidratacion:'*Sobre hidratación:* estas opciones aportan líquidos, electrolitos o carbohidratos para acompañar la hidratación y el rendimiento.',
+    barra:'*Sobre barras y snacks:* son opciones prácticas para sumar nutrientes y energía entre comidas o alrededor del entrenamiento.',
+    shaker:'*Sobre shakers y botellas:* facilitan preparar, mezclar y transportar suplementos o bebidas.',
+    accesorio:'*Sobre los accesorios:* complementan el entrenamiento, el transporte o el uso cotidiano según el producto.'
+  };
+  return textos[categoria] || '*Opciones disponibles:* encontré estos productos relacionados con tu consulta.';
+}
+
+function _waDescripcionCortaProducto_(p) {
+  var descripcion=String(p.descripcion_publicacion||p.descripcion||'').replace(/\s+/g,' ').trim();
+  if(!descripcion && Array.isArray(p.beneficios_publicacion) && p.beneficios_publicacion.length) descripcion=String(p.beneficios_publicacion[0]||'').trim();
+  if(!descripcion) return '';
+  var corte=descripcion.match(/^.*?[.!?](?:\s|$)/);
+  var primera=corte?corte[0].trim():descripcion;
+  return primera.length>170?primera.slice(0,167).replace(/\s+\S*$/,'')+'...':primera;
 }
 
 function _waBuscarProductos(telefono, consulta, silencioso) {
@@ -4693,22 +4757,33 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
     return silencioso?'':_waAyudaBusquedaProducto_();
   }
 
-  if(coincidencias.length===1) return _waDetalleProducto(coincidencias[0].p);
+  if(coincidencias.length===1) {
+    _waGuardarProductoSeleccionado_(telefono,coincidencias[0].p);
+    return _waDescripcionCategoria_(categoriaConsulta,normal)+'\n\n'+_waDetalleProducto(coincidencias[0].p)
+      +'\n\nPodés preguntarme por sus *beneficios*, *precio* o *stock*. Para atención personalizada escribí *asesor*.';
+  }
   var totalCoincidencias = coincidencias.length;
-  var visibles = coincidencias.slice(0,30);
+  var introduccion=_waDescripcionCategoria_(categoriaConsulta,normal);
+  var bloques=[],visibles=[],largo=introduccion.length+120;
+  for(var vi=0;vi<coincidencias.length && vi<30;vi++){
+    var prod=coincidencias[vi].p;
+    var contado=Number(prod.precio_venta||0),lista=Number(prod.precio_lista||contado);
+    var breve=_waDescripcionCortaProducto_(prod);
+    var bloque='\n*'+(vi+1)+'. '+String(prod.marca||'')+' - '+String(prod.nombre||'')+'*'
+      +(breve?'\n'+breve:'')
+      +'\nContado: '+_waMoneda(contado)
+      +(lista>0?' · 3 cuotas de '+_waMoneda(Math.ceil(lista/3)):'')
+      +'\nStock: '+Number(prod.stock||0)+' unidad'+(Number(prod.stock||0)===1?'':'es');
+    if(visibles.length && largo+bloque.length>3400) break;
+    visibles.push(coincidencias[vi]);
+    bloques.push(bloque);
+    largo+=bloque.length;
+  }
   _waGuardarResultadosProductos(telefono,visibles);
 
-  var salida = ['Tengo *' + totalCoincidencias + '* opciones con stock' + (categoriaConsulta ? ' de ' + categoriaConsulta : '') + ':'];
-  visibles.forEach(function(item, i) {
-    var p = item.p;
-    var contado = Number(p.precio_venta || 0);
-    var linea = '\n*' + (i + 1) + '. ' + String(p.marca || '') + ' - ' + String(p.nombre || '') + '*'
-      + '\nContado: ' + _waMoneda(contado)
-      + ' · Stock: ' + Number(p.stock || 0);
-    salida.push(linea);
-  });
+  var salida = [introduccion,'\n*Tengo '+totalCoincidencias+' opciones con stock:*'].concat(bloques);
   if(totalCoincidencias>visibles.length) salida.push('\nHay ' + (totalCoincidencias-visibles.length) + ' opciones más. Escribí una marca o sabor para afinar la búsqueda.');
-  salida.push('\nRespondé con el número para ver qué es, sus beneficios, precio completo y cuotas. También podés escribir otro producto o enviar *menu*.');
+  salida.push('\nRespondé con el número para ampliar sus beneficios, precio y stock. También podés escribir otro producto, *asesor* para atención personalizada o *menu* para volver.');
   return salida.join('\n');
 }
 
@@ -4758,9 +4833,12 @@ function _waDerivarHumano(telefono, motivo) {
 }
 
 function probarBusquedaOxidoNitricoMax() {
-  var resultado = pruebaAsistenteWhatsApp('Hola Max, ¿me das información sobre óxido nítrico?');
-  Logger.log(JSON.stringify(resultado));
-  return resultado;
+  var resultados = [
+    pruebaAsistenteWhatsApp('Hola Max, ¿me das información sobre óxido nítrico?'),
+    pruebaAsistenteWhatsApp('precio del quemador de grasa')
+  ];
+  Logger.log(JSON.stringify(resultados));
+  return resultados;
 }
 
 function _enviarWhatsAppTexto(telefono, texto) {
