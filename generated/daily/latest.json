@@ -1,37 +1,37 @@
 {
-  "fecha": "2026-09-05",
-  "generado": "2026-09-05T14:53:36.038Z",
+  "fecha": "2026-09-06",
+  "generado": "2026-09-06T15:13:43.388Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
-      "titulo": "Vegetal Protein Isolate 2Lb - Vainilla",
+      "titulo": "Shaker Maxup Simple Blanco",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Vegetal Protein Isolate 2Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Shaker Maxup Simple Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
-      "titulo": "Star Simple",
+      "titulo": "L-Carnitina 1500 x60Caps",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Star Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L-Carnitina 1500 x60Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
-      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
+      "titulo": "Rueda de Abdominales doble beatboss",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Rueda de Abdominales doble beatboss\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
-      "titulo": "Kit 5 bandas circulares tipo cinta latex c/funda",
+      "titulo": "Citrato Magnesio X 500 Grs - Frutos Rojos",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Kit 5 bandas circulares tipo cinta latex c/funda\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato Magnesio X 500 Grs - Frutos Rojos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
-      "titulo": "Cla 1000 90cap",
+      "titulo": "Iso Gold Protein 2Lb - Vainilla",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Cla 1000 90cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Iso Gold Protein 2Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
