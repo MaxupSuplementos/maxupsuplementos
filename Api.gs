@@ -238,6 +238,19 @@ function doPost(e) {
     if (data.accion === 'admin_club_sorteo')   return _jsonOut(adminEjecutarSorteoClub(data.sesion, data));
     if (data.accion === 'admin_club_instalar') return _jsonOut(adminInstalarClub(data.sesion));
 
+    // Caja Rápida alojada en maxupsuplementos.com.ar. Estas acciones usan la
+    // misma sesión y validaciones que la versión interna de Apps Script, pero
+    // evitan que el celular tenga que abrir la interfaz de Google Drive.
+    if (data.accion === 'caja_login')       return _jsonOut(cajaLoginMaxup(data.clave));
+    if (data.accion === 'caja_logout')      return _jsonOut(cajaLogoutMaxup(data.sesion));
+    if (data.accion === 'caja_datos')       return _jsonOut(obtenerDatosCajaMaxup(data.sesion));
+    if (data.accion === 'caja_pendientes')  return _jsonOut(listarVentasPendientesCajaMaxup(data.sesion));
+    if (data.accion === 'caja_guardar')     return _jsonOut(guardarVentaPendienteCajaMaxup(data.datos, data.sesion));
+    if (data.accion === 'caja_cancelar')    return _jsonOut(cancelarVentaPendienteCajaMaxup(data.id, data.sesion));
+    if (data.accion === 'caja_cerrar')      return _jsonOut(cerrarJornadaCajaMaxup(data.sesion));
+    if (data.accion === 'caja_aplicar')     return _jsonOut(registrarVentaCajaMaxup(data.datos, data.sesion));
+    if (data.accion === 'caja_derivados')   return _jsonOut(actualizarDerivadosCajaMaxup(data.sesion));
+
     if (data.accion === 'club_estado')         return _jsonOut(estadoClubMaxup(data.email, data.telefono));
     if (data.accion === 'club_registro')       return _jsonOut(registrarClubMaxup(data));
     if (data.accion === 'cuenta_solicitar')    return _jsonOut(solicitarCodigoCuenta(data));

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#070914">
+  <title>MAXUP · Caja rápida</title>
+  <link rel="icon" href="favicon.png">
+  <style>
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#070914;color:#fff;font-family:Arial,sans-serif}
+    #estado{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:24px;text-align:center}
+    #estado img{width:150px;max-width:42vw}.cargando{color:#9ca6c7;font-size:16px}.error{color:#ff8b8b;line-height:1.5;max-width:520px}
+    iframe{display:block;width:100%;height:100%;border:0;background:#070914}
+  </style>
+</head>
+<body>
+  <div id="estado"><img src="logo-transparent.png" alt="MAXUP"><div class="cargando">Abriendo Caja Rápida…</div></div>
+  <script>
+  (function(){
+    var API='https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
+
+    // Adaptador para reutilizar la Caja completa desde el dominio de MAXUP.
+    // Las operaciones sensibles siguen validándose en Apps Script.
+    var shim='<script>(function(){'+
+      'var API='+JSON.stringify(API)+';'+
+      'function enviar(accion,payload,ok,fail){payload=payload||{};payload.accion=accion;fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload),cache:"no-store",credentials:"omit"}).then(function(r){if(!r.ok)throw new Error("El servidor respondió "+r.status);return r.json();}).then(function(d){if(ok)ok(d);}).catch(function(e){if(fail)fail(e);else console.error(e);});}'+
+      'function runner(ok,fail){var r={withSuccessHandler:function(fn){return runner(fn,fail);},withFailureHandler:function(fn){return runner(ok,fn);}};'+
+      'r.cajaLoginMaxup=function(clave){enviar("caja_login",{clave:clave},ok,fail);};'+
+      'r.cajaLogoutMaxup=function(sesion){enviar("caja_logout",{sesion:sesion},ok,fail);};'+
+      'r.obtenerDatosCajaMaxup=function(sesion){enviar("caja_datos",{sesion:sesion},ok,fail);};'+
+      'r.listarVentasPendientesCajaMaxup=function(sesion){enviar("caja_pendientes",{sesion:sesion},ok,fail);};'+
+      'r.guardarVentaPendienteCajaMaxup=function(datos,sesion){enviar("caja_guardar",{datos:datos,sesion:sesion},ok,fail);};'+
+      'r.cancelarVentaPendienteCajaMaxup=function(id,sesion){enviar("caja_cancelar",{id:id,sesion:sesion},ok,fail);};'+
+      'r.cerrarJornadaCajaMaxup=function(sesion){enviar("caja_cerrar",{sesion:sesion},ok,fail);};'+
+      'r.registrarVentaCajaMaxup=function(datos,sesion){enviar("caja_aplicar",{datos:datos,sesion:sesion},ok,fail);};'+
+      'r.actualizarDerivadosCajaMaxup=function(sesion){enviar("caja_derivados",{sesion:sesion},ok,fail);};return r;}'+
+      'window.google={script:{}};Object.defineProperty(window.google.script,"run",{get:function(){return runner(null,null);}});'+
+      '})();<\\/script>';
+
+    fetch('CajaMaxup.html?v='+Date.now(),{cache:'no-store'})
+      .then(function(r){if(!r.ok)throw new Error('No se pudo cargar la interfaz');return r.text();})
+      .then(function(html){
+        html=html.replace(/var MODO_WEB=<\?!=[\s\S]*?\?>;/,'var MODO_WEB=true;')
+          .replace(/var SESION_CAJA=<\?!=[\s\S]*?\?>;/,"var SESION_CAJA='';")
+          .replace('<script>\nvar MODO_WEB=',shim+'<script>\nvar MODO_WEB=');
+        var frame=document.createElement('iframe');
+        frame.title='Caja Rápida MAXUP';
+        frame.setAttribute('allow','clipboard-write');
+        frame.srcdoc=html;
+        document.body.innerHTML='';
+        document.body.appendChild(frame);
+      })
+      .catch(function(err){
+        document.getElementById('estado').innerHTML='<img src="logo-transparent.png" alt="MAXUP"><div class="error"><b>No se pudo abrir la Caja.</b><br>'+String(err.message||err)+'<br><br>Actualizá la página para volver a intentar.</div>';
+      });
+  })();
+  </script>
+</body>
+</html>
