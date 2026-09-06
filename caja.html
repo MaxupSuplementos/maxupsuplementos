@@ -35,7 +35,7 @@
       'r.registrarVentaCajaMaxup=function(datos,sesion){enviar("caja_aplicar",{datos:datos,sesion:sesion},ok,fail);};'+
       'r.actualizarDerivadosCajaMaxup=function(sesion){enviar("caja_derivados",{sesion:sesion},ok,fail);};return r;}'+
       'window.google={script:{}};Object.defineProperty(window.google.script,"run",{get:function(){return runner(null,null);}});'+
-      '})();<\\/script>';
+      '})();<\/script>';
 
     fetch('CajaMaxup.html?v='+Date.now(),{cache:'no-store'})
       .then(function(r){if(!r.ok)throw new Error('No se pudo cargar la interfaz');return r.text();})
