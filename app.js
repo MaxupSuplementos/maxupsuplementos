@@ -3487,7 +3487,7 @@ function buildCard(p, cardIndex){
 
   const isFav = _favoritos.indexOf(p.id) >= 0;
   return `
-<div class="prod-card" data-id="${p.id}" data-cat="${p.cat}" data-brand="${(p.brand||'').toLowerCase()}"
+<div class="prod-card" data-id="${p.id}" data-cat="${p.cat}" data-cats="${(p.cats||_categoriasProducto(p.name,p.cat)).join(' ')}" data-brand="${(p.brand||'').toLowerCase()}"
      data-search="${(p.name+' '+p.brand+' '+p.cat+' '+p.flavors.map(f=>f.name).join(' ')).toLowerCase()}">
   ${badgeHtml}
   <button class="fav-btn${isFav?' active':''}" onclick="toggleFav('${p.id}',event)" title="Favorito">${isFav?'❤️':'🤍'}</button>
@@ -3556,12 +3556,13 @@ function applyFilters(){
   const cards = Array.from(document.querySelectorAll('.prod-card'));
   // Filtrar
   let visibles = cards.filter(card => {
+    const categorias = (card.dataset.cats || card.dataset.cat || '').split(/\s+/).filter(Boolean);
     let matchCat;
     if(activeCat==='favoritos') matchCat = _favoritos.indexOf(card.dataset.id)>=0;
     else if(activeCat==='magnesio'){
-      matchCat = card.dataset.cat==='magnesio' || /magnesio|omega|zma/i.test(card.dataset.search);
+      matchCat = categorias.indexOf('magnesio')>=0 || /magnesio|omega|zma/i.test(card.dataset.search);
     }
-    else matchCat = activeCat==='all' || card.dataset.cat===activeCat;
+    else matchCat = activeCat==='all' || categorias.indexOf(activeCat)>=0;
     const matchBrand = activeBrand==='all' || card.dataset.brand===activeBrand;
     const matchSearch = !activeSearch || card.dataset.search.includes(activeSearch);
     return matchCat && matchBrand && matchSearch;
@@ -3638,7 +3639,7 @@ function onOrdenFilter(val){
 }
 
 // ── #3 CHIPS FILTROS ACTIVOS ──
-var _tipoLabels = {favoritos:'❤️ Favoritos',proteina:'🥛 Proteinas',gainer:'💪 Gainers',creatina:'⚡ Creatinas',aminoacido:'🧬 Aminoacidos',vitamin:'💊 Vitaminas',magnesio:'🧲 Magnesio/Omega',preworkout:'🔥 Pre-Entreno',quemador:'🌡️ Quemadores',colageno:'🦴 Colageno',hidratacion:'💧 Hidratacion',barra:'🍴 Alimentos',shaker:'🥤 Shakers',quimicos:'💉 Hormonales',accesorio:'🏋️ Accesorios',combo:'🎁 Combos'};
+var _tipoLabels = {favoritos:'❤️ Favoritos',proteina:'🥛 Proteinas',gainer:'💪 Gainers',creatina:'⚡ Creatinas',aminoacido:'🧬 Aminoacidos',vitamin:'💊 Vitaminas',magnesio:'🧲 Magnesio/Omega',preworkout:'🔥 Pre-Entreno',quemador:'🌡️ Quemadores',colageno:'🦴 Colageno',hidratacion:'💧 Hidratacion',barra:'🍴 Alimentos',shaker:'🥤 Shakers',quimicos:'💉 Hormonales',accesorio:'🏋️ Accesorios',otros:'📦 Otros',combo:'🎁 Combos'};
 var _ordenLabels = {'precio-asc':'💲 Menor precio','precio-desc':'💲 Mayor precio','nombre-asc':'🔤 A-Z','nombre-desc':'🔤 Z-A','stock-desc':'📦 Mayor stock'};
 
 function renderFiltrosActivos(){
@@ -5006,8 +5007,9 @@ async function cargarDesdeSheets(silencioso) {
         const precio_efectivo = Number(p.precio_venta || p['Precio unitario'] || 0);
         const precio_tarjeta  = Number(p.precio_lista  || p['Precio De Lista'] || _precioListaDesdeContado(precio_efectivo) || 0);
         const stock    = Number(p.stock || p['Cantidad en stock'] || 0);
-        // Inferir categoría con la función mejorada
-        const cat = p.categoria || p.cat || _inferirCategoria(nombre);
+        // Corregir categorías genéricas o evidentemente equivocadas y conservar
+        // etiquetas secundarias para productos que pertenecen a más de un filtro.
+        const cat = _categoriaPrincipalProducto(nombre, p.categoria || p.cat || '');
         const img      = p.imagen_url || p['imagen_url'] || '';
         // Soporte múltiples imágenes desde Sheets (separadas por \n o ;)
         var imgArr = p.imagenes || [];
@@ -5020,7 +5022,8 @@ async function cargarDesdeSheets(silencioso) {
           sku: String(p.sku || p.id || ''),
           name: nombre,
           brand: marca,
-          cat: _mapCategoria(cat),
+          cat: cat,
+          cats: _categoriasProducto(nombre, cat),
           emoji: _catEmoji(cat),
           // Única fuente de fotos: la URL cargada en el Sheets.
           img: imgArr[0] || '',
@@ -5124,6 +5127,57 @@ function _extraerSabor(nombre) {
   return { base: n, sabor: '' };
 }
 
+// Determina una categoría principal visible. Si la hoja dice "otros" o una
+// palabra clave inequívoca contradice la categoría cargada, prevalece el tipo
+// real del producto. Las categorías manuales se conservan cuando el nombre no
+// aporta evidencia suficiente.
+function _categoriaPrincipalProducto(nombre, categoriaHoja) {
+  const cargada = _mapCategoria(categoriaHoja);
+  const inferida = _inferirCategoria(nombre);
+  if (inferida !== 'otros') return inferida;
+  return cargada || 'otros';
+}
+
+// Un producto puede aparecer en más de un filtro sin duplicar su tarjeta.
+// Esto cubre fórmulas mixtas y productos que los clientes buscan por función.
+function _categoriasProducto(nombre, categoriaPrincipal) {
+  const categorias = [];
+  const agregar = function(cat){ if(cat && categorias.indexOf(cat) < 0) categorias.push(cat); };
+  const n = String(nombre || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+  agregar(_mapCategoria(categoriaPrincipal) || 'otros');
+  const inferida = _inferirCategoria(nombre);
+  if (inferida !== 'otros') agregar(inferida);
+
+  if (/(whey|protein|proteina).{0,25}(colag|collagen)|(colag|collagen).{0,25}(whey|protein|proteina)/.test(n)) {
+    agregar('proteina'); agregar('colageno');
+  }
+  if (/whey.{0,12}ripped|protein.{0,20}(quemador|fat burn)/.test(n)) {
+    agregar('proteina'); agregar('quemador');
+  }
+  if (/pre.{0,8}entreno.{0,15}quemador/.test(n)) {
+    agregar('preworkout'); agregar('quemador');
+  }
+  if (/carnitin/.test(n)) {
+    agregar('aminoacido'); agregar('quemador');
+  }
+  if (/beta.{0,5}alanina/.test(n)) {
+    agregar('aminoacido'); agregar('preworkout');
+  }
+  if (/cafeina/.test(n)) agregar('preworkout');
+  if (/energy.{0,5}gel/.test(n)) {
+    agregar('hidratacion'); agregar('barra');
+  }
+  if (/\bzma\b/.test(n)) {
+    agregar('magnesio'); agregar('vitamin');
+  }
+  if (/(whey|protein|proteina).{0,20}creatin|creatin.{0,20}(whey|protein|proteina)/.test(n)) {
+    agregar('proteina'); agregar('creatina');
+  }
+  return categorias.length ? categorias : ['otros'];
+}
+
 function _inferirCategoria(nombre) {
   const n = nombre.toLowerCase()
     .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e')
@@ -5135,11 +5189,11 @@ function _inferirCategoria(nombre) {
   if (/gelatina.{0,15}colag|colag.{0,15}gelatina/.test(n)) return 'barra';
 
   // SHAKERS, VASOS, BOTELLAS, LICUADORAS Y BIDONES — antes que accesorios
-  if (/shaker|licuadora|vaso.{0,10}mezcl|vaso.{0,10}deport|everlast|bidon|mamushka|botella|mini.{0,8}batidora|batidora.{0,8}pila/.test(n)) return 'shaker';
+  if (/shaker|licuadora|vaso.{0,10}mezcl|vaso.{0,10}deport|bidon|mamushka|botella|mini.{0,8}batidora|batidora.{0,8}pila/.test(n)) return 'shaker';
 
   // ACCESORIOS — antes de barras para evitar "tope barra olimpica"
-  if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|munequera|hand.{0,8}grip|ejercitador.{0,10}dedo|bolso|scoop|llavero|vincha|tope.{0,8}barra|latex|banda.{0,30}elastic|tobillera/.test(n)) return 'accesorio';
-  if (/new.{0,3}protein/.test(n)) return 'accesorio';
+  if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|codera|munequera|hand.{0,8}grip|ejercitador|bolso|scoop|llavero|vincha|tope.{0,8}barra|latex|banda.{0,30}elastic|bandas.{0,20}cinta|power.{0,5}band|tobillera|protector.{0,8}tibial|^tibial|medicine.{0,5}ball|protan|pintura.{0,10}spray/.test(n)) return 'accesorio';
+  if (/new.{0,3}protein/.test(n)) return 'shaker';
 
   // CREATINA
   if (/creatin/.test(n)) return 'creatina';
@@ -5160,19 +5214,20 @@ function _inferirCategoria(nombre) {
   if (/colag|collagen/.test(n) && !/gelatina/.test(n)) return 'colageno';
 
   // QUEMADORES
-  if (/thermo|fat.{0,5}burn|cla |quemad|lipo|termogen/.test(n)) return 'quemador';
+  if (/thermo|fat.{0,5}burn|cla |quemad|lipo|termogen|hydroxy.{0,12}night/.test(n)) return 'quemador';
 
   // MAGNESIO / OMEGA 3
-  if (/magnesio|bisglicinato|citrato.{0,8}mag|omega.{0,3}3|fish.{0,5}oil|aceite.{0,8}pescado/.test(n)) return 'magnesio';
+  if (/magnesio|bisglicinato|citrato.{0,8}mag|omega.{0,3}3|fish.{0,5}oil|aceite.{0,8}pescado|\bzma\b/.test(n)) return 'magnesio';
+
+  // HIDRATACIÓN Y CARBOHIDRATOS DEPORTIVOS — antes de cafeína/vitaminas
+  // para que "Energy Gel con Cafeína" no termine dentro de Vitaminas.
+  if (/hidrat|iso.{0,5}sport|electro|recovery.{0,5}drink|sport.{0,5}drink|just.{0,5}carb|carbo.{0,5}complex|hydromax|hydroplus|energy.{0,5}gel|maltodextri|isotonic/.test(n)) return 'hidratacion';
 
   // VITAMINAS
-  if (/vitam|zinc|calcio|resveratrol|ashwagandha|zma|cafeina|nad |multivit|citrato|coenzima/.test(n)) return 'vitamin';
-
-  // HIDRATACIÓN
-  if (/hidrat|iso.{0,5}sport|electro|recovery.{0,5}drink|sport.{0,5}drink|just.{0,5}carb|hydromax|hydroplus|energy.{0,5}gel|maltodextri|isotonic/.test(n)) return 'hidratacion';
+  if (/vitam|zinc|calcio|resveratrol|ashwagandha|cafeina|nad |multivit|citrato|coenzima/.test(n)) return 'vitamin';
 
   // BARRAS & SNACKS
-  if (/beauty.{0,5}bar|iron.{0,5}bar|barra.{0,10}proteic|barra.{0,10}cereal|barra.{0,10}chocol|cereal.{0,5}bar|grows.{0,5}bar|brava.{0,5}bar|snack|granola|pancake|cupcake|omelette.{0,10}proteic|quelopaleo|bros.{0,5}bar|gelatina|mani.{0,5}king|vitalgy/.test(n)) return 'barra';
+  if (/beauty.{0,5}bar|iron.{0,5}bar|barra.{0,10}proteic|barra.{0,10}cereal|barra.{0,10}chocol|cereal.{0,5}bar|grows.{0,5}bar|brava.{0,5}bar|snack|granola|pancake|cupcake|omelette.{0,10}proteic|quelopaleo|bros.{0,5}bar|gelatina|mani.{0,5}king|pasta.{0,8}mani|pure.{0,5}papa|vitalgy/.test(n)) return 'barra';
 
   // INDUMENTARIA
   if (/short|remera|camiseta|calza|top |buzo|campera|catsuit/.test(n)) return 'indumentaria';

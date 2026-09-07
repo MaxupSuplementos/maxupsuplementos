@@ -979,9 +979,11 @@ function inferirCat(nombre) {
     .replace(/[úùü]/g,'u').replace(/ñ/g,'n');
   if (/whey.{0,5}bar|low.{0,5}carb.{0,10}bar|protein.{0,5}bar/.test(n)) return 'barra';
   if (/gelatina.{0,15}colag|colag.{0,15}gelatina/.test(n)) return 'barra';
-  // Shakers, vasos, botellas, bidones y licuadoras/batidoras mini → categoría "shaker"
-  if (/shaker|licuadora|\bvaso\b|botella|bidon|mini.{0,8}batidora|batidora.{0,8}pila|everlast|mamushka|maxup.{0,4}simple/.test(n)) return 'shaker';
-  if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|munequera|hand.{0,8}grip|ejercitador|bolso|scoop|llavero|vincha|tope.{0,8}barra|latex|banda.{0,30}elastic|tobillera|pelota|pilates|faja|neoprene|venda|boxeo|\bcono\b|soga|colchoneta/.test(n)) return 'accesorio';
+  // Shakers, vasos, botellas, bidones y licuadoras/batidoras mini → categoría "shaker".
+  // "Everlast" no alcanza por sí solo: la marca también vende guantes y medicine balls.
+  if (/shaker|licuadora|\bvaso\b|botella|bidon|mini.{0,8}batidora|batidora.{0,8}pila|mamushka|maxup.{0,4}simple/.test(n)) return 'shaker';
+  if (/new.{0,3}protein/.test(n)) return 'shaker';
+  if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|codera|munequera|hand.{0,8}grip|ejercitador|bolso|scoop|llavero|vincha|tope.{0,8}barra|latex|banda.{0,30}elastic|bandas.{0,20}cinta|power.{0,5}band|tobillera|pelota|pilates|faja|neoprene|venda|boxeo|\bcono\b|soga|colchoneta|protector.{0,8}tibial|^tibial|medicine.{0,5}ball|protan|pintura.{0,10}spray/.test(n)) return 'accesorio';
   // QUIMICOS (hormonales / anabolicos)
   if (/testo|testosterona|stanozol|\bstano\b|winstrol|primobolan|cipionato|enantato|propionato|sustanon|trembolona|trenbolona|boldenona|nandrolona|deca.{0,3}durabolin|dianabol|metandro|oxandrolona|anavar|oximetolona|anadrol|masteron|clembuterol|clenbuterol|somatropina|\bhgh\b|oxandro/.test(n)) return 'quimicos';
   if (/creatin/.test(n)) return 'creatina';
@@ -990,10 +992,12 @@ function inferirCat(nombre) {
   if (/bcaa|glutamin|aminoacid|taurina|arginina|leucina|eaa|hmb|carnitin/.test(n)) return 'aminoacido';
   if (/pre.{0,5}work|pre.{0,5}entren|pump|tnt|dynamite|beta.{0,5}alan|oxido.{0,4}nitric|nitrico|\bn\.o\b/.test(n)) return 'preworkout';
   if ((/colag|collagen|flexo|glucosamin|condroitin/.test(n)) && !/gelatina/.test(n)) return 'colageno';
-  if (/thermo|fat.{0,5}burn|cla |quemad|lipo|termogen|black.{0,4}cuts/.test(n)) return 'quemador';
-  if (/omega|vitam|magnesio|zinc|calcio|resveratrol|ashwagandha|astaxantina|zma|cafeina|nad |multivit|citrato|bisglicinato/.test(n)) return 'vitamin';
-  if (/hidrat|iso.{0,5}sport|electro|recovery.{0,5}drink|sport.{0,5}drink|just.{0,5}carb|hydromax|hydroplus|energy.{0,5}gel|maltodextri|isotonic/.test(n)) return 'hidratacion';
-  if (/beauty.{0,5}bar|iron.{0,5}bar|barra.{0,10}proteic|barra.{0,10}cereal|cereal.{0,5}bar|grows.{0,5}bar|brava.{0,5}bar|snack|granola|pancake|cupcake|omelette.{0,10}proteic|quelopaleo|bros.{0,5}bar|gelatina|mani.{0,5}king|vitalgy/.test(n)) return 'barra';
+  if (/thermo|fat.{0,5}burn|cla |quemad|lipo|termogen|black.{0,4}cuts|hydroxy.{0,12}night/.test(n)) return 'quemador';
+  if (/magnesio|bisglicinato|citrato.{0,8}mag|omega.{0,3}3|fish.{0,5}oil|aceite.{0,8}pescado|\bzma\b/.test(n)) return 'magnesio';
+  // Va antes de vitaminas para que los geles con cafeína sigan siendo hidratación deportiva.
+  if (/hidrat|iso.{0,5}sport|electro|recovery.{0,5}drink|sport.{0,5}drink|just.{0,5}carb|carbo.{0,5}complex|hydromax|hydroplus|energy.{0,5}gel|maltodextri|isotonic/.test(n)) return 'hidratacion';
+  if (/vitam|zinc|calcio|resveratrol|ashwagandha|astaxantina|cafeina|nad |multivit|citrato|coenzima/.test(n)) return 'vitamin';
+  if (/beauty.{0,5}bar|iron.{0,5}bar|barra.{0,10}proteic|barra.{0,10}cereal|cereal.{0,5}bar|grows.{0,5}bar|brava.{0,5}bar|snack|granola|pancake|cupcake|omelette.{0,10}proteic|quelopaleo|bros.{0,5}bar|gelatina|mani.{0,5}king|pasta.{0,8}mani|pure.{0,5}papa|vitalgy/.test(n)) return 'barra';
   if (/short|remera|camiseta|calza|top |buzo|campera|catsuit/.test(n)) return 'indumentaria';
   return 'otros';
 }
