@@ -5172,6 +5172,12 @@ function _categoriasProducto(nombre, categoriaPrincipal) {
   if (/\bzma\b/.test(n)) {
     agregar('magnesio'); agregar('vitamin');
   }
+  // Testo Gold combina micronutrientes y extractos naturales. Para que el
+  // cliente pueda encontrarlo por composición y por objetivo, se muestra en
+  // Vitaminas y también en Hormonales, sin duplicar la tarjeta.
+  if (/testo.{0,5}gold/.test(n)) {
+    agregar('vitamin'); agregar('quimicos');
+  }
   if (/(whey|protein|proteina).{0,20}creatin|creatin.{0,20}(whey|protein|proteina)/.test(n)) {
     agregar('proteina'); agregar('creatina');
   }
@@ -5187,6 +5193,7 @@ function _inferirCategoria(nombre) {
   // EXCEPCIONES PRIMERO (productos que contienen palabras ambiguas)
   if (/whey.{0,5}bar|low.{0,5}carb.{0,10}bar|protein.{0,5}bar/.test(n)) return 'barra';
   if (/gelatina.{0,15}colag|colag.{0,15}gelatina/.test(n)) return 'barra';
+  if (/testo.{0,5}gold/.test(n)) return 'vitamin';
 
   // SHAKERS, VASOS, BOTELLAS, LICUADORAS Y BIDONES — antes que accesorios
   if (/shaker|licuadora|vaso.{0,10}mezcl|vaso.{0,10}deport|bidon|mamushka|botella|mini.{0,8}batidora|batidora.{0,8}pila/.test(n)) return 'shaker';

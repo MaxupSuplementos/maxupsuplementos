@@ -979,6 +979,9 @@ function inferirCat(nombre) {
     .replace(/[úùü]/g,'u').replace(/ñ/g,'n');
   if (/whey.{0,5}bar|low.{0,5}carb.{0,10}bar|protein.{0,5}bar/.test(n)) return 'barra';
   if (/gelatina.{0,15}colag|colag.{0,15}gelatina/.test(n)) return 'barra';
+  // Testo Gold se organiza como suplemento vitamínico/mineral en la tienda.
+  // El frente además lo muestra en Hormonales como filtro secundario.
+  if (/testo.{0,5}gold/.test(n)) return 'vitamin';
   // Shakers, vasos, botellas, bidones y licuadoras/batidoras mini → categoría "shaker".
   // "Everlast" no alcanza por sí solo: la marca también vende guantes y medicine balls.
   if (/shaker|licuadora|\bvaso\b|botella|bidon|mini.{0,8}batidora|batidora.{0,8}pila|mamushka|maxup.{0,4}simple/.test(n)) return 'shaker';

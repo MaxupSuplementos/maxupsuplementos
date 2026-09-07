@@ -58,6 +58,8 @@ assert.strictEqual(categoryHelpers._categoriaPrincipalProducto('Hydroxy Max Nigh
 assert.strictEqual(categoryHelpers._categoriaPrincipalProducto('Guante de boxeo Core 2 Trn Everlast', 'shaker'), 'accesorio', 'Un guante Everlast no debe aparecer como shaker');
 assert.strictEqual(categoryHelpers._categoriaPrincipalProducto('Energy Gel con Cafeina 40g', 'vitamin'), 'hidratacion', 'Un gel con cafeina debe aparecer en Hidratacion');
 assert.strictEqual(categoryHelpers._categoriaPrincipalProducto('Omega 3 60Cap', 'vitamin'), 'magnesio', 'Omega 3 debe aparecer en Magnesio/Omega');
+assert.strictEqual(categoryHelpers._categoriaPrincipalProducto('Testo Gold 120 Caps', 'quimicos'), 'vitamin', 'Testo Gold debe tener Vitaminas como categoria principal');
+assert(categoryHelpers._categoriasProducto('Testo Gold 120 Caps', 'vitamin').includes('quimicos'), 'Testo Gold también debe aparecer en Hormonales');
 assert(categoryHelpers._categoriasProducto('Whey Ripped X 2 Libras', 'proteina').includes('quemador'), 'Whey Ripped también debe aparecer en Quemadores');
 assert(categoryHelpers._categoriasProducto('L-Carnitina 1500', 'aminoacido').includes('quemador'), 'L-Carnitina también debe aparecer en Quemadores');
 assert(categoryHelpers._categoriasProducto('Proteina Fit + Colageno', 'proteina').includes('colageno'), 'Las proteínas con colágeno deben aparecer en ambos filtros');
@@ -67,6 +69,7 @@ assert.strictEqual(apiCategory('Codera de Compresion DRB'), 'accesorio', 'La API
 assert.strictEqual(apiCategory('Carbo Complex 1kg'), 'hidratacion', 'La API debe clasificar Carbo Complex como hidratacion');
 assert.strictEqual(apiCategory('Pasta de Mani Natural 485g'), 'barra', 'La API debe clasificar la pasta de maní como alimento');
 assert.strictEqual(apiCategory('Zma X 90 Caps.'), 'magnesio', 'La API debe clasificar ZMA en Magnesio/Omega');
+assert.strictEqual(apiCategory('Testo Gold 120 Caps'), 'vitamin', 'La API debe clasificar Testo Gold en Vitaminas');
 const caja = read('CajaMaxup.gs');
 const cajaHtml = read('CajaMaxup.html');
 const cajaWeb = read('caja.html');
