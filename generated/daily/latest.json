@@ -1,37 +1,37 @@
 {
-  "fecha": "2026-09-06",
-  "generado": "2026-09-06T15:13:43.388Z",
+  "fecha": "2026-09-07",
+  "generado": "2026-09-07T17:35:27.238Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
-      "titulo": "Shaker Maxup Simple Blanco",
+      "titulo": "EAA`S Aminoacidos - Limon",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Shaker Maxup Simple Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "EAA`S Aminoacidos - Limon\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
-      "titulo": "L-Carnitina 1500 x60Caps",
+      "titulo": "Barra Proteica 50Gr - Blanco con Cookies",
       "file": "generated/daily/current/02.jpg",
-      "caption": "L-Carnitina 1500 x60Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Barra Proteica 50Gr - Blanco con Cookies\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
-      "titulo": "Rueda de Abdominales doble beatboss",
+      "titulo": "Omega 3 1000Mg 200 Cap",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Rueda de Abdominales doble beatboss\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Omega 3 1000Mg 200 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
-      "titulo": "Citrato Magnesio X 500 Grs - Frutos Rojos",
+      "titulo": "Pump V8 X285G - Grape",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Citrato Magnesio X 500 Grs - Frutos Rojos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Pump V8 X285G - Grape\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
-      "titulo": "Iso Gold Protein 2Lb - Vainilla",
+      "titulo": "Recovery Drink 540G - Naranja",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Iso Gold Protein 2Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Recovery Drink 540G - Naranja\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
