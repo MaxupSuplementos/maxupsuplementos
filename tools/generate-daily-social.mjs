@@ -10,7 +10,8 @@ function fechaArgentina() {
 
 const fecha = process.env.MAXUP_SOCIAL_DATE || fechaArgentina();
 const salida = path.resolve('generated/daily/current');
-const url = `https://maxupsuplementos.github.io/maxupsuplementos/promo.html?modo=diario&fecha=${encodeURIComponent(fecha)}`;
+const promoBase = process.env.MAXUP_PROMO_URL || 'https://maxupsuplementos.github.io/maxupsuplementos/promo.html';
+const url = `${promoBase}?modo=diario&fecha=${encodeURIComponent(fecha)}`;
 await fs.rm(salida, { recursive: true, force: true });
 await fs.mkdir(salida, { recursive: true });
 

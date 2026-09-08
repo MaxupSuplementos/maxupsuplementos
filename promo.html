@@ -36,11 +36,11 @@ canvas{display:block;max-width:100%;height:auto;border-radius:10px;box-shadow:0 
 <div class="info" id="info">Buscando producto...</div>
 <div class="found" id="found"></div>
 <div class="btns" id="singleBtns">
-  <button class="btn bd" onclick="dl()">Descargar Post (1080x1350)</button>
-  <button class="btn bs" onclick="genStory()">Generar Story (1080x1920)</button>
-  <button class="btn br" onclick="dl()">Descargar</button>
+  <button class="btn bd" onclick="dl()">Descargar Story (1080x1920)</button>
+  <button class="btn bs" onclick="genFeedPost()">Generar Post (1080x1350)</button>
+  <button class="btn br" onclick="genStory()">Volver a Story</button>
 </div>
-<canvas id="cv" width="1080" height="1350"></canvas>
+<canvas id="cv" width="1080" height="1920"></canvas>
 <div class="st" id="st"></div>
 <div class="daily-help" id="dailyHelp">Cada placa incluye foto, una descripción específica y cinco puntos claros. Guardala o compartila directamente en WhatsApp; toda la información viajará dentro de la imagen a Instagram y Facebook.</div>
 <div class="daily-grid" id="dailyGrid" hidden></div>
@@ -106,9 +106,11 @@ const dailyMode=params.get('modo')==='diario';
 const dailyIds=(params.get('ids')||'').split('|').map(v=>v.trim()).filter(Boolean);
 const dailyNames=(params.get('productos')||'').split('|').map(v=>v.trim()).filter(Boolean);
 const dailyDate=params.get('fecha')||'';
-let logoImg=null,currentMode='post';
+let logoImg=null,currentMode='story';
 const ic={};
-const _l=new Image();_l.crossOrigin='anonymous';_l.onload=()=>{logoImg=_l};_l.src='https://maxupsuplementos.github.io/maxupsuplementos/logo.png';
+const NEON_BG_URL='assets/flyers/neon-athletes-bg-v1.png';
+const LOGO_URL='logo-transparent.png';
+const _l=new Image();_l.crossOrigin='anonymous';_l.onload=()=>{logoImg=_l};_l.src=LOGO_URL;
 
 // Fuzzy match
 function findProduct(q){
@@ -318,58 +320,160 @@ function dailyFilename(p,index){
   return `MAXUP_estado_${String(index+1).padStart(2,'0')}_${safeFilePart(p.n)}_${date}.png`;
 }
 
+function drawImageCover(ctx,img,x,y,w,h){
+  const scale=Math.max(w/img.width,h/img.height);
+  const sw=w/scale,sh=h/scale;
+  const sx=(img.width-sw)/2,sy=(img.height-sh)/2;
+  ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+}
+
+function neonPalette(p){
+  const cat=dailyCategory(p);
+  const palettes={
+    proteina:['#00D8FF','#FF2D9E'],creatina:['#00E5FF','#B6FF18'],
+    preworkout:['#00C8FF','#D72CFF'],aminoacido:['#00E5FF','#A8FF1A'],
+    quemador:['#FF6B00','#FF1493'],vitamin:['#FFD42A','#00D8FF'],
+    colageno:['#FF5CB8','#8A5CFF'],barra:['#FFB000','#FF2D9E'],
+    shaker:['#00E5FF','#FF4D00'],accesorio:['#FF8A00','#00D8FF'],
+    indumentaria:['#FF2D9E','#7B61FF'],hidratacion:['#00E5FF','#4A7DFF'],
+    gainer:['#FFB000','#FF2D9E']
+  };
+  return palettes[cat]||['#00C8FF','#FF0099'];
+}
+
+function neonOctagon(ctx,x,y,w,h,cut){
+  cut=cut||24;
+  ctx.beginPath();ctx.moveTo(x+cut,y);ctx.lineTo(x+w-cut,y);ctx.lineTo(x+w,y+cut);
+  ctx.lineTo(x+w,y+h-cut);ctx.lineTo(x+w-cut,y+h);ctx.lineTo(x+cut,y+h);
+  ctx.lineTo(x,y+h-cut);ctx.lineTo(x,y+cut);ctx.closePath();
+}
+
+function fitBadgeLines(ctx,text,maxWidth,maxLines,startSize,minSize,maxHeight){
+  let size=startSize,lines=[];
+  while(size>=minSize){
+    ctx.font=`700 ${size}px 'Rajdhani',sans-serif`;
+    lines=wrapCanvasLines(ctx,String(text||'').toUpperCase(),maxWidth,maxLines);
+    if(lines.length<=maxLines&&!lines.some(line=>line.endsWith('…'))&&lines.length*(size+5)<=maxHeight)break;
+    size--;
+  }
+  return {size,lines};
+}
+
+function drawNeonBenefitBadge(ctx,text,index,x,y,w,h,colors){
+  const color=colors[index%colors.length];
+  ctx.save();
+  ctx.shadowColor=color;ctx.shadowBlur=22;ctx.lineWidth=4;ctx.strokeStyle=color;
+  neonOctagon(ctx,x,y,w,h,22);ctx.fillStyle='rgba(4,7,15,.88)';ctx.fill();ctx.stroke();
+  ctx.shadowBlur=8;ctx.fillStyle=color;ctx.beginPath();ctx.arc(x+34,y+34,15,0,Math.PI*2);ctx.fill();
+  ctx.shadowBlur=0;ctx.fillStyle='#07101B';ctx.font="800 18px 'Rajdhani',sans-serif";
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(index+1),x+34,y+35);
+  const fitted=fitBadgeLines(ctx,text,w-54,5,28,18,h-20);
+  const lh=fitted.size+5,total=fitted.lines.length*lh;
+  ctx.font=`700 ${fitted.size}px 'Rajdhani',sans-serif`;ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
+  fitted.lines.forEach((line,lineIndex)=>ctx.fillText(line,x+w/2,y+h/2-total/2+lh*(lineIndex+.5)+10));
+  ctx.restore();
+}
+
+async function drawNeonBackdrop(ctx,W,H){
+  const bg=await li(NEON_BG_URL);
+  ctx.fillStyle='#03070D';ctx.fillRect(0,0,W,H);
+  if(bg)drawImageCover(ctx,bg,0,0,W,H);
+  const shade=ctx.createLinearGradient(0,0,0,H);
+  shade.addColorStop(0,'rgba(0,0,0,.03)');shade.addColorStop(.34,'rgba(0,0,0,.18)');
+  shade.addColorStop(.58,'rgba(0,0,0,.54)');shade.addColorStop(1,'rgba(0,0,0,.78)');
+  ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
+  const edge=ctx.createLinearGradient(0,0,W,0);
+  edge.addColorStop(0,'rgba(0,200,255,.18)');edge.addColorStop(.24,'rgba(0,0,0,0)');
+  edge.addColorStop(.76,'rgba(0,0,0,0)');edge.addColorStop(1,'rgba(255,0,153,.18)');
+  ctx.fillStyle=edge;ctx.fillRect(0,0,W,H);
+}
+
+async function drawNeonProductHero(ctx,p,W){
+  const img=await li(p.img);
+  const x=W/2-310,y=330,w=620,h=610;
+  ctx.save();
+  const glow=ctx.createRadialGradient(W/2,y+h*.58,20,W/2,y+h*.58,390);
+  glow.addColorStop(0,'rgba(255,255,255,.18)');glow.addColorStop(.45,'rgba(0,200,255,.12)');glow.addColorStop(1,'rgba(255,0,153,0)');
+  ctx.fillStyle=glow;ctx.fillRect(x-100,y-80,w+200,h+160);
+  rr(ctx,x,y,w,h,34);ctx.fillStyle='rgba(0,0,0,.16)';ctx.fill();
+  if(img){
+    const ratio=img.width/img.height;let dw,dh;const maxW=w-36,maxH=h-28;
+    if(ratio>maxW/maxH){dw=maxW;dh=maxW/ratio}else{dh=maxH;dw=maxH*ratio}
+    ctx.shadowColor='rgba(0,200,255,.65)';ctx.shadowBlur=24;
+    ctx.drawImage(img,W/2-dw/2,y+h/2-dh/2,dw,dh);
+  }
+  ctx.restore();
+}
+
+function drawNeonDescription(ctx,p,W,startY){
+  const text=dailyExplainer(p),x=80,w=W-160,h=218;
+  ctx.save();ctx.shadowColor='rgba(153,51,255,.55)';ctx.shadowBlur=18;
+  rr(ctx,x,startY,w,h,24);ctx.fillStyle='rgba(5,7,17,.82)';ctx.fill();
+  ctx.shadowBlur=0;ctx.strokeStyle='rgba(184,92,255,.55)';ctx.lineWidth=2;ctx.stroke();
+  solidText(ctx,'QUÉ ES',W/2,startY+43,'#FF2D9E',"bold 30px 'Rajdhani',sans-serif");
+  let size=34,lines=[];
+  while(size>=26){ctx.font=`600 ${size}px 'Rajdhani',sans-serif`;lines=wrapCanvasLines(ctx,text,w-70,4);if(lines.length<=4&&!lines.some(line=>line.endsWith('…')))break;size--}
+  const lh=size+8,total=lines.length*lh;ctx.font=`600 ${size}px 'Rajdhani',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  lines.forEach((line,i)=>{ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillText(line,W/2+2,startY+74+(i+.5)*lh+2);ctx.fillStyle='#F4F7FF';ctx.fillText(line,W/2,startY+74+(i+.5)*lh)});
+  ctx.restore();return startY+h;
+}
+
+function drawNeonCta(ctx,W,y,label,colors){
+  const g=ctx.createLinearGradient(W/2-275,0,W/2+275,0);g.addColorStop(0,colors[0]);g.addColorStop(1,colors[1]);
+  ctx.save();ctx.shadowColor=colors[1];ctx.shadowBlur=24;rr(ctx,W/2-275,y,550,74,37);ctx.fillStyle=g;ctx.fill();ctx.shadowBlur=0;
+  solidText(ctx,label,W/2,y+50,'#fff',"bold 31px 'Rajdhani',sans-serif");ctx.restore();
+  solidText(ctx,'maxupsuplementos.com.ar',W/2,y+122,'#fff',"700 31px 'Rajdhani',sans-serif");
+  solidText(ctx,'@maxup_suplementos',W/2,y+158,'#9AA2B2',"500 21px 'Rajdhani',sans-serif");
+}
+
+async function drawNeonFlyerCore(ctx,p,options){
+  const W=options.width,H=1920,offer=!!options.offer,disc=Number(options.discount)||0;
+  const colors=neonPalette(p);
+  await drawNeonBackdrop(ctx,W,H);
+  const logo=logoImg||await li(LOGO_URL);
+  if(logo){const size=172;ctx.drawImage(logo,W/2-size/2,25,size,size)}
+  solidText(ctx,offer?'OFERTA ESPECIAL':'RECOMENDADO DEL DÍA',W/2,230,'#fff',"bold 43px 'Bebas Neue',sans-serif");
+  if(options.index){solidText(ctx,`${options.index} DE ${options.total}`,W-52,72,'#DDE4EF',"700 22px 'Rajdhani',sans-serif",'right')}
+  if(offer&&disc){
+    ctx.save();ctx.shadowColor=colors[1];ctx.shadowBlur=24;ctx.fillStyle=colors[1];ctx.beginPath();ctx.arc(W-126,212,82,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    solidText(ctx,`-${disc}%`,W-126,205,'#fff',"bold 54px 'Bebas Neue',sans-serif");solidText(ctx,'OFF',W-126,242,'#fff',"bold 27px 'Rajdhani',sans-serif");ctx.restore();
+  }
+
+  const benefits=dailyBenefits(p);
+  const sideW=Math.min(330,Math.max(280,(W-620)/2+42));
+  const leftX=38,rightX=W-sideW-38;
+  // La foto va primero: los carteles quedan siempre por delante y nunca
+  // pierden letras, incluso cuando la imagen original trae un fondo cuadrado.
+  await drawNeonProductHero(ctx,p,W);
+  drawNeonBenefitBadge(ctx,benefits[0]||'',0,leftX,365,sideW,164,colors);
+  drawNeonBenefitBadge(ctx,benefits[1]||'',1,leftX,646,sideW,164,colors);
+  drawNeonBenefitBadge(ctx,benefits[2]||'',2,rightX,365,sideW,164,colors);
+  drawNeonBenefitBadge(ctx,benefits[3]||'',3,rightX,646,sideW,164,colors);
+  drawNeonBenefitBadge(ctx,benefits[4]||'',4,rightX,852,sideW,150,colors);
+
+  const nameEnd=wrapSolid(ctx,String(p.n||'').toUpperCase(),W/2,1056,W-120,61,'#fff',"bold 57px 'Bebas Neue',sans-serif");
+  const brandY=nameEnd+52;solidText(ctx,String(p.b||'MAXUP').toUpperCase(),W/2,brandY,colors[0],"700 29px 'Rajdhani',sans-serif");
+  const descriptionY=Math.max(1218,brandY+38);const descriptionEnd=drawNeonDescription(ctx,p,W,descriptionY);
+
+  if(offer){
+    const normal=Number(p.p)||0,sale=Math.round(normal*(1-disc/100));const py=descriptionEnd+35;
+    ctx.save();rr(ctx,W/2-330,py,660,196,26);ctx.fillStyle='rgba(2,5,12,.88)';ctx.fill();ctx.strokeStyle=colors[0];ctx.lineWidth=2;ctx.stroke();ctx.restore();
+    solidText(ctx,fmt(normal),W/2-145,py+75,'#87909E',"600 36px 'Rajdhani',sans-serif");
+    ctx.save();ctx.strokeStyle=colors[1];ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(W/2-225,py+64);ctx.lineTo(W/2-65,py+64);ctx.stroke();ctx.restore();
+    solidText(ctx,fmt(sale),W/2+110,py+104,colors[1],"bold 78px 'Bebas Neue',sans-serif");
+    solidText(ctx,'PRECIO PROMOCIONAL',W/2,py+157,'#fff',"700 25px 'Rajdhani',sans-serif");
+    drawNeonCta(ctx,W,1740,'APROVECHÁ AHORA',colors);
+  }else{
+    solidText(ctx,'5 BENEFICIOS · UNA ELECCIÓN CON INFORMACIÓN',W/2,1584,'#DCE8F6',"700 30px 'Rajdhani',sans-serif");
+    drawNeonCta(ctx,W,1712,'PEDILO EN MAXUP',colors);
+  }
+}
+
 async function drawDailyStory(canvas,p,index,total){
   if(document.fonts&&document.fonts.ready)await document.fonts.ready;
   const W=1080,H=1920,ctx=canvas.getContext('2d');
   canvas.width=W;canvas.height=H;
-
-  ctx.fillStyle='#08090b';ctx.fillRect(0,0,W,H);
-  ctx.save();ctx.globalAlpha=.035;ctx.strokeStyle='#fff';ctx.lineWidth=1;
-  for(let i=-H;i<W+H;i+=56){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+H,H);ctx.stroke()}
-  ctx.restore();
-
-  let g=ctx.createLinearGradient(0,0,W,0);
-  g.addColorStop(0,'#00C8FF');g.addColorStop(.5,'#FF0099');g.addColorStop(1,'#9933FF');
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,8);
-  ctx.fillStyle=g;ctx.fillRect(0,H-8,W,8);
-
-  rr(ctx,70,175,W-140,86,18);ctx.fillStyle='rgba(255,255,255,.045)';ctx.fill();
-  ctx.strokeStyle='rgba(0,200,255,.35)';ctx.lineWidth=2;ctx.stroke();
-  solidText(ctx,'RECOMENDADO DEL DIA',W/2,234,'#fff',"bold 50px 'Bebas Neue',sans-serif");
-  solidText(ctx,`${index+1} DE ${total}`,W-92,148,'#777',"600 22px 'Rajdhani',sans-serif",'right');
-
-  smokeGlow(ctx,W/2,600,390);
-  const img=await li(p.img);
-  if(img){
-    const ratio=img.width/img.height;let dw,dh;const maxW=590,maxH=560;
-    if(ratio>maxW/maxH){dw=maxW;dh=maxW/ratio}else{dh=maxH;dw=maxH*ratio}
-    ctx.drawImage(img,W/2-dw/2,600-dh/2,dw,dh);
-  }
-
-  const nameEnd=wrapSolid(ctx,String(p.n||'').toUpperCase(),W/2,920,W-130,49,'#fff',"bold 44px 'Rajdhani',sans-serif");
-  const brandY=Math.min(nameEnd+48,1080);
-  solidText(ctx,String(p.b||'MAXUP'),W/2,brandY,'#00C8FF',"600 28px 'Rajdhani',sans-serif");
-
-  const benefitY=Math.max(1045,brandY+28),benefitBottom=1760;
-  rr(ctx,70,benefitY,W-140,benefitBottom-benefitY,18);ctx.fillStyle='rgba(153,51,255,.10)';ctx.fill();
-  ctx.strokeStyle='rgba(153,51,255,.35)';ctx.lineWidth=2;ctx.stroke();
-  solidText(ctx,'QUÉ ES',W/2,benefitY+42,'#FF0099',"bold 30px 'Rajdhani',sans-serif");
-  const descriptionEnd=wrapSolid(ctx,dailyExplainer(p),W/2,benefitY+86,W-190,41,'#eee',"600 34px 'Rajdhani',sans-serif");
-  const separatorY=descriptionEnd+20;
-  ctx.strokeStyle='rgba(0,200,255,.25)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(115,separatorY);ctx.lineTo(W-115,separatorY);ctx.stroke();
-  solidText(ctx,'5 BENEFICIOS',W/2,separatorY+42,'#00C8FF',"bold 32px 'Rajdhani',sans-serif");
-  drawDailyBenefitList(ctx,p,separatorY+60,benefitBottom-14);
-
-  rr(ctx,W/2-235,1770,470,64,32);ctx.fillStyle=g;ctx.fill();
-  solidText(ctx,'PEDILO EN NUESTRA WEB',W/2,1813,'#fff',"bold 28px 'Rajdhani',sans-serif");
-  solidText(ctx,'maxupsuplementos.com.ar',W/2,1872,'#00C8FF',"bold 32px 'Rajdhani',sans-serif");
-  solidText(ctx,'@maxupsuplementos',W/2,1906,'#666',"500 20px 'Rajdhani',sans-serif");
-
-  if(logoImg){
-    const la=logoImg.width/logoImg.height;
-    const lh=80,lw=lh*la;
-    ctx.drawImage(logoImg,W/2-lw/2,82,lw,lh);
-  }
+  await drawNeonFlyerCore(ctx,p,{width:W,index:index+1,total:total});
 }
 
 function downloadDaily(canvas,p,index){
@@ -441,77 +545,14 @@ function resolveDailyProducts(){
 async function genPost(p,disc,W,H){
   const cv=document.getElementById('cv');cv.width=W;cv.height=H;
   const ctx=cv.getContext('2d');
-  const isStory=H>1400;
-  const price=p.p;
-  const np=Math.round(price*(1-disc/100));
-
-  // Background
-  ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,W,H);
-  ctx.save();ctx.globalAlpha=.025;ctx.strokeStyle='#fff';ctx.lineWidth=1;
-  for(let i=-H;i<W+H;i+=50){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+H,H);ctx.stroke()}
+  if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+  // La plantilla se diseña siempre sobre una mesa virtual de 1920 px de alto.
+  // Para el post 4:5 ampliamos el ancho virtual y luego escalamos de forma
+  // uniforme, evitando deformar la foto o la tipografía.
+  const scale=H/1920,virtualW=W/scale;
+  ctx.save();ctx.scale(scale,scale);
+  await drawNeonFlyerCore(ctx,p,{width:virtualW,offer:true,discount:disc});
   ctx.restore();
-
-  // Top bar gradient
-  let g=ctx.createLinearGradient(0,0,W,0);
-  g.addColorStop(0,'#00C8FF');g.addColorStop(.5,'#FF0099');g.addColorStop(1,'#9933FF');
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,5);
-  // Bottom bar
-  g=ctx.createLinearGradient(0,0,W,0);
-  g.addColorStop(0,'#9933FF');g.addColorStop(.5,'#FF0099');g.addColorStop(1,'#00C8FF');
-  ctx.fillStyle=g;ctx.fillRect(0,H-5,W,5);
-
-  // Title bar
-  const titleY=isStory?40:30;
-  rr(ctx,50,titleY,W-100,80,10);
-  g=ctx.createLinearGradient(50,titleY,W-50,titleY);g.addColorStop(0,'#FF0099');g.addColorStop(1,'#9933FF');
-  ctx.fillStyle=g;ctx.fill();
-  solidText(ctx,'OFERTA ESPECIAL',W/2,titleY+55,'#fff',"bold 48px 'Bebas Neue',sans-serif");
-
-  // Separator
-  const sepY=titleY+100;
-  ctx.strokeStyle='#00C8FF';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(W/2-160,sepY);ctx.lineTo(W/2+160,sepY);ctx.stroke();
-
-  // Product image with smoke glow
-  const imgY=isStory?580:460;
-  smokeGlow(ctx,W/2,imgY,350);
-  const img=await li(p.img);
-  if(img){
-    const a=img.width/img.height;let dw,dh;
-    const mW=isStory?560:500,mH=isStory?560:480;
-    if(a>mW/mH){dw=mW;dh=mW/a}else{dh=mH;dw=mH*a}
-    ctx.drawImage(img,W/2-dw/2,imgY-dh/2,dw,dh);
-  }
-
-  // Product name
-  const nameY=isStory?960:790;
-  wrapSolid(ctx,p.n.toUpperCase(),W/2,nameY,W-100,52,'#fff',"bold 46px 'Rajdhani',sans-serif");
-  solidText(ctx,p.b,W/2,nameY+60,'#00C8FF',"500 28px 'Rajdhani',sans-serif");
-
-  // Prices
-  const priceY=isStory?1100:920;
-  solidText(ctx,fmt(price),W/2,priceY,'#666',"500 32px 'Rajdhani',sans-serif");
-  ctx.save();ctx.font="500 32px 'Rajdhani',sans-serif";const m=ctx.measureText(fmt(price)).width;
-  ctx.strokeStyle='#FF0099';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(W/2-m/2,priceY-5);ctx.lineTo(W/2+m/2,priceY-5);ctx.stroke();ctx.restore();
-
-  solidText(ctx,fmt(np),W/2,priceY+80,'#FF0099',"bold 82px 'Bebas Neue',sans-serif");
-
-  // Discount badge
-  rr(ctx,W/2-70,priceY+95,140,40,20);ctx.fillStyle='#9933FF';ctx.fill();
-  solidText(ctx,'-'+disc+'% OFF',W/2,priceY+123,'#fff',"bold 24px 'Rajdhani',sans-serif");
-
-  // CTA
-  const ctaY=isStory?1320:1170;
-  rr(ctx,W/2-160,ctaY,320,60,30);
-  g=ctx.createLinearGradient(W/2-160,0,W/2+160,0);g.addColorStop(0,'#00C8FF');g.addColorStop(1,'#9933FF');
-  ctx.fillStyle=g;ctx.fill();
-  solidText(ctx,'APROVECHA AHORA',W/2,ctaY+40,'#fff',"bold 26px 'Rajdhani',sans-serif");
-
-  // "SOLO POR TIEMPO LIMITADO"
-  solidText(ctx,'SOLO POR TIEMPO LIMITADO',W/2,ctaY+85,'#888',"600 20px 'Rajdhani',sans-serif");
-
-  // Logo
-  if(logoImg){const la=logoImg.width/logoImg.height;ctx.drawImage(logoImg,24,H-68,38*la,38)}
-  solidText(ctx,'@maxupsuplementos',W-30,H-25,'#555',"500 20px 'Rajdhani',sans-serif",'right');
 }
 
 let product=null;
@@ -571,7 +612,7 @@ async function init(){
   if(product){
     document.getElementById('info').textContent='Producto encontrado — Descuento: '+descPct+'%';
     document.getElementById('found').textContent=product.n+' — '+product.b+' — '+fmt(product.p)+' → '+fmt(Math.round(product.p*(1-descPct/100)));
-    setTimeout(()=>genPost(product,descPct,1080,1350),600);
+    setTimeout(()=>genPost(product,descPct,1080,1920),600);
   } else {
     document.getElementById('info').innerHTML='No se encontró "<b>'+query+'</b>" en el catálogo.<br>Verificá el nombre del producto.';
     document.getElementById('found').textContent='';
@@ -585,6 +626,13 @@ function genStory(){
   currentMode='story';
   genPost(product,descPct,1080,1920);
   document.getElementById('st').textContent='Story 1080x1920 generada';
+}
+
+function genFeedPost(){
+  if(!product)return;
+  currentMode='post';
+  genPost(product,descPct,1080,1350);
+  document.getElementById('st').textContent='Post 1080x1350 generado';
 }
 
 function dl(){
