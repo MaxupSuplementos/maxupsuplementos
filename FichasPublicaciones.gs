@@ -137,10 +137,603 @@ function _soloBeneficiosPromocionalesFicha(beneficios, categoria, texto, respald
   return resultado.slice(0, 5);
 }
 
+function _presentacionProductoFicha(nombre) {
+  var match = String(nombre || '').match(/\b\d+(?:[.,]\d+)?\s*(?:kg|kilos?|g|grs?|gramos?|lb|libras?|ml|litros?|caps?|cap|comp|serv)\b/i);
+  return match ? match[0].replace(/\s+/g, ' ').trim() : '';
+}
+
+// La proteína necesita distinguir fórmula y presentación. Un pote premium,
+// un doypack, un aislado y una proteína vegetal no deben mostrar la misma ficha.
+function _fichaProteinaEspecifica(texto, nombre, categoria, crear) {
+  if (categoria !== 'proteina') return null;
+  var presentacion = _presentacionProductoFicha(nombre);
+  var esPote = /\bpote\b/.test(texto);
+  var esDoypack = /doypack|doy pack/.test(texto);
+  var esGrande = /\b3\s*kg\b|\b5\s*lb\b/.test(texto);
+
+  if (/(?:truemade.*whey|whey.*truemade).*colag/.test(texto)) {
+    return crear('Fórmula ENA que combina 10 g de proteína con 10 g de colágeno por porción para músculo y tejido conectivo.', [
+      'Aporta proteína para ayudar al mantenimiento y la recuperación muscular.',
+      'Suma 10 g de colágeno para piel, tendones y articulaciones.',
+      'Combina dos perfiles de aminoácidos diferentes en una misma toma.',
+      'Permite trabajar nutrición muscular y cuidado estructural a la vez.',
+      'Su medida por porción facilita incorporarla todos los días.'
+    ]);
+  }
+
+  if (/whey ripped/.test(texto)) {
+    return crear('Whey Ripped: proteína de suero combinada con cafeína, carnitina y taurina para una etapa activa de definición.', [
+      'La whey aporta aminoácidos esenciales para conservar y reparar músculo.',
+      'La cafeína aumenta el estado de alerta y reduce la percepción de esfuerzo.',
+      'La carnitina participa en el transporte celular de ácidos grasos.',
+      'La taurina acompaña la función muscular durante el entrenamiento.',
+      'Une aporte proteico y energía estimulante en una sola preparación.'
+    ]);
+  }
+
+  if (/vegetal|soy protein|protein isolate pea|proteina.*arveja|pea protein/.test(texto)) {
+    var fuente = /soy/.test(texto) ? 'soja' : (/pea|arveja/.test(texto) ? 'arveja' : 'fuentes vegetales');
+    return crear('Proteína aislada de ' + fuente + ': alternativa vegetal para completar el aporte proteico sin usar whey.', [
+      'Aporta proteína de origen vegetal para mantener y reparar músculo.',
+      'Es una alternativa práctica para personas que no consumen proteína láctea.',
+      'El aislamiento concentra la proteína de la fuente vegetal.',
+      'Puede utilizarse en batidos, desayunos y preparaciones.',
+      'Ayuda a completar aminoácidos y proteína dentro de una alimentación vegetal.'
+    ]);
+  }
+
+  if (/(?:truemade.*whey|whey.*truemade)/.test(texto) && /\bena\b/.test(texto)) {
+    return crear('Truemade Whey ENA: mezcla de whey concentrada y aislada que aporta 25 g de proteína por porción.', [
+      'Aporta 25 g de proteína por porción para completar la ingesta diaria.',
+      'Combina whey concentrada y aislada en un mismo producto.',
+      'Aporta los nueve aminoácidos esenciales para la recuperación muscular.',
+      'Contiene 0 g de azúcares agregados según la fórmula declarada.',
+      'Es útil después de entrenar o para reforzar una comida baja en proteína.'
+    ]);
+  }
+
+  if (/100 whey/.test(texto) && /\bena\b/.test(texto)) {
+    return crear('100% Whey ENA: proteína de suero que aporta 20 g de proteína por servicio en una fórmula de entrada accesible.', [
+      'Aporta 20 g de proteína por servicio para complementar la alimentación.',
+      'Brinda aminoácidos esenciales para mantenimiento y recuperación muscular.',
+      'Funciona como colación proteica o batido posterior al entrenamiento.',
+      'Ayuda a distribuir mejor la proteína a lo largo del día.',
+      'Ofrece una alternativa sencilla para comenzar a usar whey.'
+    ]);
+  }
+
+  if (/isolate|iso gold|aislad/.test(texto)) {
+    return crear('Proteína aislada' + (presentacion ? ' de ' + presentacion : '') + ': fórmula concentrada con menos lactosa, grasa y carbohidratos que una whey concentrada.', [
+      'Aporta una alta proporción de proteína y los nueve aminoácidos esenciales.',
+      'Su menor contenido de lactosa puede favorecer una mejor tolerancia digestiva.',
+      'Ayuda a reparar el músculo y mantenerlo después del entrenamiento.',
+      'Resulta práctica cuando se prioriza proteína con pocos carbohidratos y grasas.',
+      'Se disuelve con rapidez para sumar proteína en cualquier momento del día.'
+    ]);
+  }
+
+  if (/platinum|wh3y platinum/.test(texto) && /star nutrition/.test(texto)) {
+    var formatoPlat = esGrande
+      ? 'El formato grande rinde más porciones y reduce la frecuencia de reposición.'
+      : (esPote
+        ? 'El pote rígido de boca ancha facilita medir, cerrar y conservar el polvo.'
+        : 'Su presentación permite tener una whey completa lista para el uso diario.');
+    return crear('Platinum Whey Star' + (presentacion ? ' ' + presentacion : '') + ': proteína de suero de la línea premium para uso diario y recuperación.', [
+      'Aporta aminoácidos esenciales para reparar y mantener la masa muscular.',
+      'Ayuda a completar la proteína diaria después de entrenar o entre comidas.',
+      formatoPlat,
+      esGrande ? 'La presentación de 3 kg es conveniente para consumo frecuente o compartido.' : 'La presentación de 2 lb equilibra rendimiento y facilidad de guardado.',
+      'Puede aumentar la saciedad al reforzar una comida o colación.'
+    ]);
+  }
+
+  if (/proteina 7900/.test(texto)) {
+    return crear('Proteína 7900 Gentech' + (presentacion ? ' ' + presentacion : '') + ': whey para completar la proteína diaria y acompañar la recuperación muscular.', [
+      'Aporta proteína de suero y aminoácidos esenciales para el músculo.',
+      'Ayuda a recuperar y mantener masa muscular después del entrenamiento.',
+      esPote ? 'El pote rígido facilita medir, cerrar y conservar el contenido.' : 'El doypack es liviano, compacto y ocupa menos lugar al guardarlo.',
+      esDoypack ? 'El cierre resellable protege el polvo entre preparaciones.' : 'La boca ancha permite retirar cada medida con comodidad.',
+      'Puede usarse como batido postentreno o para reforzar una colación.'
+    ]);
+  }
+
+  if (/just whey/.test(texto)) {
+    return crear('Just Whey Star: proteína de suero sin sabor, pensada para sumar proteína sin modificar el gusto de la preparación.', [
+      'Aporta aminoácidos esenciales para recuperación y mantenimiento muscular.',
+      'El sabor neutro permite combinarla tanto con recetas dulces como saladas.',
+      'Puede mezclarse en licuados, yogur, avena, panqueques y otras comidas.',
+      'Ayuda a aumentar el aporte proteico sin agregar un sabor dominante.',
+      'Resulta práctica para repartir la proteína en distintas comidas del día.'
+    ]);
+  }
+
+  if (esDoypack && /whey/.test(texto)) {
+    return crear('Whey en doypack' + (presentacion ? ' de ' + presentacion : '') + ': proteína de suero en envase flexible y compacto para uso cotidiano.', [
+      'Aporta aminoácidos esenciales para mantenimiento y reparación muscular.',
+      'El doypack ocupa menos espacio y resulta liviano para guardar o trasladar.',
+      'El cierre resellable ayuda a mantener el polvo protegido entre usos.',
+      'Es útil como batido postentreno o para completar una comida.',
+      'Permite sumar proteína de manera rápida sin cocinar.'
+    ]);
+  }
+
+  if (/premium|bio prot|pro performance|whey pro/.test(texto)) {
+    return crear('Fórmula proteica de línea premium' + (presentacion ? ' en presentación de ' + presentacion : '') + ', pensada para uso frecuente y recuperación muscular.', [
+      'Aporta proteína completa y aminoácidos esenciales para el músculo.',
+      'Ayuda a completar el objetivo diario de proteína con una toma práctica.',
+      esPote ? 'El pote rígido facilita medir y conservar el producto durante el uso.' : 'Su presentación es práctica para preparar batidos todos los días.',
+      'Puede utilizarse después de entrenar o para reforzar una colación.',
+      'Acompaña recuperación, mantenimiento muscular y saciedad.'
+    ]);
+  }
+
+  if (/blend/.test(texto)) {
+    return crear('Blend proteico' + (presentacion ? ' de ' + presentacion : '') + ': combina más de una fuente o fracción para ampliar el perfil de la fórmula.', [
+      'Aporta los aminoácidos esenciales necesarios para reparar músculo.',
+      'La mezcla de fuentes ofrece un perfil proteico más amplio.',
+      'Ayuda a completar la ingesta diaria sin depender de una comida grande.',
+      'Funciona como postentreno, desayuno o colación proteica.',
+      'Puede aportar saciedad y practicidad durante el día.'
+    ]);
+  }
+
+  if (/protein shake/.test(texto)) {
+    return crear('Protein Shake' + (presentacion ? ' de ' + presentacion : '') + ': mezcla proteica pensada para preparar una colación completa y rápida.', [
+      'Permite preparar un batido proteico en pocos minutos.',
+      'Ayuda a completar la proteína diaria y mantener masa muscular.',
+      'Es práctica para desayuno, merienda o después de entrenar.',
+      'Puede mejorar la saciedad entre comidas.',
+      'Combina nutrición y comodidad en una preparación fácil de transportar.'
+    ]);
+  }
+
+  return null;
+}
+
+function _fichaBarraEspecifica(texto, nombre, categoria, crear) {
+  if (categoria !== 'barra') return null;
+  var presentacion = _presentacionProductoFicha(nombre);
+
+  if (/beauty bar/.test(texto)) {
+    return crear('Beauty Bar Gentech: barra con colágeno, vitamina C, resveratrol y coenzima Q10.', [
+      'El colágeno aporta aminoácidos característicos de piel y tejido conectivo.',
+      'La vitamina C participa en la formación normal de colágeno.',
+      'Resveratrol y coenzima Q10 aportan soporte antioxidante.',
+      'Suma proteína en una colación individual lista para comer.',
+      'Combina nutrición, practicidad y cuidado estructural en una barra.'
+    ]);
+  }
+
+  if (/\bbrava\b/.test(texto)) {
+    return crear('Barra Brava de 58 g: snack vegetal con 15 g de proteína de arveja, dátiles y chocolate semiamargo.', [
+      'Aporta 15 g de proteína vegetal por unidad.',
+      'Utiliza proteína de arveja como fuente principal.',
+      'Es libre de gluten y apta para una alimentación sin TACC.',
+      'Dátiles, frutos secos y semillas aportan energía y textura.',
+      'Su porción individual resulta práctica antes o después de entrenar.'
+    ]);
+  }
+
+  if (/\bena\b/.test(texto) && /protein bar/.test(texto)) {
+    return crear('ENA Protein Bar de 46 g: combina 12 g de proteína con carbohidratos en una porción individual.', [
+      'Aporta 12 g de proteína por barra para complementar la ingesta diaria.',
+      'Combina proteína y carbohidratos para una colación energética.',
+      'Puede utilizarse antes o después de la actividad física.',
+      'Ayuda a resolver una comida corta cuando estás fuera de casa.',
+      'Su unidad de 46 g es fácil de transportar y consumir.'
+    ]);
+  }
+
+  if (/grows bar/.test(texto)) {
+    return crear('Grows Bar de 46 g: barra crocante que aporta 14 g de proteína y carbohidratos para una colación activa.', [
+      'Aporta 14 g de proteína por unidad.',
+      'Incluye BCAA presentes en su aporte proteico.',
+      'Los carbohidratos ayudan a reponer energía después del entrenamiento.',
+      'Su textura crocante ofrece una alternativa distinta a un batido.',
+      'La porción individual es práctica para llevar y consumir.'
+    ]);
+  }
+
+  if (/low carb/.test(texto)) {
+    return crear('Barra proteica Low Carb' + (presentacion ? ' de ' + presentacion : '') + ', formulada para priorizar proteína con menos carbohidratos que una barra convencional.', [
+      'Ayuda a sumar proteína en una colación compacta.',
+      'Su perfil reducido en carbohidratos se adapta a planes que controlan ese nutriente.',
+      'Puede mejorar la saciedad entre comidas.',
+      'Es práctica antes o después de entrenar.',
+      'Permite reemplazar el batido por una opción sólida y portátil.'
+    ]);
+  }
+
+  if (/whey bar/.test(texto)) {
+    return crear('Whey Bar' + (presentacion ? ' de ' + presentacion : '') + ': barra cuya proteína principal proviene del suero de leche.', [
+      'Aporta proteína de suero y aminoácidos esenciales en formato sólido.',
+      'Ayuda a completar la proteína diaria cuando no podés preparar un batido.',
+      'Puede utilizarse como colación previa o posterior al entrenamiento.',
+      'Su porción individual facilita controlar y transportar la cantidad.',
+      'Combina recuperación muscular y practicidad en una sola barra.'
+    ]);
+  }
+
+  if (/omelette/.test(texto)) {
+    return crear('Preparado para omelette proteico' + (presentacion ? ' de ' + presentacion : '') + ': opción salada y rápida para una comida con más proteína.', [
+      'Permite preparar una comida proteica sin pesar varios ingredientes.',
+      'Ofrece una alternativa salada a batidos, barras y panqueques.',
+      'Puede combinarse con vegetales, queso u otros rellenos.',
+      'Es útil para desayuno, almuerzo o cena según la preparación.',
+      'Su mezcla lista reduce el tiempo de cocina y facilita controlar la porción.'
+    ]);
+  }
+
+  if (/barra.*cereal|cereal.*barra/.test(texto)) {
+    return crear('Barra de cereal' + (presentacion ? ' de ' + presentacion : '') + ': colación compacta basada en cereales para sumar energía de forma práctica.', [
+      'Aporta carbohidratos para acompañar la energía entre comidas.',
+      'Su formato individual es fácil de llevar al trabajo, estudio o entrenamiento.',
+      'Permite resolver una colación sin preparación previa.',
+      'Ofrece textura crocante como alternativa a bebidas y batidos.',
+      'Ayuda a organizar una porción práctica cuando estás fuera de casa.'
+    ]);
+  }
+
+  if (/barra proteica|protein bar|barras proteicas/.test(texto)) {
+    return crear('Barra proteica' + (presentacion ? ' de ' + presentacion : '') + ': colación sólida que combina proteína y energía en una unidad lista para consumir.', [
+      'Suma proteína sin necesidad de preparar un batido.',
+      'Ayuda al mantenimiento y la recuperación muscular.',
+      'La porción individual es fácil de llevar al trabajo o gimnasio.',
+      'Puede mejorar la saciedad entre comidas.',
+      presentacion ? 'Su tamaño de ' + presentacion + ' permite identificar claramente la porción.' : 'Permite sumar una colación proteica en cualquier momento.'
+    ]);
+  }
+
+  return null;
+}
+
+function _fichaAccesorioEspecifica(texto, nombre, categoria, crear) {
+  // Algunos accesorios históricos quedaron cargados como "otros". La marca y
+  // el nombre permiten reconocerlos sin exigir que la categoría esté perfecta.
+  if (categoria !== 'accesorio' && !/\baccesorios\b/.test(texto)) return null;
+  var presentacion = _presentacionProductoFicha(nombre);
+
+  if (/\bstrap/.test(texto)) return crear('Straps de levantamiento: correas que conectan la mano con la barra para reforzar el agarre en ejercicios de tirón.', [
+    'Refuerzan la sujeción en peso muerto, remos y otros tirones pesados.',
+    'Permiten que espalda y cadena posterior sigan trabajando cuando se fatiga el agarre.',
+    'Ayudan a sostener más repeticiones con cargas exigentes.',
+    'Se enrollan alrededor de la barra para brindar una unión firme.',
+    'El par es liviano y ocupa muy poco espacio en el bolso.'
+  ]);
+
+  if (/callera/.test(texto)) return crear('Calleras de cuero: protectores de palma para mejorar el contacto con barras y reducir el roce directo.', [
+    'Protegen la palma durante dominadas, barras y movimientos repetidos.',
+    'Reducen fricción, pellizcos y formación excesiva de callos.',
+    'El cuero aporta una superficie resistente para el agarre.',
+    'Dejan los dedos libres para conservar sensibilidad y control.',
+    'Son prácticas para calistenia, cross training y gimnasio.'
+  ]);
+
+  if (/ejercitador de dedos/.test(texto)) return crear('Ejercitador para extensión y control individual de los dedos.', [
+    'Fortalece extensores de dedos que los ejercicios de agarre suelen trabajar menos.',
+    'Mejora coordinación y control de cada dedo.',
+    'Complementa el entrenamiento de mano y antebrazo.',
+    'Su tamaño permite usarlo en casa, trabajo o viaje.',
+    /tension alta/.test(texto) ? 'La tensión alta ofrece mayor resistencia para manos entrenadas.' : 'La muñequera ayuda a mantener el dispositivo estable durante el ejercicio.'
+  ]);
+
+  if (/codera/.test(texto)) return crear('Codera de compresión diseñada para dar soporte uniforme alrededor de la articulación del codo.', [
+    'Aporta compresión y sensación de estabilidad durante empujes y tirones.',
+    'Ayuda a conservar calor local antes y durante el entrenamiento.',
+    'Reduce el roce directo sobre la zona del codo.',
+    'Su tejido elástico acompaña la flexión y extensión del brazo.',
+    'Es útil para musculación y actividades repetitivas de tren superior.'
+  ]);
+
+  if (/protector tibial|tibial sonnos/.test(texto)) return crear('Protector tibial para cubrir espinilla y empeine durante deportes de contacto.', [
+    'Amortigua impactos directos sobre la tibia durante golpes y bloqueos.',
+    'Protege el empeine sin impedir el movimiento del tobillo.',
+    'Su ajuste ayuda a mantener la protección en posición.',
+    /junior/.test(texto) ? 'El tamaño junior está pensado para practicantes de menor contextura.' : 'El formato profesional ofrece una cobertura amplia para entrenamiento frecuente.',
+    'Es útil para kick boxing, muay thai y otras disciplinas de contacto.'
+  ]);
+
+  if (/push up|manija.*flexion/.test(texto)) return crear('Par de manijas para flexiones que eleva las manos y ofrece un agarre neutro y estable.', [
+    'Reduce la extensión forzada de la muñeca durante las flexiones.',
+    'Permite bajar el pecho con un recorrido más amplio.',
+    'El agarre ergonómico ayuda a repartir la presión sobre la mano.',
+    'La base triangular brinda estabilidad en el apoyo.',
+    'Es liviano y permite entrenar pecho, hombros y tríceps en cualquier lugar.'
+  ]);
+
+  if (/power ball|esfera giroscopica/.test(texto)) return crear('Esfera giroscópica para ejercitar muñeca, mano y antebrazo mediante resistencia rotacional.', [
+    'La resistencia aumenta a medida que acelera el giro.',
+    'Trabaja coordinación y control de la muñeca.',
+    'Fortalece mano y antebrazo sin usar pesas externas.',
+    'Permite variar la intensidad controlando la velocidad.',
+    'Su tamaño compacto facilita usarla y transportarla en cualquier lugar.'
+  ]);
+
+  if (/protan|pintura.*spray/.test(texto)) return crear('Spray de coloración corporal Pro Tan para lograr un tono uniforme de presentación física.', [
+    'Realza visualmente definición y contornos musculares bajo iluminación intensa.',
+    'El formato en spray facilita distribuir el producto sobre zonas amplias.',
+    'Permite construir el tono en capas según la intensidad buscada.',
+    'Ayuda a conseguir una apariencia más pareja para escenario o sesión de fotos.',
+    'La presentación de 250 ml resulta práctica para aplicación corporal.'
+  ]);
+
+  if (/munequera/.test(texto) && /tenis|sixzero|simbra 12/.test(texto)) return crear('Muñequera deportiva de tela para absorber transpiración durante tenis y otras actividades.', [
+    'Absorbe sudor antes de que llegue a la mano.',
+    'Ayuda a mantener más seco el agarre de raquetas y accesorios.',
+    'Su formato corto acompaña el movimiento sin inmovilizar la articulación.',
+    'Resulta cómoda para tenis, pádel, gimnasio y running.',
+    /x 2|par/.test(texto) ? 'El par permite usar protección en ambas muñecas.' : 'Su formato compacto es fácil de lavar y transportar.'
+  ]);
+
+  if (/munequera/.test(texto)) {
+    var esNeoprene = /neoprene|boomerang/.test(texto);
+    return crear(esNeoprene ? 'Muñequera envolvente de neoprene para soporte regulable durante ejercicios con carga.' : 'Muñequera elástica para dar compresión flexible durante el entrenamiento.', [
+      'Aporta soporte a la muñeca en presses y levantamientos.',
+      'La tensión ajustable permite adaptar el nivel de firmeza.',
+      esNeoprene ? 'El neoprene conserva calor local y brinda una sujeción más firme.' : 'El tejido elástico mantiene movilidad con compresión ligera.',
+      'Ayuda a mantener una posición más estable bajo carga.',
+      'Es compacta y fácil de llevar en el bolso del gimnasio.'
+    ]);
+  }
+
+  if (/rodillera.*voley/.test(texto)) return crear('Rodillera de vóley con acolchado frontal para amortiguar golpes y caídas sobre la cancha.', [
+    'El acolchado protege la parte frontal de la rodilla en caídas.',
+    'Su tejido elástico acompaña saltos, flexiones y desplazamientos.',
+    'Ayuda a reducir el roce directo contra el piso.',
+    'El formato en par protege ambas rodillas durante el juego.',
+    'Está diseñada específicamente para vóley y deportes con impacto frontal.'
+  ]);
+
+  if (/rodillera/.test(texto)) return crear('Rodillera de compresión para acompañar estabilidad, calor y movimiento de la articulación.', [
+    'Aporta compresión uniforme alrededor de la rodilla.',
+    'Brinda sensación de estabilidad en sentadillas y movimientos de piernas.',
+    'Ayuda a conservar calor local durante la entrada en actividad.',
+    'Su tejido flexible acompaña el rango de movimiento.',
+    'Es útil para gimnasio, caminata y entrenamiento general.'
+  ]);
+
+  if (/cinturon para hip thrust/.test(texto)) return crear('Cinturón específico para apoyar y sujetar carga durante hip thrust y puente de glúteos.', [
+    'Distribuye la presión de la carga sobre la zona de la cadera.',
+    'Evita el contacto directo e incómodo de discos o mancuernas.',
+    'Facilita agregar resistencia a ejercicios de glúteos.',
+    'Ayuda a mantener la carga más estable durante cada repetición.',
+    'Es más rápido de colocar que improvisar acolchados o apoyos.'
+  ]);
+
+  if (/cinturon lumbar/.test(texto)) return crear('Cinturón lumbar para reforzar el braceo y la estabilidad del tronco durante levantamientos pesados.', [
+    'Ofrece una superficie firme contra la cual generar presión abdominal.',
+    'Acompaña la estabilidad del tronco en sentadilla y peso muerto.',
+    'El ajuste permite adaptarlo antes de cada serie pesada.',
+    'Ayuda a mantener una técnica más consistente bajo carga.',
+    'Su construcción resistente está pensada para entrenamiento de fuerza.'
+  ]);
+
+  if (/faja.*neoprene/.test(texto)) return crear('Faja ajustable de neoprene para compresión y abrigo de la zona media durante la actividad.', [
+    'Aporta compresión regulable alrededor del abdomen y la cintura.',
+    'El neoprene ayuda a conservar calor local.',
+    'El cierre ajustable permite adaptarla a distintas medidas.',
+    'Acompaña la comodidad de la zona media durante movimientos generales.',
+    'Su formato flexible puede utilizarse debajo de la indumentaria deportiva.'
+  ]);
+
+  if (/bolsa de boxeo de piso|puching ball piso|punching ball piso/.test(texto)) return crear('Bolsa de boxeo de piso con base propia, pensada para golpes y desplazamientos sin colgarla del techo.', [
+    'No requiere perforar techo ni pared para instalarla.',
+    'Permite practicar golpes desde distintos ángulos alrededor de la base.',
+    'Su altura acompaña combinaciones de manos a diferentes niveles.',
+    'Ayuda a trabajar técnica, coordinación y resistencia.',
+    'Puede trasladarse cuando necesitás liberar el espacio.'
+  ]);
+
+  if (/bolsa de boxeo/.test(texto)) return crear('Bolsa de boxeo rellena para practicar potencia, técnica y combinaciones de golpeo.', [
+    'Permite entrenar golpes continuos sin depender de un compañero.',
+    'Ayuda a desarrollar potencia, coordinación y resistencia específica.',
+    /1 50m|1 50 m/.test(texto) ? 'Sus 1,50 m permiten trabajar golpes a distintas alturas.' : 'Su formato compacto es apropiado para práctica de manos.',
+    /cordura/.test(texto) ? 'La cordura ofrece una cubierta resistente para uso frecuente.' : 'La cubierta vinílica facilita la limpieza exterior.',
+    'Al venir rellena queda lista para colgar y comenzar a entrenar.'
+  ]);
+
+  if (/venda.*boxeo/.test(texto)) return crear('Venda de boxeo de 3 metros para envolver mano y muñeca debajo del guante.', [
+    'Ayuda a estabilizar muñeca y nudillos durante el golpeo.',
+    'Distribuye la sujeción alrededor de la mano.',
+    'Reduce el roce directo dentro del guante.',
+    'Sus 3 metros permiten ajustar el vendaje a cada mano.',
+    'Puede lavarse y reutilizarse entre sesiones.'
+  ]);
+
+  if (/pelota.*reflejos|reflejos.*boxeo/.test(texto)) return crear('Vincha con pelota elástica para entrenar reflejos, precisión y coordinación mano-ojo.', [
+    'Mejora el tiempo de reacción frente a un objetivo en movimiento.',
+    'Trabaja coordinación entre vista y golpe.',
+    'Ayuda a practicar ritmo y precisión de manera entretenida.',
+    'Permite entrenar en poco espacio y sin compañero.',
+    'La vincha ajustable mantiene el objetivo alineado durante la práctica.'
+  ]);
+
+  if (/tobillera.*polea/.test(texto)) return crear('Tobillera con gancho para conectar el tobillo a una polea y entrenar piernas y glúteos.', [
+    'Permite realizar patadas, abducciones, aducciones y extensiones en polea.',
+    'El apoyo de talón ayuda a mantener la correa en posición.',
+    'El gancho facilita colocar y retirar el cable.',
+    'Permite aislar movimientos de glúteos y piernas.',
+    'Su ajuste distribuye la tensión alrededor del tobillo.'
+  ]);
+
+  if (/tobilleras?\s*(?:1|2)\s*kg/.test(texto)) return crear('Par de tobilleras lastradas de ' + (presentacion || 'peso indicado') + ' para agregar resistencia constante al movimiento.', [
+    'Suma carga a caminatas, elevaciones y ejercicios de piernas.',
+    'Permite progresar sin sostener mancuernas con las manos.',
+    'El cierre ajustable mantiene el peso junto al tobillo.',
+    /2\s*kg/.test(texto) ? 'Los 2 kg ofrecen un estímulo mayor para usuarios con experiencia.' : 'El peso de 1 kg es práctico para comenzar o realizar más repeticiones.',
+    'El formato en par permite trabajar ambos lados de manera equilibrada.'
+  ]);
+
+  if (/mancuernas? recubiertas/.test(texto)) return crear('Mancuerna recubierta de ' + (presentacion || 'peso fijo') + ' para fuerza ligera, movilidad y clases de fitness.', [
+    'El peso fijo permite controlar fácilmente la progresión.',
+    'El recubrimiento mejora comodidad de agarre y protege el piso.',
+    'Es útil para brazos, hombros, movilidad y ejercicios combinados.',
+    /0[,.]5\s*kg/.test(texto) ? 'Los 0,5 kg son ideales para movilidad y trabajo de baja carga.' : 'Su carga permite sumar resistencia a rutinas en casa o gimnasio.',
+    'Su tamaño compacto facilita guardarla y transportarla.'
+  ]);
+
+  if (/tope barra olimpica/.test(texto)) return crear('Par de topes para fijar discos sobre una barra olímpica durante el entrenamiento.', [
+    'Evita que los discos se desplacen lateralmente durante la serie.',
+    'El cierre rápido agiliza cambios de peso.',
+    'Aporta estabilidad en movimientos dinámicos y levantamientos.',
+    'Se coloca y retira sin herramientas.',
+    'Ayuda a mantener ambos lados de la barra correctamente asegurados.'
+  ]);
+
+  if (/rueda.*abdominal/.test(texto)) return crear('Rueda abdominal doble para entrenar estabilidad del core mediante extensiones controladas.', [
+    'Trabaja abdominales, zona media, hombros y dorsales en conjunto.',
+    'La rueda doble brinda una base más estable que una rueda simple.',
+    'Permite progresar aumentando gradualmente el recorrido.',
+    'Los agarres mantienen las manos alineadas durante el movimiento.',
+    'Ocupa poco espacio y sirve para entrenar en casa o gimnasio.'
+  ]);
+
+  if (/ejercitador abdominal de piso/.test(texto)) return crear('Ejercitador de piso que guía el movimiento abdominal y brinda apoyo durante las repeticiones.', [
+    'Ayuda a mantener un recorrido más uniforme en cada repetición.',
+    'Brinda apoyo para entrenar el abdomen desde el piso.',
+    'Permite realizar series sin depender de una máquina grande.',
+    'Es útil para comenzar y controlar mejor la técnica.',
+    'Se integra fácilmente a una rutina de entrenamiento en casa.'
+  ]);
+
+  if (/ejercitador de mandibula/.test(texto)) return crear('Ejercitador de mordida fabricado para ofrecer resistencia a los músculos de la mandíbula.', [
+    'Permite realizar contracciones de mandíbula contra resistencia.',
+    'Su tamaño pequeño facilita transportarlo y guardarlo.',
+    'Ofrece una forma medida de trabajar músculos masticatorios.',
+    'Puede incorporarse a sesiones breves y progresivas.',
+    'Es reutilizable y sencillo de integrar a una rutina.'
+  ]);
+
+  if (/pelota pilates/.test(texto)) return crear('Pelota de Pilates de ' + (presentacion || 'tamaño compacto') + ' para movilidad, activación y ejercicios de estabilidad.', [
+    'Sirve como apoyo para ejercicios de abdomen, piernas y movilidad.',
+    'Permite agregar inestabilidad controlada a movimientos sencillos.',
+    'Su tamaño compacto es práctico para Pilates y rehabilitación.',
+    'La válvula permite ajustar el nivel de inflado.',
+    'Es liviana y fácil de guardar después del uso.'
+  ]);
+
+  if (/cono.*flexible/.test(texto)) return crear('Cono flexible de entrenamiento para marcar recorridos, estaciones y cambios de dirección.', [
+    'Permite delimitar circuitos de velocidad y coordinación.',
+    'Es útil para fútbol, funcional, running y trabajos grupales.',
+    'Su material flexible reduce golpes si se pisa accidentalmente.',
+    'Se apila y transporta con facilidad.',
+    'Ayuda a organizar distancias y objetivos visibles en la práctica.'
+  ]);
+
+  if (/banda elastica larga/.test(texto) && /manijas|anclaje/.test(texto)) return crear('Banda elástica larga con manijas y anclaje para realizar ejercicios de tren superior e inferior.', [
+    'Las manijas brindan un agarre cómodo en tirones y empujes.',
+    'El anclaje permite fijarla y ampliar la variedad de ejercicios.',
+    'La tensión media sirve para fuerza, activación y movilidad.',
+    'Permite entrenar brazos, espalda, pecho y piernas.',
+    'Se transporta fácilmente para entrenar en casa o viaje.'
+  ]);
+
+  if (/banda elastica circular con tobilleras/.test(texto)) return crear('Banda circular con tobilleras diseñada para mantener la resistencia estable en ejercicios de glúteos y piernas.', [
+    'Las tobilleras evitan que la banda se enrolle o desplace.',
+    'Permite trabajar abducciones, extensiones y pasos laterales.',
+    'La tensión media ofrece resistencia útil para tren inferior.',
+    'Ayuda a aislar glúteos y músculos de la cadera.',
+    'Es compacta para usar en casa, gimnasio o viaje.'
+  ]);
+
+  if (/kit.*bandas.*tela.*circular/.test(texto)) return crear('Kit de tres bandas circulares de tela para activar y fortalecer glúteos y piernas con resistencias progresivas.', [
+    'Los tres niveles permiten elegir la resistencia adecuada para cada ejercicio.',
+    'La tela ancha distribuye la presión y evita que la banda se enrolle fácilmente.',
+    'Sirven para pasos laterales, abducciones, sentadillas y puentes de glúteos.',
+    'Permiten progresar sin cambiar de tipo de accesorio.',
+    'El kit es compacto y fácil de usar en casa, gimnasio o viaje.'
+  ]);
+
+  if (/kit 5 bandas/.test(texto)) return crear('Kit de cinco bandas circulares con diferentes resistencias y funda de transporte.', [
+    'Los cinco niveles permiten progresar y elegir tensión por ejercicio.',
+    'Sirven para activación de glúteos, piernas, hombros y movilidad.',
+    'Permiten combinar o cambiar bandas durante la rutina.',
+    'La funda mantiene el conjunto ordenado y listo para transportar.',
+    'Ocupan poco espacio y permiten entrenar en cualquier lugar.'
+  ]);
+
+  if (/bolso/.test(texto)) {
+    var capacidad = (nombre.match(/\b\d+\s*l\b/i) || [])[0] || '';
+    return crear('Bolso deportivo' + (capacidad ? ' de ' + capacidad.toUpperCase() : '') + ' para organizar indumentaria, calzado y accesorios.', [
+      capacidad ? 'La capacidad de ' + capacidad.toUpperCase() + ' permite elegir el tamaño según lo que llevás.' : 'Ofrece espacio para organizar lo necesario del entrenamiento.',
+      /t60|t80/.test(texto) ? 'Sus compartimentos separan calzado y objetos personales.' : 'Permite separar prendas y accesorios dentro del bolso.',
+      'Las correas facilitan el traslado al gimnasio o durante viajes cortos.',
+      'Ayuda a mantener el equipo reunido y ordenado.',
+      'Su construcción está pensada para uso frecuente.'
+    ]);
+  }
+
+  if (/llavero scooper/.test(texto)) return crear('Mini contenedor con scoop para llevar una porción de suplemento unido a las llaves o al bolso.', [
+    'Transporta una porción de polvo sin llevar el envase grande.',
+    'El scoop integrado facilita medir y verter el suplemento.',
+    'Se engancha a llaves, mochila o bolso de entrenamiento.',
+    'Mantiene el polvo separado hasta el momento de preparar la bebida.',
+    'Ocupa muy poco espacio y acompaña rutinas fuera de casa.'
+  ]);
+
+  if (/scoop.*5\s*gr/.test(texto)) return crear('Cuchara medidora de 5 g para dosificar suplementos en polvo de forma repetible.', [
+    'Facilita medir porciones de aproximadamente 5 g.',
+    'Es práctica para creatina y otros polvos con dosis similares.',
+    'Reduce derrames al pasar el suplemento al vaso o shaker.',
+    'Puede lavarse y reutilizarse.',
+    'Permite reemplazar una cuchara medidora perdida.'
+  ]);
+
+  if (/vincha/.test(texto)) return crear('Vincha deportiva para mantener el cabello y la transpiración alejados del rostro.', [
+    'Ayuda a despejar la cara durante el entrenamiento.',
+    'Absorbe parte de la transpiración de la frente.',
+    'Acompaña running, gimnasio y actividades al aire libre.',
+    'Su tejido flexible se adapta a la cabeza.',
+    'Es liviana, lavable y fácil de transportar.'
+  ]);
+
+  return null;
+}
+
 // Fichas específicas por ingrediente, forma química o fórmula declarada.
 // Las frases describen funciones nutricionales y distinguen nivel de evidencia;
 // no convierten un suplemento en tratamiento médico ni prometen resultados.
 function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
+  if (/maxi gain/.test(texto)) {
+    return crear('Maxi Gain Gentech: ganador de peso con carbohidratos y proteína de suero para aumentar el aporte calórico diario.', [
+      'Combina carbohidratos y proteína en una sola preparación.',
+      'Facilita alcanzar un superávit calórico cuando cuesta comer el volumen necesario.',
+      'La proteína de suero aporta aminoácidos esenciales para el músculo.',
+      'Los carbohidratos ayudan a reponer energía después de entrenamientos intensos.',
+      'Resulta práctico como batido entre comidas o después de entrenar.'
+    ]);
+  }
+
+  if (/carbo complex/.test(texto)) {
+    return crear('Carbo Complex Mervick: mezcla de carbohidratos en polvo para aumentar energía y reponer reservas después del ejercicio.', [
+      'Aporta carbohidratos de forma rápida y fácil de preparar.',
+      'Ayuda a reponer glucógeno después de sesiones intensas o prolongadas.',
+      'Permite aumentar las calorías del batido sin sumar gran volumen de comida.',
+      'Puede acompañar entrenamientos de resistencia, fuerza o ganancia de peso.',
+      'Su formato en polvo facilita ajustar la cantidad a cada objetivo.'
+    ]);
+  }
+
+  if (/\bnad gold\b/.test(texto)) {
+    return crear('NAD Gold: fórmula de nicotinamida y D-ribosa, nutrientes vinculados al metabolismo y la producción de energía celular.', [
+      'La nicotinamida, forma de vitamina B3, participa en coenzimas del metabolismo energético.',
+      'La D-ribosa forma parte de moléculas celulares relacionadas con la energía.',
+      'Acompaña procesos normales de obtención de energía a partir de nutrientes.',
+      'Sus cápsulas vegetales ofrecen una toma diaria práctica.',
+      'La presentación de 30 cápsulas permite organizar un mes de uso.'
+    ]);
+  }
+
+  if (/pure de papa/.test(texto)) {
+    return crear('Puré de papa instantáneo de 150 g: preparación rápida para sumar una guarnición de carbohidratos.', [
+      'Permite preparar una guarnición caliente en pocos minutos.',
+      'Aporta carbohidratos para acompañar comidas principales.',
+      'Ayuda a resolver una comida cuando hay poco tiempo para cocinar.',
+      'Puede combinarse con carnes, huevos, vegetales y otras fuentes de proteína.',
+      'Su presentación compacta es fácil de almacenar y porcionar.'
+    ]);
+  }
+
   if (/citrato.*magnesio|magnesio.*citrato/.test(texto)) {
     return crear(
       'Magnesio unido a ácido cítrico: una forma soluble que aporta magnesio y que, según la dosis, también puede atraer agua al intestino.',
@@ -780,8 +1373,10 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
 function _fichaPublicacionBase(producto) {
   var nombre = String(producto.nombre || '');
   var categoria = String(producto.categoria || 'otros');
-  var texto = _normalizarTextoFicha([nombre, producto.marca, categoria].join(' '));
   var descripcionCatalogo = _limpiarTextoFicha(producto.descripcion, 220);
+  // La descripción se usa para detectar ingredientes y funciones en productos
+  // nuevos cuyo nombre comercial no alcanza para identificarlos.
+  var texto = _normalizarTextoFicha([nombre, producto.marca, categoria, descripcionCatalogo].join(' '));
 
   function crear(queEs, beneficios) {
     return {
@@ -792,7 +1387,10 @@ function _fichaPublicacionBase(producto) {
     };
   }
 
-  var puntual = _fichaSuplementoPuntual(texto, nombre, categoria, crear);
+  var puntual = _fichaProteinaEspecifica(texto, nombre, categoria, crear) ||
+    _fichaBarraEspecifica(texto, nombre, categoria, crear) ||
+    _fichaAccesorioEspecifica(texto, nombre, categoria, crear) ||
+    _fichaSuplementoPuntual(texto, nombre, categoria, crear);
   if (puntual) return puntual;
 
   if (/glutamin/.test(texto)) {

@@ -176,7 +176,16 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
       cla: _fichaPublicacionBase({ nombre: 'Cla 1000 90cap', marca: 'STAR NUTRITION', categoria: 'quemador' }),
       stanozolol: _fichaPublicacionBase({ nombre: 'Stanozoland 10Mg 100Comp', marca: 'LANDERLAN', categoria: 'quimicos' }),
       mamushka: _fichaPublicacionBase({ nombre: 'Botella Mamushka 3 en 1', marca: 'MAXUP', categoria: 'accesorio', descripcion: 'Accesorio práctico' }),
-      licuadora: _fichaPublicacionBase({ nombre: 'Mini Licuadora Portátil', marca: 'MAXUP', categoria: 'accesorio', descripcion: 'Accesorio práctico' })
+      licuadora: _fichaPublicacionBase({ nombre: 'Mini Licuadora Portátil', marca: 'MAXUP', categoria: 'accesorio', descripcion: 'Accesorio práctico' }),
+      potePremium: _fichaPublicacionBase({ nombre: 'Platinum Whey Protein X 2 Lb Pote', marca: 'STAR NUTRITION', categoria: 'proteina' }),
+      wheyDoypack: _fichaPublicacionBase({ nombre: 'Whey Protein Doypack 2 Lb', marca: 'STAR NUTRITION', categoria: 'proteina' }),
+      truemade: _fichaPublicacionBase({ nombre: 'Whey Protein Truemade X 2,05 Lb', marca: 'ENA', categoria: 'proteina' }),
+      barraBrava: _fichaPublicacionBase({ nombre: 'Barra proteica 58g', marca: 'BRAVA', categoria: 'barra' }),
+      barraEna: _fichaPublicacionBase({ nombre: 'Protein Bar 46g', marca: 'ENA', categoria: 'barra' }),
+      codera: _fichaPublicacionBase({ nombre: 'Codera de Compresion DRB', marca: 'ACCESORIOS', categoria: 'accesorio' }),
+      munequeraTenis: _fichaPublicacionBase({ nombre: 'Muñequera de tenis sixzero x 2u', marca: 'ACCESORIOS', categoria: 'accesorio' }),
+      munequeraNeoprene: _fichaPublicacionBase({ nombre: 'Muñequera neoprene drb unidad', marca: 'ACCESORIOS', categoria: 'accesorio' }),
+      nuevoDetectado: _fichaPublicacionBase({ nombre: 'Nuevo Active Plant', marca: 'NUEVA MARCA', categoria: 'proteina', descripcion: 'Proteína aislada de arveja para dietas vegetales.' })
     };
   `);
   const result = run();
@@ -213,6 +222,17 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
   assert.match(result.licuadora.queEs, /motor integrado/i);
   assert.notEqual(result.mamushka.queEs, result.licuadora.queEs);
   assert.doesNotMatch(result.mamushka.queEs, /Accesorio práctico/);
+  assert.match(result.potePremium.beneficios.join(' '), /pote rígido|boca ancha/i);
+  assert.match(result.wheyDoypack.beneficios.join(' '), /doypack|cierre resellable/i);
+  assert.notDeepEqual(result.potePremium.beneficios, result.wheyDoypack.beneficios);
+  assert.match(result.truemade.queEs + ' ' + result.truemade.beneficios.join(' '), /25 g de proteína|concentrada y aislada/i);
+  assert.match(result.barraBrava.queEs + ' ' + result.barraBrava.beneficios.join(' '), /15 g de proteína|arveja|sin TACC/i);
+  assert.match(result.barraEna.queEs + ' ' + result.barraEna.beneficios.join(' '), /12 g de proteína/i);
+  assert.match(result.codera.queEs + ' ' + result.codera.beneficios.join(' '), /codo|articulación del codo/i);
+  assert.match(result.munequeraTenis.beneficios.join(' '), /transpiración|sudor/i);
+  assert.match(result.munequeraNeoprene.beneficios.join(' '), /neoprene|sujeción más firme/i);
+  assert.notDeepEqual(result.munequeraTenis.beneficios, result.munequeraNeoprene.beneficios);
+  assert.match(result.nuevoDetectado.queEs, /aislada de arveja|alternativa vegetal/i);
   const textoNoPromocional = /consult|revis|compar|anticoagul|cirugía programada|medicación|puede causar|no reemplaza|no equivale|no significa|no está demostrado|resultados variables|efecto adverso/i;
   Object.values(result).forEach(ficha => {
     assert.equal(ficha.beneficios.length, 5);
@@ -222,6 +242,17 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
   assert.match(source, /BORRADOR AUTOMATICO/);
   assert.match(source, /actualizadasAutomaticas/);
   assert.match(source, /_normalizarTextoFicha\(ficha\.estado\) === 'revisado'/);
+  assert.match(source, /descripcionCatalogo\]\.join/, 'La descripción de un producto nuevo debe participar en su detección automática');
+});
+
+test('los productos nuevos se sincronizan y entran en la rotación diaria', () => {
+  const source = read('Api.gs');
+  const start = source.indexOf('function _seleccionarProductosEstadosDiarios');
+  const end = source.indexOf('function _crearEnlaceEstadosDiarios', start);
+  const selector = source.slice(start, end);
+  assert.match(selector, /sincronizarFichasPublicaciones\(\)/, 'Debe crear la ficha de cualquier producto nuevo antes de elegir historias');
+  assert.match(selector, /a\._historialPublicacionEstado \? 2 : 1/, 'Un producto todavía no publicado debe tener prioridad en la rotación');
+  assert.match(selector, /stock[\s\S]*precio_venta[\s\S]*imagen_url/, 'Solo debe publicar productos nuevos vendibles y con foto');
 });
 
 test('Promo Express conserva el modo oferta y agrega el modo diario de cinco placas', () => {

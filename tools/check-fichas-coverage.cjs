@@ -2,11 +2,6 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const API = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec?accion=catalogo';
-const CATEGORIAS = new Set([
-  'proteina', 'vitamin', 'creatina', 'aminoacido', 'hidratacion', 'preworkout',
-  'colageno', 'quemador', 'gainer', 'quimicos', 'barra'
-]);
-
 async function main() {
   const source = fs.readFileSync(path.join(__dirname, '..', 'FichasPublicaciones.gs'), 'utf8');
   const block = source.match(/[\s\S]*?(?=function _leerFichasPublicaciones\()/);
@@ -17,18 +12,20 @@ async function main() {
   const data = await response.json();
   const productos = (data.productos || []).filter(p => {
     if (Number(p.stock) <= 0) return false;
-    if (CATEGORIAS.has(String(p.categoria))) return true;
-    return String(p.categoria) === 'otros' && /hydroxy max|pasta de mani/i.test(String(p.nombre));
+    if (Number(p.precio_venta || p.precio || 0) <= 0) return false;
+    if (!String(p.imagen_url || '').trim()) return false;
+    if (String(p.categoria || '').toLowerCase().trim() === 'quimicos') return false;
+    return !/stanozol|estanozol/i.test(String(p.nombre || ''));
   });
   const genericos = [];
   const incompletos = [];
   const textosCortados = [];
   const noPromocionales = [];
-  const patronNoPromocional = /consult|revis|compar|anticoagul|cirugía programada|medicación|puede causar|no reemplaza|no equivale|no significa|no está demostrado|resultados variables|efecto adverso|contraindicación/i;
+  const patronNoPromocional = /\b(?:consultar?|consultá|revisar?|revisá|comparar?|compará)\b|anticoagul|cirugía programada|medicación|puede causar|no reemplaza|no equivale|no significa|no está demostrado|resultados variables|efecto adverso|contraindicación/i;
 
   for (const producto of productos) {
     const resultado = ficha(producto);
-    if (/^Producto pensado para complementar/i.test(resultado.queEs)) genericos.push(producto);
+    if (/^(?:Producto pensado para complementar|Accesorio deportivo pensado|Alimento listo para consumir)/i.test(resultado.queEs)) genericos.push(producto);
     if (!resultado.queEs || !Array.isArray(resultado.beneficios) || resultado.beneficios.length !== 5) incompletos.push(producto);
     resultado.beneficios.forEach((beneficio, index) => {
       if (patronNoPromocional.test(beneficio)) {
