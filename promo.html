@@ -359,7 +359,8 @@ function fitBadgeLines(ctx,text,maxWidth,maxLines,startSize,minSize,maxHeight){
   return {size,lines};
 }
 
-function drawNeonBenefitBadge(ctx,text,index,x,y,w,h,colors){
+function drawNeonBenefitBadge(ctx,text,index,x,y,w,h,colors,style){
+  style=style||{};
   const color=colors[index%colors.length];
   ctx.save();
   ctx.shadowColor=color;ctx.shadowBlur=22;ctx.lineWidth=4;ctx.strokeStyle=color;
@@ -367,7 +368,7 @@ function drawNeonBenefitBadge(ctx,text,index,x,y,w,h,colors){
   ctx.shadowBlur=8;ctx.fillStyle=color;ctx.beginPath();ctx.arc(x+34,y+34,15,0,Math.PI*2);ctx.fill();
   ctx.shadowBlur=0;ctx.fillStyle='#07101B';ctx.font="800 18px 'Rajdhani',sans-serif";
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(index+1),x+34,y+35);
-  const fitted=fitBadgeLines(ctx,text,w-54,5,28,18,h-20);
+  const fitted=fitBadgeLines(ctx,text,w-54,style.maxLines||5,style.startSize||34,style.minSize||21,h-20);
   const lh=fitted.size+5,total=fitted.lines.length*lh;
   ctx.font=`700 ${fitted.size}px 'Rajdhani',sans-serif`;ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
   fitted.lines.forEach((line,lineIndex)=>ctx.fillText(line,x+w/2,y+h/2-total/2+lh*(lineIndex+.5)+10));
@@ -388,11 +389,13 @@ async function drawNeonBackdrop(ctx,W,H){
   ctx.fillStyle=edge;ctx.fillRect(0,0,W,H);
 }
 
-async function drawNeonProductHero(ctx,p,W){
+async function drawNeonProductHero(ctx,p,W,box){
   const img=await li(p.img);
-  const x=W/2-310,y=330,w=620,h=610;
+  box=box||{};
+  const x=Number.isFinite(box.x)?box.x:W/2-310,y=Number.isFinite(box.y)?box.y:330;
+  const w=box.w||620,h=box.h||610,cx=x+w/2;
   ctx.save();
-  const glow=ctx.createRadialGradient(W/2,y+h*.58,20,W/2,y+h*.58,390);
+  const glow=ctx.createRadialGradient(cx,y+h*.58,20,cx,y+h*.58,Math.max(w,h)*.64);
   glow.addColorStop(0,'rgba(255,255,255,.18)');glow.addColorStop(.45,'rgba(0,200,255,.12)');glow.addColorStop(1,'rgba(255,0,153,0)');
   ctx.fillStyle=glow;ctx.fillRect(x-100,y-80,w+200,h+160);
   rr(ctx,x,y,w,h,34);ctx.fillStyle='rgba(0,0,0,.16)';ctx.fill();
@@ -400,22 +403,47 @@ async function drawNeonProductHero(ctx,p,W){
     const ratio=img.width/img.height;let dw,dh;const maxW=w-36,maxH=h-28;
     if(ratio>maxW/maxH){dw=maxW;dh=maxW/ratio}else{dh=maxH;dw=maxH*ratio}
     ctx.shadowColor='rgba(0,200,255,.65)';ctx.shadowBlur=24;
-    ctx.drawImage(img,W/2-dw/2,y+h/2-dh/2,dw,dh);
+    ctx.drawImage(img,cx-dw/2,y+h/2-dh/2,dw,dh);
   }
   ctx.restore();
 }
 
-function drawNeonDescription(ctx,p,W,startY){
-  const text=dailyExplainer(p),x=80,w=W-160,h=218;
+function drawNeonDescription(ctx,p,W,startY,style){
+  style=style||{};
+  const text=dailyExplainer(p),x=style.x||64,w=style.w||W-(style.x||64)*2,h=style.h||220;
   ctx.save();ctx.shadowColor='rgba(153,51,255,.55)';ctx.shadowBlur=18;
   rr(ctx,x,startY,w,h,24);ctx.fillStyle='rgba(5,7,17,.82)';ctx.fill();
   ctx.shadowBlur=0;ctx.strokeStyle='rgba(184,92,255,.55)';ctx.lineWidth=2;ctx.stroke();
-  solidText(ctx,'QUÉ ES',W/2,startY+43,'#FF2D9E',"bold 30px 'Rajdhani',sans-serif");
-  let size=34,lines=[];
-  while(size>=26){ctx.font=`600 ${size}px 'Rajdhani',sans-serif`;lines=wrapCanvasLines(ctx,text,w-70,4);if(lines.length<=4&&!lines.some(line=>line.endsWith('…')))break;size--}
+  solidText(ctx,'QUÉ ES',x+w/2,startY+43,'#FF2D9E',"bold 34px 'Rajdhani',sans-serif");
+  let size=style.startSize||38,lines=[];const maxLines=style.maxLines||4,minSize=style.minSize||27;
+  while(size>=minSize){ctx.font=`600 ${size}px 'Rajdhani',sans-serif`;lines=wrapCanvasLines(ctx,text,w-70,maxLines);if(lines.length<=maxLines&&!lines.some(line=>line.endsWith('…'))&&lines.length*(size+8)<=h-78)break;size--}
   const lh=size+8,total=lines.length*lh;ctx.font=`600 ${size}px 'Rajdhani',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-  lines.forEach((line,i)=>{ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillText(line,W/2+2,startY+74+(i+.5)*lh+2);ctx.fillStyle='#F4F7FF';ctx.fillText(line,W/2,startY+74+(i+.5)*lh)});
+  lines.forEach((line,i)=>{ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillText(line,x+w/2+2,startY+74+(i+.5)*lh+2);ctx.fillStyle='#F4F7FF';ctx.fillText(line,x+w/2,startY+74+(i+.5)*lh)});
   ctx.restore();return startY+h;
+}
+
+function drawNeonTitleBlock(ctx,p,W,startY,colors){
+  const fitted=fitBadgeLines(ctx,String(p.n||'').toUpperCase(),W-130,3,70,45,170);
+  const lh=fitted.size+4,total=fitted.lines.length*lh;
+  ctx.save();ctx.font=`800 ${fitted.size}px 'Bebas Neue',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  fitted.lines.forEach((line,i)=>{const y=startY+(i+.5)*lh;ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillText(line,W/2+3,y+3);ctx.fillStyle='#fff';ctx.fillText(line,W/2,y)});
+  ctx.restore();
+  const brandY=startY+total+24;
+  solidText(ctx,String(p.b||'MAXUP').toUpperCase(),W/2,brandY,colors[0],"700 32px 'Rajdhani',sans-serif");
+  return brandY+22;
+}
+
+async function drawNeonChosenLayout(ctx,p,W,benefits,colors,offer){
+  const compact=!!offer;
+  // El producto ocupa el corredor central y los cuatro carteles laterales
+  // quedan fuera de él: ninguna burbuja tapa la foto.
+  await drawNeonProductHero(ctx,p,W,{x:W/2-185,y:615,w:370,h:700});
+  const sideW=330,badgeH=compact?190:218,leftX=18,rightX=W-sideW-18;
+  drawNeonBenefitBadge(ctx,benefits[0]||'',0,leftX,602,sideW,badgeH,colors,{startSize:37,minSize:22});
+  drawNeonBenefitBadge(ctx,benefits[1]||'',1,leftX,compact?812:848,sideW,badgeH,colors,{startSize:37,minSize:22});
+  drawNeonBenefitBadge(ctx,benefits[2]||'',2,rightX,602,sideW,badgeH,colors,{startSize:37,minSize:22});
+  drawNeonBenefitBadge(ctx,benefits[3]||'',3,rightX,compact?812:848,sideW,badgeH,colors,{startSize:37,minSize:22});
+  drawNeonBenefitBadge(ctx,benefits[4]||'',4,210,compact?1232:1320,W-420,compact?170:194,colors,{startSize:40,minSize:24,maxLines:4});
 }
 
 function drawNeonCta(ctx,W,y,label,colors){
@@ -431,41 +459,30 @@ async function drawNeonFlyerCore(ctx,p,options){
   const colors=neonPalette(p);
   await drawNeonBackdrop(ctx,W,H);
   const logo=logoImg||await li(LOGO_URL);
-  if(logo){const size=172;ctx.drawImage(logo,W/2-size/2,25,size,size)}
-  solidText(ctx,offer?'OFERTA ESPECIAL':'RECOMENDADO DEL DÍA',W/2,230,'#fff',"bold 43px 'Bebas Neue',sans-serif");
+  if(logo){const size=126;ctx.drawImage(logo,W/2-size/2,18,size,size)}
+  solidText(ctx,offer?'OFERTA ESPECIAL':'RECOMENDADO DEL DÍA',W/2,170,'#fff',"bold 38px 'Bebas Neue',sans-serif");
   if(options.index){solidText(ctx,`${options.index} DE ${options.total}`,W-52,72,'#DDE4EF',"700 22px 'Rajdhani',sans-serif",'right')}
   if(offer&&disc){
-    ctx.save();ctx.shadowColor=colors[1];ctx.shadowBlur=24;ctx.fillStyle=colors[1];ctx.beginPath();ctx.arc(W-126,212,82,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-    solidText(ctx,`-${disc}%`,W-126,205,'#fff',"bold 54px 'Bebas Neue',sans-serif");solidText(ctx,'OFF',W-126,242,'#fff',"bold 27px 'Rajdhani',sans-serif");ctx.restore();
+    ctx.save();ctx.shadowColor=colors[1];ctx.shadowBlur=24;ctx.fillStyle=colors[1];ctx.beginPath();ctx.arc(W-112,126,70,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    solidText(ctx,`-${disc}%`,W-112,122,'#fff',"bold 46px 'Bebas Neue',sans-serif");solidText(ctx,'OFF',W-112,153,'#fff',"bold 23px 'Rajdhani',sans-serif");ctx.restore();
   }
 
   const benefits=dailyBenefits(p);
-  const sideW=Math.min(330,Math.max(280,(W-620)/2+42));
-  const leftX=38,rightX=W-sideW-38;
-  // La foto va primero: los carteles quedan siempre por delante y nunca
-  // pierden letras, incluso cuando la imagen original trae un fondo cuadrado.
-  await drawNeonProductHero(ctx,p,W);
-  drawNeonBenefitBadge(ctx,benefits[0]||'',0,leftX,365,sideW,164,colors);
-  drawNeonBenefitBadge(ctx,benefits[1]||'',1,leftX,646,sideW,164,colors);
-  drawNeonBenefitBadge(ctx,benefits[2]||'',2,rightX,365,sideW,164,colors);
-  drawNeonBenefitBadge(ctx,benefits[3]||'',3,rightX,646,sideW,164,colors);
-  drawNeonBenefitBadge(ctx,benefits[4]||'',4,rightX,852,sideW,150,colors);
-
-  const nameEnd=wrapSolid(ctx,String(p.n||'').toUpperCase(),W/2,1056,W-120,61,'#fff',"bold 57px 'Bebas Neue',sans-serif");
-  const brandY=nameEnd+52;solidText(ctx,String(p.b||'MAXUP').toUpperCase(),W/2,brandY,colors[0],"700 29px 'Rajdhani',sans-serif");
-  const descriptionY=Math.max(1218,brandY+38);const descriptionEnd=drawNeonDescription(ctx,p,W,descriptionY);
+  const titleEnd=drawNeonTitleBlock(ctx,p,W,205,colors);
+  drawNeonDescription(ctx,p,W,Math.max(350,titleEnd+18),{h:220,startSize:39});
+  await drawNeonChosenLayout(ctx,p,W,benefits,colors,offer);
 
   if(offer){
-    const normal=Number(p.p)||0,sale=Math.round(normal*(1-disc/100));const py=descriptionEnd+35;
-    ctx.save();rr(ctx,W/2-330,py,660,196,26);ctx.fillStyle='rgba(2,5,12,.88)';ctx.fill();ctx.strokeStyle=colors[0];ctx.lineWidth=2;ctx.stroke();ctx.restore();
-    solidText(ctx,fmt(normal),W/2-145,py+75,'#87909E',"600 36px 'Rajdhani',sans-serif");
+    const normal=Number(p.p)||0,sale=Math.round(normal*(1-disc/100));const py=1430;
+    ctx.save();rr(ctx,W/2-330,py,660,190,26);ctx.fillStyle='rgba(2,5,12,.88)';ctx.fill();ctx.strokeStyle=colors[0];ctx.lineWidth=2;ctx.stroke();ctx.restore();
+    solidText(ctx,fmt(normal),W/2-145,py+72,'#87909E',"600 36px 'Rajdhani',sans-serif");
     ctx.save();ctx.strokeStyle=colors[1];ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(W/2-225,py+64);ctx.lineTo(W/2-65,py+64);ctx.stroke();ctx.restore();
     solidText(ctx,fmt(sale),W/2+110,py+104,colors[1],"bold 78px 'Bebas Neue',sans-serif");
     solidText(ctx,'PRECIO PROMOCIONAL',W/2,py+157,'#fff',"700 25px 'Rajdhani',sans-serif");
-    drawNeonCta(ctx,W,1740,'APROVECHÁ AHORA',colors);
+    drawNeonCta(ctx,W,1660,'APROVECHÁ AHORA',colors);
   }else{
-    solidText(ctx,'5 BENEFICIOS · UNA ELECCIÓN CON INFORMACIÓN',W/2,1584,'#DCE8F6',"700 30px 'Rajdhani',sans-serif");
-    drawNeonCta(ctx,W,1712,'PEDILO EN MAXUP',colors);
+    solidText(ctx,'5 BENEFICIOS · UNA ELECCIÓN CON INFORMACIÓN',W/2,1570,'#DCE8F6',"700 30px 'Rajdhani',sans-serif");
+    drawNeonCta(ctx,W,1660,'PEDILO EN MAXUP',colors);
   }
 }
 
