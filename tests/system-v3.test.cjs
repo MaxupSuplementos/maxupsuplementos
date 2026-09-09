@@ -99,6 +99,14 @@ assert(cajaHtml.includes("e.key==='ArrowUp'"), 'El buscador de productos debe na
 assert(cajaHtml.includes("if(e.key==='Enter')"), 'Enter debe agregar el producto resaltado al carrito');
 assert(cajaHtml.includes("(e.ctrlKey||e.metaKey)&&e.key==='Enter'"), 'Ctrl + Enter debe guardar la venta rápida');
 assert(cajaHtml.includes("scrollIntoView({block:'nearest'})"), 'El producto resaltado debe permanecer visible al recorrer resultados');
+assert(cajaHtml.includes('var RESULTADOS_CLIENTES=[],CLIENTE_ACTIVO=-1;'), 'El buscador de clientes debe mantener una selección activa');
+assert(cajaHtml.includes('function activarClienteResultado(indice)'), 'Los resultados de clientes deben poder recorrerse con el teclado');
+assert(cajaHtml.includes('if(elegido)seleccionarCliente(elegido.codigo,true)'), 'Enter debe elegir el cliente resaltado');
+assert(cajaHtml.includes("if(enfocarPago)byId('payment').focus()"), 'Elegir un cliente con Enter debe llevar el foco a la forma de pago');
+assert(cajaHtml.includes("byId('payment').addEventListener('keydown'"), 'La forma de pago debe aceptar navegación por teclado');
+assert(cajaHtml.includes('this.selectedIndex=(this.selectedIndex+1)%opciones'), 'Flecha abajo debe recorrer las formas de pago');
+assert(cajaHtml.includes('this.selectedIndex=(this.selectedIndex-1+opciones)%opciones'), 'Flecha arriba debe recorrer las formas de pago');
+assert(cajaHtml.includes("renderCart();byId('productSearch').focus()"), 'Enter en forma de pago debe confirmarla y llevar el foco a productos');
 assert(cajaWeb.includes("fetch('CajaMaxup.html"), 'La Caja web debe reutilizar la interfaz completa');
 assert(cajaWeb.includes('caja_login'), 'La Caja web debe iniciar sesión con la clave administrativa');
 assert(cajaWeb.includes('caja_aplicar'), 'La Caja web debe poder registrar ventas reales');
