@@ -351,7 +351,7 @@ document.addEventListener('click',function(e){
 function precio(p){return byId('payment').value==='tarjeta'?Number(p.precioLista):Number(p.precioContado);}
 function stockDisponible(p){
   var extra=0;
-  if(PENDIENTE_EDITANDO){var venta=PENDIENTES.find(function(v){return v.id===PENDIENTE_EDITANDO;});var linea=venta&&(venta.lineas||[]).find(function(l){return l.id===p.id;});extra=linea?Number(linea.cantidad)||0:0;}
+  if(PENDIENTE_EDITANDO){var venta=PENDIENTES.find(function(v){return v.id===PENDIENTE_EDITANDO;});var linea=venta&&(venta.lineas||[]).find(function(l){return l.id===p.id||(l.sku&&String(l.sku)===String(p.sku))||(norm(l.nombreStock||l.nombre)===norm(p.nombre||p.detalle)&&norm(l.marca)===norm(p.marca));});extra=linea?Number(linea.cantidad)||0:0;}
   return Math.max(0,Number(p.stock||0)+extra);
 }
 function cantidadEnCarritoCaja(id){
@@ -376,7 +376,7 @@ function agregarProducto(id){
   if(disponible<=0){
     avisarProductoCaja('Este producto acaba de quedar sin stock. Estoy actualizando la lista.',true);refrescarDatosCajaEnSegundoPlano(false);return;
   }
-  if(item)item.cantidad++;else{item={id:p.id,cantidad:1};CART.push(item);}
+  if(item)item.cantidad++;else{item={id:p.id,sku:p.sku||'',nombre:p.nombre||p.detalle||'',marca:p.marca||'',cantidad:1};CART.push(item);}
   RESULTADOS_PRODUCTOS=[];PRODUCTO_ACTIVO=-1;byId('productSearch').value='';byId('productResults').style.display='none';renderCart();byId('productSearch').focus();
   avisarProductoCaja('✓ '+p.detalle+' agregado al carrito: '+item.cantidad+' de '+disponible+' disponible'+(disponible===1?'':'s')+'.',false);
 }
@@ -445,7 +445,13 @@ function editarPendiente(id){
   var venta=PENDIENTES.find(function(v){return v.id===id;});if(!venta)return;
   PENDIENTE_EDITANDO=id;OPERACION=id;
   CLIENTE=DATA.clientes.find(function(c){return String(c.codigo)===String(venta.clienteCodigo);})||{codigo:venta.clienteCodigo||'',nombre:venta.cliente||'Consumidor final',telefono:venta.telefono||'',fidelidad:false,meses:[]};
-  CART=(venta.lineas||[]).map(function(l){return{id:l.id,cantidad:Number(l.cantidad)||1};});
+  CART=(venta.lineas||[]).map(function(l){
+    var producto=DATA.productos.find(function(p){
+      return (l.sku&&String(p.sku)===String(l.sku))||
+        (norm(p.nombre||p.detalle)===norm(l.nombreStock||l.nombre)&&norm(p.marca)===norm(l.marca));
+    });
+    return{id:producto?producto.id:l.id,sku:l.sku||'',nombre:l.nombreStock||l.nombre||'',marca:l.marca||'',cantidad:Number(l.cantidad)||1};
+  }).filter(function(item){return DATA.productos.some(function(p){return p.id===item.id;});});
   byId('payment').value=venta.pagoCodigo||'contado';byId('notes').value=venta.notas||'';
   byId('clientSelected').innerHTML='<strong>Editando · '+esc(CLIENTE.nombre)+'</strong><div class="promo">El stock ya está reservado. Guardar cambios ajustará solamente la diferencia.</div>';
   byId('clientSelected').style.display='block';byId('quickBtn').textContent='💾 GUARDAR CAMBIOS';byId('saleBtn').disabled=true;renderCart();window.scrollTo(0,0);

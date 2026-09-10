@@ -45,6 +45,7 @@ function onOpen() {
     .addItem('🔎 Conciliar stock (qué falta cargar en STOCK_DETALLADO)', 'conciliarStock')
     .addItem('✅ Aplicar stock real (desde CONCILIACION_STOCK)', 'aplicarStockReal')
     .addItem('🆕 Crear en SUPLEMENTOS los productos nuevos de STOCK_DETALLADO', 'crearProductosFaltantes')
+    .addItem('🔤 Ordenar productos A-Z dentro de cada marca', 'ordenarProductosSuplementosAZ')
     .addItem('🔁 Reiniciar Nuevos Ingresos (carrusel)', 'reiniciarNuevosIngresos')
     .addItem('🔤 Ver nombres repetidos entre marcas (permitidos)', 'detectarNombresDuplicados')
     .addItem('💳 Actualizar precio de lista para 3 cuotas', 'actualizarPreciosListaTresCuotas')
@@ -960,12 +961,23 @@ function aplicarStockReal() {
 // con el stock cargado y el PRECIO en 0 resaltado en rojo para que
 // solo completes el precio. NO borra ni cambia nada existente.
 // ══════════════════════════════════════════════════════════
-function crearProductosFaltantes() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var ui = SpreadsheetApp.getUi();
+function crearProductosFaltantes(opciones) {
+  opciones = opciones || {};
+  var automatico = opciones.automatico === true;
+  var ss = (typeof _getSS === 'function') ? _getSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var ui = automatico ? null : SpreadsheetApp.getUi();
+  var lock = null;
+  if (automatico) {
+    lock = LockService.getDocumentLock();
+    try { lock.waitLock(15000); } catch (eLockProductos) { return { ok: false, error: 'La planilla está ocupada; se reintentará en la próxima edición.' }; }
+  }
+  try {
   var hojaSup = ss.getSheetByName('SUPLEMENTOS');
   var hojaSD  = ss.getSheetByName('STOCK_DETALLADO');
-  if (!hojaSup || !hojaSD) { ui.alert('❌ No se encontró SUPLEMENTOS o STOCK_DETALLADO.'); return; }
+  if (!hojaSup || !hojaSD) {
+    if (!automatico) ui.alert('❌ No se encontró SUPLEMENTOS o STOCK_DETALLADO.');
+    return { ok: false, error: 'No se encontró SUPLEMENTOS o STOCK_DETALLADO.' };
+  }
 
   // 1) Productos de STOCK_DETALLADO: suma de stock + nombre + marca
   var datosSD = hojaSD.getDataRange().getValues();
@@ -981,6 +993,9 @@ function crearProductosFaltantes() {
 
   // 2) Recorrer SUPLEMENTOS: productos existentes + estructura de marcas
   var datosSup = hojaSup.getDataRange().getValues();
+  var columnasSup = (typeof _columnasCatalogoSuplementos === 'function')
+    ? _columnasCatalogoSuplementos(datosSup)
+    : { filaHeader: 1, producto: 0, contado: 1, lista: 4, descripcion: 9, sku: -1 };
   var supNorms = {};
   var marcas = {};       // marcaNorm -> { headerRow, lastContentRow, raw }
   var curMarca = null;
@@ -989,7 +1004,7 @@ function crearProductosFaltantes() {
   for (var j = 0; j < datosSup.length; j++) {
     var nm = String(datosSup[j][0] || '').trim();
     var fila = j + 1;
-    if (_esEncabezadoMarca(nm)) {                     // encabezado de marca
+    if (_esFilaMarcaSuplementos_(datosSup[j], columnasSup)) { // encabezado de marca
       var mk = _normalizarNombre(nm);
       marcas[mk] = { headerRow: fila, lastContentRow: fila, raw: nm };
       curMarca = mk;
@@ -1031,21 +1046,25 @@ function crearProductosFaltantes() {
   }
 
   if (totalNuevos === 0) {
-    ui.alert('✅ No hay productos nuevos para crear.\n\nTodo lo de STOCK_DETALLADO ya existe en SUPLEMENTOS.' +
+    var ordenSinAltas = automatico ? { productos: 0 } : ordenarProductosSuplementosAZ({ silencioso: true, hoja: hojaSup });
+    if (!automatico) ui.alert('✅ No hay productos nuevos para crear.\n\nTodo lo de STOCK_DETALLADO ya existe en SUPLEMENTOS.' +
+      '\n\nSe revisó también el orden alfabético dentro de cada marca.' +
       (sinMarca.length ? '\n\n⚠️ ' + sinMarca.length + ' producto(s) sin marca en STOCK_DETALLADO: cargales la marca.' : ''));
-    return;
+    return { ok: true, creados: 0, ordenados: ordenSinAltas.productos || 0, sinMarca: sinMarca };
   }
 
-  var resp = ui.alert('🆕 Crear productos nuevos',
-    'Voy a crear ' + totalNuevos + ' producto(s) en SUPLEMENTOS que están en STOCK_DETALLADO y todavía no existen.\n\n' +
-    '• Los pongo bajo su marca (o creo la marca nueva si hace falta).\n' +
-    '• Les cargo el stock y dejo el PRECIO en 0 resaltado en rojo para que lo completes vos.\n' +
-    '• No borro ni cambio nada de lo que ya tenés.\n\n' +
-    'Conviene tener una copia de la planilla por las dudas. ¿Seguimos?',
-    ui.ButtonSet.YES_NO);
-  if (resp !== ui.Button.YES) return;
+  if (!automatico) {
+    var resp = ui.alert('🆕 Crear productos nuevos',
+      'Voy a crear ' + totalNuevos + ' producto(s) en SUPLEMENTOS que están en STOCK_DETALLADO y todavía no existen.\n\n' +
+      '• Los pongo bajo su marca y en orden alfabético.\n' +
+      '• Creo su descripción y su ficha de beneficios automáticamente.\n' +
+      '• Les cargo el stock y dejo el PRECIO en 0 resaltado en rojo para que lo completes vos.\n' +
+      '• No borro ni cambia ningún dato de los productos existentes.\n\n¿Seguimos?',
+      ui.ButtonSet.YES_NO);
+    if (resp !== ui.Button.YES) return { ok: false, cancelado: true };
+  }
 
-  var creados = 0, resumen = [];
+  var creados = 0, resumen = [], nuevosParaFicha = [];
 
   // 4) Insertar en marcas EXISTENTES (de abajo hacia arriba para no correr las filas de arriba)
   var destinos = Object.keys(enExistente).map(function(mk){ return { mk: mk, anchor: marcas[mk].lastContentRow }; });
@@ -1053,10 +1072,12 @@ function crearProductosFaltantes() {
   var insertadosArriba = 0; // cuántas filas se insertaron (corren hacia abajo la última fila)
   destinos.forEach(function(d){
     var prods = enExistente[d.mk];
+    prods.sort(function(a, b) { return _compararNombresProductos_(a.nombre, b.nombre); });
     var anchor = marcas[d.mk].lastContentRow;
     hojaSup.insertRowsAfter(anchor, prods.length);
     for (var p = 0; p < prods.length; p++) {
-      _escribirProductoNuevo(hojaSup, anchor + 1 + p, prods[p].nombre, prods[p].stock);
+      var nuevoExistente = _escribirProductoNuevo(hojaSup, anchor + 1 + p, prods[p].nombre, prods[p].stock, marcas[d.mk].raw, columnasSup);
+      nuevosParaFicha.push(nuevoExistente);
       creados++;
     }
     insertadosArriba += prods.length;
@@ -1067,36 +1088,122 @@ function crearProductosFaltantes() {
   // (no al final absoluto de la hoja: si hay celdas sueltas más abajo,
   // la marca quedaría lejos y perdida de vista).
   var filaInsercion = ultimaFilaConNombre + insertadosArriba;
-  Object.keys(enNueva).forEach(function(mu){
+  Object.keys(enNueva).sort(function(a, b) { return _compararNombresProductos_(a, b); }).forEach(function(mu){
     var prods = enNueva[mu];
+    prods.sort(function(a, b) { return _compararNombresProductos_(a.nombre, b.nombre); });
     hojaSup.insertRowsAfter(filaInsercion, prods.length + 1); // 1 para el encabezado
     var rh = filaInsercion + 1;
     hojaSup.getRange(rh, 1).setValue(mu);                          // encabezado (col B queda vacía)
     hojaSup.getRange(rh, 1, 1, 10).setBackground('#1a1a2e');
     hojaSup.getRange(rh, 1).setFontColor('#00C8FF').setFontWeight('bold');
     for (var p = 0; p < prods.length; p++) {
-      _escribirProductoNuevo(hojaSup, rh + 1 + p, prods[p].nombre, prods[p].stock);
+      var nuevoMarca = _escribirProductoNuevo(hojaSup, rh + 1 + p, prods[p].nombre, prods[p].stock, mu, columnasSup);
+      nuevosParaFicha.push(nuevoMarca);
       creados++;
     }
     filaInsercion = rh + prods.length; // la próxima marca nueva va debajo de esta
     resumen.push('• ' + prods.length + ' en NUEVA marca "' + mu + '"');
   });
 
+  try { if (typeof asegurarSkuProductos === 'function') asegurarSkuProductos(); } catch (eSkuNuevo) {
+    Logger.log('No se pudo completar SKU de productos nuevos: ' + eSkuNuevo.message);
+  }
+  try { if (typeof sincronizarFichasPublicaciones === 'function') sincronizarFichasPublicaciones(nuevosParaFicha); } catch (eFichaNueva) {
+    Logger.log('No se pudo sincronizar la ficha de productos nuevos: ' + eFichaNueva.message);
+  }
+  var orden = ordenarProductosSuplementosAZ({ silencioso: true, hoja: hojaSup });
   SpreadsheetApp.flush();
 
-  ui.alert('✅ PRODUCTOS CREADOS\n\n' +
-    'Se crearon ' + creados + ' producto(s) en SUPLEMENTOS:\n' +
-    resumen.join('\n') + '\n\n' +
-    '👉 Andá a SUPLEMENTOS y completá el PRECIO (la celda roja) de cada uno. El stock ya quedó cargado.' +
-    (sinMarca.length ? '\n\n⚠️ ' + sinMarca.length + ' producto(s) sin marca en STOCK_DETALLADO, NO se crearon: ' + sinMarca.slice(0, 5).join(', ') : ''));
+  if (!automatico) ui.alert('✅ PRODUCTOS CREADOS Y ORDENADOS\n\n' +
+      'Se crearon ' + creados + ' producto(s) en SUPLEMENTOS:\n' +
+      resumen.join('\n') + '\n\n' +
+      'También se creó su descripción y se ordenaron las filas completas de la A a la Z dentro de cada marca.\n\n' +
+      '👉 Andá a SUPLEMENTOS y completá el PRECIO (la celda roja). El stock ya quedó cargado.' +
+      (sinMarca.length ? '\n\n⚠️ ' + sinMarca.length + ' producto(s) sin marca en STOCK_DETALLADO, NO se crearon: ' + sinMarca.slice(0, 5).join(', ') : ''));
+  else ss.toast('Se agregaron ' + creados + ' producto(s), con descripción y orden A-Z.', 'MAXUP automático', 7);
+  return { ok: true, creados: creados, ordenados: orden.productos || 0, sinMarca: sinMarca };
+  } finally {
+    if (lock) lock.releaseLock();
+  }
 }
 
-// Escribe una fila de producto nuevo: A=nombre, B=precio 0 (resaltado en rojo
-// para completar), C=precio lista vacío, D=stock. Formato normal (fondo blanco).
-function _escribirProductoNuevo(hoja, fila, nombre, stock) {
+function _compararNombresProductos_(a, b) {
+  return _normalizarNombre(a).localeCompare(_normalizarNombre(b), 'es', { sensitivity: 'base', numeric: true });
+}
+
+// Escribe la fila completa de un producto nuevo y deja preparada la descripción
+// que usa el detalle de la web. El SKU determinístico permite que Caja rápida
+// siga identificando el producto aunque luego cambie de fila por el orden A-Z.
+function _escribirProductoNuevo(hoja, fila, nombre, stock, marca, columnas) {
+  columnas = columnas || { descripcion: 9, sku: -1 };
+  var categoria = (typeof inferirCat === 'function') ? inferirCat(nombre) : 'otros';
+  var sku = (typeof _skuDeterministico === 'function') ? _skuDeterministico(marca, nombre, 'SUP') : '';
+  var producto = { id: sku, sku: sku, nombre: nombre, marca: marca, categoria: categoria, descripcion: '' };
+  var ficha = (typeof _fichaPublicacionBase === 'function') ? _fichaPublicacionBase(producto) : null;
+  var descripcion = ficha && ficha.queEs ? ficha.queEs : ('Producto ' + nombre + ' de ' + marca + '.');
   hoja.getRange(fila, 1, 1, 4).setValues([[nombre, 0, '', stock]]);
-  hoja.getRange(fila, 1, 1, 10).setBackground('#ffffff').setFontColor('#000000').setFontWeight('normal').setFontStyle('normal');
+  hoja.getRange(fila, 1, 1, Math.max(hoja.getLastColumn(), 10)).setBackground('#ffffff').setFontColor('#000000').setFontWeight('normal').setFontStyle('normal');
   hoja.getRange(fila, 2).setBackground('#FFCDD2');     // precio en rojo claro = falta completar
+  if (columnas.descripcion >= 0) hoja.getRange(fila, columnas.descripcion + 1).setValue(descripcion).setWrap(true);
+  if (columnas.sku >= 0 && sku) hoja.getRange(fila, columnas.sku + 1).setValue(sku);
+  producto.descripcion = descripcion;
+  return producto;
+}
+
+function _esFilaMarcaSuplementos_(row, columnas) {
+  var nombre = String(row[columnas.producto] || '').trim();
+  if (!_esEncabezadoMarca(nombre)) return false;
+  var contado = row[columnas.contado];
+  var lista = columnas.lista >= 0 ? row[columnas.lista] : '';
+  return (contado === '' || contado === null) && (lista === '' || lista === null);
+}
+
+// Ordena solamente los productos que están debajo de cada marca. El rango
+// incluye todas las columnas usadas, por eso fotos, precios, stock, SKU,
+// fórmulas, notas y descripción cambian de fila juntos.
+function ordenarProductosSuplementosAZ(opciones) {
+  opciones = opciones || {};
+  var ss = (typeof _getSS === 'function') ? _getSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = opciones.hoja || ss.getSheetByName('SUPLEMENTOS');
+  if (!hoja || hoja.getLastRow() < 2) return { ok: false, error: 'No se encontró SUPLEMENTOS.' };
+  var datos = hoja.getDataRange().getValues();
+  var columnas = (typeof _columnasCatalogoSuplementos === 'function')
+    ? _columnasCatalogoSuplementos(datos)
+    : { filaHeader: 1, producto: 0, contado: 1, lista: 4 };
+  var ultimaColumna = Math.max(hoja.getLastColumn(), 1);
+  var bloques = [], inicio = -1, ultimoProducto = -1;
+
+  for (var i = columnas.filaHeader + 1; i < datos.length; i++) {
+    var nombre = String(datos[i][columnas.producto] || '').trim();
+    if (_esFilaMarcaSuplementos_(datos[i], columnas)) {
+      if (inicio >= 0 && ultimoProducto >= inicio) bloques.push({ inicio: inicio + 1, fin: ultimoProducto + 1 });
+      inicio = i + 1;
+      ultimoProducto = -1;
+      continue;
+    }
+    if (inicio >= 0 && nombre) ultimoProducto = i;
+  }
+  if (inicio >= 0 && ultimoProducto >= inicio) bloques.push({ inicio: inicio + 1, fin: ultimoProducto + 1 });
+
+  var productosOrdenados = 0;
+  bloques.forEach(function(bloque) {
+    var cantidad = bloque.fin - bloque.inicio + 1;
+    if (cantidad < 2) return;
+    hoja.getRange(bloque.inicio, 1, cantidad, ultimaColumna).sort({ column: columnas.producto + 1, ascending: true });
+    productosOrdenados += cantidad;
+  });
+  SpreadsheetApp.flush();
+  if (!opciones.silencioso) ss.toast('Filas completas ordenadas A-Z dentro de cada marca.', 'SUPLEMENTOS', 6);
+  return { ok: true, bloques: bloques.length, productos: productosOrdenados };
+}
+
+// La usa el activador autorizado cuando se carga o modifica un lote. Espera
+// a que la fila tenga producto, marca y stock positivo; entonces crea el alta,
+// su descripción y la ubica automáticamente donde corresponde.
+function sincronizarProductosStockDetalladoEdit(e) {
+  if (!e || !e.range || e.range.getSheet().getName() !== 'STOCK_DETALLADO') return { ok: false, omitido: true };
+  if (e.range.getLastRow() < 2 || e.range.getColumn() > 5 || e.range.getLastColumn() < 1) return { ok: false, omitido: true };
+  return crearProductosFaltantes({ automatico: true });
 }
 
 // ══════════════════════════════════════════════════════════

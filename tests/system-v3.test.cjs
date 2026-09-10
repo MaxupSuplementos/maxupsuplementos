@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const api = read('Api.gs');
 const system = read('SystemV3.gs');
+const ventas = read('Ventas.gs');
 const stockObjetivo = read('StockObjetivo.gs');
 const admin = read('admin.html');
 const mayorista = read('mayorista.html');
@@ -80,6 +81,9 @@ for (const [i, match] of [...cajaHtml.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\
   assert.doesNotThrow(() => new Function(scriptCaja), `CajaMaxup.html script ${i + 1} debe tener sintaxis JavaScript valida`);
 }
 assert(caja.includes('LockService.getScriptLock()'), 'La caja debe impedir ventas simultáneas que pisen el stock');
+assert(caja.includes("id: 'SUPSKU:' + sku"), 'Los suplementos de Caja deben conservar un identificador estable al ordenar filas');
+assert(caja.includes('function _cajaResolverProducto_'), 'Caja debe poder recuperar por SKU las ventas guardadas antes de ordenar');
+assert(cajaHtml.includes("sku:p.sku||''"), 'El carrito debe enviar el SKU estable junto con cada producto');
 assert(caja.includes("if (antes < item.cantidad) throw new Error('El stock cambió"), 'La caja debe volver a validar el stock justo antes de descontar');
 assert(caja.includes('hoja.getRange(item.fila, item.colStock).setValue(despues)'), 'La caja debe guardar el nuevo stock en la fila exacta vendida');
 assert(caja.indexOf('setValue(despues)') < caja.lastIndexOf('_cajaInsertarVentaBatch_(hojaVD'), 'El stock debe descontarse antes de confirmar la venta');
@@ -144,6 +148,12 @@ assert(cajaWeb.includes('caja_aplicar'), 'La Caja web debe poder registrar venta
 assert(api.includes("data.accion === 'caja_datos'"), 'La API debe servir datos a la Caja alojada en MAXUP');
 assert(api.includes("data.accion === 'caja_guardar'"), 'La API debe guardar ventas rápidas desde la Caja alojada');
 assert(cajaHtml.includes('✏️ Editar'), 'Las ventas pendientes deben poder corregirse desde la caja');
+assert(ventas.includes(".addItem('🔤 Ordenar productos A-Z dentro de cada marca'"), 'El menú debe permitir ordenar manualmente por marca');
+assert(ventas.includes("sort({ column: columnas.producto + 1, ascending: true })"), 'El orden A-Z debe mover el rango completo de cada producto');
+assert(ventas.includes('sincronizarProductosStockDetalladoEdit'), 'Los productos nuevos de STOCK_DETALLADO deben sincronizarse automáticamente');
+assert(ventas.includes('sincronizarFichasPublicaciones(nuevosParaFicha)'), 'Cada alta nueva debe crear su ficha y descripción');
+assert(api.includes("if (hoja.getName() === 'STOCK_DETALLADO')"), 'El activador autorizado debe escuchar las altas de STOCK_DETALLADO');
+assert(api.includes('producto.descripcion = producto.descripcion_publicacion'), 'La web debe recibir la descripción específica de la ficha');
 assert(stockObjetivo.includes('actualizarPreciosMayoristasMaxup'), 'Debe poder actualizar costos y precios mayoristas desde proveedores');
 const pricingHelpers = new Function(stockObjetivo + '; return {_mayoDiagnosticoPrecioMinorista_, _mayoEnlaceMercadoLibre_};')();
 assert.strictEqual(pricingHelpers._mayoDiagnosticoPrecioMinorista_(65000, 50000).estado, 'SINCRONIZADO', 'Costo 50.000 y venta 65.000 deben quedar sincronizados');

@@ -185,9 +185,13 @@ function _cajaCatalogoSuplementos_(ss) {
     if (contado <= 0 && lista <= 0) continue;
     if (lista <= 0) lista = (typeof _calcularPrecioListaTresCuotas === 'function')
       ? Number(_calcularPrecioListaTresCuotas(contado)) || contado : contado;
+    var sku = cols.sku >= 0 ? String(rows[i][cols.sku] || '').trim() : '';
+    if (!sku && typeof _skuDeterministico === 'function') sku = _skuDeterministico(marca, nombre, 'SUP');
     productos.push({
-      id: 'SUP:' + (i + 1), tipo: 'SUP', fila: i + 1,
-      sku: cols.sku >= 0 ? String(rows[i][cols.sku] || '').trim() : '',
+      // El identificador ya no depende del número de fila. Así ordenar la hoja
+      // no puede convertir una venta en otro producto distinto.
+      id: 'SUPSKU:' + sku, tipo: 'SUP', fila: i + 1,
+      sku: sku,
       nombre: nombre, detalle: nombre, marca: marca,
       precioContado: contado || lista, precioLista: lista || contado, stock: stock,
       colStock: cols.stock + 1
@@ -249,6 +253,26 @@ function _cajaCatalogoIndumentaria_(ss) {
 function _cajaCatalogo_() {
   var ss = _getSS();
   return _cajaCatalogoSuplementos_(ss).concat(_cajaCatalogoIndumentaria_(ss));
+}
+
+function _cajaResolverProducto_(catalogo, referencia) {
+  referencia = referencia || {};
+  var id = String(referencia.id || '');
+  for (var i = 0; i < catalogo.length; i++) if (catalogo[i].id === id) return catalogo[i];
+  var sku = _cajaNorm_(referencia.sku || '');
+  if (sku) {
+    for (var s = 0; s < catalogo.length; s++) {
+      if (_cajaNorm_(catalogo[s].sku || '') === sku) return catalogo[s];
+    }
+  }
+  var nombre = _cajaNorm_(referencia.nombreStock || referencia.nombre || referencia.detalle || '');
+  var marca = _cajaNorm_(referencia.marca || '');
+  if (nombre && marca) {
+    for (var n = 0; n < catalogo.length; n++) {
+      if (_cajaNorm_(catalogo[n].nombre || catalogo[n].detalle) === nombre && _cajaNorm_(catalogo[n].marca) === marca) return catalogo[n];
+    }
+  }
+  return null;
 }
 
 function obtenerDatosCajaMaxup(sesionCaja) {
@@ -483,8 +507,9 @@ function listarVentasPendientesCajaMaxup(sesionCaja) {
 function _cajaDatosVentaRapida_(datos, catalogo, cliente, pago, pagoLabel) {
   var cantidades = {};
   (Array.isArray(datos.items) ? datos.items : []).forEach(function(item) {
-    var id = String(item.id || '');
-    cantidades[id] = (cantidades[id] || 0) + Math.max(1, Math.floor(Number(item.cantidad) || 1));
+    var producto = _cajaResolverProducto_(catalogo, item);
+    if (!producto) throw new Error('Un producto cambió de lugar o ya no existe. Actualizá la caja y volvé a elegirlo.');
+    cantidades[producto.id] = (cantidades[producto.id] || 0) + Math.max(1, Math.floor(Number(item.cantidad) || 1));
   });
   if (!Object.keys(cantidades).length) throw new Error('Agregá al menos un producto');
   var mapa = {};
@@ -545,7 +570,11 @@ function guardarVentaPendienteCajaMaxup(datos, sesionCaja) {
     var mapa = {};
     catalogo.forEach(function(prod) { mapa[prod.id] = prod; });
     var viejas = {};
-    if (anterior) anterior.lineas.forEach(function(linea) { viejas[linea.id] = Number(linea.cantidad) || 0; });
+    if (anterior) anterior.lineas.forEach(function(linea) {
+      var productoAnterior = _cajaResolverProducto_(catalogo, linea);
+      if (!productoAnterior) throw new Error('No se pudo identificar ' + linea.nombre + '. Actualizá la caja.');
+      viejas[productoAnterior.id] = (viejas[productoAnterior.id] || 0) + (Number(linea.cantidad) || 0);
+    });
     var nuevas = {};
     preparada.lineas.forEach(function(linea) { nuevas[linea.id] = Number(linea.cantidad) || 0; });
     var ids = {};
@@ -611,7 +640,7 @@ function cancelarVentaPendienteCajaMaxup(id, sesionCaja) {
     catalogo.forEach(function(p) { mapa[p.id] = p; });
     var ajustes = [];
     venta.lineas.forEach(function(linea) {
-      var producto = mapa[linea.id];
+      var producto = _cajaResolverProducto_(catalogo, linea);
       if (!producto) throw new Error('No se pudo devolver el stock de ' + linea.nombre);
       var cantidad = Number(linea.cantidad) || 0;
       var nuevoStock = producto.stock + cantidad;
@@ -707,29 +736,13 @@ function registrarVentaCajaMaxup(datos, sesionCaja) {
     }
 
     var catalogo = _cajaCatalogo_();
-    var mapa = {};
-    catalogo.forEach(function(p) { mapa[p.id] = p; });
-    var cantidades = {};
-    pedidos.forEach(function(item) {
-      var id = String(item.id || '');
-      cantidades[id] = (cantidades[id] || 0) + Math.max(1, Math.floor(Number(item.cantidad) || 1));
+    var pagoLabel = { contado:'Efectivo', transferencia:'Transferencia', debito:'Tarjeta de débito', tarjeta:'Tarjeta de crédito' }[pago];
+    var preparada = _cajaDatosVentaRapida_(datos, catalogo, cliente, pago, pagoLabel);
+    var items = preparada.items;
+    items.forEach(function(actual) {
+      if (actual.cantidad > actual.stock) throw new Error('Stock insuficiente para ' + actual.detalle + '. Disponible: ' + actual.stock);
     });
-    var items = [];
-    Object.keys(cantidades).forEach(function(id) {
-      var actual = mapa[id];
-      if (!actual) throw new Error('Un producto cambió o ya no existe. Actualizá la caja.');
-      var cantidad = cantidades[id];
-      if (cantidad > actual.stock) {
-        throw new Error('Stock insuficiente para ' + actual.detalle + '. Disponible: ' + actual.stock);
-      }
-      var precio = pago === 'tarjeta' ? actual.precioLista : actual.precioContado;
-      if (precio <= 0) throw new Error('Falta el precio de ' + actual.detalle);
-      actual.cantidad = cantidad;
-      actual.precio = precio;
-      items.push(actual);
-    });
-
-    var calculo = _cajaCalcular_(items, clienteCodigo);
+    var calculo = preparada.calculo;
     if (calculo.total <= 0) throw new Error('El total de la venta no es válido');
     // El cliente nuevo se crea recién al confirmar una venta válida. Así no
     // quedan fichas vacías si se abandona un presupuesto.
@@ -737,7 +750,6 @@ function registrarVentaCajaMaxup(datos, sesionCaja) {
       cliente = _cajaCrearCliente_(nuevoCliente);
       clienteCodigo = cliente.codigo;
     }
-    var pagoLabel = { contado:'Efectivo', transferencia:'Transferencia', debito:'Tarjeta de débito', tarjeta:'Tarjeta de crédito' }[pago];
     var partesDesc = [];
     if (calculo.escala) partesDesc.push(calculo.escala.label || (Math.round(calculo.escala.pct * 100) + '% por monto'));
     if (calculo.fidelidad) partesDesc.push(Math.round(calculo.fidelidadPct * 100) + '% fidelidad');

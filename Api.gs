@@ -859,6 +859,12 @@ function getCatalogo() {
     catch(e) { Logger.log('No se pudo crear FICHAS_PUBLICACIONES: ' + e.message); }
   }
   _aplicarFichasPublicaciones(resultado.productos, ss);
+  // La tienda ya lee `descripcion`. Al copiar aquí la descripción específica
+  // de la ficha, todo producto nuevo muestra automáticamente "qué es" en su
+  // detalle sin depender de una actualización del sitio web.
+  resultado.productos.forEach(function(producto) {
+    if (producto.descripcion_publicacion) producto.descripcion = producto.descripcion_publicacion;
+  });
   resultado.configuracion = _configPublicaMaxup();
   return resultado;
 }
@@ -3970,6 +3976,10 @@ function onEdit(e) {
 function onEditPedidosAutorizado(e) {
   try {
     var hoja = e.range.getSheet();
+    if (hoja.getName() === 'STOCK_DETALLADO') {
+      sincronizarProductosStockDetalladoEdit(e);
+      return;
+    }
     if (hoja.getName() === 'CUPONES') {
       _actualizarCuponEdit(e, false);
       return;
