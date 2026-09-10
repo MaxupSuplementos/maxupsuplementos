@@ -271,13 +271,15 @@ test('Promo Express conserva el modo oferta y agrega el modo diario de cinco pla
   assert.match(html, /let fontSize=39,lineHeight=49/);
   assert.match(html, /const benefitPalette=/);
   assert.match(html, /palette\.text/);
-  assert.match(html, /benefitY\+86,W-190,41/);
+  assert.match(html, /drawNeonBenefitBadge\(ctx,benefits\[4\]/);
+  assert.match(html, /x:W\/2-225,y:575,w:450,h:compact\?630:740/, 'La foto central debe ocupar más espacio en flyers diarios y ofertas');
+  assert.match(html, /maxW=w-24,maxH=h-20/, 'La imagen debe aprovechar casi todo el contenedor central');
   assert.match(html, /const DAILY_EXPLAINERS=/);
   assert.match(html, /5 BENEFICIOS/);
   assert.match(html, /function sanitizeDailyPromotionalBenefit/);
   assert.match(html, /pubDesc:pr\.descripcion_publicacion/);
   assert.match(html, /pubBenefits:Array\.isArray\(pr\.beneficios_publicacion\)/);
-  assert.match(html, /PEDILO EN NUESTRA WEB/);
+  assert.match(html, /PEDILO EN MAXUP/);
   assert.doesNotMatch(html, /solidText\(ctx,fmt\(Number\(p\.p\)/);
   assert.match(html, /async function genPost/);
 });

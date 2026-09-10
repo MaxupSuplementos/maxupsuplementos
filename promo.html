@@ -400,7 +400,7 @@ async function drawNeonProductHero(ctx,p,W,box){
   ctx.fillStyle=glow;ctx.fillRect(x-100,y-80,w+200,h+160);
   rr(ctx,x,y,w,h,34);ctx.fillStyle='rgba(0,0,0,.16)';ctx.fill();
   if(img){
-    const ratio=img.width/img.height;let dw,dh;const maxW=w-36,maxH=h-28;
+    const ratio=img.width/img.height;let dw,dh;const maxW=w-24,maxH=h-20;
     if(ratio>maxW/maxH){dw=maxW;dh=maxW/ratio}else{dh=maxH;dw=maxH*ratio}
     ctx.shadowColor='rgba(0,200,255,.65)';ctx.shadowBlur=24;
     ctx.drawImage(img,cx-dw/2,y+h/2-dh/2,dw,dh);
@@ -435,10 +435,11 @@ function drawNeonTitleBlock(ctx,p,W,startY,colors){
 
 async function drawNeonChosenLayout(ctx,p,W,benefits,colors,offer){
   const compact=!!offer;
-  // El producto ocupa el corredor central y los cuatro carteles laterales
-  // quedan fuera de él: ninguna burbuja tapa la foto.
-  await drawNeonProductHero(ctx,p,W,{x:W/2-185,y:615,w:370,h:700});
-  const sideW=330,badgeH=compact?190:218,leftX=18,rightX=W-sideW-18;
+  // La foto gana presencia sin reducir la tipografía de los beneficios. Los
+  // carteles se acercan apenas a los bordes y sólo rozan el fondo exterior de
+  // la imagen; el producto central siempre queda completamente visible.
+  await drawNeonProductHero(ctx,p,W,{x:W/2-225,y:575,w:450,h:compact?630:740});
+  const sideW=325,badgeH=compact?190:218,leftX=10,rightX=W-sideW-10;
   drawNeonBenefitBadge(ctx,benefits[0]||'',0,leftX,602,sideW,badgeH,colors,{startSize:37,minSize:22});
   drawNeonBenefitBadge(ctx,benefits[1]||'',1,leftX,compact?812:848,sideW,badgeH,colors,{startSize:37,minSize:22});
   drawNeonBenefitBadge(ctx,benefits[2]||'',2,rightX,602,sideW,badgeH,colors,{startSize:37,minSize:22});
