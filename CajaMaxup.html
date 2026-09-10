@@ -157,6 +157,7 @@ var CLIENTE=null, CART=[], CALCULO=null, ULTIMA=null, APLICANDO=false;
 var PENDIENTES=[],PENDIENTE_EDITANDO='';
 var RESULTADOS_CLIENTES=[],CLIENTE_ACTIVO=-1;
 var RESULTADOS_PRODUCTOS=[],PRODUCTO_ACTIVO=-1;
+var ACTUALIZANDO_DATOS=false,ULTIMA_ACTUALIZACION_DATOS=0;
 var OPERACION=nuevaOperacion();
 
 function nuevaOperacion(){return 'V'+Date.now()+'_'+Math.random().toString(36).slice(2,8);}
@@ -169,7 +170,7 @@ function cargarDatosCaja(){
   byId('loading').style.display='flex';byId('loading').textContent='Cargando productos, clientes y promociones…';
   google.script.run.withSuccessHandler(function(data){
     if(!data||!data.ok){fallo({message:'No se pudieron cargar los datos'});return;}
-    DATA=data;byId('loading').style.display='none';renderCart();cargarPendientesCaja();
+    DATA=data;ULTIMA_ACTUALIZACION_DATOS=Date.now();byId('loading').style.display='none';renderCart();cargarPendientesCaja();
   }).withFailureHandler(fallo).obtenerDatosCajaMaxup(SESION_CAJA);
 }
 
@@ -271,13 +272,38 @@ function crearCliente(){
 byId('productSearch').addEventListener('input',function(){
   var q=norm(this.value),box=byId('productResults');
   if(q.length<2){RESULTADOS_PRODUCTOS=[];PRODUCTO_ACTIVO=-1;box.style.display='none';return;}
-  RESULTADOS_PRODUCTOS=DATA.productos.filter(function(p){return stockDisponible(p)>0&&norm(p.marca+' '+p.detalle+' '+p.sku).indexOf(q)>=0;}).slice(0,20);
+  RESULTADOS_PRODUCTOS=buscarProductosCaja(q);
   PRODUCTO_ACTIVO=RESULTADOS_PRODUCTOS.length?0:-1;
   box.innerHTML=RESULTADOS_PRODUCTOS.length?RESULTADOS_PRODUCTOS.map(function(p,indice){
     return '<div class="result'+(indice===PRODUCTO_ACTIVO?' active':'')+'" data-index="'+indice+'" onmouseenter="activarProductoResultado('+indice+')" onclick="agregarProducto(\''+esc(p.id)+'\')"><b>'+esc(p.detalle)+'</b><div class="meta">'+esc(p.marca)+' · Stock '+stockDisponible(p)+' · <span class="price">'+money(precio(p))+'</span> '+(p.tipo==='IND'?'· Indumentaria':'')+'</div></div>';
   }).join(''):'<div class="result"><span class="meta">No se encontraron productos con stock</span></div>';
   box.style.display='block';
 });
+function palabrasBusquedaProductoCaja(texto){
+  var conectores={de:1,del:1,la:1,el:1,los:1,las:1,un:1,una:1,para:1,por:1,con:1};
+  return norm(texto).split(' ').filter(function(palabra){return palabra.length>1&&!conectores[palabra];});
+}
+function buscarProductosCaja(consulta){
+  var palabras=palabrasBusquedaProductoCaja(consulta);
+  if(!palabras.length)return[];
+  return DATA.productos.map(function(p){
+    if(stockDisponible(p)<=0)return null;
+    var nombre=norm(p.detalle||p.nombre),marca=norm(p.marca),sku=norm(p.sku);
+    var texto=nombre+' '+marca+' '+sku;
+    if(!palabras.every(function(palabra){return texto.indexOf(palabra)>=0;}))return null;
+    var puntos=0;
+    palabras.forEach(function(palabra){
+      if(nombre.indexOf(palabra)>=0)puntos+=100;
+      if(nombre.indexOf(palabra)===0)puntos+=35;
+      if(marca.indexOf(palabra)>=0)puntos+=30;
+      if(sku.indexOf(palabra)>=0)puntos+=20;
+    });
+    if(nombre===norm(consulta))puntos+=1000;
+    return{producto:p,puntos:puntos};
+  }).filter(Boolean).sort(function(a,b){
+    return b.puntos-a.puntos||String(a.producto.detalle).localeCompare(String(b.producto.detalle),'es');
+  }).slice(0,60).map(function(resultado){return resultado.producto;});
+}
 function activarProductoResultado(indice){
   if(!RESULTADOS_PRODUCTOS.length)return;
   PRODUCTO_ACTIVO=Math.max(0,Math.min(RESULTADOS_PRODUCTOS.length-1,Number(indice)||0));
@@ -480,13 +506,23 @@ function actualizarStockLocalVenta(venta){
 }
 
 function refrescarDatosCajaEnSegundoPlano(actualizarReposicion){
+  if(ACTUALIZANDO_DATOS||!SESION_CAJA)return;
+  ACTUALIZANDO_DATOS=true;
   google.script.run.withSuccessHandler(function(data){
-    if(data&&data.ok){DATA=data;renderCart();}
+    ACTUALIZANDO_DATOS=false;
+    if(data&&data.ok){DATA=data;ULTIMA_ACTUALIZACION_DATOS=Date.now();renderCart();}
     if(actualizarReposicion)setTimeout(function(){
       google.script.run.withFailureHandler(function(){}).actualizarDerivadosCajaMaxup(SESION_CAJA);
     },1500);
-  }).withFailureHandler(function(){}).obtenerDatosCajaMaxup(SESION_CAJA);
+  }).withFailureHandler(function(){ACTUALIZANDO_DATOS=false;}).obtenerDatosCajaMaxup(SESION_CAJA);
 }
+
+function refrescarCatalogoCajaSiHaceFalta(){
+  if(document.hidden||!SESION_CAJA||Date.now()-ULTIMA_ACTUALIZACION_DATOS<60000)return;
+  refrescarDatosCajaEnSegundoPlano(false);
+}
+document.addEventListener('visibilitychange',refrescarCatalogoCajaSiHaceFalta);
+window.addEventListener('focus',refrescarCatalogoCajaSiHaceFalta);
 
 function nuevaVenta(){
   CLIENTE=null;CART=[];CALCULO=null;ULTIMA=null;APLICANDO=false;PENDIENTE_EDITANDO='';OPERACION=nuevaOperacion();

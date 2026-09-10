@@ -107,6 +107,33 @@ assert(cajaHtml.includes("byId('payment').addEventListener('keydown'"), 'La form
 assert(cajaHtml.includes('this.selectedIndex=(this.selectedIndex+1)%opciones'), 'Flecha abajo debe recorrer las formas de pago');
 assert(cajaHtml.includes('this.selectedIndex=(this.selectedIndex-1+opciones)%opciones'), 'Flecha arriba debe recorrer las formas de pago');
 assert(cajaHtml.includes("renderCart();byId('productSearch').focus()"), 'Enter en forma de pago debe confirmarla y llevar el foco a productos');
+assert(cajaHtml.includes('RESULTADOS_PRODUCTOS=buscarProductosCaja(q)'), 'La caja debe usar la busqueda flexible y ordenada de productos');
+const cajaSearchSource = [
+  cajaHtml.match(/function norm\(v\)\{[^\n]+\}/)[0],
+  cajaHtml.match(/function palabrasBusquedaProductoCaja\(texto\)\{[\s\S]*?\n\}/)[0],
+  cajaHtml.match(/function buscarProductosCaja\(consulta\)\{[\s\S]*?\n\}/)[0]
+].join('\n');
+const cajaSearchSandbox = {
+  DATA: { productos: [
+    { id:'gold-creapure', detalle:'Creatina Creapure X200G', nombre:'Creatina Creapure X200G', marca:'GOLD NUTRITION', sku:'SUP-GOLD', stock:1 },
+    { id:'gold-pre', detalle:'Pre Work Gold X 280 Grs', nombre:'Pre Work Gold X 280 Grs', marca:'GOLD NUTRITION', sku:'SUP-PRE', stock:3 },
+    { id:'gold-creatina-agotada', detalle:'Creatina X300G', nombre:'Creatina X300G', marca:'GOLD NUTRITION', sku:'SUP-AGOTADA', stock:0 }
+  ]},
+  stockDisponible(producto) { return Number(producto.stock || 0); }
+};
+vm.runInNewContext(`${cajaSearchSource}; this.buscar = buscarProductosCaja;`, cajaSearchSandbox);
+assert.deepStrictEqual(
+  Array.from(cajaSearchSandbox.buscar('creatina de gold'), producto => producto.id),
+  ['gold-creapure'],
+  'La busqueda debe encontrar creatina Gold aunque la marca y el producto se escriban en otro orden'
+);
+assert.deepStrictEqual(
+  Array.from(cajaSearchSandbox.buscar('gold creatina'), producto => producto.id),
+  ['gold-creapure'],
+  'La busqueda debe aceptar varias palabras sin exigir una frase textual exacta'
+);
+assert(cajaHtml.includes("document.addEventListener('visibilitychange',refrescarCatalogoCajaSiHaceFalta)"), 'La caja debe refrescar el catalogo al volver a la pestaña');
+assert(cajaHtml.includes("window.addEventListener('focus',refrescarCatalogoCajaSiHaceFalta)"), 'La caja debe refrescar el catalogo cuando recupera el foco');
 assert(cajaWeb.includes("fetch('CajaMaxup.html"), 'La Caja web debe reutilizar la interfaz completa');
 assert(cajaWeb.includes('caja_login'), 'La Caja web debe iniciar sesión con la clave administrativa');
 assert(cajaWeb.includes('caja_aplicar'), 'La Caja web debe poder registrar ventas reales');
