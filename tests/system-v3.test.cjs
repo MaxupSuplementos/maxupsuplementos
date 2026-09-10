@@ -134,6 +134,10 @@ assert.deepStrictEqual(
 );
 assert(cajaHtml.includes("document.addEventListener('visibilitychange',refrescarCatalogoCajaSiHaceFalta)"), 'La caja debe refrescar el catalogo al volver a la pestaña');
 assert(cajaHtml.includes("window.addEventListener('focus',refrescarCatalogoCajaSiHaceFalta)"), 'La caja debe refrescar el catalogo cuando recupera el foco');
+assert(!cajaHtml.includes("alert('No hay más stock disponible')"), 'La caja no debe confundir un producto ya agregado con falta real de stock');
+assert(cajaHtml.includes("ya está en el carrito:"), 'La caja debe avisar claramente cuando ya se agregó todo el stock disponible');
+assert(cajaHtml.includes("' · En carrito '+enCarrito"), 'Los resultados deben mostrar cuántas unidades ya están en el carrito');
+assert(cajaHtml.includes("acaba de quedar sin stock. Estoy actualizando la lista"), 'Una falta real de stock debe actualizar el catalogo');
 assert(cajaWeb.includes("fetch('CajaMaxup.html"), 'La Caja web debe reutilizar la interfaz completa');
 assert(cajaWeb.includes('caja_login'), 'La Caja web debe iniciar sesión con la clave administrativa');
 assert(cajaWeb.includes('caja_aplicar'), 'La Caja web debe poder registrar ventas reales');
