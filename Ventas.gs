@@ -336,7 +336,7 @@ function normalizarFormatoVentasDiarias() {
 // Versión individual (usada por procesarVenta del formulario)
 function _descontarStockDetallado(nombreProducto, cantidad, marcaProducto) {
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = (typeof _getSS === 'function') ? _getSS() : SpreadsheetApp.getActiveSpreadsheet();
     var hoja = ss.getSheetByName('STOCK_DETALLADO');
     if (!hoja) return;
     var datos = hoja.getDataRange().getValues();
@@ -642,7 +642,7 @@ function unificarNombresStock() {
 // ══════════════════════════════════════════════════════════
 function actualizarStockPrincipal() {
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = (typeof _getSS === 'function') ? _getSS() : SpreadsheetApp.getActiveSpreadsheet();
     var hojaSup = ss.getSheetByName('SUPLEMENTOS');
     var hojaSD  = ss.getSheetByName('STOCK_DETALLADO');
     if (!hojaSup || !hojaSD) return 0;

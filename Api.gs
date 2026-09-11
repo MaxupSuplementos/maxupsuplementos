@@ -1263,9 +1263,15 @@ function _descontarStockPedido(items, referencia) {
         if (erroresCat.length) return { ok: false, errores: erroresCat };
         cambiosCat.forEach(function(c) {
           hojaCat.getRange(c.fila + 1, colStock + 1).setValue(c.despues);
-          descontarStockDetallado(c.nombre, c.cantidad, c.marca);
           _registrarMovimientoStock('SALIDA', c.sku, c.marca, c.nombre, c.cantidad, c.antes, c.despues, referencia || '', 'pedido web');
         });
+        if (typeof _cajaSincronizarStockDetalladoBatch_ === 'function') {
+          _cajaSincronizarStockDetalladoBatch_(cambiosCat.map(function(c) {
+            return { tipo: 'SUP', nombre: c.nombre, marca: c.marca, stockDespues: c.despues };
+          }));
+        } else {
+          cambiosCat.forEach(function(c) { descontarStockDetallado(c.nombre, c.cantidad, c.marca); });
+        }
         try { actualizarHojaReposicion(); } catch(eRepo) {}
         return { ok: true, movimientos: cambiosCat.length };
       }
@@ -1295,9 +1301,15 @@ function _descontarStockPedido(items, referencia) {
     if (errores.length) return { ok: false, errores: errores };
     cambios.forEach(function(c) {
       hojaSup.getRange(c.fila + 1, cols.stock + 1).setValue(c.despues);
-      descontarStockDetallado(c.nombre, c.cantidad, c.marca);
       _registrarMovimientoStock('SALIDA', c.sku, c.marca, c.nombre, c.cantidad, c.antes, c.despues, referencia || '', 'pedido web');
     });
+    if (typeof _cajaSincronizarStockDetalladoBatch_ === 'function') {
+      _cajaSincronizarStockDetalladoBatch_(cambios.map(function(c) {
+        return { tipo: 'SUP', nombre: c.nombre, marca: c.marca, stockDespues: c.despues };
+      }));
+    } else {
+      cambios.forEach(function(c) { descontarStockDetallado(c.nombre, c.cantidad, c.marca); });
+    }
     try { actualizarHojaReposicion(); } catch(eRepo2) {}
     return { ok: true, movimientos: cambios.length };
   } finally {

@@ -280,7 +280,9 @@ byId('productSearch').addEventListener('input',function(){
   PRODUCTO_ACTIVO=RESULTADOS_PRODUCTOS.length?0:-1;
   box.innerHTML=RESULTADOS_PRODUCTOS.length?RESULTADOS_PRODUCTOS.map(function(p,indice){
     var enCarrito=cantidadEnCarritoCaja(p.id);
-    return '<div class="result'+(indice===PRODUCTO_ACTIVO?' active':'')+'" data-index="'+indice+'" onmouseenter="activarProductoResultado('+indice+')" onclick="agregarProducto(\''+esc(p.id)+'\')"><b>'+esc(p.detalle)+'</b><div class="meta">'+esc(p.marca)+' · Stock '+stockDisponible(p)+(enCarrito?' · En carrito '+enCarrito:'')+' · <span class="price">'+money(precio(p))+'</span> '+(p.tipo==='IND'?'· Indumentaria':'')+'</div></div>';
+    var variantes=variantesEspecificasCaja(p);
+    var avisoVariante=variantes.length?' · <span style="color:#ffb020;font-weight:800">⚠ SIN SABOR/VARIANTE</span>':'';
+    return '<div class="result'+(indice===PRODUCTO_ACTIVO?' active':'')+'" data-index="'+indice+'" onmouseenter="activarProductoResultado('+indice+')" onclick="agregarProducto(\''+esc(p.id)+'\')"><b>'+esc(p.detalle)+'</b><div class="meta">'+esc(p.marca)+' · Stock '+stockDisponible(p)+(enCarrito?' · En carrito '+enCarrito:'')+' · <span class="price">'+money(precio(p))+'</span> '+(p.tipo==='IND'?'· Indumentaria':'')+avisoVariante+'</div></div>';
   }).join(''):'<div class="result"><span class="meta">No se encontraron productos con stock</span></div>';
   box.style.display='block';
 });
@@ -358,6 +360,21 @@ function cantidadEnCarritoCaja(id){
   var item=CART.find(function(x){return x.id===id;});
   return item?Number(item.cantidad)||0:0;
 }
+function variantesEspecificasCaja(p){
+  if(!p||p.tipo!=='SUP')return[];
+  var base=norm(p.nombre||p.detalle),marca=norm(p.marca);
+  if(!base||!marca)return[];
+  return DATA.productos.filter(function(otro){
+    if(!otro||otro.id===p.id||otro.tipo!=='SUP'||norm(otro.marca)!==marca||stockDisponible(otro)<=0)return false;
+    var nombre=norm(otro.nombre||otro.detalle);
+    return nombre.length>base.length&&nombre.indexOf(base+' ')===0;
+  });
+}
+function confirmarProductoGenericoCaja(p){
+  var variantes=variantesEspecificasCaja(p);
+  if(!variantes.length)return true;
+  return confirm('ATENCIÓN: elegiste la opción SIN sabor o variante indicada:\n\n'+p.detalle+'\n\nTambién hay stock de:\n• '+variantes.slice(0,8).map(function(v){return v.detalle+' (stock '+stockDisponible(v)+')';}).join('\n• ')+'\n\n¿Confirmás que la venta corresponde exactamente a la opción sin variante?');
+}
 function avisarProductoCaja(mensaje,advertencia){
   var aviso=byId('productNotice');
   aviso.textContent=mensaje;aviso.className='product-notice'+(advertencia?' warning':'');aviso.style.display='block';
@@ -368,6 +385,7 @@ function ocultarAvisoProductoCaja(){
 function agregarProducto(id){
   var p=DATA.productos.find(function(x){return x.id===id;});if(!p)return;
   var item=CART.find(function(x){return x.id===id;});
+  if(!item&&!confirmarProductoGenericoCaja(p))return;
   var disponible=stockDisponible(p);
   if(item&&item.cantidad>=disponible){
     avisarProductoCaja('✓ '+p.detalle+' ya está en el carrito: '+item.cantidad+' de '+disponible+' disponible'+(disponible===1?'':'s')+'.',true);

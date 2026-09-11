@@ -416,31 +416,100 @@ function _cajaInsertarVentaBatch_(hojaVD, filas, fechaStr, totalVenta) {
   }
 }
 
-function _cajaDescontarStockDetalladoBatch_(items) {
-  var suplementos = items.filter(function(item) { return item.tipo === 'SUP'; });
-  if (!suplementos.length || typeof _normNombreSD !== 'function') return;
-  var hoja = _getSS().getSheetByName('STOCK_DETALLADO');
-  if (!hoja || hoja.getLastRow() < 2) return;
-  var datos = hoja.getDataRange().getValues();
+function _cajaClaveStockDetallado_(marca, nombre) {
+  var normalizar = typeof _normNombreSD === 'function' ? _normNombreSD : _cajaNorm_;
+  return normalizar(marca) + '||' + normalizar(nombre);
+}
+
+function _cajaFechaLote_(valor) {
+  if (!valor) return 8640000000000000;
+  var fecha = valor instanceof Date ? valor : new Date(valor);
+  return isNaN(fecha.getTime()) ? 8640000000000000 : fecha.getTime();
+}
+
+// STOCK_DETALLADO deja de descontarse "a ciegas". Después de cada reserva,
+// cancelación o venta se lleva al mismo stock que la fila principal. Esto hace
+// que un reintento sea idempotente y evita que un producto sin lote se omita
+// silenciosamente: en ese caso se crea un registro sin vencimiento.
+function _cajaSincronizarStockDetalladoBatch_(items) {
+  var suplementos = (items || []).filter(function(item) { return item && item.tipo === 'SUP'; });
+  if (!suplementos.length) return { actualizados: 0, creados: 0, reparados: [] };
+
+  var ss = _getSS();
+  var hoja = ss.getSheetByName('STOCK_DETALLADO');
+  if (!hoja) {
+    hoja = ss.insertSheet('STOCK_DETALLADO');
+    hoja.getRange(1, 1, 1, 5).setValues([['Producto','Marca','Vencimiento','Stock Inicial','Stock Actual']]);
+  }
+  var catalogo = _cajaCatalogoSuplementos_(ss);
+  var principales = {};
+  catalogo.forEach(function(producto) {
+    principales[_cajaClaveStockDetallado_(producto.marca, producto.nombre)] = producto;
+  });
+
+  var objetivos = {};
   suplementos.forEach(function(item) {
-    var nombre = _normNombreSD(item.nombre);
-    var marca = _normNombreSD(item.marca);
-    if (!nombre || !marca) return;
+    var nombre = String(item.nombreStock || item.nombre || item.detalle || '').trim();
+    var marca = String(item.marca || '').trim();
+    var clave = _cajaClaveStockDetallado_(marca, nombre);
+    if (!nombre || !marca || clave === '||') return;
+    var principal = principales[clave];
+    var valor = Number(item.stockDespues);
+    if (!isFinite(valor) && principal) valor = Number(principal.stock);
+    if (!isFinite(valor)) return;
+    objetivos[clave] = { nombre: nombre, marca: marca, stock: Math.max(0, Math.floor(valor)) };
+  });
+  if (!Object.keys(objetivos).length) return { actualizados: 0, creados: 0, reparados: [] };
+
+  var datos = hoja.getLastRow() > 0 ? hoja.getDataRange().getValues() : [];
+  if (!datos.length) datos = [['Producto','Marca','Vencimiento','Stock Inicial','Stock Actual']];
+  var actualizados = 0, nuevos = [], reparados = [];
+
+  Object.keys(objetivos).forEach(function(clave) {
+    var objetivo = objetivos[clave];
     var lotes = [];
     for (var i = 1; i < datos.length; i++) {
-      if (_normNombreSD(datos[i][0]) !== nombre || _normNombreSD(datos[i][1]) !== marca) continue;
-      var stock = Number(datos[i][4]) || 0;
-      if (stock > 0) lotes.push({ indice: i, stock: stock, venc: datos[i][2] });
+      if (_cajaClaveStockDetallado_(datos[i][1], datos[i][0]) !== clave) continue;
+      lotes.push({ indice: i, stock: Math.max(0, Number(datos[i][4]) || 0), venc: datos[i][2] });
     }
-    lotes.sort(function(a, b) { return new Date(a.venc) - new Date(b.venc); });
-    var pendiente = item.cantidad;
-    for (var l = 0; l < lotes.length && pendiente > 0; l++) {
-      var descuento = Math.min(lotes[l].stock, pendiente);
-      datos[lotes[l].indice][4] = lotes[l].stock - descuento;
-      pendiente -= descuento;
+    if (!lotes.length) {
+      nuevos.push([objetivo.nombre, objetivo.marca, '', objetivo.stock, objetivo.stock]);
+      reparados.push(objetivo.marca + ' — ' + objetivo.nombre + ' (se creó control sin vencimiento)');
+      return;
     }
+
+    var total = lotes.reduce(function(suma, lote) { return suma + lote.stock; }, 0);
+    var diferencia = objetivo.stock - total;
+    if (!diferencia) return;
+    lotes.sort(function(a, b) { return _cajaFechaLote_(a.venc) - _cajaFechaLote_(b.venc) || a.indice - b.indice; });
+    if (diferencia < 0) {
+      var quitar = -diferencia;
+      for (var l = 0; l < lotes.length && quitar > 0; l++) {
+        var baja = Math.min(lotes[l].stock, quitar);
+        datos[lotes[l].indice][4] = lotes[l].stock - baja;
+        quitar -= baja;
+      }
+    } else {
+      // Una cancelación repone primero el mismo lote FIFO que se había consumido.
+      datos[lotes[0].indice][4] = lotes[0].stock + diferencia;
+    }
+    actualizados++;
+    reparados.push(objetivo.marca + ' — ' + objetivo.nombre + ': ' + total + ' → ' + objetivo.stock);
   });
-  hoja.getRange(2, 5, datos.length - 1, 1).setValues(datos.slice(1).map(function(row) { return [row[4]]; }));
+
+  if (datos.length > 1 && actualizados) {
+    hoja.getRange(2, 5, datos.length - 1, 1).setValues(datos.slice(1).map(function(row) { return [row[4]]; }));
+  }
+  if (nuevos.length) hoja.getRange(hoja.getLastRow() + 1, 1, nuevos.length, 5).setValues(nuevos);
+  if (reparados.length && typeof _registrarAuditoria === 'function') {
+    _registrarAuditoria('STOCK SINCRONIZADO', reparados.slice(0, 30).join(' | '), 'Caja rápida');
+  }
+  return { actualizados: actualizados, creados: nuevos.length, reparados: reparados };
+}
+
+// Nombre anterior conservado por compatibilidad con llamadas históricas.
+function _cajaDescontarStockDetalladoBatch_(items) {
+  return _cajaSincronizarStockDetalladoBatch_(items);
 }
 
 function _cajaRegistrarMovimientosBatch_(movimientos) {
@@ -594,6 +663,13 @@ function guardarVentaPendienteCajaMaxup(datos, sesionCaja) {
       hojaStock.getRange(ajuste.producto.fila, ajuste.producto.colStock).setValue(ajuste.nuevoStock);
     });
 
+    _cajaSincronizarStockDetalladoBatch_(ajustes.map(function(ajuste) {
+      return {
+        tipo: ajuste.producto.tipo, nombre: ajuste.producto.nombre, marca: ajuste.producto.marca,
+        stockDespues: ajuste.nuevoStock
+      };
+    }));
+
     preparada.lineas.forEach(function(linea) {
       var ajuste = ajustes.filter(function(a) { return a.producto.id === linea.id; })[0];
       var viejo = viejas[linea.id] || 0;
@@ -646,8 +722,16 @@ function cancelarVentaPendienteCajaMaxup(id, sesionCaja) {
       var nuevoStock = producto.stock + cantidad;
       var hojaStock = producto.tipo === 'IND' ? _getSS().getSheetByName('INDUMENTARIA') : _getSS().getSheetByName('SUPLEMENTOS');
       hojaStock.getRange(producto.fila, producto.colStock).setValue(nuevoStock);
+      producto.stockDespues = nuevoStock;
       ajustes.push({ id: producto.id, delta: -cantidad, stock: nuevoStock });
     });
+    _cajaSincronizarStockDetalladoBatch_(venta.lineas.map(function(linea) {
+      var producto = _cajaResolverProducto_(catalogo, linea);
+      return producto ? {
+        tipo: producto.tipo, nombre: producto.nombre, marca: producto.marca,
+        stockDespues: producto.stockDespues
+      } : null;
+    }).filter(Boolean));
     var hoja = _cajaHojaPendientes_();
     hoja.getRange(venta.fila, 14, 1, 2).setValues([['CANCELADA', new Date()]]);
     return { ok: true, ajustes: ajustes, mensaje: 'Venta cancelada y stock devuelto' };
@@ -686,7 +770,9 @@ function cerrarJornadaCajaMaxup(sesionCaja) {
     Object.keys(grupos).forEach(function(fechaStr) {
       _cajaInsertarVentaBatch_(hojaVD, grupos[fechaStr].filas, fechaStr, grupos[fechaStr].total);
     });
-    _cajaDescontarStockDetalladoBatch_(detallado);
+    // El stock ya quedó reservado al guardar cada venta. Esta llamada solo
+    // reconcilia pendientes antiguas y es segura aunque se reintente el cierre.
+    _cajaSincronizarStockDetalladoBatch_(detallado);
     _cajaRegistrarMovimientosBatch_(movimientos);
     Object.keys(clientes).forEach(function(codigo) { _actualizarClienteMensual(codigo, clientes[codigo]); });
     var hojaPend = _cajaHojaPendientes_();
@@ -766,10 +852,12 @@ function registrarVentaCajaMaxup(datos, sesionCaja) {
       if (antes < item.cantidad) throw new Error('El stock cambió para ' + item.detalle + '. Actualizá la caja.');
       var despues = antes - item.cantidad;
       hoja.getRange(item.fila, item.colStock).setValue(despues);
+      item.stockAntes = antes;
+      item.stockDespues = despues;
       movimientosStock.push([new Date(), 'SALIDA', item.sku || item.id, item.marca, item.detalle,
         item.cantidad, antes, despues, operacion, 'caja rápida']);
     });
-    _cajaDescontarStockDetalladoBatch_(items);
+    _cajaSincronizarStockDetalladoBatch_(items);
     _cajaRegistrarMovimientosBatch_(movimientosStock);
 
     var hoy = new Date();

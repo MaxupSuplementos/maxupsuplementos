@@ -89,6 +89,10 @@ assert(caja.includes('hoja.getRange(item.fila, item.colStock).setValue(despues)'
 assert(caja.indexOf('setValue(despues)') < caja.lastIndexOf('_cajaInsertarVentaBatch_(hojaVD'), 'El stock debe descontarse antes de confirmar la venta');
 assert(caja.includes('_cajaInsertarVentaBatch_'), 'La caja debe registrar compras de varios productos en bloque');
 assert(caja.includes('_cajaDescontarStockDetalladoBatch_'), 'La caja debe actualizar los lotes en una sola lectura');
+assert(caja.includes('_cajaSincronizarStockDetalladoBatch_'), 'La caja debe reconciliar lotes contra el stock principal de forma idempotente');
+assert(caja.includes('se creó control sin vencimiento'), 'Un suplemento sin lote no puede quedar fuera del control detallado');
+assert(caja.includes('item.stockDespues = despues'), 'La venta debe sincronizar lotes con el stock final realmente escrito');
+assert(api.includes("tipo: 'SUP', nombre: c.nombre, marca: c.marca, stockDespues: c.despues"), 'Los pedidos web deben usar la misma reconciliacion segura de lotes');
 assert(caja.includes('_cajaRegistrarMovimientosBatch_'), 'La caja debe guardar los movimientos de stock en bloque');
 assert(caja.includes('_cajaFidelidadFila_(rows[i], headers, reglasFidelidad)'), 'La carga de clientes no debe recorrer toda la hoja por cada persona');
 assert(cajaHtml.includes('refrescarDatosCajaEnSegundoPlano('), 'La caja debe actualizar sus datos sin bloquear la siguiente venta');
@@ -112,6 +116,8 @@ assert(cajaHtml.includes('this.selectedIndex=(this.selectedIndex+1)%opciones'), 
 assert(cajaHtml.includes('this.selectedIndex=(this.selectedIndex-1+opciones)%opciones'), 'Flecha arriba debe recorrer las formas de pago');
 assert(cajaHtml.includes("renderCart();byId('productSearch').focus()"), 'Enter en forma de pago debe confirmarla y llevar el foco a productos');
 assert(cajaHtml.includes('RESULTADOS_PRODUCTOS=buscarProductosCaja(q)'), 'La caja debe usar la busqueda flexible y ordenada de productos');
+assert(cajaHtml.includes('function variantesEspecificasCaja(p)'), 'La caja debe detectar productos genéricos que tienen variantes con stock');
+assert(cajaHtml.includes('SIN sabor o variante indicada'), 'La caja debe pedir confirmación antes de descontar una variante ambigua');
 const cajaSearchSource = [
   cajaHtml.match(/function norm\(v\)\{[^\n]+\}/)[0],
   cajaHtml.match(/function palabrasBusquedaProductoCaja\(texto\)\{[\s\S]*?\n\}/)[0],
