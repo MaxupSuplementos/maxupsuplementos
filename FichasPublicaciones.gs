@@ -390,8 +390,92 @@ function _fichaBarraEspecifica(texto, nombre, categoria, crear) {
 function _fichaAccesorioEspecifica(texto, nombre, categoria, crear) {
   // Algunos accesorios históricos quedaron cargados como "otros". La marca y
   // el nombre permiten reconocerlos sin exigir que la categoría esté perfecta.
-  if (categoria !== 'accesorio' && !/\baccesorios\b/.test(texto)) return null;
+  var esRecipiente = categoria === 'shaker';
+  if (categoria !== 'accesorio' && !esRecipiente && !/\baccesorios\b/.test(texto)) return null;
   var presentacion = _presentacionProductoFicha(nombre);
+
+  if (/medicine ball|balon medicinal|pelota medicinal/.test(texto)) {
+    return crear('Balón medicinal con peso para sumar resistencia a ejercicios de fuerza, potencia y acondicionamiento.', [
+      'Permite realizar lanzamientos, giros, sentadillas y ejercicios de zona media.',
+      'Suma resistencia externa sin depender de barras o discos.',
+      'Ayuda a trabajar fuerza, coordinación y potencia en movimientos dinámicos.',
+      'Su formato permite entrenar individualmente o con otra persona.',
+      presentacion ? 'El peso de ' + presentacion + ' ofrece una referencia clara para planificar la carga.' : 'Es versátil para circuitos de gimnasio y entrenamiento funcional.'
+    ]);
+  }
+
+  if (/llavero/.test(texto)) {
+    return crear('Llavero MAXUP compacto para mantener llaves reunidas e identificar fácilmente el juego.', [
+      'Mantiene las llaves agrupadas dentro del bolso o bolsillo.',
+      'Facilita reconocer rápidamente el juego de llaves.',
+      'Su tamaño compacto ocupa poco espacio.',
+      'Permite llevar la identidad MAXUP en un accesorio de uso diario.',
+      'Es práctico para llaves de casa, vehículo, locker o gimnasio.'
+    ]);
+  }
+
+  // Los recipientes y mezcladores se resuelven antes que cualquier suplemento.
+  // Varias marcas de shakers usan palabras como Protein, C4, Gold o Bioaction
+  // como modelo; esas palabras no describen el contenido ni sus beneficios.
+  if (/mamushka|3 en 1|tres en uno/.test(texto) && /botella|vaso|quencher|mamushka/.test(texto)) {
+    return crear('Set de tres recipientes reutilizables de distinto tamaño que se encastran para guardarlos y transportarlos juntos.', [
+      'Incluye tres tamaños para organizar distintas bebidas o porciones.',
+      'Los recipientes se encastran entre sí y ocupan menos espacio al guardarlos.',
+      'Permite transportar cada contenido por separado.',
+      'El recipiente grande facilita llevar una mayor cantidad de bebida.',
+      'Es reutilizable y práctico para gimnasio, trabajo o uso diario.'
+    ]);
+  }
+
+  if (/mini licuadora|licuadora portatil|portable blender/.test(texto)) {
+    return crear('Licuadora portátil con motor integrado y cuchillas para preparar batidos directamente en su propio vaso.', [
+      'Mezcla suplementos en polvo con agua o leche sin usar una licuadora grande.',
+      'Permite procesar frutas blandas en porciones acordes a su capacidad.',
+      'El mismo recipiente sirve para preparar y beber el batido.',
+      'Su formato compacto facilita llevarla al trabajo, gimnasio o viaje.',
+      'Permite preparar licuados frescos fuera de casa.'
+    ]);
+  }
+
+  if (/mini batidora|batidora a pilas|mezclador electrico/.test(texto)) {
+    return crear('Batidor eléctrico compacto para mezclar suplementos y bebidas dentro de un vaso.', [
+      'Ayuda a disolver proteína y otras mezclas livianas.',
+      'Reduce grumos sin necesidad de agitar manualmente.',
+      'Funciona directamente en el vaso que ya utilizás.',
+      'Su tamaño compacto facilita guardarlo y transportarlo.',
+      'Es práctico para usar en casa, oficina o viaje.'
+    ]);
+  }
+
+  if (/botella sport|botella deportiva|botella reebok|\bbidon\b|botellon/.test(texto)) {
+    return crear('Botella deportiva reutilizable para transportar y beber agua u otras bebidas durante el día.', [
+      'Mantiene la bebida disponible durante el entrenamiento o la jornada.',
+      'Facilita llevar agua al gimnasio, trabajo o actividades al aire libre.',
+      'Permite beber rápidamente durante las pausas.',
+      'Su formato reutilizable reduce el uso de botellas descartables.',
+      'Ayuda a organizar la bebida antes de salir de casa.'
+    ]);
+  }
+
+  if ((esRecipiente || /\bshaker\b/.test(texto)) && /compart|doble/.test(texto)) {
+    return crear('Shaker con compartimento adicional para llevar el suplemento separado del líquido hasta el momento de mezclarlo.', [
+      'Mantiene el polvo separado del líquido hasta el momento de usarlo.',
+      'Permite llevar la porción de suplemento sin otro recipiente.',
+      'Permite preparar el batido justo antes de consumirlo.',
+      'Ayuda a organizar suplementos dentro del bolso del gimnasio.',
+      'Mezcla por agitación y funciona sin electricidad.'
+    ]);
+  }
+
+  if (esRecipiente || /\bshaker\b/.test(texto)) {
+    return crear('Shaker reutilizable diseñado para mezclar suplementos en polvo con líquido mediante agitación.', [
+      'Ayuda a integrar el polvo con agua o leche dentro del mismo recipiente.',
+      'Permite preparar el batido justo antes de consumirlo.',
+      'La tapa facilita transportarlo dentro del bolso del gimnasio.',
+      'Mezcla por agitación sin necesidad de electricidad.',
+      'Es reutilizable y práctico para gimnasio, trabajo o viaje.'
+    ]);
+  }
 
   if (/\bstrap/.test(texto)) return crear('Straps de levantamiento: correas que conectan la mano con la barra para reforzar el agarre en ejercicios de tirón.', [
     'Refuerzan la sujeción en peso muerto, remos y otros tirones pesados.',
@@ -1036,28 +1120,28 @@ function _fichaSuplementoPuntual(texto, nombre, categoria, crear) {
     );
   }
 
+  if (/bcaa|mtor bcaa/.test(texto)) {
+    return crear(
+      'BCAA: combinación de leucina, isoleucina y valina, tres aminoácidos esenciales de cadena ramificada.',
+      [
+        'Aporta leucina, isoleucina y valina en una toma práctica.',
+        'La leucina participa en la señal que inicia la síntesis de proteína muscular.',
+        'Los músculos pueden utilizar estos aminoácidos como energía durante el ejercicio.',
+        'Su formato permite incorporarlos alrededor del entrenamiento.',
+        'Facilita complementar la ingesta diaria de aminoácidos de cadena ramificada.'
+      ]
+    );
+  }
+
   if (/\beaa\b|aminoacidos esenciales/.test(texto)) {
     return crear(
       'EAA: mezcla de los nueve aminoácidos esenciales que el cuerpo no fabrica y necesita para construir nuevas proteínas.',
       [
         'Aporta el conjunto completo de aminoácidos esenciales para síntesis proteica.',
-        'Es más completo que BCAA, que aporta solamente leucina, isoleucina y valina.',
+        'Aporta los componentes esenciales necesarios para formar nuevas proteínas.',
         'Puede complementar comidas con poca proteína o proteína vegetal incompleta.',
         'Es práctico para sumar aminoácidos alrededor del entrenamiento.',
         'Aporta leucina, señal clave para iniciar la síntesis de proteína muscular.'
-      ]
-    );
-  }
-
-  if (/bcaa|mtor bcaa/.test(texto)) {
-    return crear(
-      'BCAA: leucina, isoleucina y valina; son tres aminoácidos esenciales, no el conjunto completo que aporta una proteína o un EAA.',
-      [
-        'La leucina participa como señal en el inicio de la síntesis de proteína muscular.',
-        'Isoleucina y valina también pueden utilizarse como energía durante el ejercicio.',
-        'Puede ser práctico si entrenás sin una comida proteica cercana.',
-        'Acompaña la recuperación después de sesiones exigentes.',
-        'Su formato en polvo permite incorporarlos fácilmente a la hidratación deportiva.'
       ]
     );
   }
@@ -1374,9 +1458,11 @@ function _fichaPublicacionBase(producto) {
   var nombre = String(producto.nombre || '');
   var categoria = String(producto.categoria || 'otros');
   var descripcionCatalogo = _limpiarTextoFicha(producto.descripcion, 220);
-  // La descripción se usa para detectar ingredientes y funciones en productos
-  // nuevos cuyo nombre comercial no alcanza para identificarlos.
-  var texto = _normalizarTextoFicha([nombre, producto.marca, categoria, descripcionCatalogo].join(' '));
+  // Nombre, marca y categoría son la identidad principal. Una descripción vieja
+  // nunca debe convertir un shaker en proteína, una botella en isotónico ni un
+  // BCAA en EAA. La descripción se consulta solo como segundo respaldo.
+  var texto = _normalizarTextoFicha([nombre, producto.marca, categoria].join(' '));
+  var textoCompleto = _normalizarTextoFicha([nombre, producto.marca, categoria, descripcionCatalogo].join(' '));
 
   function crear(queEs, beneficios) {
     return {
@@ -1387,10 +1473,19 @@ function _fichaPublicacionBase(producto) {
     };
   }
 
-  var puntual = _fichaProteinaEspecifica(texto, nombre, categoria, crear) ||
-    _fichaBarraEspecifica(texto, nombre, categoria, crear) ||
-    _fichaAccesorioEspecifica(texto, nombre, categoria, crear) ||
-    _fichaSuplementoPuntual(texto, nombre, categoria, crear);
+  var identidadProtegida = categoria === 'shaker' || categoria === 'accesorio' ||
+    /\bbcaa\b|\beaa\b|aminoacidos esenciales/.test(texto);
+  var textoPrimario = identidadProtegida ? texto : textoCompleto;
+  var textoRespaldo = identidadProtegida ? textoCompleto : texto;
+  var puntual = _fichaProteinaEspecifica(textoPrimario, nombre, categoria, crear) ||
+    _fichaBarraEspecifica(textoPrimario, nombre, categoria, crear) ||
+    _fichaAccesorioEspecifica(textoPrimario, nombre, categoria, crear) ||
+    _fichaSuplementoPuntual(textoPrimario, nombre, categoria, crear);
+  if (!puntual && categoria !== 'shaker' && categoria !== 'accesorio') {
+    puntual = _fichaProteinaEspecifica(textoRespaldo, nombre, categoria, crear) ||
+      _fichaBarraEspecifica(textoRespaldo, nombre, categoria, crear) ||
+      _fichaSuplementoPuntual(textoRespaldo, nombre, categoria, crear);
+  }
   if (puntual) return puntual;
 
   if (/glutamin/.test(texto)) {
@@ -1480,7 +1575,7 @@ function _fichaPublicacionBase(producto) {
       'Mezcla de aminoácidos esenciales (EAA): reúne los aminoácidos que el cuerpo no fabrica y necesita obtener de la alimentación.',
       [
         'Aporta el conjunto esencial necesario para fabricar nuevas proteínas.',
-        'Ofrece un perfil más completo que una fórmula compuesta solo por BCAA.',
+        'Aporta los componentes esenciales necesarios para formar nuevas proteínas.',
         'Puede complementar comidas con poca cantidad o calidad de proteína.',
         'Es una opción práctica alrededor del entrenamiento o entre comidas.',
         'Aporta leucina para iniciar la síntesis de proteína muscular.'
@@ -1490,13 +1585,13 @@ function _fichaPublicacionBase(producto) {
 
   if (/bcaa|leucina/.test(texto)) {
     return crear(
-      'BCAA: combinación específica de tres aminoácidos de cadena ramificada, leucina, isoleucina y valina.',
+      'BCAA: combinación de leucina, isoleucina y valina, tres aminoácidos esenciales de cadena ramificada.',
       [
-        'La leucina actúa como una señal vinculada a la síntesis de proteína muscular.',
-        'Isoleucina y valina también pueden utilizarse como energía durante el ejercicio.',
-        'Se incorpora fácilmente antes, durante o después del entrenamiento.',
-        'Acompaña la recuperación después de sesiones exigentes.',
-        'Puede sumarse fácilmente a la hidratación durante el entrenamiento.'
+        'Aporta leucina, isoleucina y valina en una toma práctica.',
+        'La leucina participa en la señal que inicia la síntesis de proteína muscular.',
+        'Los músculos pueden utilizar estos aminoácidos como energía durante el ejercicio.',
+        'Su formato permite incorporarlos alrededor del entrenamiento.',
+        'Facilita complementar la ingesta diaria de aminoácidos de cadena ramificada.'
       ]
     );
   }
@@ -1824,6 +1919,24 @@ function _leerFichasPublicaciones(ss) {
   return fichas;
 }
 
+function _fichaRevisadaCompatible(producto, ficha) {
+  if (!ficha) return false;
+  var identidad = _normalizarTextoFicha([producto.nombre, producto.marca, producto.categoria].join(' '));
+  var contenido = _normalizarTextoFicha([ficha.queEs].concat(ficha.beneficios || []).join(' '));
+  var categoria = _normalizarTextoFicha(producto.categoria);
+
+  if (categoria === 'shaker' || /\bshaker|botella|\bbidon\b|licuadora|batidora|mamushka/.test(identidad)) {
+    if (/proteina diaria|aminoacidos.*musculo|saciedad|masa muscular|electrolitos|carbohidratos.*energia|reponer liquidos/.test(contenido)) return false;
+  }
+  if (/\bbcaa\b/.test(identidad)) {
+    if (/\beaa\b|nueve aminoacidos|mas completo que bcaa|conjunto completo de aminoacidos/.test(contenido)) return false;
+  }
+  if (/\beaa\b|aminoacidos esenciales/.test(identidad)) {
+    if (/son tres aminoacidos|solo leucina isoleucina y valina/.test(contenido)) return false;
+  }
+  return true;
+}
+
 function _aplicarFichasPublicaciones(productos, ss) {
   if (!productos || !productos.length) return productos || [];
   var fichas = _leerFichasPublicaciones(ss || _getSS());
@@ -1831,7 +1944,8 @@ function _aplicarFichasPublicaciones(productos, ss) {
     var automatica = _fichaPublicacionBase(producto);
     var ficha = fichas[_claveFichaPublicacion(producto.marca, producto.nombre, producto.sku || producto.id)] ||
       fichas[_claveNombreFichaPublicacion(producto.marca, producto.nombre)];
-    var revisada = ficha && _normalizarTextoFicha(ficha.estado) === 'revisado';
+    var revisada = ficha && _normalizarTextoFicha(ficha.estado) === 'revisado' &&
+      _fichaRevisadaCompatible(producto, ficha);
     producto.descripcion_publicacion = revisada && ficha.queEs ? ficha.queEs : automatica.queEs;
     var beneficiosElegidos = revisada && ficha.beneficios.length ? ficha.beneficios : automatica.beneficios;
     var textoProducto = _normalizarTextoFicha([producto.nombre, producto.marca, producto.categoria].join(' '));
@@ -1881,7 +1995,9 @@ function sincronizarFichasPublicaciones(productosBase) {
     var existente = existentes[claveSku] || existentes[claveNombre];
     var ficha = _fichaPublicacionBase(producto);
     if (existente) {
-      if (_normalizarTextoFicha(existente.estado) === 'borrador automatico' && existente.fila) {
+      var automaticaOIncompatible = _normalizarTextoFicha(existente.estado) === 'borrador automatico' ||
+        !_fichaRevisadaCompatible(producto, existente);
+      if (automaticaOIncompatible && existente.fila) {
         filasAutomaticas[existente.fila - 2] = [
           String(producto.sku || producto.id || ''), String(producto.marca || ''), String(producto.nombre || ''),
           String(producto.categoria || 'otros'), ficha.queEs,

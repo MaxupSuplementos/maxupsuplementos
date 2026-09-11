@@ -112,12 +112,17 @@ const NEON_BG_URL='assets/flyers/neon-athletes-bg-v1.png';
 const LOGO_URL='logo-transparent.png';
 const _l=new Image();_l.crossOrigin='anonymous';_l.onload=()=>{logoImg=_l};_l.src=LOGO_URL;
 
-// Fuzzy match
+function isFlyerEligible(p){
+  return !!p&&Number(p.stock)>0&&Number(p.p)>0&&String(p.img||'').trim()!=='';
+}
+
+// Fuzzy match: nunca resuelve un producto agotado para una pieza promocional.
 function findProduct(q){
   if(!q)return null;
   const words=q.replace(/\[.*?\]/g,'').toLowerCase().split(/\s+/).filter(w=>w.length>2);
   let best=null,bestScore=0;
   P.forEach(p=>{
+    if(!isFlyerEligible(p))return;
     const name=(p.n+' '+p.b).toLowerCase();
     let hits=0;
     words.forEach(w=>{if(name.indexOf(w)>=0)hits++});
@@ -546,10 +551,10 @@ async function renderDaily(products){
 
 function resolveDailyProducts(){
   const selected=[],seen=new Set();
-  function add(p){if(!p)return;const key=String(p.id||'')+'|'+p.n;if(seen.has(key))return;seen.add(key);selected.push(p)}
+  function add(p){if(!isFlyerEligible(p))return;const key=String(p.id||'')+'|'+p.n;if(seen.has(key))return;seen.add(key);selected.push(p)}
   dailyIds.forEach(id=>add(P.find(p=>String(p.id)===String(id))));
   dailyNames.forEach(name=>{if(selected.length<5)add(findProduct(name.toLowerCase()))});
-  const eligible=P.filter(p=>p.p>0&&p.img&&(typeof p.stock==='undefined'||p.stock>0))
+  const eligible=P.filter(isFlyerEligible)
     .sort((a,b)=>dailyScore((a.id||a.n)+'|'+a.n)-dailyScore((b.id||b.n)+'|'+b.n));
   const usedCategories=new Set(selected.map(dailyCategory));
   eligible.forEach(p=>{
@@ -606,9 +611,9 @@ async function init(){
       throw new Error('Sin productos');
     }
   }catch(err){
-    // Fallback al catálogo local
-    P=P_FALLBACK;
-    document.getElementById('st').textContent='Usando catálogo local ('+P.length+' productos)';
+    // Sin catálogo en vivo no hay forma segura de confirmar el stock.
+    P=[];
+    document.getElementById('st').textContent='No se pudo comprobar el stock actual. No se generaron publicaciones.';
   }
 
   if(dailyMode){

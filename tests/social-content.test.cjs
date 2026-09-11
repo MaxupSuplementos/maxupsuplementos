@@ -161,6 +161,7 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
       whey: _fichaPublicacionBase({ nombre: 'Whey Protein Isolate 2 Lb', marca: 'MAXUP', categoria: 'proteina' }),
       glutamina: _fichaPublicacionBase({ nombre: 'L-Glutamina 300g', marca: 'MAXUP', categoria: 'aminoacido' }),
       bcaa: _fichaPublicacionBase({ nombre: 'BCAA 2:1:1', marca: 'MAXUP', categoria: 'aminoacido' }),
+      bcaaContaminado: _fichaPublicacionBase({ nombre: 'Mtor Bcaa X 270 Grs', marca: 'STAR NUTRITION', categoria: 'aminoacido', descripcion: 'EAA con nueve aminoácidos esenciales; más completo que BCAA.' }),
       eaa: _fichaPublicacionBase({ nombre: "EAA's Aminoácidos", marca: 'ENA', categoria: 'aminoacido' }),
       beta: _fichaPublicacionBase({ nombre: 'Beta Alanina 300g', marca: 'MAXUP', categoria: 'aminoacido' }),
       arginina: _fichaPublicacionBase({ nombre: 'L-Arginina 150g', marca: 'MAXUP', categoria: 'aminoacido' }),
@@ -177,6 +178,8 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
       stanozolol: _fichaPublicacionBase({ nombre: 'Stanozoland 10Mg 100Comp', marca: 'LANDERLAN', categoria: 'quimicos' }),
       mamushka: _fichaPublicacionBase({ nombre: 'Botella Mamushka 3 en 1', marca: 'MAXUP', categoria: 'accesorio', descripcion: 'Accesorio práctico' }),
       licuadora: _fichaPublicacionBase({ nombre: 'Mini Licuadora Portátil', marca: 'MAXUP', categoria: 'accesorio', descripcion: 'Accesorio práctico' }),
+      shakerIdn: _fichaPublicacionBase({ nombre: 'IDN Simple', marca: 'SHAKERS', categoria: 'shaker', descripcion: 'Suplemento proteico que aporta saciedad.' }),
+      botellaSport: _fichaPublicacionBase({ nombre: 'Botella Sport', marca: 'ACCESORIOS', categoria: 'shaker', descripcion: 'Fórmula para reponer líquidos y electrolitos.' }),
       potePremium: _fichaPublicacionBase({ nombre: 'Platinum Whey Protein X 2 Lb Pote', marca: 'STAR NUTRITION', categoria: 'proteina' }),
       wheyDoypack: _fichaPublicacionBase({ nombre: 'Whey Protein Doypack 2 Lb', marca: 'STAR NUTRITION', categoria: 'proteina' }),
       truemade: _fichaPublicacionBase({ nombre: 'Whey Protein Truemade X 2,05 Lb', marca: 'ENA', categoria: 'proteina' }),
@@ -196,6 +199,9 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
   assert.match(result.glutamina.queEs, /aminoácido/i);
   assert.match(result.glutamina.beneficios.join(' '), /barrera intestinal|células del intestino/i);
   assert.match(result.bcaa.queEs, /leucina, isoleucina y valina/i);
+  assert.doesNotMatch(result.bcaaContaminado.queEs + ' ' + result.bcaaContaminado.beneficios.join(' '), /nueve aminoácidos|más completo que BCAA/i);
+  assert.match(result.bcaaContaminado.queEs, /BCAA.*leucina, isoleucina y valina/i);
+  assert.doesNotMatch(result.eaa.beneficios.join(' '), /más completo que BCAA/i);
   assert.match(result.eaa.queEs, /aminoácidos esenciales/i);
   assert.notEqual(result.bcaa.queEs, result.eaa.queEs);
   assert.match(result.beta.queEs, /carnosina/i);
@@ -220,6 +226,10 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
   assert.match(result.mamushka.queEs, /tres recipientes|uno dentro de otro/i);
   assert.match(result.mamushka.beneficios.join(' '), /encastran/i);
   assert.match(result.licuadora.queEs, /motor integrado/i);
+  assert.match(result.shakerIdn.queEs + ' ' + result.shakerIdn.beneficios.join(' '), /shaker|mezclar|agitación/i);
+  assert.doesNotMatch(result.shakerIdn.queEs + ' ' + result.shakerIdn.beneficios.join(' '), /saciedad|masa muscular|aporte diario de proteína/i);
+  assert.match(result.botellaSport.queEs + ' ' + result.botellaSport.beneficios.join(' '), /botella deportiva|transportar|bebida/i);
+  assert.doesNotMatch(result.botellaSport.queEs + ' ' + result.botellaSport.beneficios.join(' '), /reponer líquidos|electrolitos|carbohidratos/i);
   assert.notEqual(result.mamushka.queEs, result.licuadora.queEs);
   assert.doesNotMatch(result.mamushka.queEs, /Accesorio práctico/);
   assert.match(result.potePremium.beneficios.join(' '), /pote rígido|boca ancha/i);
@@ -242,7 +252,7 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
   assert.match(source, /BORRADOR AUTOMATICO/);
   assert.match(source, /actualizadasAutomaticas/);
   assert.match(source, /_normalizarTextoFicha\(ficha\.estado\) === 'revisado'/);
-  assert.match(source, /descripcionCatalogo\]\.join/, 'La descripción de un producto nuevo debe participar en su detección automática');
+  assert.match(source, /textoCompleto/, 'La descripción de un producto nuevo debe participar como respaldo en su detección automática');
 });
 
 test('los productos nuevos se sincronizan y entran en la rotación diaria', () => {
@@ -270,6 +280,9 @@ test('Promo Express conserva el modo oferta y agrega el modo diario de cinco pla
   assert.match(html, /dailyBenefits\(p\)\.slice\(0,5\)/);
   assert.match(html, /let fontSize=39,lineHeight=49/);
   assert.match(html, /const benefitPalette=/);
+  assert.match(html, /function isFlyerEligible\(p\)/);
+  assert.match(html, /function add\(p\)\{if\(!isFlyerEligible\(p\)\)return/);
+  assert.match(html, /P=\[\][\s\S]*No se pudo comprobar el stock actual/);
   assert.match(html, /palette\.text/);
   assert.match(html, /drawNeonBenefitBadge\(ctx,benefits\[4\]/);
   assert.match(html, /x:W\/2-225,y:575,w:450,h:compact\?630:740/, 'La foto central debe ocupar más espacio en flyers diarios y ofertas');

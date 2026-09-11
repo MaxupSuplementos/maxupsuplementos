@@ -21,11 +21,20 @@ async function main() {
   const incompletos = [];
   const textosCortados = [];
   const noPromocionales = [];
+  const incompatibles = [];
   const patronNoPromocional = /\b(?:consultar?|consultá|revisar?|revisá|comparar?|compará)\b|anticoagul|cirugía programada|medicación|puede causar|no reemplaza|no equivale|no significa|no está demostrado|resultados variables|efecto adverso|contraindicación/i;
 
   for (const producto of productos) {
     const resultado = ficha(producto);
+    const identidad = `${producto.nombre || ''} ${producto.marca || ''} ${producto.categoria || ''}`.toLowerCase();
+    const contenido = `${resultado.queEs || ''} ${(resultado.beneficios || []).join(' ')}`.toLowerCase();
     if (/^(?:Producto pensado para complementar|Accesorio deportivo pensado|Alimento listo para consumir)/i.test(resultado.queEs)) genericos.push(producto);
+    if (String(producto.categoria || '').toLowerCase() === 'shaker' && /saciedad|masa muscular|aporte diario de proteína|reponer líquidos|electrolitos|carbohidratos brindan energía/i.test(contenido)) {
+      incompatibles.push(`${producto.marca} | ${producto.nombre}: recipiente con texto nutricional`);
+    }
+    if (/\bbcaa\b/i.test(identidad) && /\beaa\b|nueve aminoácidos|más completo que bcaa/i.test(contenido)) {
+      incompatibles.push(`${producto.marca} | ${producto.nombre}: BCAA confundido con EAA`);
+    }
     if (!resultado.queEs || !Array.isArray(resultado.beneficios) || resultado.beneficios.length !== 5) incompletos.push(producto);
     resultado.beneficios.forEach((beneficio, index) => {
       if (patronNoPromocional.test(beneficio)) {
@@ -43,8 +52,9 @@ async function main() {
     incompletos: incompletos.map(p => `${p.marca} | ${p.nombre}`),
     textosCortados,
     noPromocionales
+    ,incompatibles
   }, null, 2));
-  if (genericos.length || incompletos.length || textosCortados.length || noPromocionales.length) process.exitCode = 1;
+  if (genericos.length || incompletos.length || textosCortados.length || noPromocionales.length || incompatibles.length) process.exitCode = 1;
 }
 
 main().catch(error => {
