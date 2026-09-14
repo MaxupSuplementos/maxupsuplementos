@@ -314,3 +314,9 @@ test('el generador no depende de networkidle para abrir la página de estados', 
   assert.doesNotMatch(generator, /waitUntil:\s*'networkidle'/);
   assert.match(generator, /cards\.length === 5/);
 });
+
+test('los beneficios reservan un margen para que el número no tape las letras', () => {
+  const promo = read('promo.html');
+  assert.match(promo, /const textLeft=x\+58,textRight=x\+w-20,textCenter=/);
+  assert.match(promo, /fitBadgeLines\(ctx,text,textRight-textLeft/);
+});

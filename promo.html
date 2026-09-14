@@ -373,10 +373,13 @@ function drawNeonBenefitBadge(ctx,text,index,x,y,w,h,colors,style){
   ctx.shadowBlur=8;ctx.fillStyle=color;ctx.beginPath();ctx.arc(x+34,y+34,15,0,Math.PI*2);ctx.fill();
   ctx.shadowBlur=0;ctx.fillStyle='#07101B';ctx.font="800 18px 'Rajdhani',sans-serif";
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(index+1),x+34,y+35);
-  const fitted=fitBadgeLines(ctx,text,w-54,style.maxLines||5,style.startSize||34,style.minSize||21,h-20);
+  // Reserva un carril real para el número. Así la primera letra nunca queda
+  // debajo del círculo, incluso cuando el beneficio ocupa cinco renglones.
+  const textLeft=x+58,textRight=x+w-20,textCenter=(textLeft+textRight)/2;
+  const fitted=fitBadgeLines(ctx,text,textRight-textLeft,style.maxLines||5,style.startSize||34,style.minSize||21,h-20);
   const lh=fitted.size+5,total=fitted.lines.length*lh;
   ctx.font=`700 ${fitted.size}px 'Rajdhani',sans-serif`;ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
-  fitted.lines.forEach((line,lineIndex)=>ctx.fillText(line,x+w/2,y+h/2-total/2+lh*(lineIndex+.5)+10));
+  fitted.lines.forEach((line,lineIndex)=>ctx.fillText(line,textCenter,y+h/2-total/2+lh*(lineIndex+.5)+10));
   ctx.restore();
 }
 
