@@ -18,7 +18,10 @@ await fs.mkdir(salida, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
-  await page.goto(url, { waitUntil: 'networkidle', timeout: 120000 });
+  // La página consulta el catálogo de Apps Script y puede mantener conexiones
+  // auxiliares abiertas. Esperar "networkidle" vuelve frágil la automatización:
+  // la señal válida es que las cinco tarjetas terminen de renderizarse.
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForFunction(() => {
     const cards = [...document.querySelectorAll('.daily-card')];
     return cards.length === 5 && cards.every(card => card.querySelector('.daily-status')?.textContent.includes('Lista para publicar'));

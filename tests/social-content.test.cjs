@@ -307,3 +307,10 @@ test('las publicaciones automáticas salen a las 9 de Argentina y llevan la web'
   assert.match(publisher, /websiteUrl/);
   assert.match(generator, /https:\/\/maxupsuplementos\.com\.ar\//);
 });
+
+test('el generador no depende de networkidle para abrir la página de estados', () => {
+  const generator = read('tools/generate-daily-social.mjs');
+  assert.match(generator, /waitUntil:\s*'domcontentloaded'/);
+  assert.doesNotMatch(generator, /waitUntil:\s*'networkidle'/);
+  assert.match(generator, /cards\.length === 5/);
+});
