@@ -255,6 +255,35 @@ function _cajaCatalogo_() {
   return _cajaCatalogoSuplementos_(ss).concat(_cajaCatalogoIndumentaria_(ss));
 }
 
+// STOCK_DETALLADO es la fuente de verdad para todo suplemento que tenga al
+// menos un lote. Antes de mostrar o vender, refleja esos totales en la hoja
+// principal. Así una corrección manual en los lotes nunca puede ser pisada por
+// una cantidad vieja de SUPLEMENTOS durante la siguiente venta.
+function _cajaReconciliarPrincipalAntesDeVender_() {
+  var ss = _getSS();
+  var hojaDetalle = ss.getSheetByName('STOCK_DETALLADO');
+  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+  if (!hojaDetalle || !hojaSup || hojaDetalle.getLastRow() < 2) return 0;
+  var detalle = hojaDetalle.getRange(2, 1, hojaDetalle.getLastRow() - 1, 5).getValues();
+  var sumas = {};
+  detalle.forEach(function(row) {
+    var nombre = String(row[0] || '').trim();
+    var marca = String(row[1] || '').trim();
+    if (!nombre || !marca) return;
+    var clave = _cajaClaveStockDetallado_(marca, nombre);
+    sumas[clave] = (sumas[clave] || 0) + Math.max(0, Number(row[4]) || 0);
+  });
+  var cambios = 0;
+  _cajaCatalogoSuplementos_(ss).forEach(function(producto) {
+    var clave = _cajaClaveStockDetallado_(producto.marca, producto.nombre);
+    if (!(clave in sumas) || producto.stock === sumas[clave]) return;
+    hojaSup.getRange(producto.fila, producto.colStock).setValue(sumas[clave]);
+    cambios++;
+  });
+  SpreadsheetApp.flush();
+  return cambios;
+}
+
 function _cajaResolverProducto_(catalogo, referencia) {
   referencia = referencia || {};
   var id = String(referencia.id || '');
@@ -277,22 +306,29 @@ function _cajaResolverProducto_(catalogo, referencia) {
 
 function obtenerDatosCajaMaxup(sesionCaja) {
   _validarSesionCaja_(sesionCaja);
-  var fidelidadPct = (typeof _configNumeroMaxup === 'function')
-    ? _configNumeroMaxup('PROMO_DESCUENTO', PROMO_DESCUENTO) : PROMO_DESCUENTO;
-  var promoMinimo = (typeof _configNumeroMaxup === 'function')
-    ? _configNumeroMaxup('PROMO_MINIMO', PROMO_MINIMO) : PROMO_MINIMO;
-  var promoMeses = (typeof _configNumeroMaxup === 'function')
-    ? _configNumeroMaxup('PROMO_MESES', PROMO_MESES) : PROMO_MESES;
-  return {
-    ok: true,
-    productos: _cajaCatalogo_(),
-    clientes: _cajaClientes_(),
-    descuentosMonto: _cajaDescuentosMonto_(),
-    fidelidadPct: fidelidadPct,
-    promoMinimo: promoMinimo,
-    promoMeses: promoMeses,
-    negocio: { nombre: 'MAXUP Suplementos', telefono: '3876233406', direccion: 'General Güemes, Salta' }
-  };
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(20000); } catch (eLock) { throw new Error('La caja está actualizando el stock. Reintentá en unos segundos.'); }
+  try {
+    _cajaReconciliarPrincipalAntesDeVender_();
+    var fidelidadPct = (typeof _configNumeroMaxup === 'function')
+      ? _configNumeroMaxup('PROMO_DESCUENTO', PROMO_DESCUENTO) : PROMO_DESCUENTO;
+    var promoMinimo = (typeof _configNumeroMaxup === 'function')
+      ? _configNumeroMaxup('PROMO_MINIMO', PROMO_MINIMO) : PROMO_MINIMO;
+    var promoMeses = (typeof _configNumeroMaxup === 'function')
+      ? _configNumeroMaxup('PROMO_MESES', PROMO_MESES) : PROMO_MESES;
+    return {
+      ok: true,
+      productos: _cajaCatalogo_(),
+      clientes: _cajaClientes_(),
+      descuentosMonto: _cajaDescuentosMonto_(),
+      fidelidadPct: fidelidadPct,
+      promoMinimo: promoMinimo,
+      promoMeses: promoMeses,
+      negocio: { nombre: 'MAXUP Suplementos', telefono: '3876233406', direccion: 'General Güemes, Salta' }
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function _cajaCalcular_(items, clienteCodigo) {
@@ -501,10 +537,31 @@ function _cajaSincronizarStockDetalladoBatch_(items) {
     hoja.getRange(2, 5, datos.length - 1, 1).setValues(datos.slice(1).map(function(row) { return [row[4]]; }));
   }
   if (nuevos.length) hoja.getRange(hoja.getLastRow() + 1, 1, nuevos.length, 5).setValues(nuevos);
+  SpreadsheetApp.flush();
+
+  // Comprobación obligatoria: la operación no puede informarse como correcta
+  // si el total de lotes quedó distinto del stock principal recién calculado.
+  var verificacion = hoja.getLastRow() > 1
+    ? hoja.getRange(2, 1, hoja.getLastRow() - 1, 5).getValues()
+    : [];
+  var sumasVerificadas = {};
+  verificacion.forEach(function(row) {
+    var clave = _cajaClaveStockDetallado_(row[1], row[0]);
+    if (!(clave in objetivos)) return;
+    sumasVerificadas[clave] = (sumasVerificadas[clave] || 0) + Math.max(0, Number(row[4]) || 0);
+  });
+  var errores = [];
+  Object.keys(objetivos).forEach(function(clave) {
+    var esperado = objetivos[clave].stock;
+    var obtenido = sumasVerificadas[clave] || 0;
+    if (obtenido !== esperado) errores.push(objetivos[clave].marca + ' — ' + objetivos[clave].nombre + ': esperado ' + esperado + ', quedó ' + obtenido);
+  });
+  if (errores.length) throw new Error('No se pudo confirmar el descuento en STOCK_DETALLADO: ' + errores.slice(0, 5).join(' | '));
+
   if (reparados.length && typeof _registrarAuditoria === 'function') {
     _registrarAuditoria('STOCK SINCRONIZADO', reparados.slice(0, 30).join(' | '), 'Caja rápida');
   }
-  return { actualizados: actualizados, creados: nuevos.length, reparados: reparados };
+  return { actualizados: actualizados, creados: nuevos.length, reparados: reparados, verificados: Object.keys(objetivos).length };
 }
 
 // Nombre anterior conservado por compatibilidad con llamadas históricas.
@@ -634,6 +691,7 @@ function guardarVentaPendienteCajaMaxup(datos, sesionCaja) {
     if (clienteCodigo && !cliente) throw new Error('El cliente seleccionado ya no existe');
     if (!cliente && datos.nuevoCliente) cliente = _cajaCrearCliente_(datos.nuevoCliente);
 
+    _cajaReconciliarPrincipalAntesDeVender_();
     var catalogo = _cajaCatalogo_();
     var preparada = _cajaDatosVentaRapida_(datos, catalogo, cliente, pago, pagoLabel);
     var mapa = {};
@@ -663,17 +721,22 @@ function guardarVentaPendienteCajaMaxup(datos, sesionCaja) {
       hojaStock.getRange(ajuste.producto.fila, ajuste.producto.colStock).setValue(ajuste.nuevoStock);
     });
 
-    _cajaSincronizarStockDetalladoBatch_(ajustes.map(function(ajuste) {
+    var controlStock = _cajaSincronizarStockDetalladoBatch_(ajustes.map(function(ajuste) {
       return {
         tipo: ajuste.producto.tipo, nombre: ajuste.producto.nombre, marca: ajuste.producto.marca,
         stockDespues: ajuste.nuevoStock
       };
     }));
+    _cajaRegistrarMovimientosBatch_(ajustes.filter(function(ajuste) { return ajuste.delta !== 0; }).map(function(ajuste) {
+      return [new Date(), ajuste.delta > 0 ? 'SALIDA' : 'ENTRADA', ajuste.producto.sku || ajuste.producto.id,
+        ajuste.producto.marca, ajuste.producto.detalle, Math.abs(ajuste.delta), ajuste.producto.stock,
+        ajuste.nuevoStock, operacion, ajuste.delta > 0 ? 'caja rápida pendiente' : 'edición caja rápida pendiente'];
+    }));
 
     preparada.lineas.forEach(function(linea) {
       var ajuste = ajustes.filter(function(a) { return a.producto.id === linea.id; })[0];
       var viejo = viejas[linea.id] || 0;
-      linea.stockAntes = ajuste ? ajuste.producto.stock + viejo : 0;
+      linea.stockAntes = ajuste ? ajuste.producto.stock : 0;
       linea.stockDespues = ajuste ? ajuste.nuevoStock : 0;
     });
     var fecha = anterior ? new Date(anterior.fecha) : new Date();
@@ -695,6 +758,7 @@ function guardarVentaPendienteCajaMaxup(datos, sesionCaja) {
       descuentoTotal: preparada.calculo.descuentoTotal, fidelidad: preparada.calculo.fidelidad,
       escala: preparada.calculo.escala, total: preparada.calculo.total,
       ajustes: ajustes.map(function(a) { return { id: a.producto.id, delta: a.delta, stock: a.nuevoStock }; }),
+      controlStock: controlStock,
       mensaje: anterior ? 'Venta pendiente actualizada' : 'Venta rápida guardada'
     };
   } finally {
@@ -712,6 +776,7 @@ function cancelarVentaPendienteCajaMaxup(id, sesionCaja) {
     var venta = null;
     for (var i = 0; i < pendientes.length; i++) if (pendientes[i].id === id) venta = pendientes[i];
     if (!venta || venta.estado !== 'PENDIENTE') throw new Error('La venta pendiente ya no está disponible');
+    _cajaReconciliarPrincipalAntesDeVender_();
     var catalogo = _cajaCatalogo_(), mapa = {};
     catalogo.forEach(function(p) { mapa[p.id] = p; });
     var ajustes = [];
@@ -725,16 +790,22 @@ function cancelarVentaPendienteCajaMaxup(id, sesionCaja) {
       producto.stockDespues = nuevoStock;
       ajustes.push({ id: producto.id, delta: -cantidad, stock: nuevoStock });
     });
-    _cajaSincronizarStockDetalladoBatch_(venta.lineas.map(function(linea) {
+    var controlStock = _cajaSincronizarStockDetalladoBatch_(venta.lineas.map(function(linea) {
       var producto = _cajaResolverProducto_(catalogo, linea);
       return producto ? {
         tipo: producto.tipo, nombre: producto.nombre, marca: producto.marca,
         stockDespues: producto.stockDespues
       } : null;
     }).filter(Boolean));
+    _cajaRegistrarMovimientosBatch_(venta.lineas.map(function(linea) {
+      var producto = _cajaResolverProducto_(catalogo, linea);
+      var cantidad = Number(linea.cantidad) || 0;
+      return producto ? [new Date(), 'ENTRADA', producto.sku || producto.id, producto.marca, producto.detalle,
+        cantidad, producto.stock, producto.stock + cantidad, venta.id, 'cancelación caja rápida pendiente'] : null;
+    }).filter(Boolean));
     var hoja = _cajaHojaPendientes_();
     hoja.getRange(venta.fila, 14, 1, 2).setValues([['CANCELADA', new Date()]]);
-    return { ok: true, ajustes: ajustes, mensaje: 'Venta cancelada y stock devuelto' };
+    return { ok: true, ajustes: ajustes, controlStock: controlStock, mensaje: 'Venta cancelada y stock devuelto' };
   } finally { lock.releaseLock(); }
 }
 
@@ -747,7 +818,7 @@ function cerrarJornadaCajaMaxup(sesionCaja) {
     if (!ventas.length) return { ok: true, cantidad: 0, total: 0, mensaje: 'No hay ventas pendientes' };
     var ss = _getSS(), hojaVD = ss.getSheetByName('VentasDiarias');
     if (!hojaVD) throw new Error('No se encontró VentasDiarias');
-    var grupos = {}, detallado = [], movimientos = [], clientes = {}, totalGeneral = 0;
+    var grupos = {}, clientes = {}, totalGeneral = 0;
     ventas.forEach(function(venta) {
       var fecha = new Date(venta.fecha); if (isNaN(fecha.getTime())) fecha = new Date();
       var fechaStr = Utilities.formatDate(fecha, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
@@ -759,9 +830,6 @@ function cerrarJornadaCajaMaxup(sesionCaja) {
           Number(linea.ingreso || 0) / Math.max(1, Number(linea.cantidad) || 1), linea.ingreso,
           venta.cliente, venta.pago, nota
         ]);
-        detallado.push({ tipo: linea.tipo, nombre: linea.nombreStock || linea.nombre, marca: linea.marca, cantidad: linea.cantidad });
-        movimientos.push([fecha, 'SALIDA', linea.sku || linea.id, linea.marca, linea.nombre,
-          linea.cantidad, linea.stockAntes || '', linea.stockDespues || '', venta.id, 'cierre caja rápida']);
       });
       grupos[fechaStr].total += venta.total;
       totalGeneral += venta.total;
@@ -770,10 +838,9 @@ function cerrarJornadaCajaMaxup(sesionCaja) {
     Object.keys(grupos).forEach(function(fechaStr) {
       _cajaInsertarVentaBatch_(hojaVD, grupos[fechaStr].filas, fechaStr, grupos[fechaStr].total);
     });
-    // El stock ya quedó reservado al guardar cada venta. Esta llamada solo
-    // reconcilia pendientes antiguas y es segura aunque se reintente el cierre.
-    _cajaSincronizarStockDetalladoBatch_(detallado);
-    _cajaRegistrarMovimientosBatch_(movimientos);
+    // El stock ya quedó reservado y auditado al guardar cada venta pendiente.
+    // Cerrar la jornada registra ingresos y clientes, pero no vuelve a tocar
+    // existencias: así una corrección manual nunca se pisa durante el cierre.
     Object.keys(clientes).forEach(function(codigo) { _actualizarClienteMensual(codigo, clientes[codigo]); });
     var hojaPend = _cajaHojaPendientes_();
     ventas.forEach(function(venta) { hojaPend.getRange(venta.fila, 14, 1, 2).setValues([['CERRADA', new Date()]]); });
@@ -805,6 +872,7 @@ function registrarVentaCajaMaxup(datos, sesionCaja) {
   var lock = LockService.getScriptLock();
   try { lock.waitLock(20000); } catch (eLock) { throw new Error('La caja está ocupada. Reintentá en unos segundos.'); }
   try {
+    _cajaReconciliarPrincipalAntesDeVender_();
     var ss = _getSS();
     var hojaVD = ss.getSheetByName('VentasDiarias');
     var hojaSup = ss.getSheetByName('SUPLEMENTOS');
@@ -857,7 +925,7 @@ function registrarVentaCajaMaxup(datos, sesionCaja) {
       movimientosStock.push([new Date(), 'SALIDA', item.sku || item.id, item.marca, item.detalle,
         item.cantidad, antes, despues, operacion, 'caja rápida']);
     });
-    _cajaSincronizarStockDetalladoBatch_(items);
+    var controlStock = _cajaSincronizarStockDetalladoBatch_(items);
     _cajaRegistrarMovimientosBatch_(movimientosStock);
 
     var hoy = new Date();
@@ -899,6 +967,7 @@ function registrarVentaCajaMaxup(datos, sesionCaja) {
       subtotal: calculo.subtotal, descuentoMonto: calculo.descuentoMonto,
       descuentoFidelidad: calculo.descuentoFidelidad, descuentoTotal: calculo.descuentoTotal,
       fidelidad: calculo.fidelidad, escala: calculo.escala, total: calculo.total,
+      controlStock: controlStock,
       mensaje: 'Venta aplicada correctamente'
     };
   } finally {

@@ -92,6 +92,13 @@ assert(caja.includes('_cajaDescontarStockDetalladoBatch_'), 'La caja debe actual
 assert(caja.includes('_cajaSincronizarStockDetalladoBatch_'), 'La caja debe reconciliar lotes contra el stock principal de forma idempotente');
 assert(caja.includes('se creó control sin vencimiento'), 'Un suplemento sin lote no puede quedar fuera del control detallado');
 assert(caja.includes('item.stockDespues = despues'), 'La venta debe sincronizar lotes con el stock final realmente escrito');
+assert(caja.includes('function _cajaReconciliarPrincipalAntesDeVender_'), 'La caja debe tomar STOCK_DETALLADO como fuente antes de vender');
+assert(caja.includes("throw new Error('No se pudo confirmar el descuento en STOCK_DETALLADO:"), 'La caja no debe confirmar una venta si falla la verificación del detalle');
+assert(caja.includes("'caja rápida pendiente'"), 'Guardar una venta pendiente debe dejar el movimiento de stock inmediatamente');
+assert(caja.includes("'cancelación caja rápida pendiente'"), 'Cancelar una pendiente debe auditar la devolución de stock');
+const cierreCaja = caja.slice(caja.indexOf('function cerrarJornadaCajaMaxup'), caja.indexOf('function registrarVentaCajaMaxup'));
+assert(!cierreCaja.includes('_cajaSincronizarStockDetalladoBatch_'), 'Cerrar la jornada no debe volver a tocar el stock ya reservado');
+assert(!cierreCaja.includes('_cajaRegistrarMovimientosBatch_'), 'Cerrar la jornada no debe duplicar movimientos ya auditados al guardar');
 assert(api.includes("tipo: 'SUP', nombre: c.nombre, marca: c.marca, stockDespues: c.despues"), 'Los pedidos web deben usar la misma reconciliacion segura de lotes');
 assert(caja.includes('_cajaRegistrarMovimientosBatch_'), 'La caja debe guardar los movimientos de stock en bloque');
 assert(caja.includes('_cajaFidelidadFila_(rows[i], headers, reglasFidelidad)'), 'La carga de clientes no debe recorrer toda la hoja por cada persona');
