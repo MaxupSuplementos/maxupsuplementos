@@ -142,6 +142,48 @@ function _presentacionProductoFicha(nombre) {
   return match ? match[0].replace(/\s+/g, ' ').trim() : '';
 }
 
+// Las formulas que declaran dos objetivos deben resolverse antes que cualquier
+// regla de un solo ingrediente. De lo contrario, una coincidencia parcial como
+// "creatina" puede ocultar que el producto tambien contiene whey.
+function _fichaCombinacionEspecifica(texto, nombre, categoria, crear) {
+  var identidadNombre = _normalizarTextoFicha(nombre);
+  var tieneProteina = /\bwhey\b|proteina|protein/.test(identidadNombre);
+  var tieneCreatina = /creatin/.test(identidadNombre);
+
+  if (tieneProteina && tieneCreatina) {
+    var presentacion = _presentacionProductoFicha(nombre);
+    var esDoypack = /doypack|doy pack/.test(identidadNombre);
+    return crear(
+      'Fórmula 2 en 1' + (presentacion ? ' de ' + presentacion : '') +
+        ' que combina whey protein y creatina para unir aporte proteico, recuperación y rendimiento.',
+      [
+        'La whey aporta proteína completa y aminoácidos esenciales para reparar y mantener el músculo.',
+        'La creatina ayuda a regenerar energía rápida en series, sprints y esfuerzos repetidos.',
+        'Combina recuperación muscular con soporte para fuerza, potencia y capacidad de entrenamiento.',
+        esDoypack
+          ? 'El doypack resellable ocupa poco espacio y protege el polvo entre preparaciones.'
+          : 'Permite incorporar whey y creatina juntas en una preparación práctica.',
+        'Simplifica la rutina al reunir dos suplementos complementarios en una sola toma.'
+      ]
+    );
+  }
+
+  if (/pre\s*entreno/.test(identidadNombre) && /quemador|fat burner|termogen/.test(identidadNombre)) {
+    return crear(
+      'Fórmula combinada de preentreno y termogénico para sumar energía, enfoque y apoyo a objetivos de composición corporal.',
+      [
+        'Aumenta la energía y la concentración para encarar entrenamientos exigentes.',
+        'Puede ayudar a entrenar con menor percepción de esfuerzo.',
+        'Sus ingredientes termogénicos acompañan el gasto energético durante una etapa activa.',
+        'Reúne soporte para rendimiento y composición corporal en una sola fórmula.',
+        'Resulta práctica antes de entrenar cuando se buscan intensidad y enfoque.'
+      ]
+    );
+  }
+
+  return null;
+}
+
 // La proteína necesita distinguir fórmula y presentación. Un pote premium,
 // un doypack, un aislado y una proteína vegetal no deben mostrar la misma ficha.
 function _fichaProteinaEspecifica(texto, nombre, categoria, crear) {
@@ -1477,12 +1519,14 @@ function _fichaPublicacionBase(producto) {
     /\bbcaa\b|\beaa\b|aminoacidos esenciales/.test(texto);
   var textoPrimario = identidadProtegida ? texto : textoCompleto;
   var textoRespaldo = identidadProtegida ? textoCompleto : texto;
-  var puntual = _fichaProteinaEspecifica(textoPrimario, nombre, categoria, crear) ||
+  var puntual = _fichaCombinacionEspecifica(textoPrimario, nombre, categoria, crear) ||
+    _fichaProteinaEspecifica(textoPrimario, nombre, categoria, crear) ||
     _fichaBarraEspecifica(textoPrimario, nombre, categoria, crear) ||
     _fichaAccesorioEspecifica(textoPrimario, nombre, categoria, crear) ||
     _fichaSuplementoPuntual(textoPrimario, nombre, categoria, crear);
   if (!puntual && categoria !== 'shaker' && categoria !== 'accesorio') {
-    puntual = _fichaProteinaEspecifica(textoRespaldo, nombre, categoria, crear) ||
+    puntual = _fichaCombinacionEspecifica(textoRespaldo, nombre, categoria, crear) ||
+      _fichaProteinaEspecifica(textoRespaldo, nombre, categoria, crear) ||
       _fichaBarraEspecifica(textoRespaldo, nombre, categoria, crear) ||
       _fichaSuplementoPuntual(textoRespaldo, nombre, categoria, crear);
   }
@@ -1922,6 +1966,7 @@ function _leerFichasPublicaciones(ss) {
 function _fichaRevisadaCompatible(producto, ficha) {
   if (!ficha) return false;
   var identidad = _normalizarTextoFicha([producto.nombre, producto.marca, producto.categoria].join(' '));
+  var nombre = _normalizarTextoFicha(producto.nombre);
   var contenido = _normalizarTextoFicha([ficha.queEs].concat(ficha.beneficios || []).join(' '));
   var categoria = _normalizarTextoFicha(producto.categoria);
 
@@ -1933,6 +1978,32 @@ function _fichaRevisadaCompatible(producto, ficha) {
   }
   if (/\beaa\b|aminoacidos esenciales/.test(identidad)) {
     if (/son tres aminoacidos|solo leucina isoleucina y valina/.test(contenido)) return false;
+  }
+  // Una ficha revisada vieja no puede tapar la nueva regla de una formula
+  // compuesta si omite uno de los componentes declarados en el nombre.
+  if ((/\bwhey\b|proteina|protein/.test(nombre)) && /creatin/.test(nombre)) {
+    if (!/\bwhey\b|proteina de suero|aporte proteico|proteina completa/.test(contenido) || !/creatin/.test(contenido)) return false;
+  }
+  if ((/proteina|protein|\bwhey\b/.test(nombre)) && /colag|collagen/.test(nombre)) {
+    if (!/proteina|protein|\bwhey\b/.test(contenido) || !/colag|collagen/.test(contenido)) return false;
+  }
+  if (/colag|collagen/.test(nombre) && /hialuron/.test(nombre)) {
+    if (!/colag|collagen/.test(contenido) || !/hialuron/.test(contenido)) return false;
+  }
+  if (/pre\s*entreno/.test(nombre) && /quemador|fat burner|termogen/.test(nombre)) {
+    if (!/preentreno|pre entreno|energia|rendimiento/.test(contenido) || !/quemador|termogen|composicion corporal|gasto energetico/.test(contenido)) return false;
+  }
+  if (/ashwagandha/.test(nombre) && /vit(?:amina)?\s*c\b/.test(nombre)) {
+    if (!/ashwagandha/.test(contenido) || !/vitamina c/.test(contenido)) return false;
+  }
+  if (/gelatina/.test(nombre) && /colag|collagen/.test(nombre)) {
+    if (!/gelatina/.test(contenido) || !/colag|collagen/.test(contenido)) return false;
+  }
+  if (/resveratrol/.test(nombre) && /\bnad\b/.test(nombre)) {
+    if (!/resveratrol/.test(contenido) || !/\bnad\b/.test(contenido)) return false;
+  }
+  if (/omega\s*3/.test(nombre) && /omega\s*6/.test(nombre) && /(?:omega\s*)?9/.test(nombre)) {
+    if (!/omega\s*3/.test(contenido) || !/omega\s*6/.test(contenido) || !/omega\s*9/.test(contenido)) return false;
   }
   return true;
 }

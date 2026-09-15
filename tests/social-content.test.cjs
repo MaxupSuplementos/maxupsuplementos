@@ -180,6 +180,8 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
       licuadora: _fichaPublicacionBase({ nombre: 'Mini Licuadora Portátil', marca: 'MAXUP', categoria: 'accesorio', descripcion: 'Accesorio práctico' }),
       shakerIdn: _fichaPublicacionBase({ nombre: 'IDN Simple', marca: 'SHAKERS', categoria: 'shaker', descripcion: 'Suplemento proteico que aporta saciedad.' }),
       botellaSport: _fichaPublicacionBase({ nombre: 'Botella Sport', marca: 'ACCESORIOS', categoria: 'shaker', descripcion: 'Fórmula para reponer líquidos y electrolitos.' }),
+      wheyCreatina: _fichaPublicacionBase({ nombre: 'Whey y Creatina Doypack 2lb - Chocolate', marca: 'STAR NUTRITION', categoria: 'creatina', descripcion: 'Creatina monohidrato para energía rápida.' }),
+      preQuemador: _fichaPublicacionBase({ nombre: 'Pre Entreno Con Quemador', marca: 'WOMAN', categoria: 'preworkout' }),
       potePremium: _fichaPublicacionBase({ nombre: 'Platinum Whey Protein X 2 Lb Pote', marca: 'STAR NUTRITION', categoria: 'proteina' }),
       wheyDoypack: _fichaPublicacionBase({ nombre: 'Whey Protein Doypack 2 Lb', marca: 'STAR NUTRITION', categoria: 'proteina' }),
       truemade: _fichaPublicacionBase({ nombre: 'Whey Protein Truemade X 2,05 Lb', marca: 'ENA', categoria: 'proteina' }),
@@ -230,6 +232,12 @@ test('las fichas automáticas generan textos específicos y cinco puntos editabl
   assert.doesNotMatch(result.shakerIdn.queEs + ' ' + result.shakerIdn.beneficios.join(' '), /saciedad|masa muscular|aporte diario de proteína/i);
   assert.match(result.botellaSport.queEs + ' ' + result.botellaSport.beneficios.join(' '), /botella deportiva|transportar|bebida/i);
   assert.doesNotMatch(result.botellaSport.queEs + ' ' + result.botellaSport.beneficios.join(' '), /reponer líquidos|electrolitos|carbohidratos/i);
+  assert.match(result.wheyCreatina.queEs, /whey protein y creatina/i);
+  assert.match(result.wheyCreatina.beneficios.join(' '), /proteína completa|aporte proteico/i);
+  assert.match(result.wheyCreatina.beneficios.join(' '), /energía rápida|fuerza|potencia/i);
+  assert.match(result.wheyCreatina.beneficios.join(' '), /doypack resellable/i);
+  assert.match(result.preQuemador.queEs, /preentreno y termogénico/i);
+  assert.match(result.preQuemador.beneficios.join(' '), /composición corporal|gasto energético/i);
   assert.notEqual(result.mamushka.queEs, result.licuadora.queEs);
   assert.doesNotMatch(result.mamushka.queEs, /Accesorio práctico/);
   assert.match(result.potePremium.beneficios.join(' '), /pote rígido|boca ancha/i);
