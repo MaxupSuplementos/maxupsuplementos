@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-09-18",
-  "generado": "2026-09-19T01:16:46.385Z",
+  "fecha": "2026-09-19",
+  "generado": "2026-09-19T15:52:11.868Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Star Simple",
+      "titulo": "Resveratrol 500 X 60 Caps.",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Star Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Resveratrol 500 X 60 Caps.\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Barra Proteica 50Gr - Blanco",
+      "titulo": "Rodillera de Compresion DRB",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Barra Proteica 50Gr - Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Rodillera de Compresion DRB\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Tx3 Black Cuts 60Cap",
+      "titulo": "Glutamina X 300 Grs En Pote",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Tx3 Black Cuts 60Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Glutamina X 300 Grs En Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Muñequera drb neoprene boomerang x unidad",
+      "titulo": "Ripped Fat Burner x60caps",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Muñequera drb neoprene boomerang x unidad\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Ripped Fat Burner x60caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Calza Larga Sin Frunce Bolsillo Lateral",
+      "titulo": "CAPUCHA universal",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Calza Larga Sin Frunce Bolsillo Lateral\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "CAPUCHA universal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
