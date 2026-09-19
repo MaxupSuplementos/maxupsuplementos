@@ -3328,6 +3328,8 @@ var PRODUCTS_ESTATICO = PRODUCTS.slice(); // Copia estática para el comparador
 let activeCat = 'all';
 let activeBrand = 'all';
 let activeSearch = '';
+let precioMin = 0;
+let precioMax = null;
 let paginaActual = 1;
 let ITEMS_POR_PAGINA = 30;
 try{ var _pp = parseInt(localStorage.getItem('maxup_por_pagina')); if(_pp===30||_pp===50||_pp===100) ITEMS_POR_PAGINA=_pp; }catch(e){}
@@ -3346,7 +3348,8 @@ function syncURLIndex(){
   if(activeBrand!=='all')p.set('marca',activeBrand);
   if(activeSearch)p.set('buscar',activeSearch);
   if(paginaActual>1)p.set('pag',paginaActual);
-  if(typeof precioMax!=='undefined'&&precioMax<200000)p.set('precio',precioMax);
+  if(precioMin>0)p.set('precio_min',precioMin);
+  if(precioMax!==null)p.set('precio_max',precioMax);
   var qs=p.toString();
   history.replaceState(null,'',location.pathname+(qs?'?'+qs:'')+(location.hash||''));
 }
@@ -3357,7 +3360,12 @@ function readURLIndex(){
   if(p.get('marca')){activeBrand=p.get('marca').toLowerCase();var fb=document.getElementById('filtroBrand');if(fb)fb.value=activeBrand;}
   if(p.get('buscar')){activeSearch=p.get('buscar').toLowerCase().trim();var si=document.getElementById('searchInput');if(si)si.value=p.get('buscar');}
   if(p.get('pag'))paginaActual=parseInt(p.get('pag'))||1;
-  if(p.get('precio')&&typeof precioMax!=='undefined'){precioMax=parseInt(p.get('precio'));var r=document.getElementById('precioRange');if(r)r.value=precioMax;var l=document.getElementById('precioVal');if(l)l.textContent=precioMax>=200000?'Sin límite':'$'+precioMax.toLocaleString('es-AR');}
+  var minURL=Number(p.get('precio_min'));
+  var maxURL=Number(p.get('precio_max')||p.get('precio'));
+  if(Number.isFinite(minURL)&&minURL>0)precioMin=minURL;
+  if(Number.isFinite(maxURL)&&maxURL>0)precioMax=maxURL;
+  var minInput=document.getElementById('precioMin');if(minInput&&precioMin>0)minInput.value=precioMin;
+  var maxInput=document.getElementById('precioMax');if(maxInput&&precioMax!==null)maxInput.value=precioMax;
   if(location.hash){var sec=document.querySelector(location.hash);if(sec)setTimeout(function(){sec.scrollIntoView({behavior:'smooth',block:'start'});},500);}
 }
 
@@ -3565,7 +3573,9 @@ function applyFilters(){
     else matchCat = activeCat==='all' || categorias.indexOf(activeCat)>=0;
     const matchBrand = activeBrand==='all' || card.dataset.brand===activeBrand;
     const matchSearch = !activeSearch || card.dataset.search.includes(activeSearch);
-    return matchCat && matchBrand && matchSearch;
+    const price = _cardPrice(card);
+    const matchPrice = price >= precioMin && (precioMax === null || price <= precioMax);
+    return matchCat && matchBrand && matchSearch && matchPrice;
   });
 
   // ── #2 ORDENAR ──
@@ -3608,11 +3618,10 @@ function applyFilters(){
   const noRes = document.getElementById('noResults');
   if(activeSearch){
     info.textContent = visibles.length>0 ? `${visibles.length} resultado${visibles.length!==1?'s':''} para "${activeSearch}"` : '';
-    noRes.style.display = visibles.length===0 ? 'block' : 'none';
   } else {
-    info.textContent = '';
-    noRes.style.display = 'none';
+    info.textContent = (precioMin>0||precioMax!==null) ? `${visibles.length} producto${visibles.length!==1?'s':''} en el rango de precio` : '';
   }
+  noRes.style.display = visibles.length===0 ? 'block' : 'none';
   // Renderizar paginación
   renderPaginacion(visibles.length);
   // ── #3 Chips activos ──
@@ -3658,6 +3667,10 @@ function renderFiltrosActivos(){
   if(activeOrden!=='default'){
     html += '<span class="filtro-chip filtro-chip-orden" onclick="clearOrden()">'+(_ordenLabels[activeOrden]||activeOrden)+' <span class="chip-x">✕</span></span>';
   }
+  if(precioMin>0||precioMax!==null){
+    var rango = (precioMin>0?'$'+precioMin.toLocaleString('es-AR'):'$0')+' – '+(precioMax!==null?'$'+precioMax.toLocaleString('es-AR'):'sin límite');
+    html += '<button class="filtro-chip" onclick="clearPrecio()">Precio '+rango+' <span class="chip-x">✕</span></button>';
+  }
   if(html){
     html += '<button class="filtro-limpiar" onclick="limpiarTodosFiltros()">LIMPIAR TODO</button>';
   }
@@ -3667,12 +3680,28 @@ function renderFiltrosActivos(){
 function clearBrand(){ activeBrand='all'; var s=document.getElementById('filtroBrand'); if(s)s.value='all'; paginaActual=1; applyFilters();syncURLIndex(); }
 function clearTipo(){ activeCat='all'; var s=document.getElementById('filtroTipo'); if(s)s.value='all'; paginaActual=1; applyFilters();syncURLIndex(); }
 function clearOrden(){ activeOrden='default'; var s=document.getElementById('filtroOrden'); if(s)s.value='default'; paginaActual=1; applyFilters();syncURLIndex(); }
+function onPrecioFilter(){
+  var minInput=document.getElementById('precioMin');
+  var maxInput=document.getElementById('precioMax');
+  precioMin=Math.max(0,Number(minInput&&minInput.value)||0);
+  precioMax=maxInput&&maxInput.value!==''?Math.max(0,Number(maxInput.value)||0):null;
+  paginaActual=1;
+  applyFilters();syncURLIndex();
+}
+function clearPrecio(){
+  var minInput=document.getElementById('precioMin');if(minInput)minInput.value='';
+  var maxInput=document.getElementById('precioMax');if(maxInput)maxInput.value='';
+  precioMin=0;precioMax=null;paginaActual=1;
+  applyFilters();syncURLIndex();
+}
 function limpiarTodosFiltros(){
-  activeBrand='all'; activeCat='all'; activeOrden='default'; activeSearch=''; paginaActual=1;
+  activeBrand='all'; activeCat='all'; activeOrden='default'; activeSearch=''; precioMin=0; precioMax=null; paginaActual=1;
   var fb=document.getElementById('filtroBrand'); if(fb)fb.value='all';
   var ft=document.getElementById('filtroTipo'); if(ft)ft.value='all';
   var fo=document.getElementById('filtroOrden'); if(fo)fo.value='default';
   var si=document.getElementById('searchInput'); if(si)si.value='';
+  var pmin=document.getElementById('precioMin'); if(pmin)pmin.value='';
+  var pmax=document.getElementById('precioMax'); if(pmax)pmax.value='';
   // Restaurar grid si estaban combos
   var cs=document.getElementById('combosSection'); if(cs)cs.style.display='none';
   var pg=document.getElementById('productsGrid'); if(pg)pg.style.display='';
@@ -7471,19 +7500,6 @@ function formatearAnalisis(texto) {
 // poblarFiltroBrands() ya está definido arriba junto con onBrandFilter/onTipoFilter
 
 // ══════════════════════════════════════════════════════════
-//  FILTRO DE PRECIO
-// ══════════════════════════════════════════════════════════
-let precioMax = 999999;
-function filtrarPrecio(val) {
-  precioMax = parseInt(val);
-  const label = document.getElementById('precioVal');
-  if (label) label.textContent = precioMax >= 200000 ? 'Sin límite' : `$${precioMax.toLocaleString('es-AR')}`;
-  applyFilters();
-  setTimeout(aplicarFiltroPrecio, 50);
-  syncURLIndex();
-}
-
-// ══════════════════════════════════════════════════════════
 //  STOCK URGENTE — badge en cards
 // ══════════════════════════════════════════════════════════
 // Se maneja dentro de buildCard con el stock count
@@ -7511,17 +7527,6 @@ function makeCardsClickable() {
   });
 }
 
-// ── Precio filter aplicado después de cada render ──
-function aplicarFiltroPrecio() {
-  if (precioMax >= 200000) return;
-  document.querySelectorAll('.prod-card').forEach(card => {
-    const pid = card.dataset.id;
-    if (!pid) return;
-    const p = getProduct(pid);
-    if (p && p.price > precioMax) card.style.display = 'none';
-  });
-}
-
 // ══════════════════════════════════════════════════════════
 //  INIT — llamar todo después de que carguen los productos
 // ══════════════════════════════════════════════════════════
@@ -7531,7 +7536,6 @@ window.addEventListener('load', function() {
   // única función autorizada a mostrar productos al iniciar la página.
   readURLIndex();
   if (_catalogoSheetsCargado) applyFilters();
-  if(_catalogoSheetsCargado&&typeof precioMax!=='undefined'&&precioMax<200000)setTimeout(aplicarFiltroPrecio,50);
 });
 
 
@@ -8542,27 +8546,6 @@ function calcularSuplemento(){
   res.innerHTML = html;
 }
 
-// ── #9: FILTRO POR RANGO DE PRECIO VISUAL ──
-var _precioBadgeMax = 999999;
-function filtroPrecioBadge(max, btn){
-  document.querySelectorAll('.precio-badge').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  if(max < 0){
-    // "Más de $100.000"
-    _precioBadgeMax = -max;
-    precioMax = 999999;
-  } else {
-    _precioBadgeMax = max;
-    precioMax = max < 999999 ? max : 200000;
-  }
-  var range = document.getElementById('precioRange');
-  if(range && max > 0 && max < 999999) range.value = max;
-  else if(range) range.value = 200000;
-  var label = document.getElementById('precioVal');
-  if(label) label.textContent = max >= 999999 ? 'Sin límite' : max < 0 ? '+$100.000' : '$'+max.toLocaleString('es-AR');
-  applyFilters();
-}
-
 // ── #10: NOTIFICACIONES PUSH WEB ──
 function solicitarPush(){
   if(!('Notification' in window)) return;
@@ -8792,30 +8775,6 @@ function _getPriceChange(pid){
   renderAll = function(){
     origRenderAll2();
     setTimeout(initTimers, 500);
-  };
-})();
-
-// ── APLICAR FILTRO POR PRECIO BADGE EN applyFilters ──
-(function(){
-  var origApply2 = applyFilters;
-  applyFilters = function(){
-    origApply2();
-    // Filtro adicional por badge de precio
-    if(_precioBadgeMax < 999999){
-      var lastBadgeBtn = document.querySelector('.precio-badge[data-max="100001"]');
-      var isOverFilter = lastBadgeBtn && lastBadgeBtn.classList.contains('active');
-      document.querySelectorAll('.prod-card').forEach(function(card){
-        if(card.style.display === 'none') return;
-        var pid = card.dataset.id;
-        var p = getProduct(pid);
-        if(!p) return;
-        if(isOverFilter){
-          if(p.price < 100000) card.style.display = 'none';
-        } else {
-          if(p.price > _precioBadgeMax) card.style.display = 'none';
-        }
-      });
-    }
   };
 })();
 

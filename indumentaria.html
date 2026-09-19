@@ -47,6 +47,15 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 .ftag:hover{border-color:rgba(0,200,255,.4);color:var(--white)}
 .ftag.on{background:var(--cyan);border-color:var(--cyan);color:#000}
 .ftag.mon{background:rgba(255,184,0,.15);border-color:#FFB800;color:#FFB800}
+.price-filter{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.price-filter-title{color:var(--cyan);font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-right:4px}
+.price-filter label{display:flex;align-items:center;gap:6px;color:var(--gray);font-size:.78rem}
+.price-filter input{width:116px;padding:9px 10px;background:#1a1a2e;color:var(--white);border:1px solid rgba(0,200,255,.25);border-radius:9px;font:600 .85rem "DM Sans",sans-serif;outline:none}
+.price-filter input:focus{border-color:var(--cyan)}
+.price-filter input::-webkit-inner-spin-button,.price-filter input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.price-filter input[type=number]{-moz-appearance:textfield;appearance:textfield}
+.price-filter button{padding:9px 12px;background:transparent;color:var(--gray);border:1px solid var(--bdr);border-radius:9px;font:600 .75rem "DM Sans",sans-serif;cursor:pointer}
+.price-filter button:hover{border-color:var(--cyan);color:var(--cyan)}
 .info{color:var(--gray);font-size:.78rem;margin:14px 0 4px}
 /* GRID */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:13px;margin-top:12px}
@@ -291,6 +300,13 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
   <div class="flbl">Marca</div>
   <div class="frow" id="fMarca"></div>
 
+  <div class="price-filter" role="group" aria-label="Filtrar indumentaria por precio contado">
+    <span class="price-filter-title">Precio contado</span>
+    <label>Desde $ <input id="precioMinI" type="number" min="0" step="1" inputmode="numeric" placeholder="Mínimo" oninput="setPrecioI()"></label>
+    <label>Hasta $ <input id="precioMaxI" type="number" min="0" step="1" inputmode="numeric" placeholder="Máximo" oninput="setPrecioI()"></label>
+    <button type="button" onclick="clearPrecioI()">Limpiar precio</button>
+  </div>
+
   <div class="info-row">
     <div class="info" id="info"></div>
     <div class="pp-select">
@@ -355,6 +371,7 @@ window.scrollTo(0,0);
 var PRODS_ALL=[];
 var PRODS=PRODS_ALL.slice();
 var generoA='M',catA='all',marcaA='all',busqA='',pag=1,PPP=20;
+var precioMinI=0,precioMaxI=null;
 var mProd=null,mSelTalle=null,mSelColor=null;
 var _restaurandoModalI=false;
 var API='https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
@@ -379,6 +396,8 @@ function syncURL(){
   if(catA!=='all')p.set('cat',catA);
   if(marcaA!=='all')p.set('marca',marcaA);
   if(busqA)p.set('buscar',busqA);
+  if(precioMinI>0)p.set('precio_min',precioMinI);
+  if(precioMaxI!==null)p.set('precio_max',precioMaxI);
   if(pag>1)p.set('pag',pag);
   var qs=p.toString();
   history.replaceState(null,'',location.pathname+(qs?'?'+qs:''));
@@ -390,6 +409,12 @@ function readURL(){
   if(p.get('cat'))catA=p.get('cat');
   if(p.get('marca'))marcaA=p.get('marca');
   if(p.get('buscar')){busqA=p.get('buscar');document.getElementById('searchInput').value=busqA;}
+  var minURL=Number(p.get('precio_min'));
+  var maxURL=Number(p.get('precio_max'));
+  if(Number.isFinite(minURL)&&minURL>0)precioMinI=minURL;
+  if(Number.isFinite(maxURL)&&maxURL>0)precioMaxI=maxURL;
+  if(precioMinI>0)document.getElementById('precioMinI').value=precioMinI;
+  if(precioMaxI!==null)document.getElementById('precioMaxI').value=precioMaxI;
   if(p.get('pag'))pag=parseInt(p.get('pag'))||1;
   document.querySelectorAll('.gtab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-g')===generoA);});
 }
@@ -403,12 +428,27 @@ function setGenero(g){
   render();renderNuevosI();syncURL();
 }
 
+function setPrecioI(){
+  var min=document.getElementById('precioMinI');
+  var max=document.getElementById('precioMaxI');
+  precioMinI=Math.max(0,Number(min.value)||0);
+  precioMaxI=max.value!==''?Math.max(0,Number(max.value)||0):null;
+  pag=1;render();syncURL();
+}
+function clearPrecioI(){
+  document.getElementById('precioMinI').value='';
+  document.getElementById('precioMaxI').value='';
+  precioMinI=0;precioMaxI=null;pag=1;render();syncURL();
+}
+
 function getFil(){
   var q=busqA.toLowerCase().replace('#','');
   return PRODS.filter(function(p){
     if(p.genero!==generoA)return false;
     if(catA!=='all'&&p.cat!==catA)return false;
     if(marcaA!=='all'&&p.marca!==marcaA)return false;
+    var precio=Number(p.precio);
+    if(precio<precioMinI||(precioMaxI!==null&&precio>precioMaxI))return false;
     if(q&&!(p.nombre.toLowerCase().indexOf(q)>=0)&&!(p.marca.toLowerCase().indexOf(q)>=0)&&!(String(p.codigo||'').replace('#','').indexOf(q)>=0))return false;
     return true;
   });

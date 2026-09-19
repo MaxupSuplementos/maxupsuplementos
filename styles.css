@@ -462,6 +462,7 @@ footer{position:relative;z-index:1;padding:52px 32px 26px;border-top:1px solid r
 @media(max-width:600px){
   .filtros-dropdowns{flex-direction:row!important;flex-wrap:wrap!important;gap:8px!important;margin-bottom:16px!important}
   .filtro-group{flex:1 1 calc(50% - 4px)!important;min-width:0!important;max-width:none!important}
+  .filtro-group-precio{flex-basis:100%!important}
   .filtro-select{font-size:.8rem!important;padding:9px 10px!important;letter-spacing:.02em!important}
 }
 /* ── MENÚ MOBILE DESPLEGABLE (hamburguesa) ── */
@@ -727,6 +728,17 @@ body.light .trust-strip span{color:#555}
 .filtro-select option{background:#1a1a2e;color:#e0e0e0;padding:8px}
 body.light .filtro-select{background:#f5f5f5;color:#333;border-color:rgba(0,150,200,.3)}
 body.light .filtro-select option{background:#f5f5f5;color:#333}
+.filtro-group-precio{flex:1 1 260px;max-width:340px;min-width:240px;padding:7px 12px;background:#1a1a2e;border:1px solid rgba(0,200,255,.25);border-radius:10px}
+.filtro-precio-titulo{display:block;margin-bottom:4px;color:var(--cyan);font:700 .75rem "DM Sans",sans-serif;letter-spacing:.07em}
+.filtro-precio-campos{display:flex;gap:8px}
+.filtro-precio-campos label{display:flex;align-items:center;gap:5px;min-width:0;flex:1;color:#ccc;font-size:.75rem;white-space:nowrap}
+.filtro-precio-campos input{width:100%;min-width:0;padding:6px 8px;background:#101019;color:#e0e0e0;border:1px solid rgba(255,255,255,.16);border-radius:6px;font:600 .83rem "DM Sans",sans-serif;outline:none}
+.filtro-precio-campos input:focus{border-color:var(--cyan)}
+.filtro-precio-campos input::-webkit-inner-spin-button,.filtro-precio-campos input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.filtro-precio-campos input[type=number]{-moz-appearance:textfield;appearance:textfield}
+body.light .filtro-group-precio{background:#f5f5f5;border-color:rgba(0,150,200,.3)}
+body.light .filtro-precio-campos label{color:#444}
+body.light .filtro-precio-campos input{background:#fff;color:#222;border-color:rgba(0,0,0,.2)}
 @media(max-width:600px){.filtros-dropdowns{flex-direction:column;align-items:stretch}.filtro-group{max-width:100%}}
 
 /* ── TESTIMONIOS ── */

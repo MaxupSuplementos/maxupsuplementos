@@ -154,7 +154,7 @@
   └─────────────────────────────────────────────────────────────┘
 -->
 
-<link rel="stylesheet" href="styles.css?v=20260803-club-maxup">
+<link rel="stylesheet" href="styles.css?v=20260918-filtro-precio">
 </head>
 <body>
 
@@ -335,6 +335,13 @@
         <option value="combo">🎁 Combos</option>
       </select>
     </div>
+    <div class="filtro-group filtro-group-precio" role="group" aria-label="Filtrar por precio contado">
+      <span class="filtro-precio-titulo">PRECIO CONTADO</span>
+      <div class="filtro-precio-campos">
+        <label>Desde $ <input id="precioMin" type="number" min="0" step="1" inputmode="numeric" placeholder="Mínimo" oninput="onPrecioFilter()"></label>
+        <label>Hasta $ <input id="precioMax" type="number" min="0" step="1" inputmode="numeric" placeholder="Máximo" oninput="onPrecioFilter()"></label>
+      </div>
+    </div>
     <div class="filtro-group filtro-group-orden">
       <select class="filtro-select" id="filtroOrden" onchange="onOrdenFilter(this.value)">
         <option value="default">ORDENAR POR</option>
@@ -367,7 +374,7 @@
   <div id="productsGrid"></div>
   <div class="no-results" id="noResults" style="display:none">
     <span>🔍</span>
-    <p>Sin resultados. Probá con otro término o categoría.</p>
+    <p>Sin resultados. Probá con otro término o ajustá los filtros.</p>
   </div>
 </section>
 
@@ -959,7 +966,7 @@ function closeMobileMenu(){
 }
 </script>
 
-<script src="app.js?v=20260907-testo-gold" defer></script>
+<script src="app.js?v=20260918-filtro-precio" defer></script>
 </div><!-- /appContent -->
 </body>
 </html>
