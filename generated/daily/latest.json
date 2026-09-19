@@ -1,37 +1,42 @@
 {
-  "fecha": "2026-09-14",
-  "generado": "2026-09-14T22:21:28.156Z",
+  "fecha": "2026-09-18",
+  "generado": "2026-09-19T01:16:46.385Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
-      "titulo": "Citrato De Magnesio 60 Cap",
+      "tipo": "suplemento",
+      "titulo": "Star Simple",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Citrato De Magnesio 60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Star Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
-      "titulo": "Universal Simple",
+      "tipo": "suplemento",
+      "titulo": "Barra Proteica 50Gr - Blanco",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Universal Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Barra Proteica 50Gr - Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
-      "titulo": "Platinum Whey Protein X 2 Lb Pote - Vainilla",
+      "tipo": "suplemento",
+      "titulo": "Tx3 Black Cuts 60Cap",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Platinum Whey Protein X 2 Lb Pote - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Tx3 Black Cuts 60Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
-      "titulo": "Creatina 120 gomitas - Blueberry",
+      "tipo": "suplemento",
+      "titulo": "Muñequera drb neoprene boomerang x unidad",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Creatina 120 gomitas - Blueberry\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Muñequera drb neoprene boomerang x unidad\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
-      "titulo": "Vitamin Gold 30cap",
+      "tipo": "indumentaria",
+      "titulo": "Calza Larga Sin Frunce Bolsillo Lateral",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Vitamin Gold 30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Calza Larga Sin Frunce Bolsillo Lateral\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
