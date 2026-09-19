@@ -2,8 +2,11 @@ name: Generar estados diarios MAXUP
 
 on:
   schedule:
-    # 12:00 UTC = 09:00 en Argentina (UTC-3).
-    - cron: "0 12 * * *"
+    # Evitamos el minuto 00, cuando GitHub suele demorar los trabajos programados.
+    # 12:07 UTC = 09:07 en Argentina (UTC-3).
+    - cron: "7 12 * * *"
+    # Respaldo diario. El progreso guardado evita volver a publicar lo que ya salió.
+    - cron: "37 13 * * *"
   workflow_dispatch:
 
 permissions:
@@ -16,7 +19,7 @@ concurrency:
 jobs:
   generar:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - name: Descargar el sitio
         uses: actions/checkout@v4
@@ -58,3 +61,21 @@ jobs:
           META_SKIP_FACEBOOK_COUNT: ${{ vars.META_SKIP_FACEBOOK_COUNT }}
           MAXUP_WEBSITE_URL: https://maxupsuplementos.com.ar/
         run: npm run publicar-meta
+
+      - name: Guardar progreso para evitar publicaciones duplicadas
+        if: always()
+        run: |
+          if [ ! -f generated/daily/publish-progress.json ]; then
+            echo "Todavía no hay progreso de publicación para guardar."
+            exit 0
+          fi
+          git config user.name "MAXUP Automatizaciones"
+          git config user.email "actions@users.noreply.github.com"
+          git add generated/daily/publish-progress.json
+          if git diff --cached --quiet; then
+            echo "El progreso ya estaba actualizado."
+          else
+            git commit -m "Guardar progreso de publicaciones diarias"
+            git pull --rebase
+            git push
+          fi

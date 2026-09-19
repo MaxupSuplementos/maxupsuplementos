@@ -16,6 +16,24 @@ const websiteUrl = process.env.MAXUP_WEBSITE_URL || 'https://maxupsuplementos.co
 if (!token || (!igUserId && !pageId)) throw new Error('Faltan las credenciales de Meta para publicar.');
 
 const manifest = JSON.parse(await fs.readFile('generated/daily/latest.json', 'utf8'));
+const progressPath = 'generated/daily/publish-progress.json';
+let progress = { fecha: manifest.fecha, instagram: [], facebook: [], completado: false };
+try {
+  const saved = JSON.parse(await fs.readFile(progressPath, 'utf8'));
+  if (saved.fecha === manifest.fecha) progress = { ...progress, ...saved };
+} catch (error) {
+  if (error.code !== 'ENOENT') console.warn(`No se pudo leer el progreso anterior: ${error.message}`);
+}
+progress.instagram = Array.isArray(progress.instagram) ? progress.instagram : [];
+progress.facebook = Array.isArray(progress.facebook) ? progress.facebook : [];
+const publishedInstagram = new Set(progress.instagram);
+const publishedFacebook = new Set(progress.facebook);
+async function saveProgress() {
+  progress.instagram = [...publishedInstagram];
+  progress.facebook = [...publishedFacebook];
+  progress.actualizado = new Date().toISOString();
+  await fs.writeFile(progressPath, JSON.stringify(progress, null, 2) + '\n');
+}
 const repository = process.env.GITHUB_REPOSITORY || 'MaxupSuplementos/maxupsuplementos';
 const revision = process.env.META_IMAGE_REVISION || execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 const baseRaw = `https://raw.githubusercontent.com/${repository}/${revision}/`;
@@ -60,23 +78,37 @@ if (pageId) {
 }
 
 for (const [index, item] of manifest.items.entries()) {
+  const itemKey = `${manifest.fecha}|${item.file}|${item.titulo}`;
   const imageUrl = baseRaw + item.file;
-  if (igUserId && index >= skipInstagramCount) {
+  if (igUserId && index >= skipInstagramCount && !publishedInstagram.has(itemKey)) {
     const container = await graph(`${igUserId}/media`, { image_url: imageUrl, media_type: 'STORIES' });
     await waitForInstagramContainer(container.id);
     await graph(`${igUserId}/media_publish`, { creation_id: container.id });
+    publishedInstagram.add(itemKey);
+    await saveProgress();
     console.log(`Historia de Instagram publicada: ${item.titulo}`);
   } else if (igUserId) {
     console.log(`Historia de Instagram omitida para evitar duplicados: ${item.titulo}`);
   }
-  if (pageId && index >= skipFacebookCount) {
+  if (pageId && index >= skipFacebookCount && !publishedFacebook.has(itemKey)) {
     const captionBase = String(item.caption || item.titulo || '').trim();
     const caption = captionBase.includes(websiteUrl)
       ? captionBase
       : `${captionBase}\n\n🛒 Mirá precios, stock y productos:\n${websiteUrl}`;
     await graph(`${pageId}/photos`, { url: imageUrl, caption, published: 'true' }, pageToken);
+    publishedFacebook.add(itemKey);
+    await saveProgress();
     console.log(`Publicación de Facebook publicada: ${item.titulo}`);
   } else if (pageId) {
     console.log(`Publicación de Facebook omitida para evitar duplicados: ${item.titulo}`);
   }
 }
+
+progress.completado = manifest.items.every((item, index) => {
+  const key = `${manifest.fecha}|${item.file}|${item.titulo}`;
+  const instagramOk = !igUserId || index < skipInstagramCount || publishedInstagram.has(key);
+  const facebookOk = !pageId || index < skipFacebookCount || publishedFacebook.has(key);
+  return instagramOk && facebookOk;
+});
+if (progress.completado) progress.completado_en = new Date().toISOString();
+await saveProgress();

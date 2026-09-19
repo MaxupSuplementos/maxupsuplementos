@@ -47,7 +47,7 @@ canvas{display:block;max-width:100%;height:auto;border-radius:10px;box-shadow:0 
 
 <script>
 const API_URL='https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
-let P=[];
+let P=[],I=[];
 // Ejemplo de fallback mínimo por si la API falla
 const P_FALLBACK=[
 {id:"sn_whey_dp",n:"Whey Protein Doypack 2 Lb",b:"Star Nutrition",p:49000,img:"https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/whey-protein-star-bolsa-frente-1024x1024.jpg&w=400&output=webp&q=82",cat:"proteina"},
@@ -204,6 +204,7 @@ const DAILY_EXPLAINERS={
 
 function dailyBenefits(p){
   const cat=dailyCategory(p);
+  if(cat==='indumentaria')return dailyApparelProfile(p).benefits;
   const fallback=DAILY_BENEFITS[cat]||DAILY_BENEFITS.otros;
   const custom=Array.isArray(p.pubBenefits)?p.pubBenefits.map(sanitizeDailyPromotionalBenefit).filter(Boolean):[];
   const extras=['Aporta practicidad a una rutina activa.','Acompaña tus objetivos de nutrición o entrenamiento.'];
@@ -225,12 +226,14 @@ function sanitizeDailyPromotionalBenefit(value){
 }
 
 function dailyExplainer(p){
+  if(dailyCategory(p)==='indumentaria')return dailyApparelProfile(p).explainer;
   if(String(p.pubDesc||'').trim())return String(p.pubDesc).trim();
   const cat=dailyCategory(p);
   return DAILY_EXPLAINERS[cat]||DAILY_EXPLAINERS.otros;
 }
 
 function dailyCategory(p){
+  if(p&&p.kind==='indumentaria')return 'indumentaria';
   const raw=String((p.cat||'otros')+' '+(p.n||'')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   if(raw.includes('creatina'))return 'creatina';
   if(raw.includes('prote'))return 'proteina';
@@ -247,6 +250,46 @@ function dailyCategory(p){
   if(raw.includes('indument')||raw.includes('ropa'))return 'indumentaria';
   if(raw.includes('quem')||raw.includes('termogen'))return 'quemador';
   return raw||'otros';
+}
+
+function dailyApparelProfile(p){
+  const raw=String((p&&p.n||'')+' '+(p&&p.cat||'')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const withoutPushup=/(?:sin\s+(?:push[ -]?up|frunce)|lisa|liso|clasica|clasico)/.test(raw);
+  const withPushup=!withoutPushup&&/(?:push[ -]?up|frunce|levanta\s*cola)/.test(raw);
+  const isShort=/(?:short|biker|calza corta|cancan)/.test(raw);
+  const isLegging=/(?:calza|legging)/.test(raw)&&!isShort;
+  const isTop=/(?:top|musculosa|crop)/.test(raw);
+  const isShirt=/(?:remera|remeron|camiseta)/.test(raw);
+  const isSet=/(?:conjunto|catsuit|mono)/.test(raw);
+
+  if(withPushup){
+    return {
+      explainer:`${isShort?'Short':'Calza'} deportiva con frunce trasero tipo push-up para realzar visualmente la silueta.`,
+      benefits:['Efecto levanta cola que realza visualmente los glúteos.','Frunce trasero que acompaña y define la forma.','Calce elastizado para moverte con comodidad.']
+    };
+  }
+  if(withoutPushup&&(isShort||isLegging)){
+    return {
+      explainer:`${isShort?'Short':'Calza'} deportiva de diseño liso, sin frunce ni efecto push-up, para un calce natural.`,
+      benefits:['Diseño liso y discreto para un calce natural.','Sin frunce trasero para una terminación más uniforme.','Tejido elastizado que acompaña tus movimientos.']
+    };
+  }
+  if(isShort||isLegging){
+    return {
+      explainer:`${isShort?'Short':'Calza'} deportiva elastizada para entrenar con comodidad y libertad de movimiento.`,
+      benefits:['Calce cómodo que acompaña el movimiento.','Diseño versátil para entrenamiento o uso diario.','Tela elastizada para moverte con libertad.']
+    };
+  }
+  if(isTop){
+    return {explainer:'Top deportivo pensado para acompañar el entrenamiento con comodidad y libertad de movimiento.',benefits:['Aporta sujeción cómoda durante la actividad.','Permite mover brazos y torso con libertad.','Combina fácilmente con calzas o shorts deportivos.']};
+  }
+  if(isShirt){
+    return {explainer:'Remera deportiva cómoda y versátil para entrenar o completar un look diario.',benefits:['Calce cómodo para moverte con libertad.','Versátil para entrenamiento o uso cotidiano.','Fácil de combinar con distintas prendas deportivas.']};
+  }
+  if(isSet){
+    return {explainer:'Conjunto deportivo coordinado para resolver un look cómodo, funcional y listo para usar.',benefits:['Look completo sin tener que combinar prendas.','Comodidad para entrenar y moverte.','Piezas versátiles que también podés usar por separado.']};
+  }
+  return {explainer:DAILY_EXPLAINERS.indumentaria,benefits:['Brinda comodidad para moverte.','Ofrece libertad de movimiento.','Combina funcionalidad y estilo deportivo.']};
 }
 
 function wrapCanvasLines(ctx,text,maxWidth,maxLines){
@@ -448,11 +491,17 @@ async function drawNeonChosenLayout(ctx,p,W,benefits,colors,offer){
   // la imagen; el producto central siempre queda completamente visible.
   await drawNeonProductHero(ctx,p,W,{x:W/2-225,y:575,w:450,h:compact?630:740});
   const sideW=325,badgeH=compact?190:218,leftX=10,rightX=W-sideW-10;
-  drawNeonBenefitBadge(ctx,benefits[0]||'',0,leftX,602,sideW,badgeH,colors,{startSize:37,minSize:22});
-  drawNeonBenefitBadge(ctx,benefits[1]||'',1,leftX,compact?812:848,sideW,badgeH,colors,{startSize:37,minSize:22});
-  drawNeonBenefitBadge(ctx,benefits[2]||'',2,rightX,602,sideW,badgeH,colors,{startSize:37,minSize:22});
-  drawNeonBenefitBadge(ctx,benefits[3]||'',3,rightX,compact?812:848,sideW,badgeH,colors,{startSize:37,minSize:22});
-  drawNeonBenefitBadge(ctx,benefits[4]||'',4,210,compact?1232:1320,W-420,compact?170:194,colors,{startSize:40,minSize:24,maxLines:4});
+  if(benefits.length<=3){
+    drawNeonBenefitBadge(ctx,benefits[0]||'',0,leftX,650,sideW,badgeH,colors,{startSize:37,minSize:22});
+    drawNeonBenefitBadge(ctx,benefits[1]||'',1,rightX,650,sideW,badgeH,colors,{startSize:37,minSize:22});
+    drawNeonBenefitBadge(ctx,benefits[2]||'',2,190,compact?1232:1320,W-380,compact?170:194,colors,{startSize:40,minSize:24,maxLines:4});
+  }else{
+    drawNeonBenefitBadge(ctx,benefits[0]||'',0,leftX,602,sideW,badgeH,colors,{startSize:37,minSize:22});
+    drawNeonBenefitBadge(ctx,benefits[1]||'',1,leftX,compact?812:848,sideW,badgeH,colors,{startSize:37,minSize:22});
+    drawNeonBenefitBadge(ctx,benefits[2]||'',2,rightX,602,sideW,badgeH,colors,{startSize:37,minSize:22});
+    drawNeonBenefitBadge(ctx,benefits[3]||'',3,rightX,compact?812:848,sideW,badgeH,colors,{startSize:37,minSize:22});
+    drawNeonBenefitBadge(ctx,benefits[4]||'',4,210,compact?1232:1320,W-420,compact?170:194,colors,{startSize:40,minSize:24,maxLines:4});
+  }
 }
 
 function drawNeonCta(ctx,W,y,label,colors){
@@ -490,7 +539,7 @@ async function drawNeonFlyerCore(ctx,p,options){
     solidText(ctx,'PRECIO PROMOCIONAL',W/2,py+157,'#fff',"700 25px 'Rajdhani',sans-serif");
     drawNeonCta(ctx,W,1660,'APROVECHÁ AHORA',colors);
   }else{
-    solidText(ctx,'5 BENEFICIOS · UNA ELECCIÓN CON INFORMACIÓN',W/2,1570,'#DCE8F6',"700 30px 'Rajdhani',sans-serif");
+    solidText(ctx,`${benefits.length} BENEFICIOS · UNA ELECCIÓN CON INFORMACIÓN`,W/2,1570,'#DCE8F6',"700 30px 'Rajdhani',sans-serif");
     drawNeonCta(ctx,W,1660,'PEDILO EN MAXUP',colors);
   }
 }
@@ -537,7 +586,7 @@ async function renderDaily(products){
 
   for(let index=0;index<products.length;index++){
     const p=products[index];
-    const card=document.createElement('section');card.className='daily-card';
+    const card=document.createElement('section');card.className='daily-card';card.dataset.tipo=p.kind==='indumentaria'?'indumentaria':'suplemento';
     const title=document.createElement('h2');title.textContent=`${index+1}. ${p.n}`;
     const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1920;
     const actions=document.createElement('div');actions.className='daily-actions';
@@ -556,16 +605,18 @@ function resolveDailyProducts(){
   const selected=[],seen=new Set();
   function add(p){if(!isFlyerEligible(p))return;const key=String(p.id||'')+'|'+p.n;if(seen.has(key))return;seen.add(key);selected.push(p)}
   dailyIds.forEach(id=>add(P.find(p=>String(p.id)===String(id))));
-  dailyNames.forEach(name=>{if(selected.length<5)add(findProduct(name.toLowerCase()))});
+  dailyNames.forEach(name=>{if(selected.length<4)add(findProduct(name.toLowerCase()))});
   const eligible=P.filter(isFlyerEligible)
     .sort((a,b)=>dailyScore((a.id||a.n)+'|'+a.n)-dailyScore((b.id||b.n)+'|'+b.n));
   const usedCategories=new Set(selected.map(dailyCategory));
   eligible.forEach(p=>{
     const cat=dailyCategory(p);
-    if(selected.length<5&&!usedCategories.has(cat)){add(p);usedCategories.add(cat)}
+    if(selected.length<4&&!usedCategories.has(cat)){add(p);usedCategories.add(cat)}
   });
-  eligible.forEach(p=>{if(selected.length<5)add(p)});
-  return selected.slice(0,5);
+  eligible.forEach(p=>{if(selected.length<4)add(p)});
+  const apparel=I.filter(isFlyerEligible)
+    .sort((a,b)=>dailyScore('indumentaria|'+(a.id||a.n)+'|'+a.n)-dailyScore('indumentaria|'+(b.id||b.n)+'|'+b.n))[0];
+  return selected.slice(0,4).concat(apparel?[apparel]:[]);
 }
 
 async function genPost(p,disc,W,H){
@@ -617,6 +668,24 @@ async function init(){
     // Sin catálogo en vivo no hay forma segura de confirmar el stock.
     P=[];
     document.getElementById('st').textContent='No se pudo comprobar el stock actual. No se generaron publicaciones.';
+  }
+
+  if(dailyMode){
+    try{
+      const respInd=await fetch(API_URL+'?accion=indumentaria');
+      const dataInd=await respInd.json();
+      if(!dataInd.ok||!Array.isArray(dataInd.prendas))throw new Error(dataInd.error||'Sin indumentaria');
+      I=dataInd.prendas.map(function(pr,index){
+        var imgUrl=String(pr.img||'').trim();
+        if(imgUrl&&imgUrl.indexOf('weserv.nl')<0&&imgUrl.indexOf('data:')<0){
+          imgUrl='https://images.weserv.nl/?url='+encodeURIComponent(imgUrl.replace(/^https?:\/\//,''))+'&w=500&output=webp&q=82';
+        }
+        return {id:'ind-'+(pr.codigo||index),n:pr.nombre||'',b:pr.marca||'MAXUP',p:Number(pr.precio)||0,img:imgUrl,cat:'indumentaria '+(pr.cat||''),kind:'indumentaria',stock:Number(pr.stock)||0};
+      });
+    }catch(err){
+      I=[];
+      document.getElementById('st').textContent+=' No se pudo comprobar el stock de indumentaria.';
+    }
   }
 
   if(dailyMode){

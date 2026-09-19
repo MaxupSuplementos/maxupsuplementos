@@ -296,7 +296,7 @@ test('Promo Express conserva el modo oferta y agrega el modo diario de cinco pla
   assert.match(html, /x:W\/2-225,y:575,w:450,h:compact\?630:740/, 'La foto central debe ocupar más espacio en flyers diarios y ofertas');
   assert.match(html, /maxW=w-24,maxH=h-20/, 'La imagen debe aprovechar casi todo el contenedor central');
   assert.match(html, /const DAILY_EXPLAINERS=/);
-  assert.match(html, /5 BENEFICIOS/);
+  assert.match(html, /\$\{benefits\.length\} BENEFICIOS/);
   assert.match(html, /function sanitizeDailyPromotionalBenefit/);
   assert.match(html, /pubDesc:pr\.descripcion_publicacion/);
   assert.match(html, /pubBenefits:Array\.isArray\(pr\.beneficios_publicacion\)/);
@@ -309,7 +309,8 @@ test('las publicaciones automáticas salen a las 9 de Argentina y llevan la web'
   const workflow = read('.github/workflows/generar-estados-diarios.yml');
   const publisher = read('tools/publish-meta-social.mjs');
   const generator = read('tools/generate-daily-social.mjs');
-  assert.match(workflow, /cron: "0 12 \* \* \*"/);
+  assert.match(workflow, /cron: "7 12 \* \* \*"/);
+  assert.match(workflow, /cron: "37 13 \* \* \*"/, 'Debe existir una segunda ejecución diaria de respaldo');
   assert.match(workflow, /MAXUP_WEBSITE_URL: https:\/\/maxupsuplementos\.com\.ar\//);
   assert.match(publisher, /Mirá precios, stock y productos/);
   assert.match(publisher, /websiteUrl/);
@@ -321,6 +322,40 @@ test('el generador no depende de networkidle para abrir la página de estados', 
   assert.match(generator, /waitUntil:\s*'domcontentloaded'/);
   assert.doesNotMatch(generator, /waitUntil:\s*'networkidle'/);
   assert.match(generator, /cards\.length === 5/);
+  assert.match(generator, /AbortSignal\.timeout\(210000\)/, 'El catálogo lento debe tener un margen suficiente');
+  assert.match(generator, /undefined, \{ timeout: 300000 \}\)/, 'El tiempo extendido debe enviarse como opciones de Playwright, no como argumento de la página');
+  assert.match(generator, /fetchJsonWithRetry\('catalogo'\)/);
+  assert.match(generator, /fetchJsonWithRetry\('indumentaria'\)/);
+});
+
+test('la rotación diaria genera cuatro suplementos y una prenda con stock', () => {
+  const promo = read('promo.html');
+  const generator = read('tools/generate-daily-social.mjs');
+  assert.match(promo, /selected\.slice\(0,4\)\.concat\(apparel\?\[apparel\]:\[\]\)/);
+  assert.match(promo, /API_URL\+'\?accion=indumentaria'/);
+  assert.match(promo, /card\.dataset\.tipo=p\.kind==='indumentaria'\?'indumentaria':'suplemento'/);
+  assert.match(generator, /types\.filter\(type => type === 'suplemento'\)\.length === 4/);
+  assert.match(generator, /types\.filter\(type => type === 'indumentaria'\)\.length === 1/);
+});
+
+test('las prendas con y sin push-up reciben beneficios específicos', () => {
+  const promo = read('promo.html');
+  assert.match(promo, /function dailyApparelProfile\(p\)/);
+  assert.match(promo, /Efecto levanta cola que realza visualmente los glúteos/);
+  assert.match(promo, /Frunce trasero que acompaña y define la forma/);
+  assert.match(promo, /Diseño liso y discreto para un calce natural/);
+  assert.match(promo, /Sin frunce trasero para una terminación más uniforme/);
+  assert.match(promo, /if\(benefits\.length<=3\)/, 'La plantilla debe acomodar tres beneficios sin dejar huecos');
+});
+
+test('Meta guarda el progreso para reintentar sin duplicar historias', () => {
+  const publisher = read('tools/publish-meta-social.mjs');
+  const workflow = read('.github/workflows/generar-estados-diarios.yml');
+  assert.match(publisher, /publish-progress\.json/);
+  assert.match(publisher, /publishedInstagram\.has\(itemKey\)/);
+  assert.match(publisher, /publishedFacebook\.has\(itemKey\)/);
+  assert.match(workflow, /if: always\(\)/);
+  assert.match(workflow, /Guardar progreso para evitar publicaciones duplicadas/);
 });
 
 test('los beneficios reservan un margen para que el número no tape las letras', () => {
