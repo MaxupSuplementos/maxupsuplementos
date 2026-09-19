@@ -255,6 +255,32 @@ function _cajaCatalogo_() {
   return _cajaCatalogoSuplementos_(ss).concat(_cajaCatalogoIndumentaria_(ss));
 }
 
+// Vista rápida y de solo lectura para abrir la Caja. Mantiene
+// STOCK_DETALLADO como fuente de verdad sin bloquear la aplicación ni escribir
+// celda por celda durante el inicio. La venta vuelve a reconciliar y validar el
+// stock dentro de su bloqueo antes de descontar, por lo que no pierde seguridad.
+function _cajaCatalogoParaMostrar_() {
+  var ss = _getSS();
+  var suplementos = _cajaCatalogoSuplementos_(ss);
+  var hojaDetalle = ss.getSheetByName('STOCK_DETALLADO');
+  if (hojaDetalle && hojaDetalle.getLastRow() >= 2) {
+    var detalle = hojaDetalle.getRange(2, 1, hojaDetalle.getLastRow() - 1, 5).getValues();
+    var sumas = {};
+    detalle.forEach(function(row) {
+      var nombre = String(row[0] || '').trim();
+      var marca = String(row[1] || '').trim();
+      if (!nombre || !marca) return;
+      var clave = _cajaClaveStockDetallado_(marca, nombre);
+      sumas[clave] = (sumas[clave] || 0) + Math.max(0, Number(row[4]) || 0);
+    });
+    suplementos.forEach(function(producto) {
+      var clave = _cajaClaveStockDetallado_(producto.marca, producto.nombre);
+      if (clave in sumas) producto.stock = sumas[clave];
+    });
+  }
+  return suplementos.concat(_cajaCatalogoIndumentaria_(ss));
+}
+
 // STOCK_DETALLADO es la fuente de verdad para todo suplemento que tenga al
 // menos un lote. Antes de mostrar o vender, refleja esos totales en la hoja
 // principal. Así una corrección manual en los lotes nunca puede ser pisada por
@@ -304,31 +330,35 @@ function _cajaResolverProducto_(catalogo, referencia) {
   return null;
 }
 
-function obtenerDatosCajaMaxup(sesionCaja) {
+function obtenerCatalogoCajaMaxup(sesionCaja) {
   _validarSesionCaja_(sesionCaja);
-  var lock = LockService.getScriptLock();
-  try { lock.waitLock(20000); } catch (eLock) { throw new Error('La caja está actualizando el stock. Reintentá en unos segundos.'); }
-  try {
-    _cajaReconciliarPrincipalAntesDeVender_();
-    var fidelidadPct = (typeof _configNumeroMaxup === 'function')
-      ? _configNumeroMaxup('PROMO_DESCUENTO', PROMO_DESCUENTO) : PROMO_DESCUENTO;
-    var promoMinimo = (typeof _configNumeroMaxup === 'function')
-      ? _configNumeroMaxup('PROMO_MINIMO', PROMO_MINIMO) : PROMO_MINIMO;
-    var promoMeses = (typeof _configNumeroMaxup === 'function')
-      ? _configNumeroMaxup('PROMO_MESES', PROMO_MESES) : PROMO_MESES;
-    return {
-      ok: true,
-      productos: _cajaCatalogo_(),
-      clientes: _cajaClientes_(),
-      descuentosMonto: _cajaDescuentosMonto_(),
-      fidelidadPct: fidelidadPct,
-      promoMinimo: promoMinimo,
-      promoMeses: promoMeses,
-      negocio: { nombre: 'MAXUP Suplementos', telefono: '3876233406', direccion: 'General Güemes, Salta' }
-    };
-  } finally {
-    lock.releaseLock();
-  }
+  var fidelidadPct = (typeof _configNumeroMaxup === 'function')
+    ? _configNumeroMaxup('PROMO_DESCUENTO', PROMO_DESCUENTO) : PROMO_DESCUENTO;
+  var promoMinimo = (typeof _configNumeroMaxup === 'function')
+    ? _configNumeroMaxup('PROMO_MINIMO', PROMO_MINIMO) : PROMO_MINIMO;
+  var promoMeses = (typeof _configNumeroMaxup === 'function')
+    ? _configNumeroMaxup('PROMO_MESES', PROMO_MESES) : PROMO_MESES;
+  return {
+    ok: true,
+    productos: _cajaCatalogoParaMostrar_(),
+    descuentosMonto: _cajaDescuentosMonto_(),
+    fidelidadPct: fidelidadPct,
+    promoMinimo: promoMinimo,
+    promoMeses: promoMeses,
+    negocio: { nombre: 'MAXUP Suplementos', telefono: '3876233406', direccion: 'General Güemes, Salta' }
+  };
+}
+
+function obtenerClientesCajaMaxup(sesionCaja) {
+  _validarSesionCaja_(sesionCaja);
+  return { ok: true, clientes: _cajaClientes_() };
+}
+
+// Compatibilidad con pestañas que todavía tengan abierta la versión anterior.
+function obtenerDatosCajaMaxup(sesionCaja) {
+  var datos = obtenerCatalogoCajaMaxup(sesionCaja);
+  datos.clientes = _cajaClientes_();
+  return datos;
 }
 
 function _cajaCalcular_(items, clienteCodigo) {

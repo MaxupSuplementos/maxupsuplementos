@@ -244,6 +244,8 @@ function doPost(e) {
     if (data.accion === 'caja_login')       return _jsonOut(cajaLoginMaxup(data.clave));
     if (data.accion === 'caja_logout')      return _jsonOut(cajaLogoutMaxup(data.sesion));
     if (data.accion === 'caja_datos')       return _jsonOut(obtenerDatosCajaMaxup(data.sesion));
+    if (data.accion === 'caja_catalogo')    return _jsonOut(obtenerCatalogoCajaMaxup(data.sesion));
+    if (data.accion === 'caja_clientes')    return _jsonOut(obtenerClientesCajaMaxup(data.sesion));
     if (data.accion === 'caja_pendientes')  return _jsonOut(listarVentasPendientesCajaMaxup(data.sesion));
     if (data.accion === 'caja_guardar')     return _jsonOut(guardarVentaPendienteCajaMaxup(data.datos, data.sesion));
     if (data.accion === 'caja_cancelar')    return _jsonOut(cancelarVentaPendienteCajaMaxup(data.id, data.sesion));

@@ -170,11 +170,22 @@ function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){retur
 function byId(id){return document.getElementById(id);}
 
 function cargarDatosCaja(){
-  byId('loading').style.display='flex';byId('loading').textContent='Cargando productos, clientes y promociones…';
+  byId('loading').style.display='flex';byId('loading').textContent='Cargando productos y stock…';
+  byId('clientSearch').disabled=true;byId('clientSearch').placeholder='Cargando clientes…';
   google.script.run.withSuccessHandler(function(data){
-    if(!data||!data.ok){fallo({message:'No se pudieron cargar los datos'});return;}
-    DATA=data;ULTIMA_ACTUALIZACION_DATOS=Date.now();byId('loading').style.display='none';renderCart();cargarPendientesCaja();
-  }).withFailureHandler(fallo).obtenerDatosCajaMaxup(SESION_CAJA);
+    if(!data||!data.ok){fallo({message:'No se pudieron cargar los productos'});return;}
+    DATA.productos=data.productos||[];DATA.descuentosMonto=data.descuentosMonto||[];
+    DATA.fidelidadPct=data.fidelidadPct;DATA.promoMinimo=data.promoMinimo;DATA.promoMeses=data.promoMeses;DATA.negocio=data.negocio;
+    ULTIMA_ACTUALIZACION_DATOS=Date.now();byId('loading').style.display='none';renderCart();cargarPendientesCaja();
+  }).withFailureHandler(fallo).obtenerCatalogoCajaMaxup(SESION_CAJA);
+  google.script.run.withSuccessHandler(function(data){
+    if(!data||!data.ok){byId('clientSearch').placeholder='No se cargaron los clientes. Actualizá la página.';return;}
+    DATA.clientes=data.clientes||[];
+    byId('clientSearch').disabled=false;byId('clientSearch').placeholder='Buscar por nombre, código o teléfono';
+    if(byId('clientSearch').value)byId('clientSearch').dispatchEvent(new Event('input'));
+  }).withFailureHandler(function(){
+    byId('clientSearch').placeholder='No se cargaron los clientes. Actualizá la página.';
+  }).obtenerClientesCajaMaxup(SESION_CAJA);
 }
 
 function iniciarCaja(){
