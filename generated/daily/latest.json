@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-09-19",
-  "generado": "2026-09-19T16:47:04.907Z",
+  "fecha": "2026-09-20",
+  "generado": "2026-09-20T16:01:05.756Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Resveratrol 500 X 60 Caps.",
+      "titulo": "Star V8 Simple",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Resveratrol 500 X 60 Caps.\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Star V8 Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Rodillera de Compresion DRB",
+      "titulo": "Nad Gold x30caps",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Rodillera de Compresion DRB\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Nad Gold x30caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Glutamina X 300 Grs En Pote",
+      "titulo": "Creatina X 500 Grs Pote",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Glutamina X 300 Grs En Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina X 500 Grs Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Ripped Fat Burner x60caps",
+      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Ripped Fat Burner x60caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "CAPUCHA universal",
+      "titulo": "Conjunto Corto Linea Blanca",
       "file": "generated/daily/current/05.jpg",
-      "caption": "CAPUCHA universal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Conjunto Corto Linea Blanca\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
