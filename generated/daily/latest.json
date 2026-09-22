@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-09-21",
-  "generado": "2026-09-21T18:54:04.391Z",
+  "fecha": "2026-09-22",
+  "generado": "2026-09-22T16:51:56.366Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Ultra Mass X 1,5 Kgs - Vainilla",
+      "titulo": "Muñequera Elastico par",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Ultra Mass X 1,5 Kgs - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Muñequera Elastico par\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Guantes P/ Gim",
+      "titulo": "Mini Licuadora Portátil",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Guantes P/ Gim\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mini Licuadora Portátil\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Energy Gel 42g - Limon",
+      "titulo": "Barra Proteica 50Gr - Blanco",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Energy Gel 42g - Limon\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Barra Proteica 50Gr - Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Creatina X 300 Grs - Doypack - Frutos Rojos",
+      "titulo": "Beta Alanina x300g",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Creatina X 300 Grs - Doypack - Frutos Rojos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Beta Alanina x300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Short Batik en V",
+      "titulo": "Conjunto Corto Morly",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Short Batik en V\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Conjunto Corto Morly\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
