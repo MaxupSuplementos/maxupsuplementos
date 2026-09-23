@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-09-22",
-  "generado": "2026-09-22T17:45:54.218Z",
+  "fecha": "2026-09-23",
+  "generado": "2026-09-23T16:50:38.578Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Muñequera Elastico par",
+      "titulo": "Creatina X 300 Grs - Doypack - Frutos Rojos",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Muñequera Elastico par\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina X 300 Grs - Doypack - Frutos Rojos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Mini Licuadora Portátil",
+      "titulo": "Collagen Sport Naranja X 360 Grs",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Mini Licuadora Portátil\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Collagen Sport Naranja X 360 Grs\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Barra Proteica 50Gr - Blanco",
+      "titulo": "Cafeina 200 - 30 Cap",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Barra Proteica 50Gr - Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Cafeina 200 - 30 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Beta Alanina x300g",
+      "titulo": "Vegetal Protein Isolate 2Lb - Vainilla",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Beta Alanina x300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Vegetal Protein Isolate 2Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Conjunto Corto Morly",
+      "titulo": "Top con Cierre",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Conjunto Corto Morly\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Top con Cierre\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
