@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-09-23",
-  "generado": "2026-09-23T17:58:02.386Z",
+  "fecha": "2026-09-24",
+  "generado": "2026-09-24T17:04:42.382Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Creatina X 300 Grs - Doypack - Frutos Rojos",
+      "titulo": "Protein Bar 46g - Chocolate",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Creatina X 300 Grs - Doypack - Frutos Rojos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Protein Bar 46g - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Collagen Sport Naranja X 360 Grs",
+      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Collagen Sport Naranja X 360 Grs\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Cafeina 200 - 30 Cap",
+      "titulo": "Creatina 250Gr",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Cafeina 200 - 30 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina 250Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Vegetal Protein Isolate 2Lb - Vainilla",
+      "titulo": "L-Carnitine 1000 X60 Comp",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Vegetal Protein Isolate 2Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L-Carnitine 1000 X60 Comp\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Top con Cierre",
+      "titulo": "MUSCULOSA SPORT Exotic",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Top con Cierre\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "MUSCULOSA SPORT Exotic\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
