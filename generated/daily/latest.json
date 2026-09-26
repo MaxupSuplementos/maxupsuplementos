@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-09-25",
-  "generado": "2026-09-25T18:04:24.104Z",
+  "fecha": "2026-09-26",
+  "generado": "2026-09-26T16:18:20.649Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Medicine Ball 12Lb Everlast",
+      "titulo": "Botella Sport",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Medicine Ball 12Lb Everlast\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Botella Sport\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Ena Simple",
+      "titulo": "Creatina 250Gr",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Ena Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina 250Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Protein Bar 46g - Chocolate",
+      "titulo": "Beta Alanina x300g",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Protein Bar 46g - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Beta Alanina x300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Glicinato de Magnesio 60cap",
+      "titulo": "Vegetal Protein Isolate 2Lb - Neutro",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Glicinato de Magnesio 60cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Vegetal Protein Isolate 2Lb - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Musculosa Alo",
+      "titulo": "Top Deportivo",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Musculosa Alo\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Top Deportivo\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
