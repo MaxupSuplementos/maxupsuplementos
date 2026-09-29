@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-09-28",
-  "generado": "2026-09-28T20:14:03.648Z",
+  "fecha": "2026-09-29",
+  "generado": "2026-09-29T18:03:01.645Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Shaker Maxup Simple Negro",
+      "titulo": "Calleras de Cuero Talle Unico - par",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Shaker Maxup Simple Negro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Calleras de Cuero Talle Unico - par\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Omega 3 - Fish Oil X30Cap",
+      "titulo": "L-Carnitina 1500 x60Caps",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Omega 3 - Fish Oil X30Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L-Carnitina 1500 x60Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Cafeina 200 - 30 Cap",
+      "titulo": "Whey Protein Truemade X 2,05 Lb - Cookies",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Cafeina 200 - 30 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey Protein Truemade X 2,05 Lb - Cookies\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "EAA`S Aminoacidos - Limon",
+      "titulo": "Citrato Magnesio X 500 Grs - Frutos Rojos",
       "file": "generated/daily/current/04.jpg",
-      "caption": "EAA`S Aminoacidos - Limon\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato Magnesio X 500 Grs - Frutos Rojos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "MANGA LARGA Animal",
+      "titulo": "Remerón Burbuja",
       "file": "generated/daily/current/05.jpg",
-      "caption": "MANGA LARGA Animal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Remerón Burbuja\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
