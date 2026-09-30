@@ -3490,8 +3490,11 @@ function buildCard(p, cardIndex){
 
   const precioLista = p.price_tarjeta || _precioListaDesdeContado(p.price);
   const cuota3 = precioLista / 3;
-  const addDisabled = initStock===0 ? 'disabled' : '';
-  const addText = initStock===0 ? '❌ Agotado' : '🛒 Agregar';
+  // Si mostramos el catálogo guardado de la visita anterior, dejamos navegar
+  // y filtrar de inmediato pero no permitimos comprar hasta validar el stock.
+  const esperandoStock = typeof _catalogoSoloCache !== 'undefined' && _catalogoSoloCache;
+  const addDisabled = (initStock===0 || esperandoStock) ? 'disabled' : '';
+  const addText = esperandoStock ? '⏳ Actualizando stock' : (initStock===0 ? '❌ Agotado' : '🛒 Agregar');
 
   const isFav = _favoritos.indexOf(p.id) >= 0;
   return `
@@ -3546,13 +3549,36 @@ function buildCard(p, cardIndex){
 </div>`;
 }
 
+var _comparadorVisible = false;
+var _comparadorObserver = null;
+function _programarComparador_(){
+  if (_comparadorVisible) {
+    poblarComparador();
+    return;
+  }
+  if (_comparadorObserver) return;
+  var seccion = document.getElementById('comparador');
+  if (!seccion || typeof IntersectionObserver === 'undefined') {
+    setTimeout(function(){ _comparadorVisible = true; poblarComparador(); }, 1200);
+    return;
+  }
+  _comparadorObserver = new IntersectionObserver(function(entries){
+    if (!entries.some(function(entry){ return entry.isIntersecting; })) return;
+    _comparadorVisible = true;
+    _comparadorObserver.disconnect();
+    _comparadorObserver = null;
+    poblarComparador();
+  }, { rootMargin:'500px 0px' });
+  _comparadorObserver.observe(seccion);
+}
+
 function renderAll(){
-  const grid = document.getElementById('productsGrid');
-  grid.innerHTML = PRODUCTS.map((p, i) => buildCard(p, i)).join('');
   poblarFiltroBrands();
-  poblarComparador();
-  setTimeout(makeCardsClickable, 100);
-  // Aplicar paginación inmediatamente (sin scroll reveal para que funcione bien)
+  // El comparador está varias pantallas más abajo. Sus cientos de opciones se
+  // crean recién cuando el visitante se acerca a esa sección.
+  _programarComparador_();
+  // applyFilters también dibuja la página visible. Así evitamos construir
+  // cientos de tarjetas que el visitante no está mirando.
   applyFilters();
 }
 
@@ -3561,36 +3587,50 @@ var activeOrden = 'default';
 function applyFilters(){
   var _pp = document.getElementById('filtroPorPagina');
   if(_pp && _pp.value !== String(ITEMS_POR_PAGINA)) _pp.value = String(ITEMS_POR_PAGINA);
-  const cards = Array.from(document.querySelectorAll('.prod-card'));
-  // Filtrar
-  let visibles = cards.filter(card => {
-    const categorias = (card.dataset.cats || card.dataset.cat || '').split(/\s+/).filter(Boolean);
+  var grid = document.getElementById('productsGrid');
+  var info = document.getElementById('searchInfo');
+  var noRes = document.getElementById('noResults');
+
+  // El usuario puede elegir filtros apenas ve la página. Guardamos ese estado
+  // y no lo confundimos con "sin resultados" mientras llega el catálogo.
+  if (!PRODUCTS.length && !_catalogoSheetsCargado) {
+    _catalogoFiltroPendiente = true;
+    if (noRes) noRes.style.display = 'none';
+    if (info) info.textContent = 'Preparando los productos con el filtro elegido…';
+    _mostrarEstadoCatalogo_('loading', 'Cargando productos y aplicando tu filtro…');
+    renderFiltrosActivos();
+    return;
+  }
+
+  _catalogoFiltroPendiente = false;
+  // Filtrar primero los datos y dibujar solamente los productos visibles.
+  let visibles = PRODUCTS.filter(function(p) {
+    const categorias = Array.isArray(p.cats) && p.cats.length ? p.cats : _categoriasProducto(p.name, p.cat);
+    const textoBusqueda = ((p.name||'')+' '+(p.brand||'')+' '+(p.cat||'')+' '+
+      ((p.flavors||[]).map(function(f){ return f.name || ''; }).join(' '))).toLowerCase();
     let matchCat;
-    if(activeCat==='favoritos') matchCat = _favoritos.indexOf(card.dataset.id)>=0;
+    if(activeCat==='favoritos') matchCat = _favoritos.indexOf(p.id)>=0;
     else if(activeCat==='magnesio'){
-      matchCat = categorias.indexOf('magnesio')>=0 || /magnesio|omega|zma/i.test(card.dataset.search);
+      matchCat = categorias.indexOf('magnesio')>=0 || /magnesio|omega|zma/i.test(textoBusqueda);
     }
     else matchCat = activeCat==='all' || categorias.indexOf(activeCat)>=0;
-    const matchBrand = activeBrand==='all' || card.dataset.brand===activeBrand;
-    const matchSearch = !activeSearch || card.dataset.search.includes(activeSearch);
-    const price = _cardPrice(card);
+    const matchBrand = activeBrand==='all' || String(p.brand||'').toLowerCase()===activeBrand;
+    const matchSearch = !activeSearch || textoBusqueda.includes(activeSearch);
+    const price = Number(p.price || 0);
     const matchPrice = price >= precioMin && (precioMax === null || price <= precioMax);
     return matchCat && matchBrand && matchSearch && matchPrice;
   });
 
   // ── #2 ORDENAR ──
   if(activeOrden !== 'default'){
-    var grid = document.getElementById('productsGrid');
     visibles.sort(function(a,b){
-      if(activeOrden==='precio-asc') return _cardPrice(a) - _cardPrice(b);
-      if(activeOrden==='precio-desc') return _cardPrice(b) - _cardPrice(a);
-      if(activeOrden==='nombre-asc') return (a.dataset.search||'').localeCompare(b.dataset.search||'');
-      if(activeOrden==='nombre-desc') return (b.dataset.search||'').localeCompare(a.dataset.search||'');
-      if(activeOrden==='stock-desc') return _cardStock(b) - _cardStock(a);
+      if(activeOrden==='precio-asc') return Number(a.price||0) - Number(b.price||0);
+      if(activeOrden==='precio-desc') return Number(b.price||0) - Number(a.price||0);
+      if(activeOrden==='nombre-asc') return String(a.name||'').localeCompare(String(b.name||''), 'es');
+      if(activeOrden==='nombre-desc') return String(b.name||'').localeCompare(String(a.name||''), 'es');
+      if(activeOrden==='stock-desc') return _stockProducto_(b) - _stockProducto_(a);
       return 0;
     });
-    // Re-append in sorted order
-    visibles.forEach(function(c){ grid.appendChild(c); });
   }
 
   // Reset página si cambió el filtro
@@ -3598,34 +3638,48 @@ function applyFilters(){
   if(paginaActual > totalPags) paginaActual = 1;
   const inicio = (paginaActual - 1) * ITEMS_POR_PAGINA;
   const fin = inicio + ITEMS_POR_PAGINA;
-  // Mostrar/ocultar con animación (#9)
-  cards.forEach(card => { card.style.display = 'none'; card.classList.remove('filter-anim'); });
-  visibles.slice(inicio, fin).forEach(function(card, i){
-    card.style.display = 'flex';
-    card.style.opacity = '0';
-    // Las tarjetas nacen ocultas por la paginación. Al hacerlas visibles,
-    // forzar la descarga de su foto principal corrige navegadores móviles que
-    // no reactivan correctamente una imagen lazy creada con display:none.
-    var imgPrincipal = card.querySelector('img[data-product-img]');
-    if (imgPrincipal) {
-      imgPrincipal.loading = 'eager';
-      imgPrincipal.setAttribute('fetchpriority', i < 6 ? 'high' : 'auto');
+  var paginaVisible = visibles.slice(inicio, fin);
+  if (grid) {
+    if (_catalogoSoloCache && !paginaVisible.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:42px 16px;color:#aaa"><div style="width:34px;height:34px;border:3px solid rgba(0,200,255,.2);border-top-color:#00C8FF;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px"></div><p>Buscando coincidencias en el catálogo actualizado…</p></div>';
+    } else {
+      grid.innerHTML = paginaVisible.map(function(p, i){ return buildCard(p, i); }).join('');
     }
-    setTimeout(function(){ card.classList.add('filter-anim'); }, i * 30);
-  });
-  // Info búsqueda
-  const info = document.getElementById('searchInfo');
-  const noRes = document.getElementById('noResults');
-  if(activeSearch){
-    info.textContent = visibles.length>0 ? `${visibles.length} resultado${visibles.length!==1?'s':''} para "${activeSearch}"` : '';
-  } else {
-    info.textContent = (precioMin>0||precioMax!==null) ? `${visibles.length} producto${visibles.length!==1?'s':''} en el rango de precio` : '';
+    setTimeout(function(){
+      makeCardsClickable();
+      Array.from(grid.querySelectorAll('.prod-card')).forEach(function(card, i){
+        card.style.display = 'flex';
+        card.classList.add('filter-anim');
+        var imgPrincipal = card.querySelector('img[data-product-img]');
+        if (imgPrincipal) {
+          imgPrincipal.loading = i < 6 ? 'eager' : 'lazy';
+          imgPrincipal.setAttribute('fetchpriority', i < 6 ? 'high' : 'low');
+        }
+      });
+    }, 0);
   }
-  noRes.style.display = visibles.length===0 ? 'block' : 'none';
+  // Info búsqueda
+  if(activeSearch){
+    if(info) info.textContent = visibles.length>0 ? `${visibles.length} resultado${visibles.length!==1?'s':''} para "${activeSearch}"` : '';
+  } else {
+    if(info) info.textContent = (precioMin>0||precioMax!==null) ? `${visibles.length} producto${visibles.length!==1?'s':''} en el rango de precio` : '';
+  }
+  if(noRes) noRes.style.display = (visibles.length===0 && !_catalogoSoloCache) ? 'block' : 'none';
   // Renderizar paginación
   renderPaginacion(visibles.length);
   // ── #3 Chips activos ──
   renderFiltrosActivos();
+  if (_catalogoSoloCache) {
+    _mostrarEstadoCatalogo_('loading', 'Productos visibles. Estamos verificando precios y stock actual…');
+  } else {
+    _mostrarEstadoCatalogo_('ok', '');
+  }
+}
+
+function _stockProducto_(p){
+  return (p && p.flavors ? p.flavors : []).reduce(function(total, f){
+    return total + (Number(f.stock) || 0);
+  }, 0);
 }
 
 // Helpers para ordenar
@@ -3789,6 +3843,8 @@ function poblarFiltroBrands(){
     opt.textContent = m + ' (' + count + ')';
     sel.appendChild(opt);
   });
+  sel.value = activeBrand;
+  if (sel.value !== activeBrand) sel.value = 'all';
   // ── #10 Contadores por tipo ──
   poblarContadoresTipo();
 }
@@ -3849,6 +3905,11 @@ function renderSearchSuggest(q){
   if(!box) return;
   q = (q||'').toLowerCase().trim();
   if(q.length < 2){ box.style.display='none'; box.innerHTML=''; return; }
+  if(!PRODUCTS.length && !_catalogoSheetsCargado){
+    box.innerHTML = '<div class="ss-empty">Cargando productos para buscar “'+q+'”…</div>';
+    box.style.display = 'block';
+    return;
+  }
   var matches = (typeof PRODUCTS!=='undefined'?PRODUCTS:[]).filter(function(p){
     var stock = p.flavors ? p.flavors.reduce(function(s,f){return s+f.stock;},0) : 0;
     if(stock<=0) return false;
@@ -4006,6 +4067,10 @@ function saveCart(){
 }
 
 function addToCartById(pid){
+  if (_catalogoSoloCache) {
+    showToast('⏳ Estamos verificando el stock actual. Esperá un momento.');
+    return;
+  }
   const p = getProduct(pid);
   const flav = getSelectedFlavor(pid);
   if(!flav || flav.stock===0) return;
@@ -4587,20 +4652,26 @@ function finalizarPedido(){
   });
 }
 
-cargarLiquidaciones();
-
 function mostrarLiquidaciones() {
   var sec = document.getElementById('liquidaciones');
   if (sec) sec.style.display = 'block';
+  if (!_liquidacionesCargadas && !_liquidacionesCargando) cargarLiquidaciones();
 }
 
 // ── CARGAR LIQUIDACIONES DESDE API ───────────────────────────
+var _liquidacionesCargadas = false;
+var _liquidacionesCargando = false;
 async function cargarLiquidaciones() {
+  if (_liquidacionesCargando) return;
+  _liquidacionesCargando = true;
   try {
     var API_LIQ = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
     var res = await fetch(API_LIQ + '?accion=ofertas');
     var data = await res.json();
-    if (!data.ok || !data.productos || data.productos.length === 0) return;
+    if (!data.ok || !data.productos || data.productos.length === 0) {
+      _liquidacionesCargadas = true;
+      return;
+    }
 
     var seccion = document.getElementById('liquidaciones');
     var grid = document.getElementById('liquidacionesGrid');
@@ -4644,7 +4715,11 @@ async function cargarLiquidaciones() {
         + '📲 CONSULTAR PRECIO ESPECIAL</a>'
         + '</div></div>';
     }).join('');
-  } catch(e) {}
+    _liquidacionesCargadas = true;
+  } catch(e) {
+  } finally {
+    _liquidacionesCargando = false;
+  }
 }
 
 // Abrir un producto para valorarlo (desde el pedido de reseña post-compra)
@@ -4663,7 +4738,7 @@ function resetAfterOrder(){
     const el=document.getElementById(id); if(el) el.value='';
   });
   cargarDesdeSheets();
-cargarLiquidaciones();
+  _liquidacionesCargadas = false;
 
 }
 
@@ -4696,17 +4771,29 @@ function initScrollReveal(){
 
 /* ── INIT ── */
 loadCart();
-// El catálogo visible debe salir únicamente del Sheets actual.
-// Vaciar el catálogo local y los caches antiguos evita que aparezcan productos
-// o fotos viejas mientras responde la API.
-PRODUCTS.length = 0;
-try {
-  localStorage.removeItem('maxup_cache_prods');
-  localStorage.removeItem('maxup_cache_ts');
-  localStorage.removeItem('maxup_cache_nuevos');
-} catch(e) {}
-cargarDesdeSheets();
-cargarLiquidaciones();
+// Esperar a que todo app.js termine de inicializar. Primero se recupera la
+// última copia válida para que la tienda y sus filtros aparezcan al instante;
+// después se valida precio y stock contra Sheets en segundo plano.
+function _iniciarCatalogoTienda_(){
+  readURLIndex();
+  PRODUCTS.length = 0;
+  var teniaCache = _cargarCatalogoRapido_();
+  // Primera visita o caché limpiado: usar la copia incluida en la propia web
+  // como vista inmediata. Los botones quedan bloqueados hasta que Sheets
+  // confirme stock y precios, pero buscar y filtrar funciona desde el inicio.
+  if (!teniaCache && Array.isArray(PRODUCTS_ESTATICO) && PRODUCTS_ESTATICO.length) {
+    PRODUCTS_ESTATICO.forEach(function(p){ PRODUCTS.push(p); });
+    _catalogoSoloCache = true;
+    renderAll();
+    teniaCache = true;
+  }
+  cargarDesdeSheets(teniaCache);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _iniciarCatalogoTienda_, { once:true });
+} else {
+  setTimeout(_iniciarCatalogoTienda_, 0);
+}
 
 const PROD_IMG_MAP = {
   "whey protein doypack 2 lb": "https://images.weserv.nl/?url=www.demusculos.com/web/wp-content/uploads/2024/02/whey-protein-star-bolsa-frente-1024x1024.jpg",
@@ -4971,10 +5058,104 @@ function _optimizarImgUrl(u, w) {
 var _catalogoSheetsCargado = false;
 var _catalogoSheetsCargando = false;
 var _catalogoUltimaCargaMs = 0;
+var _catalogoSoloCache = false;
+var _catalogoFiltroPendiente = false;
+var _CATALOGO_CACHE_KEY = 'maxup_catalogo_rapido_v1';
+var _CATALOGO_CACHE_MAX_MS = 7 * 24 * 60 * 60 * 1000;
 var _RECARGO_LISTA = 0.13;
 var _REDONDEO_LISTA = 500;
 function _precioListaDesdeContado(precio) {
   return Math.ceil((Number(precio || 0) * (1 + _RECARGO_LISTA)) / _REDONDEO_LISTA) * _REDONDEO_LISTA;
+}
+
+function _mostrarEstadoCatalogo_(tipo, mensaje) {
+  var grid = document.getElementById('productsGrid');
+  if (!grid || !grid.parentNode) return;
+  var estado = document.getElementById('catalogStatus');
+  if (!estado) {
+    estado = document.createElement('div');
+    estado.id = 'catalogStatus';
+    estado.setAttribute('role', 'status');
+    estado.setAttribute('aria-live', 'polite');
+    estado.style.cssText = 'display:none;margin:0 0 14px;padding:9px 12px;border-radius:8px;font-size:.83rem;text-align:center';
+    grid.parentNode.insertBefore(estado, grid);
+  }
+  if (!mensaje) {
+    estado.style.display = 'none';
+    estado.textContent = '';
+    return;
+  }
+  estado.style.display = 'block';
+  estado.style.color = tipo === 'error' ? '#ffd3d3' : '#d8f7ff';
+  estado.style.background = tipo === 'error' ? 'rgba(255,61,61,.12)' : 'rgba(0,200,255,.10)';
+  estado.style.border = '1px solid ' + (tipo === 'error' ? 'rgba(255,61,61,.35)' : 'rgba(0,200,255,.28)');
+  estado.textContent = mensaje;
+}
+
+function _guardarCatalogoRapido_() {
+  try {
+    localStorage.setItem(_CATALOGO_CACHE_KEY, JSON.stringify({
+      version: 1,
+      guardado: Date.now(),
+      productos: PRODUCTS,
+      nuevos: Array.isArray(_nuevosServer) ? _nuevosServer : [],
+      configuracion: {
+        recargoLista: _RECARGO_LISTA,
+        redondeoLista: _REDONDEO_LISTA,
+        descuentoBienvenida: DESCUENTO_BIENVENIDA,
+        descuentosMonto: DESCUENTOS_MONTO,
+        cupones: CUPONES,
+        comboDescuento: COMBO_DESCUENTO
+      }
+    }));
+  } catch(e) {
+    // Algunos navegadores limitan mucho localStorage; la tienda sigue normal.
+  }
+}
+
+function _cargarCatalogoRapido_() {
+  try {
+    var raw = localStorage.getItem(_CATALOGO_CACHE_KEY);
+    if (!raw) return false;
+    var cache = JSON.parse(raw);
+    if (!cache || cache.version !== 1 || !Array.isArray(cache.productos) || !cache.productos.length) return false;
+    if (!cache.guardado || Date.now() - Number(cache.guardado) > _CATALOGO_CACHE_MAX_MS) {
+      localStorage.removeItem(_CATALOGO_CACHE_KEY);
+      return false;
+    }
+    PRODUCTS.length = 0;
+    cache.productos.forEach(function(p){ PRODUCTS.push(p); });
+    _nuevosServer = Array.isArray(cache.nuevos) ? cache.nuevos : [];
+    var cfg = cache.configuracion || {};
+    _RECARGO_LISTA = Number(cfg.recargoLista) || _RECARGO_LISTA;
+    _REDONDEO_LISTA = Number(cfg.redondeoLista) || _REDONDEO_LISTA;
+    if (isFinite(Number(cfg.descuentoBienvenida))) DESCUENTO_BIENVENIDA = Number(cfg.descuentoBienvenida);
+    if (Array.isArray(cfg.descuentosMonto) && cfg.descuentosMonto.length) DESCUENTOS_MONTO = cfg.descuentosMonto;
+    if (cfg.cupones && typeof cfg.cupones === 'object') CUPONES = cfg.cupones;
+    if (isFinite(Number(cfg.comboDescuento))) COMBO_DESCUENTO = Number(cfg.comboDescuento);
+    _catalogoSoloCache = true;
+    renderAll();
+    if (typeof renderNuevosIngresos === 'function') renderNuevosIngresos();
+    return true;
+  } catch(e) {
+    try { localStorage.removeItem(_CATALOGO_CACHE_KEY); } catch(ignore) {}
+    return false;
+  }
+}
+
+async function _fetchCatalogoConLimite_(url, limiteMs) {
+  var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  var timer = controller ? setTimeout(function(){ controller.abort(); }, limiteMs) : null;
+  try {
+    return await fetch(url, {
+      method: 'GET',
+      cache: 'no-store',
+      credentials: 'omit',
+      signal: controller ? controller.signal : undefined
+    });
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 async function cargarDesdeSheets(silencioso) {
@@ -4982,19 +5163,21 @@ async function cargarDesdeSheets(silencioso) {
   _catalogoSheetsCargando = true;
   // Mostrar loading
   const grid = document.getElementById('productsGrid');
-  if (grid && !silencioso) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#aaa"><div style="width:40px;height:40px;border:3px solid rgba(0,200,255,.2);border-top-color:#00C8FF;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px"></div><p>Cargando catálogo...</p></div>';
+  if (grid && !silencioso && !PRODUCTS.length) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#aaa"><div style="width:40px;height:40px;border:3px solid rgba(0,200,255,.2);border-top-color:#00C8FF;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px"></div><p>Cargando catálogo...</p></div>';
+  _mostrarEstadoCatalogo_('loading', PRODUCTS.length ? 'Verificando precios y stock actual…' : 'Cargando productos…');
   
   try {
-    // Apps Script a veces falla de forma pasajera (404/timeout): reintentar hasta
-    // 3 veces antes de caer al cache o al catalogo local (que puede estar viejo).
+    // Un intento lento ya no puede dejar la tienda cargando indefinidamente.
+    // Hacemos un único reintento corto; mientras tanto el visitante puede usar
+    // el catálogo guardado y elegir filtros normalmente.
     let res = null, intentoErr = null;
-    for (let intento = 0; intento < 3; intento++) {
-      if (intento > 0) await new Promise(r => setTimeout(r, 2000 * intento));
+    for (let intento = 0; intento < 2; intento++) {
+      if (intento > 0) await new Promise(r => setTimeout(r, 750));
       try {
         // El sello horario y no-store impiden que el navegador o un intermediario
         // reutilicen un catálogo anterior después de una venta.
         var catalogoUrl = API_URL + '?accion=catalogo&_=' + Date.now();
-        res = await fetch(catalogoUrl, { method: 'GET', cache: 'no-store', credentials: 'omit' });
+        res = await _fetchCatalogoConLimite_(catalogoUrl, 15000);
         if (res.ok) { intentoErr = null; break; }
         intentoErr = new Error('HTTP ' + res.status);
       } catch(eNet) { intentoErr = eNet; }
@@ -5107,8 +5290,10 @@ async function cargarDesdeSheets(silencioso) {
       PRODUCTS.push(p);
     });
 
+    _catalogoSoloCache = false;
     _catalogoSheetsCargado = true;
     _catalogoUltimaCargaMs = Date.now();
+    _guardarCatalogoRapido_();
     renderAll();
     // Solo subir al inicio si el usuario NO scrolleó mientras cargaba
     // (respeta la posición donde dejó la vista) y si no hay anclas (#seccion)
@@ -5120,11 +5305,13 @@ async function cargarDesdeSheets(silencioso) {
     console.warn('⚠️ No se pudo actualizar el catálogo desde Sheets:', err.message);
     // En la carga inicial no mostrar datos locales ni guardados: es preferible
     // informar la falla antes que ofrecer productos, precios o fotos anteriores.
-    if (!_catalogoSheetsCargado) {
+    if (!_catalogoSheetsCargado && !PRODUCTS.length) {
       PRODUCTS.length = 0;
       _nuevosServer = [];
       if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#aaa"><p style="font-size:1.05rem;color:#fff;margin-bottom:8px">No pudimos actualizar el catálogo.</p><p>Revisá tu conexión y recargá la página para ver precios, stock y fotos actuales.</p><button type="button" onclick="location.reload()" style="margin-top:18px;padding:10px 18px;border:0;border-radius:8px;background:#00C8FF;color:#000;font-weight:700;cursor:pointer">RECARGAR</button></div>';
       if (typeof renderNuevosIngresos === 'function') renderNuevosIngresos();
+    } else if (_catalogoSoloCache) {
+      _mostrarEstadoCatalogo_('error', 'No pudimos verificar el stock ahora. Podés mirar y filtrar; reintentá en un momento para comprar.');
     }
   } finally {
     _catalogoSheetsCargando = false;
@@ -5136,7 +5323,7 @@ async function cargarDesdeSheets(silencioso) {
 // pantalla de carga. Se evita repetir consultas si se actualizó hace menos de
 // un minuto.
 function _refrescarCatalogoAlVolver_() {
-  if (document.hidden || !_catalogoSheetsCargado || _catalogoSheetsCargando) return;
+  if (document.hidden || _catalogoSheetsCargando) return;
   if (Date.now() - _catalogoUltimaCargaMs < 60000) return;
   cargarDesdeSheets(true);
 }
@@ -7532,9 +7719,7 @@ function makeCardsClickable() {
 // ══════════════════════════════════════════════════════════
 // Llamada inicial garantizada
 window.addEventListener('load', function() {
-  // No dibujar el catálogo local durante la espera. cargarDesdeSheets() es la
-  // única función autorizada a mostrar productos al iniciar la página.
-  readURLIndex();
+  // El estado de URL ya se leyó antes de recuperar el catálogo rápido.
   if (_catalogoSheetsCargado) applyFilters();
 });
 

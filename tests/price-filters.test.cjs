@@ -31,34 +31,38 @@ indumContext.catA = 'remera';
 assert.equal(indumContext.getFil().length, 0, 'precio y categoría se combinan');
 
 const appFilter = app.slice(app.indexOf('function applyFilters(){'), app.indexOf('function onOrdenFilter(val){'));
-const cards = [3000, 6000, 8000, 9000].map((price, i) => ({
-  dataset: { id: `p${i}`, cat: 'creatina', cats: 'creatina', brand: 'star', search: `creatina ${i}` },
-  style: {},
-  classList: { remove() {}, add() {} },
-  querySelector(selector) { return selector === '.prod-price-val' ? { textContent: '$' + price.toLocaleString('es-AR') } : null; },
+const products = [3000, 6000, 8000, 9000].map((price, i) => ({
+  id: `p${i}`, name: `Creatina ${i}`, brand: 'Star', cat: 'creatina', cats: ['creatina'],
+  price, flavors: [{ name: 'Unidad', stock: 1 }],
 }));
 const elements = {
   filtroPorPagina: { value: '2' },
   searchInfo: { textContent: '' },
   noResults: { style: {} },
-  productsGrid: { appendChild() {} },
+  productsGrid: { innerHTML: '', querySelectorAll() { return []; } },
 };
 let totalPaginado = -1;
 const appContext = {
   document: {
-    querySelectorAll(selector) { return selector === '.prod-card' ? cards : []; },
     getElementById(id) { return elements[id] || null; },
   },
+  PRODUCTS: products,
+  _catalogoSheetsCargado: true, _catalogoSoloCache: false,
   _favoritos: [], activeCat: 'all', activeBrand: 'all', activeSearch: '',
   precioMin: 6000, precioMax: 8000, activeOrden: 'default',
   paginaActual: 1, ITEMS_POR_PAGINA: 2,
   renderPaginacion(total) { totalPaginado = total; },
-  renderFiltrosActivos() {}, setTimeout() {},
+  renderFiltrosActivos() {}, setTimeout(fn) { fn(); },
+  _mostrarEstadoCatalogo_() {}, _categoriasProducto() { return ['creatina']; },
+  buildCard(p) { return `<article data-id="${p.id}">${p.name}</article>`; },
+  makeCardsClickable() {},
 };
 vm.runInNewContext(appFilter, appContext);
 appContext.applyFilters();
 assert.equal(totalPaginado, 2, 'la paginación cuenta solo productos dentro del rango');
-assert.deepEqual(cards.map(c => c.style.display), ['none', 'flex', 'flex', 'none']);
+assert.match(elements.productsGrid.innerHTML, /Creatina 1/);
+assert.match(elements.productsGrid.innerHTML, /Creatina 2/);
+assert.doesNotMatch(elements.productsGrid.innerHTML, /Creatina 0/);
 appContext.activeBrand = 'otra';
 appContext.applyFilters();
 assert.equal(totalPaginado, 0, 'precio y marca se combinan');

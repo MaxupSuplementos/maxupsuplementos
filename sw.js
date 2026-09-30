@@ -1,13 +1,13 @@
 // MAXUP Service Worker — Cache & Offline
-const CACHE_NAME = 'maxup-v22-max-whatsapp';
+const CACHE_NAME = 'maxup-v23-catalogo-rapido';
 // OJO: si un asset de esta lista no existe (404), addAll falla y NO se cachea nada.
 // mantenimiento.webp se descarga solo si el mantenimiento se activa.
 const ASSETS = [
   './',
   './index.html',
   './privacidad.html',
-  './styles.css?v=20260803-club-maxup',
-  './app.js?v=20260825-max-whatsapp',
+  './styles.css?v=20260918-filtro-precio',
+  './app.js?v=20260930-catalogo-rapido',
   './logo.png',
   './logo-transparent.png',
   './favicon.png',
@@ -32,23 +32,41 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Fetch: network first, fallback to cache
+// Fetch: los archivos versionados salen del cache de inmediato y se actualizan
+// en segundo plano. El HTML sigue usando red primero para recibir cambios.
 self.addEventListener('fetch', e => {
   // Skip non-GET and API calls
   if (e.request.method !== 'GET') return;
   if (e.request.url.includes('script.google.com')) return;
   if (e.request.url.includes('googletagmanager')) return;
 
-  e.respondWith(
-    fetch(e.request)
-      .then(res => {
-        // Cache successful responses
-        if (res.status === 200) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-        }
-        return res;
+  const url = new URL(e.request.url);
+  const esEstaticoVersionado = url.origin === self.location.origin &&
+    (/\.(?:js|css|png|jpg|jpeg|webp|svg|woff2?)$/i.test(url.pathname));
+
+  if (esEstaticoVersionado) {
+    e.respondWith(
+      caches.match(e.request).then(cached => {
+        const actualizacion = fetch(e.request).then(res => {
+          if (res.status === 200) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          }
+          return res;
+        }).catch(() => cached);
+        return cached || actualizacion;
       })
-      .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  e.respondWith(
+    fetch(e.request).then(res => {
+      if (res.status === 200) {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+      }
+      return res;
+    }).catch(() => caches.match(e.request))
   );
 });
