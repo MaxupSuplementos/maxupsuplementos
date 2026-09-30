@@ -5,3 +5,4 @@ _material_diseno/
 # Servidor local de pruebas
 server.ps1
 node_modules/
+dist/

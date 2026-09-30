@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:cloudflare": "node tools/build-cloudflare.mjs",
     "generar-estados": "node tools/generate-daily-social.mjs",
     "publicar-meta": "node tools/publish-meta-social.mjs"
   },
