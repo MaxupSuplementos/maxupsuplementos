@@ -3331,11 +3331,13 @@ let activeSearch = '';
 let precioMin = 0;
 let precioMax = null;
 let paginaActual = 1;
-let ITEMS_POR_PAGINA = 30;
-try{ var _pp = parseInt(localStorage.getItem('maxup_por_pagina')); if(_pp===30||_pp===50||_pp===100) ITEMS_POR_PAGINA=_pp; }catch(e){}
+// Colo muestra 10 productos en su primera página. MAXUP usa 12 para lograr
+// una primera vista igualmente liviana sin perder variedad.
+let ITEMS_POR_PAGINA = 12;
+try{ var _pp = parseInt(localStorage.getItem('maxup_por_pagina_v2')); if(_pp===12||_pp===30||_pp===50||_pp===100) ITEMS_POR_PAGINA=_pp; }catch(e){}
 function setPorPagina(v){
-  ITEMS_POR_PAGINA = parseInt(v) || 30;
-  try{ localStorage.setItem('maxup_por_pagina', String(ITEMS_POR_PAGINA)); }catch(e){}
+  ITEMS_POR_PAGINA = parseInt(v) || 12;
+  try{ localStorage.setItem('maxup_por_pagina_v2', String(ITEMS_POR_PAGINA)); }catch(e){}
   paginaActual = 1;
   applyFilters(); syncURLIndex();
   var c = document.getElementById('catalogo');
@@ -3457,7 +3459,7 @@ function buildCard(p, cardIndex){
   const slidesHtml = imgList.length
     ? imgList.map((src,i) => `
       <div class="gallery-slide">
-        <img src="${src}" alt="${p.name}" data-product-img="1" loading="${i===0 && cardIndex<6?'eager':'lazy'}" fetchpriority="${i===0 && cardIndex<6?'high':'low'}" decoding="async" onerror="recuperarImagenProducto(this)" style="background:#1a1a2e">
+        <img src="${src}" alt="${p.name}" data-product-img="1" loading="${i===0 && cardIndex<4?'eager':'lazy'}" fetchpriority="${i===0 && cardIndex<4?'high':'low'}" decoding="async" onerror="recuperarImagenProducto(this)" style="background:#1a1a2e">
       </div>`).join('')
     : `<div class="gallery-slide"><span class="prod-emoji">${p.emoji}</span></div>`;
 
@@ -3652,8 +3654,8 @@ function applyFilters(){
         card.classList.add('filter-anim');
         var imgPrincipal = card.querySelector('img[data-product-img]');
         if (imgPrincipal) {
-          imgPrincipal.loading = i < 6 ? 'eager' : 'lazy';
-          imgPrincipal.setAttribute('fetchpriority', i < 6 ? 'high' : 'low');
+          imgPrincipal.loading = i < 4 ? 'eager' : 'lazy';
+          imgPrincipal.setAttribute('fetchpriority', i < 4 ? 'high' : 'low');
         }
       });
     }, 0);

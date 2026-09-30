@@ -22,7 +22,14 @@ const llamadasLiquidaciones = app.match(/cargarLiquidaciones\(\);/g) || [];
 assert.equal(llamadasLiquidaciones.length, 1,
   'las ofertas deben cargarse bajo demanda y no competir dos veces con el catálogo al iniciar');
 
-const version = '20260930-catalogo-rapido';
+assert.match(index, /<option value="12">VER 12 POR PÁGINA<\/option>/,
+  'la primera vista debe limitarse a doce productos');
+assert.match(app, /let ITEMS_POR_PAGINA = 12/,
+  'la tienda debe dibujar una primera tanda similar a la portada rápida de referencia');
+assert.match(app, /cardIndex<4\?'eager':'lazy'/,
+  'solo las primeras imágenes visibles deben competir por la red');
+
+const version = '20260930-primera-vista';
 assert.match(index, new RegExp(`app\\.js\\?v=${version}`));
 assert.match(sw, new RegExp(`app\\.js\\?v=${version}`));
 assert.match(sw, /return cached \|\| actualizacion/,
