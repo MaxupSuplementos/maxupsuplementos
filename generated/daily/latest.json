@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-09-30",
-  "generado": "2026-09-30T18:06:20.502Z",
+  "fecha": "2026-10-01",
+  "generado": "2026-10-01T18:31:05.261Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Granola Proteica 400G - Chocolate",
+      "titulo": "Protein Bar 46g - Chocolate",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Granola Proteica 400G - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Protein Bar 46g - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Power Band 2000*65*0,45mm",
+      "titulo": "Gelatina con Colageno 150g - Frutilla",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Power Band 2000*65*0,45mm\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Glutamina X 300 Grs En Pote",
+      "titulo": "Creatina Monohidratada x 1kg",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Glutamina X 300 Grs En Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina Monohidratada x 1kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Vitamina C (Acido Ascorbico)",
+      "titulo": "Kit 3 bandas tipo cinta de tela circular importada Sonnos",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Vitamina C (Acido Ascorbico)\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Kit 3 bandas tipo cinta de tela circular importada Sonnos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "CAPUCHA animal",
+      "titulo": "Catsuit Corto Con Manga",
       "file": "generated/daily/current/05.jpg",
-      "caption": "CAPUCHA animal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Catsuit Corto Con Manga\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
