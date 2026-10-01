@@ -1,11 +1,20 @@
 {
   "fecha": "2026-10-01",
   "instagram": [
-    "2026-10-01|generated/daily/current/01.jpg|Protein Bar 46g - Chocolate"
+    "2026-10-01|generated/daily/current/01.jpg|Protein Bar 46g - Chocolate",
+    "2026-10-01|generated/daily/current/02.jpg|Gelatina con Colageno 150g - Frutilla",
+    "2026-10-01|generated/daily/current/03.jpg|Creatina Monohidratada x 1kg",
+    "2026-10-01|generated/daily/current/04.jpg|Kit 3 bandas tipo cinta de tela circular importada Sonnos",
+    "2026-10-01|generated/daily/current/05.jpg|Catsuit Corto Con Manga"
   ],
   "facebook": [
-    "2026-10-01|generated/daily/current/01.jpg|Protein Bar 46g - Chocolate"
+    "2026-10-01|generated/daily/current/01.jpg|Protein Bar 46g - Chocolate",
+    "2026-10-01|generated/daily/current/02.jpg|Gelatina con Colageno 150g - Frutilla",
+    "2026-10-01|generated/daily/current/03.jpg|Creatina Monohidratada x 1kg",
+    "2026-10-01|generated/daily/current/04.jpg|Kit 3 bandas tipo cinta de tela circular importada Sonnos",
+    "2026-10-01|generated/daily/current/05.jpg|Catsuit Corto Con Manga"
   ],
-  "completado": false,
-  "actualizado": "2026-10-01T18:31:27.015Z"
+  "completado": true,
+  "actualizado": "2026-10-01T19:10:30.995Z",
+  "completado_en": "2026-10-01T19:10:30.995Z"
 }
