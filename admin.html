@@ -984,6 +984,15 @@ function cargarConfigCentral(){
       +campoCfgTexto('cfgPagoCuenta','Banco / billetera',v.PAGO_CUENTA||'Mercado Pago')
       +'</div></div>'
       +'<div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)">'
+      +'<div style="font-weight:700;font-size:.9rem;margin-bottom:8px">🚨 Alertas fuertes de pedidos</div>'
+      +'<div style="color:var(--gray);font-size:.78rem;margin-bottom:10px">Telegram, correo y navegador siguen activos. Además, Max intentará avisar por WhatsApp a estos números. Separalos con coma.</div>'
+      +'<div class="stats-grid">'
+      +campoCfgTexto('cfgAlertaWhatsapp','WhatsApp de administradores',v.ALERTA_WHATSAPP_ADMIN||'5491168461457,5493875104606')
+      +'</div>'
+      +'<button type="button" class="filtro-btn" style="margin-top:10px" onclick="probarAlertasPedido()">🔔 PROBAR ALERTAS AHORA</button>'
+      +'<div id="resultadoPruebaAlertas" style="font-size:.78rem;color:var(--gray);margin-top:8px"></div>'
+      +'</div>'
+      +'<div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)">'
       +'<div style="font-weight:700;font-size:.9rem;margin-bottom:5px">🎁 Excepciones de la ventana del Club</div>'
       +'<div style="color:var(--gray);font-size:.78rem;margin-bottom:8px">Una persona por línea. Podés escribir: Nombre | email o Nombre | teléfono. Se reconoce en los dispositivos donde esa persona ya se registró o hizo un pedido.</div>'
       +'<textarea id="cfgClubExcluidos" class="filtro-input" rows="5" placeholder="Ejemplo:\nDario | correo@ejemplo.com\nCaja local | 3874000000" style="width:100%;resize:vertical">'+esc(v.CLUB_POPUP_EXCLUIDOS||'')+'</textarea>'
@@ -1048,12 +1057,28 @@ function guardarConfigCentral(){
     PAGO_CBU:String((document.getElementById('cfgPagoCbu')||{}).value||''),
     PAGO_TITULAR:String((document.getElementById('cfgPagoTitular')||{}).value||''),
     PAGO_CUENTA:String((document.getElementById('cfgPagoCuenta')||{}).value||''),
+    ALERTA_WHATSAPP_ADMIN:String((document.getElementById('cfgAlertaWhatsapp')||{}).value||''),
     CLUB_POPUP_EXCLUIDOS:String((document.getElementById('cfgClubExcluidos')||{}).value||'')
   };
   postAdmin({accion:'admin_configuracion',sesion:clave,valores:valores}).then(function(data){
       if(!data.ok) throw new Error(data.error||'Error');
       showToast('✅ Configuración guardada'); cargarConfigCentral();
     }).catch(function(err){showToast('❌ '+err.message);});
+}
+
+function probarAlertasPedido(){
+  var salida=document.getElementById('resultadoPruebaAlertas');
+  if(salida)salida.textContent='Enviando prueba…';
+  postAdmin({accion:'admin_probar_alertas',sesion:clave}).then(function(data){
+    var wa=data.whatsapp||{};
+    var resumen='Telegram: '+(data.telegram?'✅':'❌')+' · WhatsApp: '+((wa.enviados||[]).length?'✅ '+wa.enviados.join(', '):'❌');
+    if((wa.errores||[]).length)resumen+=' · Meta rechazó: '+wa.errores.join(' / ');
+    if(salida){salida.textContent=resumen;salida.style.color=data.ok?'var(--green)':'var(--pink)';}
+    showToast(data.ok?'✅ Prueba enviada':'⚠️ No se pudo enviar la prueba');
+  }).catch(function(err){
+    if(salida){salida.textContent='Error: '+err.message;salida.style.color='var(--pink)';}
+    showToast('❌ '+err.message);
+  });
 }
 
 function setMantMsg(msg) {

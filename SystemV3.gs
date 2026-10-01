@@ -19,6 +19,7 @@ var CONFIG_MAXUP_DEFAULTS = {
   PAGO_CBU: '',
   PAGO_TITULAR: 'Ruben Dario Ghiggia',
   PAGO_CUENTA: 'Mercado Pago',
+  ALERTA_WHATSAPP_ADMIN: '5491168461457,5493875104606',
   CLUB_POPUP_EXCLUIDOS: ''
 };
 
@@ -63,6 +64,7 @@ function _asegurarHojaConfiguracion() {
     PAGO_CBU: 'CBU o CVU que se envia solo al confirmar pedidos por transferencia',
     PAGO_TITULAR: 'Titular de la cuenta para transferencias',
     PAGO_CUENTA: 'Banco o billetera de la cuenta para transferencias',
+    ALERTA_WHATSAPP_ADMIN: 'Numeros de WhatsApp que reciben nuevos pedidos, separados por coma',
     CLUB_POPUP_EXCLUIDOS: 'Correos o telefonos que no ven la invitacion emergente del Club'
   };
   var nuevas = [];

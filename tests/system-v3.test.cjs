@@ -220,6 +220,10 @@ assert(app.includes("gtag('event', 'pedido_solicitado'"), 'La solicitud debe med
 assert(!app.includes("gtag('event', 'purchase'"), 'Una solicitud pendiente no debe inflar las compras de Google Analytics');
 assert(api.includes("'Pendiente de confirmación'"), 'Los pedidos web deben esperar confirmación manual de stock');
 assert(api.includes('adminConfirmarStockYHabilitarPago'), 'El panel debe confirmar stock antes de habilitar el pago');
+assert(api.includes('_notificarWhatsAppAdministradores(alertaWhatsApp, codigoPedido)'), 'Un pedido nuevo debe alertar también por WhatsApp al administrador');
+assert(api.includes('adminProbarAlertasPedido'), 'El panel debe permitir probar Telegram y WhatsApp');
+assert(system.includes('ALERTA_WHATSAPP_ADMIN'), 'Los WhatsApp administrativos deben ser configurables');
+assert(admin.includes('PROBAR ALERTAS AHORA'), 'Administración debe mostrar el botón de prueba de alertas');
 assert(api.includes('_aplicarReservasCatalogo'), 'El catálogo debe descontar las reservas virtuales del disponible');
 assert(api.includes('_validarDisponibilidadReservaPedido(items)'), 'La confirmación debe validar la reserva sin descontar stock físico');
 assert(api.includes("[18, 'Fecha Confirmación']"), 'Las reservas deben comenzar en R para no pisar fidelidad en P/Q');

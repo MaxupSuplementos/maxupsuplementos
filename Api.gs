@@ -235,6 +235,7 @@ function doPost(e) {
     if (data.accion === 'admin_mayoristas')    return adminMayoristas({ sesion: data.sesion });
     if (data.accion === 'admin_auditoria')     return _jsonOut(adminGetAuditoria(data.sesion, data.limite));
     if (data.accion === 'admin_configuracion') return _jsonOut(adminConfiguracion(data.sesion, data.valores));
+    if (data.accion === 'admin_probar_alertas') return _jsonOut(adminProbarAlertasPedido(data.sesion));
     if (data.accion === 'admin_cupones')       return _jsonOut(adminGetCupones(data.sesion));
     if (data.accion === 'admin_club')          return _jsonOut(adminGetClub(data.sesion));
     if (data.accion === 'admin_club_chance')   return _jsonOut(adminAgregarChanceClub(data.sesion, data));
@@ -503,7 +504,21 @@ function registrarPedidoWeb(data) {
       + '💳 Pago: ' + pago + '\n\n'
       + '⏳ Pendiente de tu confirmación de stock y pago\n'
       + '📋 Ver pedido: https://maxupsuplementos.com.ar/estado.html?pedido=' + codigoPedido;
-    _notificarTelegram(msg);
+    _notificarTelegram(msg, {
+      botonTexto: '🚨 ABRIR PEDIDOS',
+      botonUrl: 'https://maxupsuplementos.com.ar/admin.html'
+    });
+
+    var alertaWhatsApp = '🚨 *NUEVO PEDIDO WEB — MAXUP* 🚨\n\n'
+      + '🔑 *' + codigoPedido + '*\n'
+      + '👤 ' + nombre + '\n'
+      + '📱 ' + telefono + '\n'
+      + '💰 *TOTAL: $' + _formatoPrecio(totalReal) + '*\n'
+      + '💳 ' + pago + '\n'
+      + '📦 ' + itemsTexto.replace(/^\s*•\s*/gm, '• ') + '\n\n'
+      + '⏳ *CONFIRMAR STOCK AHORA*\n'
+      + 'https://maxupsuplementos.com.ar/admin.html';
+    _notificarWhatsAppAdministradores(alertaWhatsApp, codigoPedido);
   } catch(e) {}
 
   // ── Notificar por Email ──────────────────────────────────
@@ -1086,7 +1101,7 @@ function getStats() {
 }
 
 // ── NOTIFICACIÓN TELEGRAM (única función) ───────────────────
-function _notificarTelegram(mensaje) {
+function _notificarTelegram(mensaje, opciones) {
   var cfg = _getConfig();
   if (!cfg.TELEGRAM_TOKEN || !cfg.TELEGRAM_CHAT_ID) {
     Logger.log('Telegram no configurado');
@@ -1094,10 +1109,21 @@ function _notificarTelegram(mensaje) {
   }
   var url = 'https://api.telegram.org/bot' + cfg.TELEGRAM_TOKEN + '/sendMessage';
   try {
+    var payload = {
+      chat_id: cfg.TELEGRAM_CHAT_ID,
+      text: mensaje,
+      disable_notification: false
+    };
+    opciones = opciones || {};
+    if (opciones.botonTexto && opciones.botonUrl) {
+      payload.reply_markup = {
+        inline_keyboard: [[{ text: String(opciones.botonTexto), url: String(opciones.botonUrl) }]]
+      };
+    }
     var respuesta = UrlFetchApp.fetch(url, {
       method: 'post',
       contentType: 'application/json',
-      payload: JSON.stringify({ chat_id: cfg.TELEGRAM_CHAT_ID, text: mensaje }),
+      payload: JSON.stringify(payload),
       muteHttpExceptions: true
     });
     var codigo = respuesta.getResponseCode();
@@ -1157,6 +1183,53 @@ function _asegurarColumnasPedidoConfirmacion() {
   });
   hoja.getRange(1, 12, 1, 11).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
   return hoja;
+}
+
+// Envía la alerta del pedido a los WhatsApp del equipo. Los números se editan
+// desde Administración → Configuración y se separan por coma o salto de línea.
+// Meta puede rechazar texto libre si ese número no habló con Max en las últimas
+// 24 horas; el resultado queda en AUDITORIA y WA_DIAGNOSTICO para poder verlo.
+function _notificarWhatsAppAdministradores(mensaje, codigoPedido) {
+  var configuracion = {};
+  try { configuracion = _leerConfiguracionMaxup() || {}; } catch(eCfg) {}
+  var lista = String(configuracion.ALERTA_WHATSAPP_ADMIN || '5491168461457,5493875104606')
+    .split(/[;,\n]+/)
+    .map(function(v) { return String(v || '').replace(/\D/g, ''); })
+    .filter(function(v, i, arr) { return v && arr.indexOf(v) === i; });
+  var enviados = [], errores = [];
+  lista.forEach(function(telefono) {
+    try {
+      if (_enviarWhatsAppTexto(telefono, mensaje) === true) enviados.push('***' + telefono.slice(-4));
+    } catch(eWaAdmin) {
+      errores.push('***' + telefono.slice(-4) + ': ' + String(eWaAdmin.message || eWaAdmin).slice(0, 220));
+    }
+  });
+  try {
+    _registrarAuditoria(
+      'ALERTA PEDIDO WHATSAPP',
+      String(codigoPedido || 'PRUEBA') + ' | enviados: ' + (enviados.join(', ') || 'ninguno')
+        + (errores.length ? ' | errores: ' + errores.join(' / ') : ''),
+      'sistema'
+    );
+  } catch(eAudit) {}
+  return { ok: enviados.length > 0, enviados: enviados, errores: errores };
+}
+
+function adminProbarAlertasPedido(sesion) {
+  _validarSesionAdmin(sesion);
+  var fecha = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm:ss');
+  var mensaje = '🚨 *PRUEBA DE ALERTAS MAXUP* 🚨\n\nSi recibiste esto, las alertas de pedidos por WhatsApp están funcionando.\n\nHora: ' + fecha;
+  var telegram = _notificarTelegram('🚨 PRUEBA DE ALERTAS MAXUP\n\nSi recibiste esto, Telegram está funcionando.\nHora: ' + fecha, {
+    botonTexto: 'ABRIR ADMINISTRACIÓN',
+    botonUrl: 'https://maxupsuplementos.com.ar/admin.html'
+  });
+  var whatsapp = _notificarWhatsAppAdministradores(mensaje, 'PRUEBA');
+  return {
+    ok: telegram || whatsapp.ok,
+    telegram: telegram,
+    whatsapp: whatsapp,
+    mensaje: 'Prueba enviada. Revisá Telegram y los WhatsApp configurados.'
+  };
 }
 
 function _numeroPedido(valor) {
