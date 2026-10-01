@@ -242,6 +242,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <button class="tab" onclick="switchTab('club',this)">🎁 Club & Sorteos</button>
     <button class="tab" onclick="switchTab('descuentos',this)">🎁 Descuentos</button>
     <button class="tab" onclick="switchTab('vencer',this)">⏰ Por vencer <span class="badge" id="badgeVencer"></span></button>
+    <button class="tab" id="tabBtnMayoristas" onclick="switchTab('mayoristas',this)">🏭 Mayoristas <span class="badge" id="badgeMayoristas"></span></button>
     <button class="tab" onclick="switchTab('log',this)">📋 Actividad</button>
     <button class="tab" onclick="switchTab('ajustes',this)">⚙️ Ajustes</button>
   </div>
@@ -255,6 +256,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <div id="tabClub" style="display:none"></div>
     <div id="tabDescuentos" style="display:none"></div>
     <div id="tabVencer" style="display:none"></div>
+    <div id="tabMayoristas" style="display:none"></div>
     <div id="tabLog" style="display:none"></div>
     <div id="tabAjustes" style="display:none"></div>
   </div>
@@ -323,7 +325,9 @@ function login() {
         document.getElementById('claveInput').value = '';
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
-        cargarResumen();
+        var seccionPedida = new URLSearchParams(location.search).get('seccion');
+        if (seccionPedida === 'mayoristas') switchTab('mayoristas', document.getElementById('tabBtnMayoristas'));
+        else cargarResumen();
         iniciarAutoRefresh();
         actualizarBotonAlertas();
         _chequearMant();
@@ -462,7 +466,7 @@ function detenerAutoRefresh() {
 }
 
 // ── TABS ─────────────────────────────────────────────────────
-var ALL_TABS = ['resumen','dashboard','pedidos','stock','cupones','club','descuentos','vencer','log','ajustes'];
+var ALL_TABS = ['resumen','dashboard','pedidos','stock','cupones','club','descuentos','vencer','mayoristas','log','ajustes'];
 
 function switchTab(tab, el) {
   tabActual = tab;
@@ -479,13 +483,14 @@ function switchTab(tab, el) {
   if (tab === 'club')        cargarClub();
   if (tab === 'descuentos')  cargarDescuentos();
   if (tab === 'vencer')      cargarVencer();
+  if (tab === 'mayoristas')  cargarMayoristas();
   if (tab === 'log')         cargarLog();
   if (tab === 'ajustes')     cargarAjustes();
 }
 
 function recargarTab() {
   var fn = {resumen:cargarResumen,dashboard:cargarDashboard,pedidos:cargarPedidos,stock:cargarStock,
-    cupones:cargarCuponesSheets,club:cargarClub,descuentos:cargarDescuentos,vencer:cargarVencer,log:cargarLog,ajustes:cargarAjustes};
+    cupones:cargarCuponesSheets,club:cargarClub,descuentos:cargarDescuentos,vencer:cargarVencer,mayoristas:cargarMayoristas,log:cargarLog,ajustes:cargarAjustes};
   if(fn[tabActual]) fn[tabActual]();
 }
 
@@ -507,6 +512,50 @@ function getBadgeClass(estado) {
     'Listo para retirar':'badge-listo','Enviado':'badge-Enviado',
     'Entregado':'badge-Entregado','Retirado':'badge-Retirado','Cancelado':'badge-Cancelado'};
   return map[estado] || 'badge-Recibido';
+}
+
+// ── MAYORISTAS ──────────────────────────────────────────────
+function cargarMayoristas() {
+  var el = document.getElementById('tabMayoristas');
+  el.innerHTML = '<div class="loading-txt">Cargando solicitudes mayoristas...</div>';
+  api('accion=admin_mayoristas').then(function(data) {
+    if (!data.ok) throw new Error(data.error || 'No se pudieron cargar');
+    var lista = data.mayoristas || [];
+    var pendientes = lista.filter(function(m){ return String(m.estado || '').toLowerCase() === 'pendiente'; });
+    var badge = document.getElementById('badgeMayoristas');
+    if (badge) { badge.textContent = pendientes.length || ''; badge.style.display = pendientes.length ? 'inline' : 'none'; }
+    lista.sort(function(a,b){
+      var ap = String(a.estado||'').toLowerCase()==='pendiente' ? 0 : 1;
+      var bp = String(b.estado||'').toLowerCase()==='pendiente' ? 0 : 1;
+      return ap-bp || String(a.nombre||'').localeCompare(String(b.nombre||''));
+    });
+    var html = '<div class="section-title">🏭 <span>Solicitudes mayoristas</span></div>';
+    if (!lista.length) { el.innerHTML = html + '<div class="empty-txt">Todavía no hay solicitudes.</div>'; return; }
+    html += lista.map(function(m) {
+      var estado = String(m.estado || 'pendiente').toLowerCase();
+      var color = estado === 'aprobado' ? 'var(--green)' : (estado === 'rechazado' ? 'var(--pink)' : 'var(--orange)');
+      return '<div class="pedido-card" style="margin-bottom:12px">'
+        + '<div class="pedido-header"><div><strong style="font-size:1rem">'+esc(m.nombre)+'</strong>'
+        + '<div style="color:var(--gray);font-size:.82rem">'+esc(m.negocio||'Sin negocio')+' · '+esc(m.ciudad||'Sin ciudad')+'</div></div>'
+        + '<span style="color:'+color+';font-weight:700;text-transform:uppercase">'+esc(estado)+'</span></div>'
+        + '<div style="font-size:.85rem;margin-top:9px">📧 '+esc(m.email)+' · 📱 '+esc(m.telefono)+' · 💼 '+esc(m.rubro||'-')+'</div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'
+        + '<button class="btn-estado btn-listo" data-email="'+esc(m.email)+'" onclick="cambiarEstadoMayorista(this.dataset.email,\'aprobado\')">✅ APROBAR</button>'
+        + '<button class="btn-estado btn-cancelar" data-email="'+esc(m.email)+'" onclick="cambiarEstadoMayorista(this.dataset.email,\'rechazado\')">❌ RECHAZAR</button>'
+        + '</div></div>';
+    }).join('');
+    el.innerHTML = html;
+  }).catch(function(err){ el.innerHTML = '<div class="empty-txt">❌ '+esc(err.message)+'</div>'; });
+}
+
+function cambiarEstadoMayorista(email, estado) {
+  var verbo = estado === 'aprobado' ? 'aprobar' : 'rechazar';
+  if (!confirm('¿Querés '+verbo+' la solicitud de '+email+'?')) return;
+  postAdmin({accion:'admin_mayorista_estado',sesion:clave,email:email,estado:estado}).then(function(data){
+    if(!data.ok) throw new Error(data.error || 'No se pudo actualizar');
+    showToast((estado === 'aprobado' ? '✅ ' : '❌ ') + data.mensaje);
+    cargarMayoristas();
+  }).catch(function(err){ showToast('❌ '+err.message); });
 }
 
 // ── RESUMEN ──────────────────────────────────────────────────

@@ -231,6 +231,12 @@ assert(system.includes("setNumberFormat('@').setValue(valor)"), 'Los teléfonos 
 assert(admin.includes("v==='5491168461458'"), 'El panel debe impedir que vuelva a guardarse el número incorrecto terminado en 1458');
 assert(admin.includes('WhatsApp guardados:'), 'El panel debe confirmar cuáles WhatsApp persistió realmente el servidor');
 assert(admin.includes('PROBAR ALERTAS AHORA'), 'Administración debe mostrar el botón de prueba de alertas');
+assert(api.includes('API_URL_PUBLICA_MAXUP'), 'Los enlaces operativos deben usar la implementación vigente de Apps Script');
+assert(!api.includes("cfg.API_URL_SELF + '?accion=aprobar_mayorista"), 'Telegram no debe enviar enlaces directos a implementaciones antiguas');
+assert(api.includes("botonTexto: '🏭 REVISAR Y APROBAR'"), 'La solicitud mayorista debe abrir el panel estable desde Telegram');
+assert(api.includes('adminCambiarEstadoMayorista'), 'El panel debe permitir aprobar mayoristas con una sesión administrativa');
+assert(admin.includes("switchTab('mayoristas'"), 'El panel debe incluir una sección de solicitudes mayoristas');
+assert(admin.includes('cargarMayoristas'), 'La sección mayoristas debe listar las solicitudes existentes');
 assert(api.includes('_aplicarReservasCatalogo'), 'El catálogo debe descontar las reservas virtuales del disponible');
 assert(api.includes('_validarDisponibilidadReservaPedido(items)'), 'La confirmación debe validar la reserva sin descontar stock físico');
 assert(api.includes("[18, 'Fecha Confirmación']"), 'Las reservas deben comenzar en R para no pisar fidelidad en P/Q');

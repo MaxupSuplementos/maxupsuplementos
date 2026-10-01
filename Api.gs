@@ -8,17 +8,23 @@
 // ── CONFIGURACIÓN CENTRALIZADA ──────────────────────────────
 // Ejecutar configurarCredenciales() UNA VEZ desde el editor de Apps Script.
 // Después de ejecutarla, podés borrar los valores por defecto de _getConfig().
+var API_URL_PUBLICA_MAXUP = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
 var _CONFIG = null;
 function _getConfig() {
   if (_CONFIG) return _CONFIG;
   try {
     var props = PropertiesService.getScriptProperties();
+    // La implementación vigente es fija. Una propiedad antigua apuntaba a una
+    // implementación eliminada y generaba "No se puede abrir el archivo".
+    if (props.getProperty('API_URL_SELF') !== API_URL_PUBLICA_MAXUP) {
+      props.setProperty('API_URL_SELF', API_URL_PUBLICA_MAXUP);
+    }
     _CONFIG = {
       SS_ID:            props.getProperty('SS_ID')            || '17rFBpuvjam54M3NGE8Pmtc9YwBBRhVYI8bgGpckiAXo',
       TELEGRAM_TOKEN:   props.getProperty('TELEGRAM_TOKEN')   || '',
       TELEGRAM_CHAT_ID: props.getProperty('TELEGRAM_CHAT_ID') || '',
       ADMIN_CLAVE:      props.getProperty('ADMIN_CLAVE')      || '',
-      API_URL_SELF:     props.getProperty('API_URL_SELF')      || '',
+      API_URL_SELF:     API_URL_PUBLICA_MAXUP,
       LINK_SECRET:      props.getProperty('LINK_SECRET')       || '',
       WA_VERIFY_TOKEN:  props.getProperty('WA_VERIFY_TOKEN')   || '',
       WA_ACCESS_TOKEN:  props.getProperty('WA_ACCESS_TOKEN')   || '',
@@ -31,7 +37,7 @@ function _getConfig() {
       TELEGRAM_TOKEN:   '',
       TELEGRAM_CHAT_ID: '',
       ADMIN_CLAVE:      '',
-      API_URL_SELF:     '',
+      API_URL_SELF:     API_URL_PUBLICA_MAXUP,
       LINK_SECRET:      '',
       WA_VERIFY_TOKEN:  '',
       WA_ACCESS_TOKEN:  '',
@@ -233,6 +239,7 @@ function doPost(e) {
     if (data.accion === 'admin_dashboard')     return _jsonOut(adminGetDashboard(data.sesion));
     if (data.accion === 'admin_mantenimiento') return _jsonOut(adminMantenimiento(data.sesion, data.activo, data.mensaje));
     if (data.accion === 'admin_mayoristas')    return adminMayoristas({ sesion: data.sesion });
+    if (data.accion === 'admin_mayorista_estado') return _jsonOut(adminCambiarEstadoMayorista(data.sesion, data.email, data.estado));
     if (data.accion === 'admin_auditoria')     return _jsonOut(adminGetAuditoria(data.sesion, data.limite));
     if (data.accion === 'admin_configuracion') return _jsonOut(adminConfiguracion(data.sesion, data.valores));
     if (data.accion === 'admin_probar_alertas') return _jsonOut(adminProbarAlertasPedido(data.sesion));
@@ -2606,9 +2613,7 @@ function registroMayorista(body) {
       'pendiente', new Date().toLocaleDateString('es-AR')
     ]);
 
-    var cfg = _getConfig();
-    var tokenAprobar = _crearTokenAccion('aprobar_mayorista', body.email, 48);
-    var tokenRechazar = _crearTokenAccion('rechazar_mayorista', body.email, 48);
+    var urlRevision = 'https://maxupsuplementos.com.ar/admin.html?seccion=mayoristas';
     var msg = '🏭 *NUEVA SOLICITUD MAYORISTA*\n\n'
       + '👤 Nombre: ' + body.nombre + '\n'
       + '🏪 Negocio: ' + body.negocio + '\n'
@@ -2616,12 +2621,12 @@ function registroMayorista(body) {
       + '📍 Ciudad: ' + (body.ciudad || '-') + '\n'
       + '📧 Email: ' + body.email + '\n'
       + '💼 Rubro: ' + (body.rubro || '-') + '\n\n'
-      + 'Para aprobar:\n'
-      + cfg.API_URL_SELF + '?accion=aprobar_mayorista&token=' + encodeURIComponent(tokenAprobar) + '\n\n'
-      + 'Para rechazar:\n'
-      + cfg.API_URL_SELF + '?accion=rechazar_mayorista&token=' + encodeURIComponent(tokenRechazar);
+      + 'Revisala de forma segura desde el Panel MAXUP.';
 
-    _notificarTelegram(msg);
+    _notificarTelegram(msg, {
+      botonTexto: '🏭 REVISAR Y APROBAR',
+      botonUrl: urlRevision
+    });
 
     // Email de notificación
     try {
@@ -2636,6 +2641,7 @@ function registroMayorista(body) {
           + '<p>📍 Ciudad: ' + (body.ciudad || '-') + '</p>'
           + '<p>📧 Email: ' + body.email + '</p>'
           + '<p>💼 Rubro: ' + (body.rubro || '-') + '</p>'
+          + '<p style="margin-top:22px"><a href="' + urlRevision + '" style="display:inline-block;background:#FFB800;color:#111;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:bold">REVISAR SOLICITUD</a></p>'
           + '</div>'
       });
     } catch(eEmail) {}
@@ -2972,6 +2978,34 @@ function adminMayoristas(params) {
     return jsonResp({ ok: true, mayoristas: lista });
   } catch(e) {
     return jsonResp({ ok: false, error: e.message });
+  }
+}
+
+function adminCambiarEstadoMayorista(sesion, email, estado) {
+  _validarSesionAdmin(sesion);
+  email = String(email || '').trim().toLowerCase();
+  estado = String(estado || '').trim().toLowerCase();
+  if (!email) throw new Error('Falta el email del mayorista');
+  if (['aprobado', 'rechazado'].indexOf(estado) < 0) throw new Error('Estado mayorista inválido');
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var hoja = _getSS().getSheetByName(HOJA_MAYORISTAS);
+    if (!hoja || hoja.getLastRow() < 2) throw new Error('No hay solicitudes mayoristas');
+    var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, Math.max(9, hoja.getLastColumn())).getValues();
+    for (var i = 0; i < datos.length; i++) {
+      if (String(datos[i][0] || '').trim().toLowerCase() !== email) continue;
+      hoja.getRange(i + 2, 8).setValue(estado);
+      SpreadsheetApp.flush();
+      var nombre = String(datos[i][1] || email);
+      var negocio = String(datos[i][2] || '');
+      _registrarAuditoria('MAYORISTA ' + estado.toUpperCase(), email, 'panel administracion');
+      _notificarTelegram((estado === 'aprobado' ? '✅' : '❌') + ' Mayorista ' + estado.toUpperCase() + ': ' + nombre + (negocio ? ' (' + negocio + ')' : ''));
+      return { ok: true, email: email, estado: estado, mensaje: nombre + ' quedó ' + estado };
+    }
+    throw new Error('No se encontró la solicitud de ' + email);
+  } finally {
+    lock.releaseLock();
   }
 }
 
