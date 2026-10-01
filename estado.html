@@ -63,6 +63,8 @@ nav{width:100%;max-width:600px;display:flex;align-items:center;gap:12px;padding:
 .detalle-val{color:var(--white);font-weight:600;text-align:right}
 .badge-estado{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.78rem;font-weight:700;letter-spacing:.06em}
 .badge-Recibido{background:rgba(0,200,255,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.3)}
+.badge-Pendiente\ de\ confirmación{background:rgba(255,184,0,.15);color:#FFD166;border:1px solid rgba(255,184,0,.3)}
+.badge-Stock\ confirmado{background:rgba(174,117,255,.16);color:#C6A4FF;border:1px solid rgba(174,117,255,.35)}
 .badge-En\ preparación{background:rgba(255,165,0,.15);color:#FFA500;border:1px solid rgba(255,165,0,.3)}
 .badge-Listo\ para\ retirar{background:rgba(0,230,118,.15);color:#00E676;border:1px solid rgba(0,230,118,.3)}
 .badge-Enviado{background:rgba(0,230,118,.15);color:#00E676;border:1px solid rgba(0,230,118,.3)}
@@ -114,11 +116,12 @@ nav{width:100%;max-width:600px;display:flex;align-items:center;gap:12px;padding:
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
 
-const ESTADOS_RETIRO = ['Recibido','En preparación','Listo para retirar','Retirado'];
-const ESTADOS_ENVIO  = ['Recibido','En preparación','Enviado','Entregado'];
-const ESTADO_ICONS = { 'Recibido':'📥', 'En preparación':'🔧', 'Listo para retirar':'✅', 'Enviado':'🚚', 'Entregado':'📦', 'Retirado':'🤝', 'Cancelado':'❌' };
+const ESTADOS_RETIRO = ['Pendiente de confirmación','Stock confirmado','En preparación','Listo para retirar','Retirado'];
+const ESTADOS_ENVIO  = ['Pendiente de confirmación','Stock confirmado','En preparación','Enviado','Entregado'];
+const ESTADO_ICONS = { 'Pendiente de confirmación':'🔎', 'Stock confirmado':'✅', 'En preparación':'🔧', 'Listo para retirar':'✅', 'Enviado':'🚚', 'Entregado':'📦', 'Retirado':'🤝', 'Cancelado':'❌' };
 const ESTADO_DESC = {
-  'Recibido': 'Tu pedido fue recibido y está pendiente de confirmación.',
+  'Pendiente de confirmación': 'Recibimos tu solicitud. MAXUP está revisando físicamente el stock. Todavía no pagues.',
+  'Stock confirmado': 'El stock quedó reservado y te enviamos por WhatsApp las instrucciones según el medio de pago elegido.',
   'En preparación': 'Estamos preparando tu pedido.',
   'Listo para retirar': 'Tu pedido está listo. Podés pasar a retirarlo por Calixto Gauna 1045, General Güemes, Salta.',
   'Enviado': 'Tu pedido está en camino.',
@@ -167,7 +170,8 @@ function mostrarResultado(data) {
     return;
   }
 
-  const estadoActual = data.estado || 'Recibido';
+  const estadoActualOriginal = data.estado || 'Pendiente de confirmación';
+  const estadoActual = estadoActualOriginal === 'Recibido' ? 'Pendiente de confirmación' : estadoActualOriginal;
   const esEnvio = (data.entrega || '').toLowerCase().indexOf('env') >= 0;
   const ESTADOS = esEnvio ? ESTADOS_ENVIO : ESTADOS_RETIRO;
   const idxActual = ESTADOS.indexOf(estadoActual);
@@ -193,6 +197,15 @@ function mostrarResultado(data) {
   // Detalle
   var productos = (data.productos || '').split(' | ').map(function(p) { return '• ' + p; }).join('<br>');
 
+  var pagoHTML = '<div class="detalle-row"><span class="detalle-label">Estado del pago</span><span class="detalle-val">' + (data.estadoPago || 'Esperando confirmación de stock') + '</span></div>';
+  if (!cancelado && data.pagoHabilitado && data.linkPago) {
+    pagoHTML += '<a href="' + data.linkPago + '" target="_blank" rel="noopener" class="wa-btn" style="background:linear-gradient(135deg,#009EE3,#0064a8);margin:12px 0">💳 Pagar ahora con Mercado Pago</a>';
+  } else if (!cancelado && data.pagoHabilitado && (data.pago || '').toLowerCase() === 'transferencia') {
+    pagoHTML += '<div style="margin:10px 0;padding:11px;border-radius:8px;background:rgba(0,200,255,.08);color:#bdefff;font-size:.84rem">🏦 El alias/CBU y el total fueron enviados a tu WhatsApp. Si no los recibiste, consultanos con el botón de abajo.</div>';
+  } else if (!cancelado && !data.pagoHabilitado) {
+    pagoHTML += '<div style="margin:10px 0;padding:11px;border-radius:8px;background:rgba(255,184,0,.08);color:#FFD166;font-size:.84rem">⏳ Todavía no pagues. Primero confirmaremos el stock.</div>';
+  }
+
   res.innerHTML = '<div class="estado-header">'
     + '<div class="estado-codigo">' + data.codigo + '</div>'
     + '<div class="estado-cliente">Pedido de <strong>' + data.cliente + '</strong> · ' + data.fecha + '</div>'
@@ -206,7 +219,8 @@ function mostrarResultado(data) {
     + (esEnvio && data.direccion && data.direccion !== '-' ? '<br><span style="color:var(--gray);font-size:.8rem">' + data.direccion + '</span>' : '')
     + (!esEnvio ? '<br><span style="color:var(--gray);font-size:.8rem">Calixto Gauna 1045, Gral. Güemes, Salta</span><br><a href="https://www.google.com/maps/search/?api=1&query=Calixto+Gauna+1045+General+Guemes+Salta+Argentina" target="_blank" style="color:var(--cyan);font-size:.78rem;text-decoration:none">📍 Cómo llegar</a>' : '')
     + '</span></div>'
-    + '<div class="detalle-row"><span class="detalle-label">Pago</span><span class="detalle-val">' + data.pago + '</span></div>'
+    + '<div class="detalle-row"><span class="detalle-label">Pago elegido</span><span class="detalle-val">' + data.pago + '</span></div>'
+    + pagoHTML
     + '</div>'
     + '<a href="https://wa.me/5493876233406?text=' + encodeURIComponent('Hola! Consulto por mi pedido ' + data.codigo) + '" target="_blank" class="wa-btn">📲 Consultar por WhatsApp</a>';
 }

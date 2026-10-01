@@ -216,7 +216,14 @@ assert(admin.includes('cargarCuponesSheets'), 'El panel debe mostrar los cupones
 assert(app.includes('let CUPONES = {};'), 'La tienda no debe conservar cupones locales vencidos');
 assert(admin.includes('GOOGLE_REVIEW_URL'), 'El aviso de entrega debe incluir la ficha de Google para pedir resenas');
 assert(admin.includes('Visitas web'), 'El panel debe ofrecer acceso directo a Google Analytics');
-assert(app.includes("gtag('event', 'purchase'"), 'Los pedidos web deben medirse como compras en Google Analytics');
+assert(app.includes("gtag('event', 'pedido_solicitado'"), 'La solicitud debe medirse sin declararla venta antes de confirmar stock y pago');
+assert(!app.includes("gtag('event', 'purchase'"), 'Una solicitud pendiente no debe inflar las compras de Google Analytics');
+assert(api.includes("'Pendiente de confirmación'"), 'Los pedidos web deben esperar confirmación manual de stock');
+assert(api.includes('adminConfirmarStockYHabilitarPago'), 'El panel debe confirmar stock antes de habilitar el pago');
+assert(api.includes('_aplicarReservasCatalogo'), 'El catálogo debe descontar las reservas virtuales del disponible');
+assert(api.includes('_validarDisponibilidadReservaPedido(items)'), 'La confirmación debe validar la reserva sin descontar stock físico');
+const liberarReservas = api.slice(api.indexOf('function _liberarReservasVencidas'), api.indexOf('// ── REGISTRAR LA VENTA DE UN PEDIDO WEB'));
+assert(!liberarReservas.includes('_restaurarStockPedido'), 'Vencer una reserva virtual no debe sumar stock físico');
 assert(api.includes("data.object === 'whatsapp_business_account'"), 'WhatsApp debe tener un webhook separado de los pedidos web');
 assert(api.includes('_verificarWebhookWhatsApp'), 'Meta debe poder verificar el webhook de WhatsApp');
 assert(api.includes('_procesarWebhookWhatsApp'), 'Los mensajes entrantes de WhatsApp deben procesarse');

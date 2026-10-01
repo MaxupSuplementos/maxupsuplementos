@@ -4083,7 +4083,7 @@ function addToCartById(pid){
     existing.qty = Math.min(existing.qty+qty, flav.stock);
   } else {
     const imgList = p.imgs_gallery && p.imgs_gallery.length ? p.imgs_gallery : (p.imgs && Array.isArray(p.imgs) && p.imgs.length ? p.imgs : (p.img ? [p.img] : []));
-    cart.push({key, pid, sku:flav.sku||p.sku||'', sheetName:flav.nombreOriginal||p.name, name:p.name, brand:p.brand, flavor:flav.name, price:p.price, emoji:p.emoji, img:imgList[0]||'', maxStock:flav.stock, qty});
+    cart.push({key, pid, sku:flav.sku||p.sku||'', sheetName:flav.nombreOriginal||p.name, name:p.name, brand:p.brand, flavor:flav.name, price:p.price, priceCard:p.price_tarjeta||_precioListaDesdeContado(p.price), emoji:p.emoji, img:imgList[0]||'', maxStock:flav.stock, qty});
   }
   saveCart(); renderCart(); updateBadge();
   const btn = document.getElementById(`addbtn-${pid}`);
@@ -4408,17 +4408,19 @@ function openCheckout(){
   // Mostrar/ocultar el campo de dirección según la opción de entrega activa
   // (por defecto es "envío a domicilio", así el campo aparece desde el inicio)
   toggleAddress();
+  buildMiniList();
 }
 function closeCheckout(){ document.getElementById('checkoutOverlay').classList.remove('open'); document.body.style.overflow=''; }
 
 function buildMiniList(){
   const el=document.getElementById('orderMiniList');
-  const base = cartTotal();
-  const desc = getDescuentoMonto(base);
-  const totalConMonto = desc ? Math.round(base*(1-desc.pct)) : base;
-  let totalConCupon = totalConMonto;
-  if(_cuponActivo) totalConCupon = Math.round(totalConMonto * (1 - _cuponActivo.pct));
-  const totalFinal = (_esClienteNuevo && !desc && !_cuponActivo) ? Math.round(base*(1-DESCUENTO_BIENVENIDA)) : totalConCupon;
+  const pago = (document.querySelector('input[name="pay"]:checked')||{}).value||'transferencia';
+  const calculo = _calcularCheckoutPorPago(pago);
+  const base = calculo.base;
+  const desc = calculo.desc;
+  const totalConMonto = calculo.totalConMonto;
+  const totalConCupon = calculo.totalConCupon;
+  const totalFinal = calculo.totalFinal;
   let totalRow = '<div class="omi" style="margin-top:6px"><span><strong>Subtotal</strong></span><span>' + fmt(base) + '</span></div>';
   if(desc){
     totalRow += '<div class="omi" style="color:var(--cyan)"><span>🎉 ' + desc.label + '</span><span>-' + fmt(base-totalConMonto) + '</span></div>';
@@ -4430,7 +4432,15 @@ function buildMiniList(){
     totalRow += '<div class="omi" style="color:#00E676"><span>🎉 2% descuento bienvenida</span><span>-' + fmt(base-totalFinal) + '</span></div>';
   }
   totalRow += '<div class="omi" style="border-top:1px solid rgba(0,200,255,.2);margin-top:4px;padding-top:6px"><span><strong>TOTAL</strong></span><span style="color:var(--cyan);font-size:1.1em">' + fmt(totalFinal) + '</span></div>';
-  el.innerHTML = cart.map(function(i){ return '<div class="omi"><span>' + i.emoji + ' ' + i.name + ' — ' + i.flavor + ' x' + i.qty + '</span><span>' + fmt(i.price*i.qty) + '</span></div>'; }).join('') + totalRow;
+  el.innerHTML = cart.map(function(i){ return '<div class="omi"><span>' + i.emoji + ' ' + i.name + ' — ' + i.flavor + ' x' + i.qty + '</span><span>' + fmt(_precioCheckoutItem(i,pago)*i.qty) + '</span></div>'; }).join('') + totalRow;
+  var resumenPago = document.getElementById('paymentAmountSummary');
+  if (resumenPago) {
+    resumenPago.innerHTML = pago === 'mercadopago'
+      ? '💳 <strong>Precio de lista: ' + fmt(totalFinal) + '</strong><br>Hasta 3 cuotas estimadas de ' + fmt(Math.ceil(totalFinal/3)) + '. El enlace se envía después de confirmar el stock.'
+      : (pago === 'transferencia'
+        ? '🏦 <strong>Total por transferencia: ' + fmt(totalFinal) + '</strong><br>El alias/CBU se envía recién cuando confirmemos el stock.'
+        : '💵 <strong>Total en efectivo: ' + fmt(totalFinal) + '</strong><br>Pagás al retirar o recibir tu pedido, una vez confirmado el stock.');
+  }
 }
 
 function toggleAddress(){
@@ -4442,7 +4452,28 @@ function selPay(m,el){
   document.querySelectorAll('.pay-option').forEach(o=>o.classList.remove('selected'));
   el.classList.add('selected');
   var t = document.getElementById('finalizeBtnText');
-  if(t) t.textContent = (m==='mercadopago') ? 'Pagar con Mercado Pago' : 'Enviar pedido por WhatsApp';
+  if(t) t.textContent = 'Enviar solicitud para confirmar stock';
+  buildMiniList();
+}
+
+function _precioCheckoutItem(item, pago){
+  if (pago !== 'mercadopago') return Number(item.price || 0);
+  if (Number(item.priceCard || 0) > 0) return Number(item.priceCard);
+  var p = getProduct(item.pid);
+  return Number((p && p.price_tarjeta) || _precioListaDesdeContado(item.price) || item.price || 0);
+}
+
+function _calcularCheckoutPorPago(pago){
+  var base = cart.reduce(function(s,item){
+    var subtotal = _precioCheckoutItem(item,pago) * item.qty;
+    if(item.combo) subtotal = Math.round(subtotal * (1 - COMBO_DESCUENTO/100));
+    return s + subtotal;
+  },0);
+  var desc = getDescuentoMonto(base);
+  var totalConMonto = desc ? Math.round(base*(1-desc.pct)) : base;
+  var totalConCupon = _cuponActivo ? Math.round(totalConMonto * (1-_cuponActivo.pct)) : totalConMonto;
+  var totalFinal = (_esClienteNuevo && !desc && !_cuponActivo) ? Math.round(base*(1-DESCUENTO_BIENVENIDA)) : totalConCupon;
+  return {base:base,desc:desc,totalConMonto:totalConMonto,totalConCupon:totalConCupon,totalFinal:totalFinal};
 }
 
 // ── ENVÍO AUTOGESTIONADO ──
@@ -4523,13 +4554,13 @@ function finalizarPedido(){
   msg+=`📱 *WhatsApp:* ${phone}\n`;
   if(email) msg+=`📧 *Email:* ${email}\n`;
   msg+=`\n📦 *Detalle:*\n`;
-  cart.forEach(i=>{ msg+=`  • ${i.emoji} ${i.brand ? '['+i.brand+'] ' : ''}${i.name} — ${i.flavor} × ${i.qty}  →  ${fmt(i.price*i.qty)}\n`; });
-  const _baseTotal = cartTotal();
-  const _desc = getDescuentoMonto(_baseTotal);
-  const _totalConMonto = _desc ? Math.round(_baseTotal*(1-_desc.pct)) : _baseTotal;
-  let _totalConCupon = _totalConMonto;
-  if(_cuponActivo) _totalConCupon = Math.round(_totalConMonto * (1 - _cuponActivo.pct));
-  const _totalFinal = (_esClienteNuevo && !_desc && !_cuponActivo) ? Math.round(_baseTotal*(1-DESCUENTO_BIENVENIDA)) : _totalConCupon;
+  cart.forEach(i=>{ msg+=`  • ${i.emoji} ${i.brand ? '['+i.brand+'] ' : ''}${i.name} — ${i.flavor} × ${i.qty}  →  ${fmt(_precioCheckoutItem(i,pay)*i.qty)}\n`; });
+  const _calculoPago = _calcularCheckoutPorPago(pay);
+  const _baseTotal = _calculoPago.base;
+  const _desc = _calculoPago.desc;
+  const _totalConMonto = _calculoPago.totalConMonto;
+  const _totalConCupon = _calculoPago.totalConCupon;
+  const _totalFinal = _calculoPago.totalFinal;
   if(_desc) msg+='\n🎉 *Descuento: '+_desc.label+'* (-'+fmt(_baseTotal-_totalConMonto)+')\n';
   if(_cuponActivo) msg+='\n🏷️ *Cupón: '+_cuponActivo.code+' ('+_cuponActivo.label+')* (-'+fmt(_totalConMonto-_totalConCupon)+')\n';
   if(_esClienteNuevo && !_desc && !_cuponActivo) msg+='\n🎉 *Descuento bienvenida: 2%* (-'+fmt(_baseTotal-_totalFinal)+')\n';
@@ -4547,7 +4578,7 @@ function finalizarPedido(){
   }
   msg+=`💳 *Pago:* ${pay.charAt(0).toUpperCase()+pay.slice(1)}\n`;
   if(notes) msg+=`📝 *Notas:* ${notes}\n`;
-  msg+=`\n¡Gracias por tu compra! 💪`;
+  msg+=`\nEsta es una solicitud. MAXUP confirmará el stock antes del pago. 💪`;
 
   // ── Registrar en Google Sheets ───────────────────────────
   const API_URL = 'https://script.google.com/macros/s/AKfycbwUujcSoSyBWLLla-LOdovJmTDan-DP3O9Gp0k_MSupTHGEPB55TCZqllvGmEK6vlk/exec';
@@ -4580,21 +4611,16 @@ function finalizarPedido(){
     body: JSON.stringify(payload)
   }).then(function(r){ return r.json(); })
   .then(function(data) {
-    // ── Pago con Mercado Pago: llevar al cliente a pagar ──
-    if (data && data.init_point) {
-      showToast('💳 Redirigiendo a Mercado Pago...');
-      setTimeout(function(){ window.location.href = data.init_point; }, 700);
+    if (!data || !data.ok) {
+      _liberarEnvio();
+      showToast('⚠️ ' + ((data && data.error) || 'No pudimos registrar la solicitud.'));
       return;
-    }
-    if (pay === 'mercadopago' && data && data.ok && !data.init_point) {
-      showToast('⚠️ No se pudo generar el link de pago. Te contactamos por WhatsApp.');
     }
     // ── Mostrar confirmación al cliente ──
     var codigo = (data && data.codigo) ? data.codigo : '';
-    // Medir pedidos web reales en Google Analytics. El código de pedido evita
-    // duplicados y el evento estándar "purchase" habilita los informes de ventas.
+    // Todavía no es una venta: primero MAXUP confirma y reserva el stock.
     if (data && data.ok && codigo && typeof gtag === 'function') {
-      gtag('event', 'purchase', {
+      gtag('event', 'pedido_solicitado', {
         transaction_id: codigo,
         value: _totalFinal,
         currency: 'ARS',
@@ -4604,7 +4630,7 @@ function finalizarPedido(){
             item_name: i.nombre,
             item_brand: i.marca,
             index: idx,
-            price: i.precio,
+            price: _precioCheckoutItem(cart[idx] || i, pay),
             quantity: i.cantidad
           };
         })
@@ -4621,11 +4647,11 @@ function finalizarPedido(){
     var retiroBox = document.getElementById('retiroInfoBox');
     if (retiroBox) retiroBox.style.display = (delivery === 'retiro') ? 'block' : 'none';
     var transferBox = document.getElementById('transferInfoBox');
-    if (transferBox) transferBox.style.display = (pay === 'transferencia') ? 'block' : 'none';
+    if (transferBox) transferBox.style.display = 'none';
     // Botón para enviar el pedido por WhatsApp al comercio (click directo = sin bloqueo de popup)
     var waBtn = document.getElementById('waRepeatBtn');
     if (waBtn) {
-      waBtn.textContent = '📲 Enviar pedido por WhatsApp';
+      waBtn.textContent = '📲 Consultar esta solicitud por WhatsApp';
       waBtn.onclick = function(){ window.open('https://wa.me/' + waNum + '?text=' + encodeURIComponent(msg), '_blank'); };
     }
     // Pedido de reseña post-compra: botones para valorar lo comprado
@@ -8372,7 +8398,7 @@ function agregarCombo(comboId){
       existing.combo = true;
     } else {
       var imgList = p.imgs && Object.values(p.imgs).length ? Object.values(p.imgs) : (p.img ? [p.img] : []);
-      cart.push({key:key, pid:p.id, sku:flav.sku||p.sku||'', sheetName:flav.nombreOriginal||p.name, name:p.name, brand:p.brand||'', flavor:flav.name, price:p.price||0, emoji:p.emoji||'📦', img:imgList[0]||'', maxStock:flav.stock, qty:1, combo:true});
+      cart.push({key:key, pid:p.id, sku:flav.sku||p.sku||'', sheetName:flav.nombreOriginal||p.name, name:p.name, brand:p.brand||'', flavor:flav.name, price:p.price||0, priceCard:p.price_tarjeta||_precioListaDesdeContado(p.price), emoji:p.emoji||'📦', img:imgList[0]||'', maxStock:flav.stock, qty:1, combo:true});
     }
   });
   saveCart(); renderCart(); updateBadge();

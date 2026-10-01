@@ -226,6 +226,9 @@ function doPost(e) {
     if (data.accion === 'admin_stock')         return _jsonOut(adminGetStockBajo(data.sesion, data.limite));
     if (data.accion === 'admin_descuentos')    return _jsonOut(adminGetClientesDescuento(data.sesion));
     if (data.accion === 'admin_estado')        return _jsonOut(adminCambiarEstado(data.sesion, data.pedido, data.estado));
+    if (data.accion === 'admin_confirmar_stock') return _jsonOut(adminConfirmarStockYHabilitarPago(data.sesion, data.pedido, false));
+    if (data.accion === 'admin_reenviar_pago')   return _jsonOut(adminConfirmarStockYHabilitarPago(data.sesion, data.pedido, true));
+    if (data.accion === 'admin_confirmar_pago')  return _jsonOut(adminConfirmarPagoPedido(data.sesion, data.pedido));
     if (data.accion === 'admin_vencer')        return _jsonOut(adminGetPorVencer(data.sesion, data.dias));
     if (data.accion === 'admin_dashboard')     return _jsonOut(adminGetDashboard(data.sesion));
     if (data.accion === 'admin_mantenimiento') return _jsonOut(adminMantenimiento(data.sesion, data.activo, data.mensaje));
@@ -303,6 +306,8 @@ function registrarPedidoWeb(data) {
   var hojaVD   = ss.getSheetByName('VentasDiarias');
 
   if (!hojaCli || !hojaVD) throw new Error('Hojas CLIENTES o VentasDiarias no encontradas');
+  // Libera reservas vencidas antes de validar el stock de una nueva solicitud.
+  try { _liberarReservasVencidas(); } catch(eReserva) {}
 
   var nombre   = String(data.nombre   || '').trim();
   var telefono = String(data.telefono || '').trim();
@@ -398,7 +403,7 @@ function registrarPedidoWeb(data) {
   var detalleTotalSeguro = null;
 
   if (items.length > 0) {
-    items = _validarItemsPedidoWeb(items);
+    items = _validarItemsPedidoWeb(items, pago);
     // La web manda "total" con TODOS sus descuentos aplicados (combos,
     // descuento por monto, cupón, bienvenida). Antes se ignoraba y
     // los items se anotaban a precio de lista (y el link de Mercado Pago se
@@ -435,9 +440,10 @@ function registrarPedidoWeb(data) {
     var hojaPed = ss.getSheetByName('PEDIDOS');
     if (!hojaPed) {
       hojaPed = ss.insertSheet('PEDIDOS');
-      hojaPed.appendRow(['Código','Fecha','Cliente','Teléfono','Productos','Total','Entrega','Dirección','Pago','Estado']);
-      hojaPed.getRange(1,1,1,10).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
+      hojaPed.appendRow(['Código','Fecha','Cliente','Teléfono','Productos','Total','Entrega','Dirección','Pago','Estado','Items JSON']);
+      hojaPed.getRange(1,1,1,11).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
     }
+    _asegurarColumnasPedidoConfirmacion();
     var itemsResumen = items.length > 0
       ? items.map(function(i){ return (i.marca ? '[' + i.marca + '] ' : '') + i.nombre + ' x' + i.cantidad; }).join(' | ')
       : 'Pedido web';
@@ -447,7 +453,8 @@ function registrarPedidoWeb(data) {
       codigoPedido, hoy, nombre, telefono, itemsResumen,
       '$' + _formatoPrecio(totalReal),
       entrega === 'envio' ? 'Envío' : 'Retiro en local',
-      direccion || '-', pago, 'Recibido', itemsJSON
+      direccion || '-', pago, 'Pendiente de confirmación', itemsJSON,
+      'Esperando confirmación de stock', '', '', '', '', '', '', 'No', ''
     ]);
   } catch(ePed) {
     throw new Error('No se pudo registrar el pedido: ' + ePed.message);
@@ -474,7 +481,7 @@ function registrarPedidoWeb(data) {
     var itemsTexto = items.length > 0
       ? items.map(function(i) { return '  • ' + (i.marca ? '[' + i.marca + '] ' : '') + i.nombre + ' x' + i.cantidad; }).join('\n')
       : 'Pedido web';
-    var msg = '🛒 NUEVO PEDIDO WEB — MAXUP\n\n'
+    var msg = '🛒 NUEVA SOLICITUD WEB — MAXUP\n\n'
       + '🔑 Código: ' + codigoPedido + '\n'
       + '👤 ' + nombre + '\n'
       + '📱 ' + telefono + '\n'
@@ -484,16 +491,16 @@ function registrarPedidoWeb(data) {
       + (tipoDesc ? ' 🎁 ' + tipoDesc : '') + '\n'
       + '🚚 ' + (entrega === 'envio' ? 'Envío a: ' + direccion : 'Retiro en local') + '\n'
       + '💳 Pago: ' + pago + '\n\n'
-      + '✅ Registrado en Sheets\n'
+      + '⏳ Pendiente de tu confirmación de stock y pago\n'
       + '📋 Ver pedido: https://maxupsuplementos.com.ar/estado.html?pedido=' + codigoPedido;
     _notificarTelegram(msg);
   } catch(e) {}
 
   // ── Notificar por Email ──────────────────────────────────
   try {
-    var asunto = '🛒 Nuevo Pedido ' + codigoPedido + ' — ' + nombre;
+    var asunto = '🛒 Solicitud pendiente ' + codigoPedido + ' — ' + nombre;
     var cuerpoEmail = '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;background:#0a0a0a;color:#fff;padding:24px;border-radius:12px">'
-      + '<h2 style="color:#00C8FF;margin:0 0 16px">NUEVO PEDIDO WEB</h2>'
+      + '<h2 style="color:#00C8FF;margin:0 0 16px">SOLICITUD WEB PENDIENTE</h2>'
       + '<p style="color:#FF0099;font-size:20px;margin:4px 0">Código: <strong>' + codigoPedido + '</strong></p>'
       + '<hr style="border-color:#222">'
       + '<p>👤 <strong>' + nombre + '</strong></p>'
@@ -504,6 +511,7 @@ function registrarPedidoWeb(data) {
       + '<p style="font-size:22px;color:#FF0099"><strong>Total: $' + _formatoPrecio(totalReal) + '</strong></p>'
       + '<p>🚚 ' + (entrega === 'envio' ? 'Envío a: ' + direccion : 'Retiro en local') + '</p>'
       + '<p>💳 Pago: ' + pago + '</p>'
+      + '<p style="color:#FFB800"><strong>Revisá el stock y habilitá el pago desde el panel de administración.</strong></p>'
       + '</div>';
     MailApp.sendEmail({
       to: 'maxups24@gmail.com',
@@ -520,22 +528,14 @@ function registrarPedidoWeb(data) {
     _registrarNotificacion('🛒 PEDIDO', nombre + ' — $' + _formatoPrecio(totalReal) + ' — ' + itemsNotif);
   } catch(eNotif) {}
 
-  // ── Mercado Pago: generar link de pago si el cliente eligió MP ──
-  var initPoint = null;
-  if (String(pago).toLowerCase() === 'mercadopago' && totalReal > 0) {
-    try {
-      var _mp = crearPreferenciaMP({ total: totalReal, codigo: codigoPedido, email: email, items: items });
-      if (_mp && _mp.ok) initPoint = _mp.init_point;
-    } catch(eMp) {}
-  }
-
   return {
     ok: true,
     codigo: codigoPedido,
     esNuevo: esNuevo,
     descuento: tipoDesc,
-    init_point: initPoint,
-    mensaje: 'Cliente ' + nombre + ' registrado. Total: $' + _formatoPrecio(totalReal) + (tipoDesc ? ' (' + tipoDesc + ')' : '')
+    estado: 'Pendiente de confirmación',
+    pagoHabilitado: false,
+    mensaje: 'Solicitud registrada. Revisaremos el stock antes de habilitar el pago. Total: $' + _formatoPrecio(totalReal) + (tipoDesc ? ' (' + tipoDesc + ')' : '')
   };
 
   } finally {
@@ -573,6 +573,10 @@ function crearPreferenciaMP(data) {
       auto_return: 'approved',
       statement_descriptor: 'MAXUP'
     };
+    if (data.reservaHasta instanceof Date) {
+      pref.expires = true;
+      pref.expiration_date_to = data.reservaHasta.toISOString();
+    }
     if (data.email) pref.payer = { email: String(data.email) };
 
     var resp = UrlFetchApp.fetch('https://api.mercadopago.com/checkout/preferences', {
@@ -704,6 +708,65 @@ function _actualizarTotalDiaApi(hojaVD, fechaStr) {
 }
 
 // ── CATÁLOGO ────────────────────────────────────────────────
+function _claveReservaProducto(item) {
+  var sku = String(item && (item.sku || item.id) || '').trim();
+  if (sku) return 'sku:' + sku;
+  return 'nombre:' + _normalizarHeaderV3(item && (item.marca || item.brand) || '')
+    + '|' + _normalizarHeaderV3(item && (item.nombre || item.name) || '');
+}
+
+// Las reservas viven en PEDIDOS, columna "Stock reservado". Se calculan con
+// los datos persistidos en Sheets, nunca solo en memoria, y las confirmaciones
+// se serializan con ScriptLock para impedir dos reservas simultáneas.
+function _reservasActivasPorProducto() {
+  var mapa = {};
+  var hoja = _getSS().getSheetByName('PEDIDOS');
+  if (!hoja || hoja.getLastRow() < 2) return mapa;
+  var rows = hoja.getDataRange().getValues();
+  var ahora = Date.now();
+  for (var i = 1; i < rows.length; i++) {
+    var marca = String(rows[i][18] || '').toLowerCase();
+    var estado = String(rows[i][9] || '');
+    var vence = rows[i][16];
+    if (marca !== 'si' && marca !== 'sí') continue;
+    if (['Cancelado','Entregado','Retirado'].indexOf(estado) >= 0) continue;
+    if (vence instanceof Date && vence.getTime() <= ahora) continue;
+    var items = [];
+    try { items = JSON.parse(String(rows[i][10] || '[]')); } catch(eItems) {}
+    items.forEach(function(item) {
+      var clave = _claveReservaProducto(item);
+      mapa[clave] = (mapa[clave] || 0) + Math.max(1, Number(item.cantidad) || 1);
+    });
+  }
+  return mapa;
+}
+
+function _aplicarReservasCatalogo(productos) {
+  var reservas = _reservasActivasPorProducto();
+  (productos || []).forEach(function(producto) {
+    var reservado = Number(reservas[_claveReservaProducto(producto)] || 0);
+    producto.stock_fisico = Number(producto.stock) || 0;
+    producto.stock_reservado = reservado;
+    producto.stock = Math.max(0, producto.stock_fisico - reservado);
+  });
+}
+
+function _validarDisponibilidadReservaPedido(items) {
+  var catalogo = getCatalogo().productos || [];
+  var mapa = {};
+  catalogo.forEach(function(producto) { mapa[_claveReservaProducto(producto)] = producto; });
+  var errores = [], cantidades = {};
+  (items || []).forEach(function(item) {
+    var clave = _claveReservaProducto(item);
+    var producto = mapa[clave];
+    var cantidad = Math.max(1, Number(item.cantidad) || 1);
+    cantidades[clave] = (cantidades[clave] || 0) + cantidad;
+    if (!producto) errores.push('No se encontró [' + (item.marca || '') + '] ' + (item.nombre || ''));
+    else if ((Number(producto.stock) || 0) < cantidades[clave]) errores.push('Stock disponible insuficiente [' + producto.marca + '] ' + producto.nombre + ' (' + (Number(producto.stock) || 0) + ')');
+  });
+  return { ok: errores.length === 0, errores: errores };
+}
+
 // ════════════════════════════════════════════════════════════
 //  NUEVOS INGRESOS (server-side) — igual para TODOS los visitantes
 //  Compara el stock actual contra una "foto" guardada en una hoja
@@ -856,6 +919,7 @@ function getCatalogo() {
   hoja = ss.getSheetByName('SUPLEMENTOS');
   if (!resultado && hoja) resultado = getCatalogoDesdeSuplemetos(hoja);
   if (!resultado) resultado = { productos: [], total: 0, error: 'No se encontró hoja CATALOGO ni SUPLEMENTOS' };
+  _aplicarReservasCatalogo(resultado.productos);
   if (!ss.getSheetByName(_HOJA_FICHAS_PUBLICACIONES)) {
     try { sincronizarFichasPublicaciones(resultado.productos); }
     catch(e) { Logger.log('No se pudo crear FICHAS_PUBLICACIONES: ' + e.message); }
@@ -1082,6 +1146,176 @@ function _registrarNotificacion(tipo, detalle) {
 }
 
 // ── CONSULTAR ESTADO DE PEDIDO ──────────────────────────────
+function _asegurarColumnasPedidoConfirmacion() {
+  var hoja = _getSS().getSheetByName('PEDIDOS');
+  if (!hoja) return null;
+  var headersFijos = [
+    [12, 'Estado Pago'], [13, 'ID Pago'], [14, 'Fecha Pago'], [15, 'Importe Pago'],
+    [16, 'Fecha Confirmación'], [17, 'Reserva hasta'], [18, 'Link Pago'],
+    [19, 'Stock reservado'], [20, 'Último aviso pago']
+  ];
+  headersFijos.forEach(function(def) {
+    var actual = String(hoja.getRange(1, def[0]).getValue() || '').trim();
+    if (!actual) hoja.getRange(1, def[0]).setValue(def[1]);
+  });
+  hoja.getRange(1, 12, 1, 9).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
+  return hoja;
+}
+
+function _numeroPedido(valor) {
+  return Number(String(valor || '').replace(/[^0-9,-]/g, '').replace(',', '.')) || 0;
+}
+
+function _datosTransferenciaMaxup() {
+  var props = PropertiesService.getScriptProperties();
+  var cfg = {};
+  try { cfg = _leerConfiguracionMaxup() || {}; } catch(eCfg) {}
+  return {
+    // La configuración editable del panel tiene prioridad. Las propiedades
+    // antiguas quedan solo como compatibilidad para instalaciones previas.
+    alias: String(cfg.PAGO_ALIAS || props.getProperty('PAGO_ALIAS') || 'maxup24').trim(),
+    cbu: String(cfg.PAGO_CBU || props.getProperty('PAGO_CBU') || '').trim(),
+    titular: String(cfg.PAGO_TITULAR || props.getProperty('PAGO_TITULAR') || 'Ruben Dario Ghiggia').trim(),
+    cuenta: String(cfg.PAGO_CUENTA || props.getProperty('PAGO_CUENTA') || 'Mercado Pago').trim()
+  };
+}
+
+function _mensajePagoPedido(codigo, cliente, pago, total, linkPago, reservaHasta) {
+  var metodo = String(pago || '').toLowerCase();
+  var vence = reservaHasta instanceof Date
+    ? Utilities.formatDate(reservaHasta, 'America/Argentina/Buenos_Aires', 'dd/MM HH:mm')
+    : '';
+  var texto = '✅ *¡Stock confirmado, ' + String(cliente || 'cliente') + '!*\n\n'
+    + 'Tu solicitud *' + codigo + '* quedó reservada.\n'
+    + '💰 *Total: $' + _formatoPrecio(total) + '*\n';
+
+  if (metodo === 'transferencia') {
+    var datos = _datosTransferenciaMaxup();
+    texto += '\n🏦 *Datos para transferir*\n'
+      + 'Alias: *' + datos.alias + '*\n'
+      + (datos.cbu ? 'CBU/CVU: *' + datos.cbu + '*\n' : '')
+      + 'Titular: *' + datos.titular + '*\n'
+      + 'Cuenta: ' + datos.cuenta + '\n\n'
+      + 'Cuando transfieras, respondé a este chat con el comprobante.';
+  } else if (metodo === 'mercadopago') {
+    texto += '\n💳 *Pagá con tarjeta o Mercado Pago desde este enlace:*\n' + linkPago
+      + '\n\nEl enlace se habilitó recién después de verificar tu stock.';
+  } else {
+    texto += '\n💵 Elegiste *efectivo*. Pagás $' + _formatoPrecio(total)
+      + (String(pago || '').toLowerCase().indexOf('retiro') >= 0 ? ' al retirar.' : ' al recibir o retirar tu compra.');
+  }
+  if (vence) texto += '\n\n⏳ Te reservamos el stock hasta el *' + vence + '*.';
+  texto += '\n📋 Estado: https://maxupsuplementos.com.ar/estado.html?pedido=' + encodeURIComponent(codigo)
+    + '\n\n— MAXUP Suplementos 💪';
+  return texto;
+}
+
+function _urlWhatsAppManual(telefono, mensaje) {
+  var variantes = _waVariantesTelefonoDestino(telefono);
+  var destino = variantes && variantes.length ? variantes[0] : String(telefono || '').replace(/\D/g, '');
+  return 'https://wa.me/' + destino + '?text=' + encodeURIComponent(mensaje);
+}
+
+function adminConfirmarStockYHabilitarPago(clave, codigo, soloReenviar) {
+  _validarClave(clave);
+  codigo = String(codigo || '').trim();
+  if (!codigo) throw new Error('Pedido requerido');
+  var hoja = _asegurarColumnasPedidoConfirmacion();
+  if (!hoja) throw new Error('Hoja PEDIDOS no encontrada');
+
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(20000); } catch(eLock) { throw new Error('Sistema ocupado, reintentá en unos segundos'); }
+  var fila = -1, row, mensaje = '', linkPago = '', reservaHasta = null, yaReservado = false;
+  try {
+    var rows = hoja.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]).trim() === codigo) { fila = i + 1; row = rows[i]; break; }
+    }
+    if (fila < 0) throw new Error('Pedido no encontrado: ' + codigo);
+    var estado = String(row[9] || '');
+    if (['Cancelado','Entregado','Retirado'].indexOf(estado) >= 0) throw new Error('El pedido ya está ' + estado.toLowerCase());
+    yaReservado = String(row[18] || '').toLowerCase() === 'si' || String(row[18] || '').toLowerCase() === 'sí';
+    if (soloReenviar && !yaReservado) throw new Error('Primero confirmá el stock');
+
+    var items = [];
+    try { items = JSON.parse(String(row[10] || '[]')); } catch(eItems) { throw new Error('El detalle del pedido no es válido'); }
+    var total = _numeroPedido(row[5]);
+    var pago = String(row[8] || 'transferencia');
+    linkPago = String(row[17] || '');
+    reservaHasta = row[16] instanceof Date ? row[16] : null;
+
+    if (!yaReservado) {
+      var cfgReserva = {};
+      try { cfgReserva = _leerConfiguracionMaxup() || {}; } catch(eCfgReserva) {}
+      var horas = Number(cfgReserva.RESERVA_PEDIDO_HORAS || PropertiesService.getScriptProperties().getProperty('RESERVA_PEDIDO_HORAS') || 6);
+      if (!isFinite(horas) || horas <= 0) horas = 6;
+      var ahora = new Date();
+      reservaHasta = new Date(ahora.getTime() + horas * 60 * 60 * 1000);
+      // Primero se valida la disponibilidad efectiva (stock fisico menos otras
+      // reservas). Así nunca se genera un enlace de pago para algo agotado.
+      var resultadoStock = _validarDisponibilidadReservaPedido(items);
+      if (!resultadoStock.ok) throw new Error('No se pudo reservar: ' + (resultadoStock.errores || ['error de stock']).join('; '));
+      if (String(pago).toLowerCase() === 'mercadopago') {
+        var mp = crearPreferenciaMP({ total: total, codigo: codigo, items: items, reservaHasta: reservaHasta });
+        if (!mp || !mp.ok || !mp.init_point) throw new Error('No se pudo crear el enlace de Mercado Pago: ' + ((mp && mp.error) || 'revisá la configuración'));
+        linkPago = mp.init_point;
+      }
+      // La reserva se persiste en PEDIDOS y reduce el disponible publicado.
+      // El stock físico se descuenta una sola vez al entregar o retirar.
+      var estadoPago = String(pago).toLowerCase() === 'mercadopago' ? 'Esperando pago'
+        : (String(pago).toLowerCase() === 'transferencia' ? 'Esperando transferencia' : 'Pago en efectivo');
+      hoja.getRange(fila, 10).setValue('Stock confirmado');
+      hoja.getRange(fila, 12).setValue(estadoPago);
+      hoja.getRange(fila, 16, 1, 5).setValues([[ahora, reservaHasta, linkPago, 'Sí', '']]);
+      _registrarAuditoria('STOCK RESERVADO', codigo + ' hasta ' + reservaHasta, 'administracion');
+    }
+    mensaje = _mensajePagoPedido(codigo, row[2], pago, total, linkPago, reservaHasta);
+  } finally {
+    lock.releaseLock();
+  }
+
+  var enviado = false, errorWhatsApp = '';
+  try { enviado = _enviarWhatsAppTexto(row[3], mensaje) === true; }
+  catch(eWa) { errorWhatsApp = eWa.message; }
+  try {
+    hoja.getRange(fila, 20).setValue((enviado ? 'Enviado ' : 'Falló ') + Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm') + (errorWhatsApp ? ': ' + errorWhatsApp.slice(0, 180) : ''));
+  } catch(eAviso) {}
+  if (!soloReenviar && !yaReservado) {
+    try { _notificarTelegram('✅ STOCK CONFIRMADO\n' + codigo + '\nPago: ' + row[8] + '\n' + (enviado ? 'WhatsApp enviado automáticamente' : '⚠️ WhatsApp requiere envío manual')); } catch(eTg) {}
+  }
+  return {
+    ok: true, codigo: codigo, reservado: true, whatsappEnviado: enviado,
+    errorWhatsApp: errorWhatsApp, linkPago: linkPago,
+    mensajeWhatsApp: mensaje, whatsappManual: _urlWhatsAppManual(row[3], mensaje),
+    mensaje: enviado ? 'Stock reservado e instrucciones enviadas' : 'Stock reservado. Meta no aceptó el mensaje automático; usá el botón de WhatsApp.'
+  };
+}
+
+function adminConfirmarPagoPedido(clave, codigo) {
+  _validarClave(clave);
+  var hoja = _asegurarColumnasPedidoConfirmacion();
+  if (!hoja) throw new Error('Hoja PEDIDOS no encontrada');
+  try { _liberarReservasVencidas(); } catch(eReservaVencida) {}
+  var lockPago = LockService.getScriptLock();
+  try { lockPago.waitLock(15000); } catch(eLockPago) { throw new Error('Sistema ocupado, reintentá en unos segundos'); }
+  try {
+    var rows = hoja.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]).trim() !== String(codigo || '').trim()) continue;
+      if (String(rows[i][9] || '') === 'Cancelado') throw new Error('El pedido está cancelado');
+      if (String(rows[i][18] || '').toLowerCase().indexOf('s') !== 0) throw new Error('Primero confirmá y reservá el stock');
+      hoja.getRange(i + 1, 12).setValue('Pago confirmado');
+      hoja.getRange(i + 1, 14).setValue(new Date());
+      hoja.getRange(i + 1, 15).setValue(_numeroPedido(rows[i][5]));
+      _registrarAuditoria('PAGO CONFIRMADO', String(codigo), 'administracion');
+      return { ok: true, mensaje: 'Pago confirmado' };
+    }
+    throw new Error('Pedido no encontrado: ' + codigo);
+  } finally {
+    lockPago.releaseLock();
+  }
+}
+
 function getEstadoPedido(codigo) {
   if (!codigo) return { ok: false, error: 'Código no proporcionado' };
 
@@ -1103,7 +1337,11 @@ function getEstadoPedido(codigo) {
         pago:      rows[i][8],
         estado:    rows[i][9],
         estadoPago: String(rows[i][11] || ''),
-        idPago: String(rows[i][12] || '')
+        idPago: String(rows[i][12] || ''),
+        pagoHabilitado: String(rows[i][18] || '').toLowerCase().indexOf('s') === 0,
+        linkPago: String(rows[i][17] || ''),
+        reservaHasta: rows[i][16] instanceof Date
+          ? Utilities.formatDate(rows[i][16], 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm') : ''
       };
     }
   }
@@ -1120,6 +1358,7 @@ function _validarClave(sesion) {
 
 function adminGetPedidos(clave) {
   _validarClave(clave);
+  try { _liberarReservasVencidas(); } catch(eReservas) {}
   var hoja = _getSS().getSheetByName('PEDIDOS');
   if (!hoja || hoja.getLastRow() < 2) return { ok: true, pedidos: [] };
 
@@ -1140,6 +1379,10 @@ function adminGetPedidos(clave) {
       pago:      String(rows[i][8]),
       estado:    String(rows[i][9]),
       estadoPago:String(rows[i][11] || ''),
+      reservaHasta: rows[i][16] instanceof Date ? Utilities.formatDate(rows[i][16], 'America/Argentina/Buenos_Aires', 'dd/MM HH:mm') : '',
+      linkPago: String(rows[i][17] || ''),
+      stockReservado: String(rows[i][18] || ''),
+      ultimoAvisoPago: String(rows[i][19] || ''),
       fila:      i + 1
     });
     if (pedidos.length >= 50) break;
@@ -1149,35 +1392,55 @@ function adminGetPedidos(clave) {
 
 function adminCambiarEstado(clave, codigo, nuevoEstado) {
   _validarClave(clave);
-  var estadosValidos = ['Recibido','En preparación','Listo para retirar','Enviado','Entregado','Retirado','Cancelado'];
+  var estadosValidos = ['Pendiente de confirmación','Recibido','Stock confirmado','En preparación','Listo para retirar','Enviado','Entregado','Retirado','Cancelado'];
   if (estadosValidos.indexOf(nuevoEstado) < 0) throw new Error('Estado inválido. Válidos: ' + estadosValidos.join(', '));
 
   var hoja = _getSS().getSheetByName('PEDIDOS');
   if (!hoja) throw new Error('Hoja PEDIDOS no encontrada');
 
-  var rows = hoja.getDataRange().getValues();
-  for (var i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]).trim() === String(codigo).trim()) {
+  var lockEstado = LockService.getScriptLock();
+  try { lockEstado.waitLock(20000); } catch(eLockEstado) { throw new Error('Sistema ocupado, reintentá en unos segundos'); }
+  try {
+    var rows = hoja.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]).trim() === String(codigo).trim()) {
       var estadoAnterior = String(rows[i][9] || '');
-      hoja.getRange(i + 1, 10).setValue(nuevoEstado);
+      var marcaStock = String(rows[i][18] || '').toLowerCase();
+      var stockReservado = marcaStock === 'si' || marcaStock === 'sí';
+      var stockYaDescontado = marcaStock === 'descontado';
 
-      // Descontar stock SOLO al marcar como Entregado o Retirado
+      // Los pedidos nuevos reservan disponibilidad al confirmarlos, sin tocar
+      // el stock fisico. El descuento real se hace una sola vez al finalizar.
       var estadosFinales = ['Entregado', 'Retirado'];
       if (estadosFinales.indexOf(nuevoEstado) >= 0 && estadosFinales.indexOf(estadoAnterior) < 0) {
         var itemsJSON = String(rows[i][10] || '[]');
         var items = JSON.parse(itemsJSON);
-        var resultadoStock = _descontarStockPedido(items, codigo);
-        if (!resultadoStock.ok) {
-          hoja.getRange(i + 1, 10).setValue(estadoAnterior);
-          _registrarAuditoria('STOCK BLOQUEADO', codigo + ': ' + (resultadoStock.errores || []).join('; '), 'administracion');
-          throw new Error('No se cambio el estado: ' + (resultadoStock.errores || ['error de stock']).join('; '));
+        if (!stockYaDescontado) {
+          var resultadoStock = _descontarStockPedido(items, codigo, true);
+          if (!resultadoStock.ok) {
+            _registrarAuditoria('STOCK BLOQUEADO', codigo + ': ' + (resultadoStock.errores || []).join('; '), 'administracion');
+            throw new Error('No se cambio el estado: ' + (resultadoStock.errores || ['error de stock']).join('; '));
+          }
         }
+        hoja.getRange(i + 1, 19).setValue('Descontado');
         // Recién acá la venta queda anotada en VentasDiarias (pedido concretado)
         _registrarVentaPedidoWeb(codigo);
       }
 
       // Al CANCELAR: revertir la venta (VentasDiarias + compra mensual del cliente)
       if (nuevoEstado === 'Cancelado' && estadoAnterior !== 'Cancelado') {
+        if (stockYaDescontado) {
+          var itemsCancelar = [];
+          try { itemsCancelar = JSON.parse(String(rows[i][10] || '[]')); } catch(eItemsCancelar) {}
+          var devuelto = _restaurarStockPedido(itemsCancelar, codigo + '-CANCELADO', true);
+          if (!devuelto.ok) throw new Error('No se pudo cancelar porque falló la devolución de stock: ' + (devuelto.errores || []).join('; '));
+          hoja.getRange(i + 1, 19).setValue('No');
+          hoja.getRange(i + 1, 17).clearContent();
+        } else if (stockReservado) {
+          // Reserva virtual: alcanza con liberarla; el stock físico no cambió.
+          hoja.getRange(i + 1, 19).setValue('No');
+          hoja.getRange(i + 1, 17).clearContent();
+        }
         try { _revertirVentaPedidoWeb(codigo, estadoAnterior); } catch(eRev) {
           Logger.log('Error revirtiendo venta de ' + codigo + ': ' + eRev.message);
         }
@@ -1186,17 +1449,24 @@ function adminCambiarEstado(clave, codigo, nuevoEstado) {
         }
       }
 
+      hoja.getRange(i + 1, 10).setValue(nuevoEstado);
+
       try {
         var cliente = String(rows[i][2]);
         var emoji = nuevoEstado === 'Entregado' || nuevoEstado === 'Retirado' ? '✅' : '✏️';
         _notificarTelegram(emoji + ' ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')'
-          + (estadosFinales.indexOf(nuevoEstado) >= 0 ? '\n📦 Stock descontado automáticamente' : ''));
+          + (estadosFinales.indexOf(nuevoEstado) >= 0 ? '\n📦 Stock ya reservado/descontado sin duplicar' : '')
+          + (nuevoEstado === 'Cancelado' && stockYaDescontado ? '\n↩️ Stock devuelto automáticamente' : '')
+          + (nuevoEstado === 'Cancelado' && stockReservado ? '\n↩️ Reserva liberada automáticamente' : ''));
       } catch(e) {}
       _registrarAuditoria('ESTADO PEDIDO', codigo + ': ' + estadoAnterior + ' -> ' + nuevoEstado, 'administracion');
-      return { ok: true, mensaje: 'Estado actualizado a ' + nuevoEstado };
+        return { ok: true, mensaje: 'Estado actualizado a ' + nuevoEstado };
+      }
     }
+    throw new Error('Pedido no encontrado: ' + codigo);
+  } finally {
+    lockEstado.releaseLock();
   }
-  throw new Error('Pedido no encontrado: ' + codigo);
 }
 
 // Busca solamente una coincidencia exacta de marca + producto.
@@ -1230,10 +1500,13 @@ function _buscarFilaSuplementoMarcaNombreApi(data, nombreItem, marcaItem, startR
 }
 
 // Descuenta stock cuando el pedido se marca como finalizado
-function _descontarStockPedido(items, referencia) {
+function _descontarStockPedido(items, referencia, omitirCandado) {
   if (!items || items.length === 0) return { ok: true, movimientos: 0 };
-  var lock = LockService.getScriptLock();
-  try { lock.waitLock(15000); } catch(eLock) { return { ok: false, errores: ['Sistema ocupado; reintenta'] }; }
+  var lock = null;
+  if (!omitirCandado) {
+    lock = LockService.getScriptLock();
+    try { lock.waitLock(15000); } catch(eLock) { return { ok: false, errores: ['Sistema ocupado; reintenta'] }; }
+  }
   try {
     var ss = _getSS();
     var hojaCat = ss.getSheetByName('CATALOGO');
@@ -1315,8 +1588,134 @@ function _descontarStockPedido(items, referencia) {
     try { actualizarHojaReposicion(); } catch(eRepo2) {}
     return { ok: true, movimientos: cambios.length };
   } finally {
+    if (lock) lock.releaseLock();
+  }
+}
+
+// Devuelve exactamente las unidades reservadas. Usa la misma identidad
+// SKU/marca/producto del descuento para que cancelar nunca sume a otra fila.
+function _restaurarStockPedido(items, referencia, omitirCandado) {
+  if (!items || items.length === 0) return { ok: true, movimientos: 0 };
+  var lock = null;
+  if (!omitirCandado) {
+    lock = LockService.getScriptLock();
+    try { lock.waitLock(15000); } catch(eLock) { return { ok: false, errores: ['Sistema ocupado; reintenta'] }; }
+  }
+  try {
+    var ss = _getSS();
+    var hojaCat = ss.getSheetByName('CATALOGO');
+    if (hojaCat && hojaCat.getLastRow() > 1) {
+      var catData = hojaCat.getDataRange().getValues();
+      var headers = catData[0].map(_normalizarHeaderV3);
+      var colNombre = headers.indexOf('nombre'), colStock = headers.indexOf('stock');
+      var colMarca = headers.indexOf('marca'), colSku = headers.indexOf('sku');
+      if (colNombre >= 0 && colStock >= 0 && colMarca >= 0) {
+        var cambiosCat = [], erroresCat = [];
+        items.forEach(function(item) {
+          var cantidad = Math.max(1, Number(item.cantidad) || 1);
+          var marca = String(item.marca || item.brand || ''), fila = -1;
+          if (colSku >= 0 && item.sku) {
+            for (var r = 1; r < catData.length; r++) {
+              if (String(catData[r][colSku]).trim() === String(item.sku).trim()) { fila = r; break; }
+            }
+          }
+          if (fila < 0) fila = _matchFilaProducto(catData, colNombre, item.nombre, 1, colMarca, marca);
+          if (fila < 0) { erroresCat.push('No se encontró [' + marca + '] ' + item.nombre); return; }
+          var antes = Number(catData[fila][colStock]) || 0;
+          cambiosCat.push({ fila: fila, cantidad: cantidad, antes: antes, despues: antes + cantidad, marca: marca,
+            nombre: String(item.nombre || ''), sku: String(item.sku || (colSku >= 0 ? catData[fila][colSku] : '')) });
+        });
+        if (erroresCat.length) return { ok: false, errores: erroresCat };
+        cambiosCat.forEach(function(c) {
+          hojaCat.getRange(c.fila + 1, colStock + 1).setValue(c.despues);
+          _registrarMovimientoStock('ENTRADA', c.sku, c.marca, c.nombre, c.cantidad, c.antes, c.despues, referencia || '', 'cancelación/reserva web');
+        });
+        if (typeof _cajaSincronizarStockDetalladoBatch_ === 'function') {
+          _cajaSincronizarStockDetalladoBatch_(cambiosCat.map(function(c) {
+            return { tipo: 'SUP', nombre: c.nombre, marca: c.marca, stockDespues: c.despues };
+          }));
+        }
+        try { actualizarHojaReposicion(); } catch(eRepo) {}
+        return { ok: true, movimientos: cambiosCat.length };
+      }
+    }
+
+    var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+    if (!hojaSup) return { ok: false, errores: ['Falta hoja SUPLEMENTOS'] };
+    var supData = hojaSup.getDataRange().getValues();
+    var cols = _columnasCatalogoSuplementos(supData);
+    var cambios = [], errores = [];
+    items.forEach(function(item) {
+      var cantidad = Math.max(1, Number(item.cantidad) || 1);
+      var marca = String(item.marca || item.brand || ''), fila = -1;
+      if (cols.sku >= 0 && item.sku) {
+        for (var r = cols.filaHeader + 1; r < supData.length; r++) {
+          if (String(supData[r][cols.sku]).trim() === String(item.sku).trim()) { fila = r; break; }
+        }
+      }
+      if (fila < 0) fila = _buscarFilaSuplementoMarcaNombreApi(supData, item.nombre, marca, 0);
+      if (fila < 0) { errores.push('No se encontró [' + marca + '] ' + item.nombre); return; }
+      var antes = Number(supData[fila][cols.stock]) || 0;
+      cambios.push({ fila: fila, cantidad: cantidad, antes: antes, despues: antes + cantidad, marca: marca,
+        nombre: String(item.nombre || ''), sku: String(item.sku || (cols.sku >= 0 ? supData[fila][cols.sku] : '')) });
+    });
+    if (errores.length) return { ok: false, errores: errores };
+    cambios.forEach(function(c) {
+      hojaSup.getRange(c.fila + 1, cols.stock + 1).setValue(c.despues);
+      _registrarMovimientoStock('ENTRADA', c.sku, c.marca, c.nombre, c.cantidad, c.antes, c.despues, referencia || '', 'cancelación/reserva web');
+    });
+    if (typeof _cajaSincronizarStockDetalladoBatch_ === 'function') {
+      _cajaSincronizarStockDetalladoBatch_(cambios.map(function(c) {
+        return { tipo: 'SUP', nombre: c.nombre, marca: c.marca, stockDespues: c.despues };
+      }));
+    }
+    try { actualizarHojaReposicion(); } catch(eRepo2) {}
+    return { ok: true, movimientos: cambios.length };
+  } finally {
+    if (lock) lock.releaseLock();
+  }
+}
+
+function _liberarReservasVencidas() {
+  var hoja = _asegurarColumnasPedidoConfirmacion();
+  if (!hoja || hoja.getLastRow() < 2) return { ok: true, liberadas: 0 };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { ok: true, liberadas: 0, ocupado: true };
+  var avisos = [], liberadas = 0;
+  try {
+    // Se relee dentro del candado y se libera la reserva virtual en PEDIDOS.
+    // El stock fisico nunca se modifico, por lo que no hay nada que devolver.
+    var rows = hoja.getDataRange().getValues();
+    var ahora = new Date();
+    for (var i = 1; i < rows.length; i++) {
+      var reservado = String(rows[i][18] || '').toLowerCase();
+      var vence = rows[i][16];
+      var estado = String(rows[i][9] || '');
+      var estadoPago = String(rows[i][11] || '').toLowerCase();
+      if (reservado !== 'si' && reservado !== 'sí') continue;
+      if (!(vence instanceof Date) || vence.getTime() > ahora.getTime()) continue;
+      if (['Entregado','Retirado','Cancelado'].indexOf(estado) >= 0) continue;
+      if (estadoPago === 'approved' || estadoPago === 'pago confirmado') continue;
+      var codigo = String(rows[i][0]);
+      hoja.getRange(i + 1, 10).setValue('Cancelado');
+      hoja.getRange(i + 1, 12).setValue('Reserva vencida');
+      hoja.getRange(i + 1, 19).setValue('No');
+      hoja.getRange(i + 1, 17).clearContent();
+      try { _actualizarEstadoUsoCupon(codigo, 'Cancelado'); } catch(eCupon) {}
+      liberadas++;
+      avisos.push({ codigo: codigo, telefono: rows[i][3] });
+      try { _registrarAuditoria('RESERVA VENCIDA', codigo, 'sistema'); } catch(eAudit) {}
+    }
+  } finally {
     lock.releaseLock();
   }
+  // Los avisos de red se envían fuera del candado para no frenar otros pedidos.
+  avisos.forEach(function(aviso) {
+    try {
+      _enviarWhatsAppTexto(aviso.telefono, '⏳ La reserva del pedido *' + aviso.codigo + '* venció sin confirmación de pago y el stock fue liberado. Si todavía lo querés, podés hacer una nueva solicitud en maxupsuplementos.com.ar.');
+    } catch(eWa) {}
+  });
+  return { ok: true, liberadas: liberadas };
 }
 
 // ── REGISTRAR LA VENTA DE UN PEDIDO WEB AL ENTREGARLO ───────
@@ -1476,17 +1875,15 @@ function _revertirVentaPedidoWeb(codigo, estadoAnterior) {
     });
   }
 
-  // Aviso: si ya estaba Entregado/Retirado, el stock ya se había descontado
-  var avisoStock = (estadoAnterior === 'Entregado' || estadoAnterior === 'Retirado')
-    ? '\n⚠️ OJO: este pedido ya estaba ' + estadoAnterior + ' y su stock ya se descontó. Si te devuelven la mercadería, sumala de nuevo al lote.'
-    : '';
   _notificarTelegram('↩️ ' + codigo + ' CANCELADO: venta revertida (' + filasBorrar.length +
-    ' renglón(es) borrados de VentasDiarias, total del día y cliente corregidos).' + avisoStock);
+    ' renglón(es) borrados de VentasDiarias, total del día y cliente corregidos).');
 }
 
 function _getMsgEstado(estado) {
   var msgs = {
+    'Pendiente de confirmación': 'Recibimos tu solicitud. Estamos verificando el stock antes de habilitar el pago.',
     'Recibido': 'Tu pedido fue recibido correctamente.',
+    'Stock confirmado': 'Confirmamos el stock y te enviamos las instrucciones de pago por WhatsApp.',
     'En preparación': 'Estamos preparando tu pedido. En breve estará listo.',
     'Listo para retirar': '¡Tu pedido está listo! Podés pasar a retirarlo.',
     'Enviado': '¡Tu pedido está en camino! Pronto lo recibís.',
@@ -3988,6 +4385,7 @@ function onEdit(e) {
 // Este handler se instala una sola vez y ejecuta los cambios de stock/ventas/Telegram
 // con los permisos de la cuenta propietaria.
 function onEditPedidosAutorizado(e) {
+  var lockPedidos = null;
   try {
     var hoja = e.range.getSheet();
     if (hoja.getName() === 'STOCK_DETALLADO') {
@@ -4000,6 +4398,9 @@ function onEditPedidosAutorizado(e) {
     }
     if (hoja.getName() !== 'PEDIDOS') return;
 
+    lockPedidos = LockService.getScriptLock();
+    lockPedidos.waitLock(20000);
+
     var rango = e.range;
     var col = rango.getColumn();
     var fila = rango.getRow();
@@ -4008,6 +4409,9 @@ function onEditPedidosAutorizado(e) {
     var nuevoEstado = String(e.value || '').trim();
     var estadoAnterior = String(e.oldValue || '').trim();
     var estadosFinales = ['Entregado', 'Retirado'];
+    var marcaStock = String(hoja.getRange(fila, 19).getValue() || '').toLowerCase();
+    var stockReservado = marcaStock === 'si' || marcaStock === 'sí';
+    var stockYaDescontado = marcaStock === 'descontado';
 
     if (estadosFinales.indexOf(nuevoEstado) >= 0 && estadosFinales.indexOf(estadoAnterior) < 0) {
       var rowData = hoja.getRange(fila, 1, 1, 11).getValues()[0];
@@ -4016,14 +4420,17 @@ function onEditPedidosAutorizado(e) {
       var itemsJSON = String(rowData[10] || '[]');
       try {
         var items = JSON.parse(itemsJSON);
-        var resultadoStock = _descontarStockPedido(items, codigo);
-        if (!resultadoStock.ok) {
-          hoja.getRange(fila, 10).setValue(estadoAnterior || 'Recibido');
-          _registrarAuditoria('STOCK BLOQUEADO', codigo + ': ' + (resultadoStock.errores || []).join('; '), 'edicion Sheets');
-          _notificarTelegram('⚠️ ' + codigo + ': no se cambio el estado. ' + (resultadoStock.errores || []).join('; '));
-          return;
+        if (!stockYaDescontado) {
+          var resultadoStock = _descontarStockPedido(items, codigo, true);
+          if (!resultadoStock.ok) {
+            hoja.getRange(fila, 10).setValue(estadoAnterior || 'Pendiente de confirmación');
+            _registrarAuditoria('STOCK BLOQUEADO', codigo + ': ' + (resultadoStock.errores || []).join('; '), 'edicion Sheets');
+            _notificarTelegram('⚠️ ' + codigo + ': no se cambio el estado. ' + (resultadoStock.errores || []).join('; '));
+            return;
+          }
         }
-        _notificarTelegram('✅ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')' + String.fromCharCode(10) + '📦 Stock descontado y venta anotada');
+        hoja.getRange(fila, 19).setValue('Descontado');
+        _notificarTelegram('✅ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')' + String.fromCharCode(10) + '📦 Stock reservado/descontado sin duplicar y venta anotada');
       } catch(eJSON) {
         _notificarTelegram('⚠️ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')' + String.fromCharCode(10) + '❌ No se pudo descontar stock');
       }
@@ -4033,6 +4440,23 @@ function onEditPedidosAutorizado(e) {
 
     if (nuevoEstado === 'Cancelado' && estadoAnterior !== 'Cancelado') {
       var codigoCanc = String(hoja.getRange(fila, 1).getValue());
+      if (stockYaDescontado) {
+        try {
+          var itemsCanc = JSON.parse(String(hoja.getRange(fila, 11).getValue() || '[]'));
+          var devuelto = _restaurarStockPedido(itemsCanc, codigoCanc + '-CANCELADO', true);
+          if (!devuelto.ok) throw new Error((devuelto.errores || []).join('; '));
+          hoja.getRange(fila, 19).setValue('No');
+          hoja.getRange(fila, 17).clearContent();
+        } catch(eStockCanc) {
+          hoja.getRange(fila, 10).setValue(estadoAnterior || 'Stock confirmado');
+          _notificarTelegram('⚠️ ' + codigoCanc + ': no se pudo cancelar ni devolver el stock. ' + eStockCanc.message);
+          return;
+        }
+      } else if (stockReservado) {
+        // La reserva era virtual: liberarla no requiere sumar stock fisico.
+        hoja.getRange(fila, 19).setValue('No');
+        hoja.getRange(fila, 17).clearContent();
+      }
       try { _revertirVentaPedidoWeb(codigoCanc, estadoAnterior); } catch(eRev) {
         Logger.log('Error revirtiendo venta de ' + codigoCanc + ': ' + eRev.message);
       }
@@ -4044,6 +4468,10 @@ function onEditPedidosAutorizado(e) {
     _colorearEstadoPedido(e);
   } catch(err) {
     Logger.log('onEditPedidosAutorizado error: ' + err.message);
+  } finally {
+    if (lockPedidos) {
+      try { lockPedidos.releaseLock(); } catch(eRelease) {}
+    }
   }
 }
 
@@ -4052,7 +4480,9 @@ function _colorearEstadoPedido(e) {
   if (rango.getColumn() !== 10 || rango.getRow() < 2) return;
   var nuevoEstado = String(e.value || '').trim();
   var colores = {
+    'Pendiente de confirmación': '#FFE0B2',
     'Recibido': '#FFF3CD',
+    'Stock confirmado': '#D1C4E9',
     'En preparación': '#CCE5FF',
     'Listo para retirar': '#D4EDDA',
     'Enviado': '#D1ECF1',
@@ -4092,7 +4522,7 @@ function setupPedidos() {
 
   var ultimaFila = Math.max(hoja.getLastRow(), 100);
   var regla = SpreadsheetApp.newDataValidation()
-    .requireValueInList(['Recibido','En preparación','Listo para retirar','Enviado','Entregado','Retirado','Cancelado'], true)
+    .requireValueInList(['Pendiente de confirmación','Recibido','Stock confirmado','En preparación','Listo para retirar','Enviado','Entregado','Retirado','Cancelado'], true)
     .setAllowInvalid(false)
     .build();
   hoja.getRange(2, 10, ultimaFila - 1, 1).setDataValidation(regla);

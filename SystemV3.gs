@@ -14,6 +14,11 @@ var CONFIG_MAXUP_DEFAULTS = {
   CUPONES_JSON: '{"MAXUP5":{"pct":0.05,"label":"5% off con cupon MAXUP5"},"MAXUP10":{"pct":0.10,"label":"10% off con cupon MAXUP10"},"PRIMERA15":{"pct":0.15,"label":"15% off primera compra"}}',
   ALERTA_VENCIMIENTO_DIAS: '70',
   BACKUP_RETENCION_DIAS: '14',
+  RESERVA_PEDIDO_HORAS: '6',
+  PAGO_ALIAS: 'maxup24',
+  PAGO_CBU: '',
+  PAGO_TITULAR: 'Ruben Dario Ghiggia',
+  PAGO_CUENTA: 'Mercado Pago',
   CLUB_POPUP_EXCLUIDOS: ''
 };
 
@@ -53,6 +58,11 @@ function _asegurarHojaConfiguracion() {
     CUPONES_JSON: 'Cupones activos en formato JSON',
     ALERTA_VENCIMIENTO_DIAS: 'Dias para alerta de vencimientos',
     BACKUP_RETENCION_DIAS: 'Dias que se conservan copias automaticas',
+    RESERVA_PEDIDO_HORAS: 'Horas que se reserva el stock de un pedido web confirmado',
+    PAGO_ALIAS: 'Alias que se envia solo al confirmar pedidos por transferencia',
+    PAGO_CBU: 'CBU o CVU que se envia solo al confirmar pedidos por transferencia',
+    PAGO_TITULAR: 'Titular de la cuenta para transferencias',
+    PAGO_CUENTA: 'Banco o billetera de la cuenta para transferencias',
     CLUB_POPUP_EXCLUIDOS: 'Correos o telefonos que no ven la invitacion emergente del Club'
   };
   var nuevas = [];
@@ -414,9 +424,11 @@ function _registrarMovimientoStock(tipo, sku, marca, producto, cantidad, antes, 
   ]);
 }
 
-function _validarItemsPedidoWeb(items) {
+function _validarItemsPedidoWeb(items, medioPago) {
   if (!Array.isArray(items) || !items.length) return [];
   var catalogo = getCatalogo().productos || [];
+  var usarPrecioLista = String(medioPago || '').toLowerCase() === 'mercadopago';
+  var cantidadesPorProducto = {};
   return items.map(function(item) {
     var sku = String(item.sku || '').trim();
     var marca = _normalizarHeaderV3(item.marca || item.brand || '');
@@ -429,12 +441,23 @@ function _validarItemsPedidoWeb(items) {
     }
     if (!producto) throw new Error('Producto no encontrado: [' + (item.marca || '') + '] ' + (item.nombre || ''));
     var cantidad = Math.max(1, Math.floor(Number(item.cantidad) || 1));
-    if ((Number(producto.stock) || 0) < cantidad) throw new Error('Stock insuficiente: [' + producto.marca + '] ' + producto.nombre);
+    var claveStock = String(producto.sku || producto.id || '').trim()
+      || (_normalizarHeaderV3(producto.marca) + '|' + _normalizarHeaderV3(producto.nombre));
+    cantidadesPorProducto[claveStock] = (cantidadesPorProducto[claveStock] || 0) + cantidad;
+    if ((Number(producto.stock) || 0) < cantidadesPorProducto[claveStock]) {
+      throw new Error('Stock insuficiente: [' + producto.marca + '] ' + producto.nombre);
+    }
     return {
       sku: String(producto.sku || producto.id || ''),
       nombre: String(producto.nombre || ''),
       marca: String(producto.marca || ''),
-      precio: Number(producto.precio_venta) || 0,
+      // Efectivo y transferencia usan contado. Mercado Pago/tarjeta usa la
+      // columna Precio de lista que ya se muestra en la tienda.
+      precio: usarPrecioLista
+        ? (Number(producto.precio_lista) || Number(producto.precio_venta) || 0)
+        : (Number(producto.precio_venta) || 0),
+      precioContado: Number(producto.precio_venta) || 0,
+      precioLista: Number(producto.precio_lista) || Number(producto.precio_venta) || 0,
       cantidad: cantidad,
       combo: item.combo === true || item.combo === 'true'
     };
@@ -500,22 +523,33 @@ function procesarWebhookMercadoPago(data) {
     var pago = JSON.parse(resp.getContentText() || '{}');
     var codigo = String(pago.external_reference || '').trim();
     if (!codigo) throw new Error('Pago sin referencia de pedido');
-    var hoja = _asegurarColumnasPagoPedidos();
-    if (!hoja) throw new Error('Falta hoja PEDIDOS');
-    var rows = hoja.getDataRange().getValues(), fila = -1;
-    for (var i = 1; i < rows.length; i++) if (String(rows[i][0]).trim() === codigo) { fila = i + 1; break; }
-    if (fila < 0) throw new Error('Pedido no encontrado: ' + codigo);
-    var totalEsperado = Number(String(rows[fila - 1][5] || '').replace(/[^0-9,-]/g, '').replace(',', '.')) || 0;
     var importe = Number(pago.transaction_amount) || 0;
     var estado = String(pago.status || 'unknown');
-    var estadoHoja = estado;
-    if (Math.abs(totalEsperado - importe) > 1) estadoHoja = 'monto_incorrecto';
-    var anteriorId = String(hoja.getRange(fila, 13).getValue() || '');
-    var anteriorEstado = String(hoja.getRange(fila, 12).getValue() || '');
-    hoja.getRange(fila, 12, 1, 4).setValues([[estadoHoja, paymentId, new Date(), importe]]);
+    var estadoHoja = estado, anteriorId = '', anteriorEstado = '';
+    var lockPago = LockService.getScriptLock();
+    lockPago.waitLock(15000);
+    try {
+      var hoja = _asegurarColumnasPagoPedidos();
+      if (!hoja) throw new Error('Falta hoja PEDIDOS');
+      var rows = hoja.getDataRange().getValues(), fila = -1;
+      for (var i = 1; i < rows.length; i++) if (String(rows[i][0]).trim() === codigo) { fila = i + 1; break; }
+      if (fila < 0) throw new Error('Pedido no encontrado: ' + codigo);
+      var filaPedido = rows[fila - 1];
+      var totalEsperado = Number(String(filaPedido[5] || '').replace(/[^0-9,-]/g, '').replace(',', '.')) || 0;
+      if (Math.abs(totalEsperado - importe) > 1) estadoHoja = 'monto_incorrecto';
+      else if (estado === 'approved' && String(filaPedido[9] || '') === 'Cancelado') estadoHoja = 'approved_after_cancel';
+      else if (estado === 'approved' && ['si','sí','descontado'].indexOf(String(filaPedido[18] || '').toLowerCase()) < 0) estadoHoja = 'approved_sin_reserva';
+      anteriorId = String(filaPedido[12] || '');
+      anteriorEstado = String(filaPedido[11] || '');
+      hoja.getRange(fila, 12, 1, 4).setValues([[estadoHoja, paymentId, new Date(), importe]]);
+    } finally {
+      lockPago.releaseLock();
+    }
     if (anteriorId !== paymentId || anteriorEstado !== estadoHoja) {
       _registrarAuditoria('MERCADO PAGO', codigo + ': ' + estadoHoja + ' $' + importe, 'webhook');
-      var icono = estadoHoja === 'approved' ? 'PAGO APROBADO' : (estadoHoja === 'monto_incorrecto' ? 'ALERTA DE IMPORTE' : 'Pago actualizado');
+      var icono = estadoHoja === 'approved' ? 'PAGO APROBADO'
+        : (estadoHoja === 'monto_incorrecto' ? 'ALERTA DE IMPORTE'
+        : (estadoHoja.indexOf('approved_') === 0 ? 'ALERTA: PAGO SIN RESERVA ACTIVA' : 'Pago actualizado'));
       _notificarTelegram(icono + '\n' + codigo + '\nEstado: ' + estadoHoja + '\nImporte: $' + _formatoPrecio(importe));
     }
     return { ok: true };

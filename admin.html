@@ -117,10 +117,15 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
 .btn-retirado:hover{background:rgba(79,195,247,.3)}
 .btn-cancelar{background:rgba(255,61,61,.1);color:var(--red);border:1px solid rgba(255,61,61,.2)}
 .btn-cancelar:hover{background:rgba(255,61,61,.25)}
+.btn-confirmar{background:linear-gradient(135deg,#00C8FF,#00E676);color:#03140d;border:1px solid rgba(0,230,118,.45)}
+.btn-confirmar:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.pago-estado{margin:0 0 10px;padding:8px 10px;border-radius:7px;background:rgba(255,184,0,.07);border:1px solid rgba(255,184,0,.18);color:#FFD166;font-size:.78rem}
 
 /* BADGE ESTADO */
 .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;letter-spacing:.05em}
 .badge-Recibido{background:rgba(0,200,255,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.3)}
+.badge-pendiente{background:rgba(255,184,0,.15);color:#FFD166;border:1px solid rgba(255,184,0,.35)}
+.badge-confirmado{background:rgba(174,117,255,.16);color:#C6A4FF;border:1px solid rgba(174,117,255,.35)}
 .badge-preparacion{background:rgba(255,165,0,.15);color:var(--orange);border:1px solid rgba(255,165,0,.3)}
 .badge-listo{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3)}
 .badge-Enviado{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3)}
@@ -425,7 +430,7 @@ function iniciarAutoRefresh() {
       .then(function(data) {
         if (!data.ok) return;
         var pedidos = data.pedidos || [];
-        var pendientes = pedidos.filter(function(p){ return p.estado==='Recibido'||p.estado==='En preparación'; }).length;
+        var pendientes = pedidos.filter(function(p){ return p.estado==='Pendiente de confirmación'||p.estado==='Recibido'||p.estado==='Stock confirmado'||p.estado==='En preparación'; }).length;
 
         // Actualizar badge
         var badge = document.getElementById('badgePedidos');
@@ -498,7 +503,7 @@ function showToast(msg) {
   setTimeout(function(){ t.classList.remove('show'); }, 2500);
 }
 function getBadgeClass(estado) {
-  var map = {'Recibido':'badge-Recibido','En preparación':'badge-preparacion',
+  var map = {'Pendiente de confirmación':'badge-pendiente','Recibido':'badge-Recibido','Stock confirmado':'badge-confirmado','En preparación':'badge-preparacion',
     'Listo para retirar':'badge-listo','Enviado':'badge-Enviado',
     'Entregado':'badge-Entregado','Retirado':'badge-Retirado','Cancelado':'badge-Cancelado'};
   return map[estado] || 'badge-Recibido';
@@ -568,7 +573,7 @@ function cargarPedidos() {
     if (!data.ok) { el.innerHTML = '<div class="empty-txt">Error: ' + data.error + '</div>'; return; }
 
     var pedidos = data.pedidos || [];
-    var pendientes = pedidos.filter(function(p){ return p.estado === 'Recibido' || p.estado === 'En preparación'; }).length;
+    var pendientes = pedidos.filter(function(p){ return p.estado === 'Pendiente de confirmación' || p.estado === 'Recibido' || p.estado === 'Stock confirmado' || p.estado === 'En preparación'; }).length;
     var badge = document.getElementById('badgePedidos');
     if (pendientes > 0) { badge.textContent = pendientes; badge.style.display = 'inline'; }
     else badge.style.display = 'none';
@@ -579,7 +584,8 @@ function cargarPedidos() {
       + '<div class="filtro-row" style="margin-top:-6px">'
       + '<button class="filtro-btn ' + (filtroEstado==='todos'?'activo':'') + '" onclick="setFiltro(\'todos\',this)">Todos</button>'
       + '<button class="filtro-btn ' + (filtroEstado==='pendientes'?'activo':'') + '" onclick="setFiltro(\'pendientes\',this)">🔴 Pendientes</button>'
-      + '<button class="filtro-btn ' + (filtroEstado==='Recibido'?'activo':'') + '" onclick="setFiltro(\'Recibido\',this)">Recibidos</button>'
+      + '<button class="filtro-btn ' + (filtroEstado==='Pendiente de confirmación'?'activo':'') + '" onclick="setFiltro(\'Pendiente de confirmación\',this)">Por confirmar</button>'
+      + '<button class="filtro-btn ' + (filtroEstado==='Stock confirmado'?'activo':'') + '" onclick="setFiltro(\'Stock confirmado\',this)">Stock confirmado</button>'
       + '<button class="filtro-btn ' + (filtroEstado==='En preparación'?'activo':'') + '" onclick="setFiltro(\'En preparación\',this)">En prep.</button>'
       + '<button class="filtro-btn ' + (filtroEstado==='Listo para retirar'?'activo':'') + '" onclick="setFiltro(\'Listo para retirar\',this)">Listos</button>'
       + '<button class="filtro-btn ' + (filtroEstado==='Enviado'?'activo':'') + '" onclick="setFiltro(\'Enviado\',this)">Enviados</button>'
@@ -613,7 +619,7 @@ function renderPedidos(pedidos) {
   // Filtro por estado
   var filtrados;
   if (filtroEstado === 'todos') filtrados = pedidos;
-  else if (filtroEstado === 'pendientes') filtrados = pedidos.filter(function(p){ return p.estado==='Recibido'||p.estado==='En preparación'||p.estado==='Listo para retirar'||p.estado==='Enviado'; });
+  else if (filtroEstado === 'pendientes') filtrados = pedidos.filter(function(p){ return p.estado==='Pendiente de confirmación'||p.estado==='Recibido'||p.estado==='Stock confirmado'||p.estado==='En preparación'||p.estado==='Listo para retirar'||p.estado==='Enviado'; });
   else filtrados = pedidos.filter(function(p){ return p.estado === filtroEstado; });
 
   // Filtro por búsqueda (código, cliente, teléfono, productos)
@@ -649,12 +655,24 @@ function renderPedidos(pedidos) {
       + '<span>💳 <strong>' + p.pago + '</strong></span>'
       + '</div>'
       + '<div class="pedido-productos">' + prods + '</div>';
+    if (p.estadoPago || p.reservaHasta) {
+      html += '<div class="pago-estado">💳 ' + esc(p.estadoPago || 'Sin informar')
+        + (p.reservaHasta ? ' · ⏳ Reserva hasta ' + esc(p.reservaHasta) : '') + '</div>';
+    }
 
     // Botones de acción solo si no está finalizado
     if (!esFinal) {
       html += '<div class="pedido-actions">';
-      if (p.estado === 'Recibido')
-        html += '<button class="btn-estado btn-prep" onclick="cambiarEstado(\'' + p.codigo + '\',\'En preparación\')">🔧 En preparación</button>';
+      if (p.estado === 'Pendiente de confirmación' || p.estado === 'Recibido')
+        html += '<button class="btn-estado btn-confirmar" onclick="confirmarStockPago(\'' + p.codigo + '\')">✅ Confirmar stock y habilitar pago</button>';
+      if (p.estado === 'Stock confirmado') {
+        var pagoOk = p.estadoPago === 'Pago confirmado' || p.estadoPago === 'approved' || (p.pago||'').toLowerCase() === 'efectivo';
+        if (!pagoOk && (p.pago||'').toLowerCase() === 'transferencia')
+          html += '<button class="btn-estado btn-listo" onclick="confirmarPago(\'' + p.codigo + '\')">💰 Confirmar transferencia</button>';
+        if (pagoOk)
+          html += '<button class="btn-estado btn-prep" onclick="cambiarEstado(\'' + p.codigo + '\',\'En preparación\')">🔧 En preparación</button>';
+        html += '<button class="btn-estado btn-enviado" onclick="reenviarPago(\'' + p.codigo + '\')">📲 Reenviar instrucciones</button>';
+      }
       if (p.estado === 'En preparación' && !esEnvio)
         html += '<button class="btn-estado btn-listo" onclick="cambiarEstado(\'' + p.codigo + '\',\'Listo para retirar\')">✅ Listo para retirar</button>';
       if (p.estado === 'En preparación' && esEnvio)
@@ -673,6 +691,42 @@ function renderPedidos(pedidos) {
   lista.innerHTML = html;
 }
 
+function confirmarStockPago(codigo) {
+  if (!confirm('¿Confirmaste físicamente que está todo el stock de ' + codigo + '?\n\nAl continuar se reservarán las unidades disponibles y se enviarán automáticamente las instrucciones de pago al cliente. El stock físico se descontará recién al entregar o retirar.')) return;
+  showToast('Reservando stock y habilitando pago...');
+  api('accion=admin_confirmar_stock&pedido=' + encodeURIComponent(codigo))
+    .then(function(data) {
+      if (!data.ok) { showToast('❌ ' + (data.error || 'No se pudo confirmar')); return; }
+      showToast(data.whatsappEnviado ? '✅ Stock reservado y mensaje enviado' : '⚠️ Stock reservado; falta enviar WhatsApp');
+      logActivity('Stock confirmado', codigo);
+      if (!data.whatsappEnviado && data.whatsappManual && confirm('El stock quedó reservado, pero Meta no aceptó el mensaje automático. ¿Abrir WhatsApp con el mensaje listo?')) {
+        window.open(data.whatsappManual, '_blank');
+      }
+      cargarPedidos();
+    }).catch(function(){ showToast('⚠️ Error de conexión'); });
+}
+
+function reenviarPago(codigo) {
+  showToast('Reenviando instrucciones...');
+  api('accion=admin_reenviar_pago&pedido=' + encodeURIComponent(codigo))
+    .then(function(data) {
+      if (!data.ok) { showToast('❌ ' + (data.error || 'No se pudo reenviar')); return; }
+      showToast(data.whatsappEnviado ? '✅ Instrucciones reenviadas' : '⚠️ Meta no aceptó el envío automático');
+      if (!data.whatsappEnviado && data.whatsappManual) window.open(data.whatsappManual, '_blank');
+      cargarPedidos();
+    }).catch(function(){ showToast('⚠️ Error de conexión'); });
+}
+
+function confirmarPago(codigo) {
+  if (!confirm('¿Ya verificaste el comprobante y el ingreso del dinero de ' + codigo + '?')) return;
+  api('accion=admin_confirmar_pago&pedido=' + encodeURIComponent(codigo))
+    .then(function(data) {
+      if (!data.ok) { showToast('❌ ' + (data.error || 'No se pudo confirmar')); return; }
+      showToast('✅ Pago confirmado');
+      cargarPedidos();
+    }).catch(function(){ showToast('⚠️ Error de conexión'); });
+}
+
 function cambiarEstado(codigo, nuevoEstado) {
   showToast('Actualizando...');
   api('accion=admin_estado&pedido=' + encodeURIComponent(codigo) + '&estado=' + encodeURIComponent(nuevoEstado))
@@ -688,8 +742,8 @@ function cambiarEstado(codigo, nuevoEstado) {
         var pedido = window._pedidosCache ? window._pedidosCache.find(function(p){ return p.codigo===codigo; }) : null;
         if(pedido && pedido.telefono){
           var mensajesEstado = {
-            'Confirmado': '✅ ¡Tu pedido *'+codigo+'* fue confirmado! Lo estamos preparando. Te avisamos cuando esté listo.',
-            'Preparando': '📦 Tu pedido *'+codigo+'* se está preparando. ¡Ya falta poco!',
+            'Stock confirmado': '✅ ¡El stock de tu pedido *'+codigo+'* fue confirmado! Revisá las instrucciones de pago que te enviamos.',
+            'En preparación': '📦 Tu pedido *'+codigo+'* se está preparando. ¡Ya falta poco!',
             'Enviado': '🚚 ¡Tu pedido *'+codigo+'* fue enviado! Te mandamos el seguimiento a la brevedad.',
             'Listo para retirar': '🏪 Tu pedido *'+codigo+'* está listo para retirar en Calixto Gauna 1045, Gral. Güemes, Salta.',
             'Entregado': '🎉 ¡Pedido *'+codigo+'* entregado! Gracias por elegir MAXUP.\n\n⭐ Si te gustó la atención, ¿nos ayudás dejando una reseña en Google? Abrí este enlace y tocá *Escribir una opinión*:\n' + GOOGLE_REVIEW_URL,
@@ -715,9 +769,9 @@ function cambiarEstado(codigo, nuevoEstado) {
 // Confirmación antes de estados finales (descuentan stock o cancelan)
 function confirmarFinal(codigo, nuevoEstado) {
   var msgs = {
-    'Entregado': '📦 ¿Marcar ' + codigo + ' como ENTREGADO?\nEsto descontará el stock automáticamente.',
-    'Retirado':  '🤝 ¿Marcar ' + codigo + ' como RETIRADO?\nEsto descontará el stock automáticamente.',
-    'Cancelado': '❌ ¿Cancelar el pedido ' + codigo + '?\nEsta acción no se puede deshacer.'
+    'Entregado': '📦 ¿Marcar ' + codigo + ' como ENTREGADO?\nLa reserva se convertirá en descuento físico y la venta quedará registrada.',
+    'Retirado':  '🤝 ¿Marcar ' + codigo + ' como RETIRADO?\nLa reserva se convertirá en descuento físico y la venta quedará registrada.',
+    'Cancelado': '❌ ¿Cancelar el pedido ' + codigo + '?\nSi tenía stock reservado, se liberará automáticamente.'
   };
   if (confirm(msgs[nuevoEstado] || '¿Cambiar estado a ' + nuevoEstado + '?')) {
     cambiarEstado(codigo, nuevoEstado);
@@ -918,7 +972,17 @@ function cargarConfigCentral(){
       +campoCfg('cfgPromoMeses','Meses para fidelidad',Number(v.PROMO_MESES||3))
       +campoCfg('cfgPromoPct','Descuento fidelidad (%)',pct('PROMO_DESCUENTO',.10))
       +campoCfg('cfgBackup','Días de backups',Number(v.BACKUP_RETENCION_DIAS||14))
+      +campoCfg('cfgReservaHoras','Horas de reserva del pedido',Number(v.RESERVA_PEDIDO_HORAS||6))
       +'</div>'
+      +'<div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)">'
+      +'<div style="font-weight:700;font-size:.9rem;margin-bottom:8px">🏦 Datos para transferencias</div>'
+      +'<div style="color:var(--gray);font-size:.78rem;margin-bottom:10px">Solo se envían al cliente después de que confirmes físicamente el stock.</div>'
+      +'<div class="stats-grid">'
+      +campoCfgTexto('cfgPagoAlias','Alias',v.PAGO_ALIAS||'maxup24')
+      +campoCfgTexto('cfgPagoCbu','CBU / CVU',v.PAGO_CBU||'')
+      +campoCfgTexto('cfgPagoTitular','Titular',v.PAGO_TITULAR||'Ruben Dario Ghiggia')
+      +campoCfgTexto('cfgPagoCuenta','Banco / billetera',v.PAGO_CUENTA||'Mercado Pago')
+      +'</div></div>'
       +'<div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)">'
       +'<div style="font-weight:700;font-size:.9rem;margin-bottom:5px">🎁 Excepciones de la ventana del Club</div>'
       +'<div style="color:var(--gray);font-size:.78rem;margin-bottom:8px">Una persona por línea. Podés escribir: Nombre | email o Nombre | teléfono. Se reconoce en los dispositivos donde esa persona ya se registró o hizo un pedido.</div>'
@@ -962,6 +1026,11 @@ function campoCfg(id,label,value){
     +'<input id="'+id+'" class="filtro-input" type="number" step="0.01" value="'+value+'" style="width:100%;margin-top:5px"></label>';
 }
 
+function campoCfgTexto(id,label,value){
+  return '<label style="display:block;font-size:.75rem;color:var(--gray)">'+label
+    +'<input id="'+id+'" class="filtro-input" type="text" value="'+esc(value)+'" style="width:100%;margin-top:5px"></label>';
+}
+
 function guardarConfigCentral(){
   function n(id){ return Number(document.getElementById(id).value); }
   var descuentosMonto=[
@@ -974,6 +1043,11 @@ function guardarConfigCentral(){
     DESCUENTOS_MONTO_JSON:JSON.stringify(descuentosMonto),
     PROMO_MINIMO:String(n('cfgPromoMin')), PROMO_MESES:String(n('cfgPromoMeses')),
     PROMO_DESCUENTO:String(n('cfgPromoPct')/100), BACKUP_RETENCION_DIAS:String(n('cfgBackup')),
+    RESERVA_PEDIDO_HORAS:String(n('cfgReservaHoras')),
+    PAGO_ALIAS:String((document.getElementById('cfgPagoAlias')||{}).value||''),
+    PAGO_CBU:String((document.getElementById('cfgPagoCbu')||{}).value||''),
+    PAGO_TITULAR:String((document.getElementById('cfgPagoTitular')||{}).value||''),
+    PAGO_CUENTA:String((document.getElementById('cfgPagoCuenta')||{}).value||''),
     CLUB_POPUP_EXCLUIDOS:String((document.getElementById('cfgClubExcluidos')||{}).value||'')
   };
   postAdmin({accion:'admin_configuracion',sesion:clave,valores:valores}).then(function(data){
