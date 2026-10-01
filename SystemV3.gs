@@ -71,7 +71,14 @@ function _asegurarHojaConfiguracion() {
   Object.keys(CONFIG_MAXUP_DEFAULTS).forEach(function(k) {
     if (!existentes[k]) nuevas.push([k, CONFIG_MAXUP_DEFAULTS[k], descripciones[k] || '']);
   });
-  if (nuevas.length) hoja.getRange(hoja.getLastRow() + 1, 1, nuevas.length, 3).setValues(nuevas);
+  if (nuevas.length) {
+    var rangoNuevas = hoja.getRange(hoja.getLastRow() + 1, 1, nuevas.length, 3);
+    // Los valores de configuración son texto. En una planilla argentina una
+    // coma entre dos teléfonos puede interpretarse como separador decimal y
+    // redondear el primer número (por ejemplo, ...1457 pasa a ...1458).
+    rangoNuevas.offset(0, 1, nuevas.length, 1).setNumberFormat('@');
+    rangoNuevas.setValues(nuevas);
+  }
   return hoja;
 }
 
@@ -374,11 +381,15 @@ function adminConfiguracion(sesion, valores) {
         if (String(filas[i][0] || '').trim() === k) {
           // Se actualizan todas las coincidencias antes de depurarlas. Así una
           // fila duplicada antigua nunca vuelve a imponer un valor obsoleto.
-          hoja.getRange(i + 2, 2).setValue(valor);
+          hoja.getRange(i + 2, 2).setNumberFormat('@').setValue(valor);
           encontrados++;
         }
       }
-      if (!encontrados) hoja.appendRow([k, valor, '']);
+      if (!encontrados) {
+        var filaNueva = hoja.getLastRow() + 1;
+        hoja.getRange(filaNueva, 1, 1, 3).setValues([[k, '', '']]);
+        hoja.getRange(filaNueva, 2).setNumberFormat('@').setValue(valor);
+      }
     });
     var duplicadasEliminadas = _deduplicarConfiguracionMaxup(hoja);
     SpreadsheetApp.flush();

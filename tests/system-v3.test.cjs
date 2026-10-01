@@ -227,6 +227,7 @@ assert(api.includes('adminEstadoAlertasPedido'), 'Administración debe poder con
 assert(system.includes('ALERTA_WHATSAPP_ADMIN'), 'Los WhatsApp administrativos deben ser configurables');
 assert(system.includes('_deduplicarConfiguracionMaxup'), 'La configuración debe eliminar claves internas duplicadas');
 assert(system.includes('encontrados++'), 'Guardar configuración debe actualizar todas las filas antiguas de una misma clave');
+assert(system.includes("setNumberFormat('@').setValue(valor)"), 'Los teléfonos deben guardarse como texto para que Sheets no redondee la coma decimal');
 assert(admin.includes("v==='5491168461458'"), 'El panel debe impedir que vuelva a guardarse el número incorrecto terminado en 1458');
 assert(admin.includes('WhatsApp guardados:'), 'El panel debe confirmar cuáles WhatsApp persistió realmente el servidor');
 assert(admin.includes('PROBAR ALERTAS AHORA'), 'Administración debe mostrar el botón de prueba de alertas');
