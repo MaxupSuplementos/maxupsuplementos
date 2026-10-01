@@ -538,7 +538,7 @@ function procesarWebhookMercadoPago(data) {
       var totalEsperado = Number(String(filaPedido[5] || '').replace(/[^0-9,-]/g, '').replace(',', '.')) || 0;
       if (Math.abs(totalEsperado - importe) > 1) estadoHoja = 'monto_incorrecto';
       else if (estado === 'approved' && String(filaPedido[9] || '') === 'Cancelado') estadoHoja = 'approved_after_cancel';
-      else if (estado === 'approved' && ['si','sí','descontado'].indexOf(String(filaPedido[18] || '').toLowerCase()) < 0) estadoHoja = 'approved_sin_reserva';
+      else if (estado === 'approved' && ['si','sí','descontado'].indexOf(String(filaPedido[20] || '').toLowerCase()) < 0) estadoHoja = 'approved_sin_reserva';
       anteriorId = String(filaPedido[12] || '');
       anteriorEstado = String(filaPedido[11] || '');
       hoja.getRange(fila, 12, 1, 4).setValues([[estadoHoja, paymentId, new Date(), importe]]);
@@ -689,6 +689,7 @@ var CLUB_STOCK_HEADERS = ['Clave','SKU','Marca','Producto','Categoria','Stock','
 var CLUB_CARRITOS_HEADERS = ['Club ID','Email','Carrito JSON','Actualizado'];
 var CLUB_SESIONES_HEADERS = ['Token hash','Club ID','Email','Creada','Vence','Activa','Ultimo uso'];
 var CLUB_MIN_VERIFICADOS_SORTEO = 50;
+var CLUB_AVISO_MIN_INTERVALO_MS = 24 * 60 * 60 * 1000;
 
 function _clubAsegurarHoja(nombre, headers, oculta) {
   var ss = _getSS();
@@ -1220,7 +1221,7 @@ function _clubStockActual() {
       productos.push({sku:p.codigo||'',id:p.codigo||'',marca:p.marca||'',nombre:p.nombre||'',categoria:'indumentaria '+String(p.cat||''),stock:p.stock||0,precio_venta:p.precio||0});
     });
   } catch(eInd) { Logger.log('Club indumentaria: ' + eInd.message); }
-  return productos.map(function(p){
+  var normalizados = productos.map(function(p){
     var stock = Number(p.stock) || 0;
     if (p.flavors && p.flavors.length) stock = p.flavors.reduce(function(s,f){return s+(Number(f.stock)||0);},0);
     var sku=String(p.sku||p.id||'').trim(), marca=String(p.marca||p.brand||'').trim(), nombre=String(p.nombre||p.name||'').trim();
@@ -1228,6 +1229,23 @@ function _clubStockActual() {
     var clave=sku||_normalizarHeaderV3(marca+'|'+nombre);
     return {clave:clave,sku:sku,marca:marca,nombre:nombre,categoria:categoria,stock:stock,precio:precio,firma:[stock,precio,nombre,marca].join('|')};
   }).filter(function(p){return p.clave&&p.nombre;});
+
+  // CATALOGO puede contener también prendas que luego vuelven a entrar desde
+  // INDUMENTARIA. Si ambas copias tienen el mismo SKU pero distinto precio,
+  // conservar las dos generaba falsas notificaciones horarias.
+  var porClave = {}, orden = [];
+  normalizados.forEach(function(p){
+    if (!Object.prototype.hasOwnProperty.call(porClave, p.clave)) orden.push(p.clave);
+    porClave[p.clave] = p;
+  });
+  return orden.map(function(clave){ return porClave[clave]; });
+}
+
+function _clubAvisoEsReciente(valor, ahoraMs) {
+  if (!valor) return false;
+  var fecha = valor instanceof Date ? valor : new Date(valor);
+  var ts = fecha.getTime();
+  return !isNaN(ts) && ahoraMs - ts < CLUB_AVISO_MIN_INTERVALO_MS;
 }
 
 function _clubCoincideInteres(intereses, cambio) {
@@ -1241,8 +1259,14 @@ function _clubCoincideInteres(intereses, cambio) {
 }
 
 function procesarNotificacionesClubStock() {
+  // Preparar el catálogo antes del bloqueo porque getCatalogo usa su propio
+  // bloqueo breve para actualizar la sección de nuevos ingresos.
+  var actuales = _clubStockActual();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return {ok:true,omitido:true,motivo:'otra_revision_en_curso'};
+  try {
   var hoja = _clubAsegurarHoja('_STOCK_CLUB', CLUB_STOCK_HEADERS, true);
-  var actuales = _clubStockActual(), anteriores = {};
+  var anteriores = {};
   if (hoja.getLastRow()>1) hoja.getRange(2,1,hoja.getLastRow()-1,CLUB_STOCK_HEADERS.length).getValues().forEach(function(r){ anteriores[String(r[0])]={stock:Number(r[5])||0,precio:Number(r[6])||0,firma:String(r[7]||'')}; });
   var inicial = Object.keys(anteriores).length===0, cambios=[];
   actuales.forEach(function(p){
@@ -1256,10 +1280,11 @@ function procesarNotificacionesClubStock() {
   if (inicial || !cambios.length) return {ok:true,inicializado:inicial,cambios:cambios.length,enviados:0};
 
   var club=_clubHoja(), filas=club.getLastRow()>1?club.getRange(2,1,club.getLastRow()-1,CLUB_HEADERS.length).getValues():[];
-  var cuota=MailApp.getRemainingDailyQuota(), enviados=0;
+  var cuota=MailApp.getRemainingDailyQuota(), enviados=0, omitidosPorFrecuencia=0, ahoraMs=Date.now();
   for(var i=0;i<filas.length && cuota>0;i++){
     var r=filas[i];
     if(r[6]!==true||r[8]!==true||r[10]!==true) continue;
+    if(_clubAvisoEsReciente(r[18], ahoraMs)){ omitidosPorFrecuencia++; continue; }
     var relevantes=cambios.filter(function(c){return _clubCoincideInteres(r[9],c);});
     if(!relevantes.length) continue;
     var items=relevantes.slice(0,12).map(function(c){return '<li><strong>'+_clubEsc(c.marca+' '+c.nombre)+'</strong> — '+(c.tipo==='NUEVO'?'nuevo ingreso':c.tipo==='REINGRESO'?'volvió a tener stock':'precio actualizado')+(c.precio?' · $'+Number(c.precio).toLocaleString('es-AR'):'')+'</li>';}).join('');
@@ -1270,7 +1295,10 @@ function procesarNotificacionesClubStock() {
     } catch(eEnvio) { Logger.log('Club aviso a '+String(r[4])+': '+eEnvio.message); }
   }
   if(enviados) _notificarTelegram('📧 Club MAXUP: '+enviados+' avisos enviados por '+cambios.length+' cambios de catálogo.');
-  return {ok:true,cambios:cambios.length,enviados:enviados,cuotaRestante:cuota};
+  return {ok:true,cambios:cambios.length,enviados:enviados,omitidosPorFrecuencia:omitidosPorFrecuencia,cuotaRestante:cuota};
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function instalarAutomatizacionesClub() {

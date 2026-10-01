@@ -443,6 +443,14 @@ function registrarPedidoWeb(data) {
       hojaPed.appendRow(['Código','Fecha','Cliente','Teléfono','Productos','Total','Entrega','Dirección','Pago','Estado','Items JSON']);
       hojaPed.getRange(1,1,1,11).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
     }
+    // P y Q pertenecen al beneficio de fidelidad de una única compra.
+    // Las columnas nuevas de confirmación/pago empiezan recién en R.
+    var headersFidelidad = hojaPed.getRange(1, 16, 1, 2).getDisplayValues()[0];
+    if ((headersFidelidad[0] && headersFidelidad[0] !== 'Beneficio fidelidad') ||
+        (headersFidelidad[1] && headersFidelidad[1] !== 'Cliente fidelidad')) {
+      throw new Error('Las columnas de fidelidad en PEDIDOS están ocupadas; no se registró el pedido');
+    }
+    hojaPed.getRange(1, 16, 1, 2).setValues([['Beneficio fidelidad','Cliente fidelidad']]);
     _asegurarColumnasPedidoConfirmacion();
     var itemsResumen = items.length > 0
       ? items.map(function(i){ return (i.marca ? '[' + i.marca + '] ' : '') + i.nombre + ' x' + i.cantidad; }).join(' | ')
@@ -454,7 +462,9 @@ function registrarPedidoWeb(data) {
       '$' + _formatoPrecio(totalReal),
       entrega === 'envio' ? 'Envío' : 'Retiro en local',
       direccion || '-', pago, 'Pendiente de confirmación', itemsJSON,
-      'Esperando confirmación de stock', '', '', '', '', '', '', 'No', ''
+      'Esperando confirmación de stock', '', '', '',
+      tieneDesc ? '10% fidelidad' : '', tieneDesc ? String(codigoCliente) : '',
+      '', '', '', 'No', ''
     ]);
   } catch(ePed) {
     throw new Error('No se pudo registrar el pedido: ' + ePed.message);
@@ -605,20 +615,7 @@ function _tieneDescuentoApi(codigo, rowsCli, headersCli) {
   }
   if (!clienteFila) return false;
 
-  var ahora  = new Date();
-  var streak = 0;
-
-  var promoMeses = _configNumeroMaxup('PROMO_MESES', PROMO_MESES_API);
-  var promoMinimo = _configNumeroMaxup('PROMO_MINIMO', PROMO_MINIMO_API);
-  for (var m = 0; m < promoMeses; m++) {
-    var fecha  = new Date(ahora.getFullYear(), ahora.getMonth() - m, 1);
-    var colIdx = _buscarColumnaMes(headersCli, fecha);
-    if (colIdx === -1) break;
-    var monto = Number(clienteFila[colIdx]) || 0;
-    if (monto >= promoMinimo) { streak++; } else { break; }
-  }
-
-  return streak >= promoMeses;
+  return _fidelidadDisponible_(clienteFila, headersCli);
 }
 
 // Busca la columna del mes en CLIENTES, soportando ambos formatos:
@@ -725,9 +722,9 @@ function _reservasActivasPorProducto() {
   var rows = hoja.getDataRange().getValues();
   var ahora = Date.now();
   for (var i = 1; i < rows.length; i++) {
-    var marca = String(rows[i][18] || '').toLowerCase();
+    var marca = String(rows[i][20] || '').toLowerCase();
     var estado = String(rows[i][9] || '');
-    var vence = rows[i][16];
+    var vence = rows[i][18];
     if (marca !== 'si' && marca !== 'sí') continue;
     if (['Cancelado','Entregado','Retirado'].indexOf(estado) >= 0) continue;
     if (vence instanceof Date && vence.getTime() <= ahora) continue;
@@ -1151,14 +1148,14 @@ function _asegurarColumnasPedidoConfirmacion() {
   if (!hoja) return null;
   var headersFijos = [
     [12, 'Estado Pago'], [13, 'ID Pago'], [14, 'Fecha Pago'], [15, 'Importe Pago'],
-    [16, 'Fecha Confirmación'], [17, 'Reserva hasta'], [18, 'Link Pago'],
-    [19, 'Stock reservado'], [20, 'Último aviso pago']
+    [18, 'Fecha Confirmación'], [19, 'Reserva hasta'], [20, 'Link Pago'],
+    [21, 'Stock reservado'], [22, 'Último aviso pago']
   ];
   headersFijos.forEach(function(def) {
     var actual = String(hoja.getRange(1, def[0]).getValue() || '').trim();
     if (!actual) hoja.getRange(1, def[0]).setValue(def[1]);
   });
-  hoja.getRange(1, 12, 1, 9).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
+  hoja.getRange(1, 12, 1, 11).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#00C8FF');
   return hoja;
 }
 
@@ -1234,15 +1231,15 @@ function adminConfirmarStockYHabilitarPago(clave, codigo, soloReenviar) {
     if (fila < 0) throw new Error('Pedido no encontrado: ' + codigo);
     var estado = String(row[9] || '');
     if (['Cancelado','Entregado','Retirado'].indexOf(estado) >= 0) throw new Error('El pedido ya está ' + estado.toLowerCase());
-    yaReservado = String(row[18] || '').toLowerCase() === 'si' || String(row[18] || '').toLowerCase() === 'sí';
+    yaReservado = String(row[20] || '').toLowerCase() === 'si' || String(row[20] || '').toLowerCase() === 'sí';
     if (soloReenviar && !yaReservado) throw new Error('Primero confirmá el stock');
 
     var items = [];
     try { items = JSON.parse(String(row[10] || '[]')); } catch(eItems) { throw new Error('El detalle del pedido no es válido'); }
     var total = _numeroPedido(row[5]);
     var pago = String(row[8] || 'transferencia');
-    linkPago = String(row[17] || '');
-    reservaHasta = row[16] instanceof Date ? row[16] : null;
+    linkPago = String(row[19] || '');
+    reservaHasta = row[18] instanceof Date ? row[18] : null;
 
     if (!yaReservado) {
       var cfgReserva = {};
@@ -1266,7 +1263,7 @@ function adminConfirmarStockYHabilitarPago(clave, codigo, soloReenviar) {
         : (String(pago).toLowerCase() === 'transferencia' ? 'Esperando transferencia' : 'Pago en efectivo');
       hoja.getRange(fila, 10).setValue('Stock confirmado');
       hoja.getRange(fila, 12).setValue(estadoPago);
-      hoja.getRange(fila, 16, 1, 5).setValues([[ahora, reservaHasta, linkPago, 'Sí', '']]);
+      hoja.getRange(fila, 18, 1, 5).setValues([[ahora, reservaHasta, linkPago, 'Sí', '']]);
       _registrarAuditoria('STOCK RESERVADO', codigo + ' hasta ' + reservaHasta, 'administracion');
     }
     mensaje = _mensajePagoPedido(codigo, row[2], pago, total, linkPago, reservaHasta);
@@ -1278,7 +1275,7 @@ function adminConfirmarStockYHabilitarPago(clave, codigo, soloReenviar) {
   try { enviado = _enviarWhatsAppTexto(row[3], mensaje) === true; }
   catch(eWa) { errorWhatsApp = eWa.message; }
   try {
-    hoja.getRange(fila, 20).setValue((enviado ? 'Enviado ' : 'Falló ') + Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm') + (errorWhatsApp ? ': ' + errorWhatsApp.slice(0, 180) : ''));
+    hoja.getRange(fila, 22).setValue((enviado ? 'Enviado ' : 'Falló ') + Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm') + (errorWhatsApp ? ': ' + errorWhatsApp.slice(0, 180) : ''));
   } catch(eAviso) {}
   if (!soloReenviar && !yaReservado) {
     try { _notificarTelegram('✅ STOCK CONFIRMADO\n' + codigo + '\nPago: ' + row[8] + '\n' + (enviado ? 'WhatsApp enviado automáticamente' : '⚠️ WhatsApp requiere envío manual')); } catch(eTg) {}
@@ -1303,7 +1300,7 @@ function adminConfirmarPagoPedido(clave, codigo) {
     for (var i = 1; i < rows.length; i++) {
       if (String(rows[i][0]).trim() !== String(codigo || '').trim()) continue;
       if (String(rows[i][9] || '') === 'Cancelado') throw new Error('El pedido está cancelado');
-      if (String(rows[i][18] || '').toLowerCase().indexOf('s') !== 0) throw new Error('Primero confirmá y reservá el stock');
+      if (String(rows[i][20] || '').toLowerCase().indexOf('s') !== 0) throw new Error('Primero confirmá y reservá el stock');
       hoja.getRange(i + 1, 12).setValue('Pago confirmado');
       hoja.getRange(i + 1, 14).setValue(new Date());
       hoja.getRange(i + 1, 15).setValue(_numeroPedido(rows[i][5]));
@@ -1338,10 +1335,10 @@ function getEstadoPedido(codigo) {
         estado:    rows[i][9],
         estadoPago: String(rows[i][11] || ''),
         idPago: String(rows[i][12] || ''),
-        pagoHabilitado: String(rows[i][18] || '').toLowerCase().indexOf('s') === 0,
-        linkPago: String(rows[i][17] || ''),
-        reservaHasta: rows[i][16] instanceof Date
-          ? Utilities.formatDate(rows[i][16], 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm') : ''
+        pagoHabilitado: String(rows[i][20] || '').toLowerCase().indexOf('s') === 0,
+        linkPago: String(rows[i][19] || ''),
+        reservaHasta: rows[i][18] instanceof Date
+          ? Utilities.formatDate(rows[i][18], 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm') : ''
       };
     }
   }
@@ -1379,10 +1376,10 @@ function adminGetPedidos(clave) {
       pago:      String(rows[i][8]),
       estado:    String(rows[i][9]),
       estadoPago:String(rows[i][11] || ''),
-      reservaHasta: rows[i][16] instanceof Date ? Utilities.formatDate(rows[i][16], 'America/Argentina/Buenos_Aires', 'dd/MM HH:mm') : '',
-      linkPago: String(rows[i][17] || ''),
-      stockReservado: String(rows[i][18] || ''),
-      ultimoAvisoPago: String(rows[i][19] || ''),
+      reservaHasta: rows[i][18] instanceof Date ? Utilities.formatDate(rows[i][18], 'America/Argentina/Buenos_Aires', 'dd/MM HH:mm') : '',
+      linkPago: String(rows[i][19] || ''),
+      stockReservado: String(rows[i][20] || ''),
+      ultimoAvisoPago: String(rows[i][21] || ''),
       fila:      i + 1
     });
     if (pedidos.length >= 50) break;
@@ -1405,7 +1402,7 @@ function adminCambiarEstado(clave, codigo, nuevoEstado) {
     for (var i = 1; i < rows.length; i++) {
       if (String(rows[i][0]).trim() === String(codigo).trim()) {
       var estadoAnterior = String(rows[i][9] || '');
-      var marcaStock = String(rows[i][18] || '').toLowerCase();
+      var marcaStock = String(rows[i][20] || '').toLowerCase();
       var stockReservado = marcaStock === 'si' || marcaStock === 'sí';
       var stockYaDescontado = marcaStock === 'descontado';
 
@@ -1422,7 +1419,7 @@ function adminCambiarEstado(clave, codigo, nuevoEstado) {
             throw new Error('No se cambio el estado: ' + (resultadoStock.errores || ['error de stock']).join('; '));
           }
         }
-        hoja.getRange(i + 1, 19).setValue('Descontado');
+        hoja.getRange(i + 1, 21).setValue('Descontado');
         // Recién acá la venta queda anotada en VentasDiarias (pedido concretado)
         _registrarVentaPedidoWeb(codigo);
       }
@@ -1434,12 +1431,12 @@ function adminCambiarEstado(clave, codigo, nuevoEstado) {
           try { itemsCancelar = JSON.parse(String(rows[i][10] || '[]')); } catch(eItemsCancelar) {}
           var devuelto = _restaurarStockPedido(itemsCancelar, codigo + '-CANCELADO', true);
           if (!devuelto.ok) throw new Error('No se pudo cancelar porque falló la devolución de stock: ' + (devuelto.errores || []).join('; '));
-          hoja.getRange(i + 1, 19).setValue('No');
-          hoja.getRange(i + 1, 17).clearContent();
+          hoja.getRange(i + 1, 21).setValue('No');
+          hoja.getRange(i + 1, 19).clearContent();
         } else if (stockReservado) {
           // Reserva virtual: alcanza con liberarla; el stock físico no cambió.
-          hoja.getRange(i + 1, 19).setValue('No');
-          hoja.getRange(i + 1, 17).clearContent();
+          hoja.getRange(i + 1, 21).setValue('No');
+          hoja.getRange(i + 1, 19).clearContent();
         }
         try { _revertirVentaPedidoWeb(codigo, estadoAnterior); } catch(eRev) {
           Logger.log('Error revirtiendo venta de ' + codigo + ': ' + eRev.message);
@@ -1688,8 +1685,8 @@ function _liberarReservasVencidas() {
     var rows = hoja.getDataRange().getValues();
     var ahora = new Date();
     for (var i = 1; i < rows.length; i++) {
-      var reservado = String(rows[i][18] || '').toLowerCase();
-      var vence = rows[i][16];
+      var reservado = String(rows[i][20] || '').toLowerCase();
+      var vence = rows[i][18];
       var estado = String(rows[i][9] || '');
       var estadoPago = String(rows[i][11] || '').toLowerCase();
       if (reservado !== 'si' && reservado !== 'sí') continue;
@@ -1699,8 +1696,8 @@ function _liberarReservasVencidas() {
       var codigo = String(rows[i][0]);
       hoja.getRange(i + 1, 10).setValue('Cancelado');
       hoja.getRange(i + 1, 12).setValue('Reserva vencida');
-      hoja.getRange(i + 1, 19).setValue('No');
-      hoja.getRange(i + 1, 17).clearContent();
+      hoja.getRange(i + 1, 21).setValue('No');
+      hoja.getRange(i + 1, 19).clearContent();
       try { _actualizarEstadoUsoCupon(codigo, 'Cancelado'); } catch(eCupon) {}
       liberadas++;
       avisos.push({ codigo: codigo, telefono: rows[i][3] });
@@ -1754,7 +1751,8 @@ function _registrarVentaPedidoWeb(codigo) {
 
     var hoy = new Date();
     var fechaStr = Utilities.formatDate(hoy, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
-    var nota = 'WEB ' + codigo + ' | ' + entregaC + ' | ' + pagoC;
+    var nota = 'WEB ' + codigo + ' | ' + entregaC + ' | ' + pagoC
+      + (String(ped[15]) === '10% fidelidad' ? ' | 10% fidelidad F10:' + String(ped[16] || '') : '');
     var totalVenta = 0;
 
     if (items.length > 0) {
@@ -1996,12 +1994,13 @@ function adminGetClientesDescuento(clave) {
   var rows = hoja.getDataRange().getValues();
   var headers = rows[0];
   var clientes = [];
+  var usosFidelidad = _fidelidadUsosRecientes_();
 
   for (var i = 1; i < rows.length; i++) {
     var codigo = rows[i][0];
     var nombre = rows[i][1];
     if (!codigo || !nombre) continue;
-    if (_tieneDescuentoApi(codigo, rows, headers)) {
+    if (_fidelidadDisponible_(rows[i], headers, usosFidelidad)) {
       var ahora = new Date();
       var total3m = 0;
       for (var m = 0; m < 3; m++) {
@@ -2819,15 +2818,7 @@ function descontarStockDetallado(nombreProducto, cantidadVendida, marcaProducto)
 // Normaliza nombres para comparar de forma EXACTA pero tolerante:
 // ignora acentos, mayúsculas, puntuación, espacios de más y "x 300" vs "x300".
 function _normNombreSD(n) {
-  return String(n || '').trim().toLowerCase()
-    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
-    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
-    .replace(/[.,;:!¡¿?'"()\[\]{}]/g,'')
-    .replace(/[-_]+/g,' ')
-    .replace(/\s+/g,' ')
-    .replace(/x\s*(\d)/g,'x$1')
-    .replace(/(\d)\s*,\s*(\d)/g,'$1.$2')
-    .trim();
+  return _normalizarNombre(n);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -4389,7 +4380,8 @@ function onEditPedidosAutorizado(e) {
   try {
     var hoja = e.range.getSheet();
     if (hoja.getName() === 'STOCK_DETALLADO') {
-      sincronizarProductosStockDetalladoEdit(e);
+      // Cargar un lote no registra stock ni crea filas en SUPLEMENTOS.
+      // Eso sucede únicamente al pulsar el botón "Agregar stock".
       return;
     }
     if (hoja.getName() === 'CUPONES') {
@@ -4409,7 +4401,7 @@ function onEditPedidosAutorizado(e) {
     var nuevoEstado = String(e.value || '').trim();
     var estadoAnterior = String(e.oldValue || '').trim();
     var estadosFinales = ['Entregado', 'Retirado'];
-    var marcaStock = String(hoja.getRange(fila, 19).getValue() || '').toLowerCase();
+    var marcaStock = String(hoja.getRange(fila, 21).getValue() || '').toLowerCase();
     var stockReservado = marcaStock === 'si' || marcaStock === 'sí';
     var stockYaDescontado = marcaStock === 'descontado';
 
@@ -4429,7 +4421,7 @@ function onEditPedidosAutorizado(e) {
             return;
           }
         }
-        hoja.getRange(fila, 19).setValue('Descontado');
+        hoja.getRange(fila, 21).setValue('Descontado');
         _notificarTelegram('✅ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')' + String.fromCharCode(10) + '📦 Stock reservado/descontado sin duplicar y venta anotada');
       } catch(eJSON) {
         _notificarTelegram('⚠️ ' + codigo + ' → ' + nuevoEstado + ' (' + cliente + ')' + String.fromCharCode(10) + '❌ No se pudo descontar stock');
@@ -4445,8 +4437,8 @@ function onEditPedidosAutorizado(e) {
           var itemsCanc = JSON.parse(String(hoja.getRange(fila, 11).getValue() || '[]'));
           var devuelto = _restaurarStockPedido(itemsCanc, codigoCanc + '-CANCELADO', true);
           if (!devuelto.ok) throw new Error((devuelto.errores || []).join('; '));
-          hoja.getRange(fila, 19).setValue('No');
-          hoja.getRange(fila, 17).clearContent();
+          hoja.getRange(fila, 21).setValue('No');
+          hoja.getRange(fila, 19).clearContent();
         } catch(eStockCanc) {
           hoja.getRange(fila, 10).setValue(estadoAnterior || 'Stock confirmado');
           _notificarTelegram('⚠️ ' + codigoCanc + ': no se pudo cancelar ni devolver el stock. ' + eStockCanc.message);
@@ -4454,8 +4446,8 @@ function onEditPedidosAutorizado(e) {
         }
       } else if (stockReservado) {
         // La reserva era virtual: liberarla no requiere sumar stock fisico.
-        hoja.getRange(fila, 19).setValue('No');
-        hoja.getRange(fila, 17).clearContent();
+        hoja.getRange(fila, 21).setValue('No');
+        hoja.getRange(fila, 19).clearContent();
       }
       try { _revertirVentaPedidoWeb(codigoCanc, estadoAnterior); } catch(eRev) {
         Logger.log('Error revirtiendo venta de ' + codigoCanc + ': ' + eRev.message);

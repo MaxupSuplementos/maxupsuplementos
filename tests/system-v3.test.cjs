@@ -222,6 +222,9 @@ assert(api.includes("'Pendiente de confirmación'"), 'Los pedidos web deben espe
 assert(api.includes('adminConfirmarStockYHabilitarPago'), 'El panel debe confirmar stock antes de habilitar el pago');
 assert(api.includes('_aplicarReservasCatalogo'), 'El catálogo debe descontar las reservas virtuales del disponible');
 assert(api.includes('_validarDisponibilidadReservaPedido(items)'), 'La confirmación debe validar la reserva sin descontar stock físico');
+assert(api.includes("[18, 'Fecha Confirmación']"), 'Las reservas deben comenzar en R para no pisar fidelidad en P/Q');
+assert(api.includes("['Beneficio fidelidad','Cliente fidelidad']"), 'El pedido debe conservar las columnas del beneficio de compra única');
+assert(ventas.includes('function _fidelidadDisponible_'), 'La fidelidad debe comprobar que el beneficio todavía no fue usado');
 const liberarReservas = api.slice(api.indexOf('function _liberarReservasVencidas'), api.indexOf('// ── REGISTRAR LA VENTA DE UN PEDIDO WEB'));
 assert(!liberarReservas.includes('_restaurarStockPedido'), 'Vencer una reserva virtual no debe sumar stock físico');
 assert(api.includes("data.object === 'whatsapp_business_account'"), 'WhatsApp debe tener un webhook separado de los pedidos web');

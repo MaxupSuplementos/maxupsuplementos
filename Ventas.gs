@@ -363,6 +363,7 @@ function _normalizarNombre(n) {
     .replace(/\s*(gramos?|grs?)\b/gi, 'g')  // "Gramos"/"Gr"/"Grs" → "g"
     .replace(/\s*(litros?|lts?)\b/gi, 'l')  // "Litros"/"Lt"/"Lts" → "l"
     .replace(/\s*(libras?|lbs?)\b/gi, 'lb') // "Libras"/"Lb"/"Lbs" → "lb"
+    .replace(/\bx(?=\d+(?:\.\d+)?(?:kg|g|ml|l|lb)\b)/g, '') // "x300g" y "300g" son el mismo tamaño
     .trim();
 }
 
@@ -1144,8 +1145,11 @@ function _escribirProductoNuevo(hoja, fila, nombre, stock, marca, columnas) {
   hoja.getRange(fila, 1, 1, 4).setValues([[nombre, 0, '', stock]]);
   hoja.getRange(fila, 1, 1, Math.max(hoja.getLastColumn(), 10)).setBackground('#ffffff').setFontColor('#000000').setFontWeight('normal').setFontStyle('normal');
   hoja.getRange(fila, 2).setBackground('#FFCDD2');     // precio en rojo claro = falta completar
-  if (columnas.descripcion >= 0) hoja.getRange(fila, columnas.descripcion + 1).setValue(descripcion).setWrap(true);
+  if (columnas.descripcion >= 0) hoja.getRange(fila, columnas.descripcion + 1).setValue(descripcion);
   if (columnas.sku >= 0 && sku) hoja.getRange(fila, columnas.sku + 1).setValue(sku);
+  // Una descripción larga no debe convertir el producto en una fila gigante.
+  hoja.getRange(fila, 1, 1, Math.max(hoja.getLastColumn(), 10)).setWrap(false);
+  hoja.setRowHeight(fila, 22);
   producto.descripcion = descripcion;
   return producto;
 }
@@ -1197,13 +1201,10 @@ function ordenarProductosSuplementosAZ(opciones) {
   return { ok: true, bloques: bloques.length, productos: productosOrdenados };
 }
 
-// La usa el activador autorizado cuando se carga o modifica un lote. Espera
-// a que la fila tenga producto, marca y stock positivo; entonces crea el alta,
-// su descripción y la ubica automáticamente donde corresponde.
+// Compatibilidad con instalaciones anteriores. Editar un lote no debe crear
+// productos: el único punto de confirmación es registrarStockEntrante.
 function sincronizarProductosStockDetalladoEdit(e) {
-  if (!e || !e.range || e.range.getSheet().getName() !== 'STOCK_DETALLADO') return { ok: false, omitido: true };
-  if (e.range.getLastRow() < 2 || e.range.getColumn() > 5 || e.range.getLastColumn() < 1) return { ok: false, omitido: true };
-  return crearProductosFaltantes({ automatico: true });
+  return { ok: true, omitido: true };
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1248,7 +1249,8 @@ function reiniciarNuevosIngresos() {
 // ══════════════════════════════════════════════════════════
 function registrarStockEntrante() {
   // 1) Crear productos nuevos si los hay (la función avisa y pide confirmación)
-  crearProductosFaltantes();
+  var altas = crearProductosFaltantes();
+  if (!altas || !altas.ok) return; // Si se canceló, no registrar parcialmente.
 
   // 2) Sincronizar el stock principal
   var cambios = actualizarStockPrincipal();
@@ -1361,29 +1363,77 @@ function _tieneDescuento(clienteCodigo) {
   const rows = hoja.getDataRange().getValues();
   const clienteFila = rows.find(r => String(r[0]) === String(clienteCodigo));
   if (!clienteFila) return false;
-
-  const headers = rows[0];
-  const ahora   = new Date();
-  let streak    = 0;
-
-  for (let m = 0; m < PROMO_MESES; m++) {
-    const fecha  = new Date(ahora.getFullYear(), ahora.getMonth() - m, 1);
-    const colIdx = _buscarColumnaMes(headers, fecha);
-
-    if (colIdx === -1) break;
-    const monto = Number(clienteFila[colIdx]) || 0;
-    if (monto >= PROMO_MINIMO) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-
-  return streak >= PROMO_MESES;
+  return _fidelidadDisponible_(clienteFila, rows[0]);
 }
 
 // Busca la columna del mes en CLIENTES, soportando ambos formatos:
 // "Abr 2026" (creado por el código) y Date/2026-04-01 (creado por Setup)
+function _fidelidadNombre_(valor) {
+  return String(valor || '').trim().toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+}
+
+function _fidelidadUsosRecientes_() {
+  var ss = _getSS();
+  var ahora = new Date();
+  var meses = (typeof _configNumeroMaxup === 'function')
+    ? _configNumeroMaxup('PROMO_MESES', PROMO_MESES) : PROMO_MESES;
+  var desde = new Date(ahora.getFullYear(), ahora.getMonth() - meses + 1, 1).getTime();
+  var usos = [];
+  function agregar(fecha, codigo, nombre, operacion) {
+    var f = fecha instanceof Date ? fecha : new Date(fecha);
+    if (!isNaN(f.getTime()) && f.getTime() >= desde && f.getTime() <= Date.now()) {
+      usos.push({ codigo: String(codigo || ''), nombre: _fidelidadNombre_(nombre), operacion: String(operacion || '') });
+    }
+  }
+  var pendientes = ss.getSheetByName('VENTAS_PENDIENTES');
+  if (pendientes && pendientes.getLastRow() > 1) {
+    pendientes.getRange(2, 1, pendientes.getLastRow() - 1, 14).getValues().forEach(function(r) {
+      if (Number(r[10]) > 0 && ['PENDIENTE','CERRADA'].indexOf(String(r[13])) >= 0) {
+        agregar(r[1], r[2], r[3], r[0]);
+      }
+    });
+  }
+  var pedidos = ss.getSheetByName('PEDIDOS');
+  if (pedidos && pedidos.getLastRow() > 1 && pedidos.getLastColumn() >= 17) {
+    pedidos.getRange(2, 1, pedidos.getLastRow() - 1, 17).getValues().forEach(function(r) {
+      if (String(r[15]) === '10% fidelidad' && String(r[9]) !== 'Cancelado') {
+        agregar(r[1], r[16], r[2], r[0]);
+      }
+    });
+  }
+  var ventas = ss.getSheetByName('VentasDiarias');
+  if (ventas && ventas.getLastRow() > 1) {
+    ventas.getRange(2, 1, ventas.getLastRow() - 1, 9).getValues().forEach(function(r) {
+      var nota = String(r[8] || '');
+      if (/10% fidelidad|descuento 10%|F10:\d+/i.test(nota)) {
+        var marca = nota.match(/F10:(\d+)/i);
+        agregar(r[0], marca ? marca[1] : '', r[6], '');
+      }
+    });
+  }
+  return usos;
+}
+
+function _fidelidadDisponible_(fila, headers, usos, excluirOperacion) {
+  if (!fila || !fila[0]) return false;
+  var meses = (typeof _configNumeroMaxup === 'function')
+    ? _configNumeroMaxup('PROMO_MESES', PROMO_MESES) : PROMO_MESES;
+  var minimo = (typeof _configNumeroMaxup === 'function')
+    ? _configNumeroMaxup('PROMO_MINIMO', PROMO_MINIMO) : PROMO_MINIMO;
+  var ahora = new Date();
+  for (var m = 0; m < meses; m++) {
+    var col = _buscarColumnaMes(headers, new Date(ahora.getFullYear(), ahora.getMonth() - m, 1));
+    if (col < 0 || (Number(fila[col]) || 0) < minimo) return false;
+  }
+  var codigo = String(fila[0]);
+  var nombre = _fidelidadNombre_(fila[1]);
+  return !(usos || _fidelidadUsosRecientes_()).some(function(uso) {
+    if (excluirOperacion && uso.operacion === String(excluirOperacion)) return false;
+    return uso.codigo ? uso.codigo === codigo : !!nombre && uso.nombre === nombre;
+  });
+}
+
 function _buscarColumnaMes(headers, fecha) {
   var textoMes = NOMBRES_MESES[fecha.getMonth()] + ' ' + fecha.getFullYear();
   var anio = fecha.getFullYear();
@@ -1786,6 +1836,9 @@ function abrirFormularioVenta() {
 
 // ── PROCESAR VENTA DESDE FORMULARIO ─────────────────────────
 function procesarVenta(datos) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
   const ss      = SpreadsheetApp.getActiveSpreadsheet();
   const hojaSup = ss.getSheetByName('SUPLEMENTOS');
   const hojaVD  = ss.getSheetByName('VentasDiarias');
@@ -1830,7 +1883,7 @@ function procesarVenta(datos) {
       ingreso,
       clienteNombre || '',
       '',
-      datos.notas || (descuento ? '🎁 Descuento 10%' : '')
+      (descuento ? '10% fidelidad F10:' + datos.clienteCodigo + ' | ' : '') + String(datos.notas || '')
     ], fechaStr);
 
     // Descontar de SUPLEMENTOS
@@ -1858,6 +1911,9 @@ function procesarVenta(datos) {
     'Cliente: ' + (clienteNombre || 'Sin cliente') + '\n' +
     'Total: $' + totalVenta.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') +
     (descuento ? '\n🎁 Descuento 10% aplicado!' : '');
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ── NUEVO CLIENTE ────────────────────────────────────────────
@@ -1966,12 +2022,13 @@ function verClientesConDescuento() {
 
   const rows = hoja.getDataRange().getValues();
   const calificados = [];
+  const usosFidelidad = _fidelidadUsosRecientes_();
 
   for (let i = 1; i < rows.length; i++) {
     const codigo = rows[i][0];
     const nombre = rows[i][1];
     if (!codigo || !nombre) continue;
-    if (_tieneDescuento(codigo)) {
+    if (_fidelidadDisponible_(rows[i], rows[0], usosFidelidad)) {
       calificados.push('  🎁 ' + nombre + ' (Código: ' + codigo + ')');
     }
   }
