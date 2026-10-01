@@ -236,6 +236,7 @@ function doPost(e) {
     if (data.accion === 'admin_auditoria')     return _jsonOut(adminGetAuditoria(data.sesion, data.limite));
     if (data.accion === 'admin_configuracion') return _jsonOut(adminConfiguracion(data.sesion, data.valores));
     if (data.accion === 'admin_probar_alertas') return _jsonOut(adminProbarAlertasPedido(data.sesion));
+    if (data.accion === 'admin_estado_alertas') return _jsonOut(adminEstadoAlertasPedido(data.sesion));
     if (data.accion === 'admin_cupones')       return _jsonOut(adminGetCupones(data.sesion));
     if (data.accion === 'admin_club')          return _jsonOut(adminGetClub(data.sesion));
     if (data.accion === 'admin_club_chance')   return _jsonOut(adminAgregarChanceClub(data.sesion, data));
@@ -1230,6 +1231,21 @@ function adminProbarAlertasPedido(sesion) {
     whatsapp: whatsapp,
     mensaje: 'Prueba enviada. Revisá Telegram y los WhatsApp configurados.'
   };
+}
+
+function adminEstadoAlertasPedido(sesion) {
+  _validarSesionAdmin(sesion);
+  var hoja = _getSS().getSheetByName('WA_DIAGNOSTICO');
+  if (!hoja || hoja.getLastRow() < 2) return { ok: true, estados: [] };
+  var cantidad = Math.min(40, hoja.getLastRow() - 1);
+  var desde = hoja.getLastRow() - cantidad + 1;
+  var filas = hoja.getRange(desde, 1, cantidad, 4).getDisplayValues();
+  var estados = filas.reverse().filter(function(r) {
+    return /ENVIO_|ESTADO_|ERROR_AL_ENVIAR|RESPUESTA_ENVIADA/.test(String(r[1] || ''));
+  }).slice(0, 12).map(function(r) {
+    return { fecha: r[0], etapa: r[1], telefono: r[2], detalle: String(r[3] || '').slice(0, 500) };
+  });
+  return { ok: true, estados: estados };
 }
 
 function _numeroPedido(valor) {
@@ -4857,6 +4873,7 @@ function _procesarWebhookWhatsApp(payload) {
   var cfg = _getConfig();
   var cache = CacheService.getScriptCache();
   var recibidos = 0;
+  var estadosProcesados = 0;
   var entry = (payload && payload.entry) || [];
 
   for (var i = 0; i < entry.length; i++) {
@@ -4865,6 +4882,31 @@ function _procesarWebhookWhatsApp(payload) {
       var value = changes[j].value || {};
       var phoneId = String((value.metadata && value.metadata.phone_number_id) || '');
       if (cfg.WA_PHONE_ID && phoneId && phoneId !== String(cfg.WA_PHONE_ID)) continue;
+
+      // Meta confirma la aceptación en el POST inicial y luego informa por
+      // webhook si el mensaje fue enviado, entregado, leído o falló.
+      var statuses = value.statuses || [];
+      for (var s = 0; s < statuses.length; s++) {
+        var estadoMeta = statuses[s] || {};
+        var idEstado = String(estadoMeta.id || '');
+        var nombreEstado = String(estadoMeta.status || 'desconocido').toUpperCase();
+        var telefonoEstado = String(estadoMeta.recipient_id || '').replace(/\D/g, '');
+        var timestampEstado = String(estadoMeta.timestamp || '');
+        var claveEstado = 'WA_STATUS_' + _hashSeguro(idEstado + '|' + nombreEstado + '|' + timestampEstado);
+        if (cache.get(claveEstado)) continue;
+        cache.put(claveEstado, '1', WA_TTL_ESTADO);
+        var detalleEstado = 'Meta informó estado ' + nombreEstado;
+        var erroresEstado = estadoMeta.errors || [];
+        if (erroresEstado.length) {
+          detalleEstado += ': ' + erroresEstado.map(function(errorMeta) {
+            var datos = errorMeta.error_data || {};
+            return '[' + String(errorMeta.code || '') + '] '
+              + String(datos.details || errorMeta.message || errorMeta.title || 'Error sin detalle');
+          }).join(' / ');
+        }
+        _waRegistrarDiagnostico('ESTADO_' + nombreEstado, telefonoEstado, detalleEstado);
+        estadosProcesados++;
+      }
 
       var messages = value.messages || [];
       for (var m = 0; m < messages.length; m++) {
@@ -4894,7 +4936,7 @@ function _procesarWebhookWhatsApp(payload) {
       }
     }
   }
-  return { ok: true, recibidos: recibidos };
+  return { ok: true, recibidos: recibidos, estados: estadosProcesados };
 }
 
 function _waTextoEntrante(mensaje) {
@@ -5405,7 +5447,18 @@ function _enviarWhatsAppTexto(telefono, texto) {
     var status = response.getResponseCode();
     var respuestaMeta = String(response.getContentText() || '');
     if (status >= 200 && status < 300) {
-      _waRegistrarDiagnostico('RESPUESTA_ENVIADA', telefono, 'Meta acepto la respuesta del asistente (estado ' + status + ', variante ' + (i + 1) + ').');
+      var respuestaJson = {};
+      try { respuestaJson = JSON.parse(respuestaMeta); } catch(eJsonWa) {}
+      var mensajeMeta = (respuestaJson.messages && respuestaJson.messages[0]) || {};
+      var idCorto = String(mensajeMeta.id || '');
+      if (idCorto.length > 12) idCorto = '…' + idCorto.slice(-12);
+      _waRegistrarDiagnostico(
+        'ENVIO_ACEPTADO',
+        telefono,
+        'Meta aceptó el envío (HTTP ' + status + ', variante ' + (i + 1) + ')'
+          + (mensajeMeta.message_status ? ', estado inicial ' + mensajeMeta.message_status : '')
+          + (idCorto ? ', id ' + idCorto : '') + '. Falta la confirmación posterior de entrega.'
+      );
       return true;
     }
 

@@ -1073,12 +1073,26 @@ function probarAlertasPedido(){
     var wa=data.whatsapp||{};
     var resumen='Telegram: '+(data.telegram?'✅':'❌')+' · WhatsApp: '+((wa.enviados||[]).length?'✅ '+wa.enviados.join(', '):'❌');
     if((wa.errores||[]).length)resumen+=' · Meta rechazó: '+wa.errores.join(' / ');
-    if(salida){salida.textContent=resumen;salida.style.color=data.ok?'var(--green)':'var(--pink)';}
+    if(salida){salida.textContent=resumen+' · Esperando confirmación de entrega de Meta…';salida.style.color=data.ok?'var(--green)':'var(--pink)';}
     showToast(data.ok?'✅ Prueba enviada':'⚠️ No se pudo enviar la prueba');
+    setTimeout(cargarEstadoAlertasPedido,7000);
   }).catch(function(err){
     if(salida){salida.textContent='Error: '+err.message;salida.style.color='var(--pink)';}
     showToast('❌ '+err.message);
   });
+}
+
+function cargarEstadoAlertasPedido(){
+  var salida=document.getElementById('resultadoPruebaAlertas');
+  postAdmin({accion:'admin_estado_alertas',sesion:clave}).then(function(data){
+    var estados=data.estados||[];
+    if(!estados.length){if(salida)salida.textContent='Meta todavía no informó si entregó el mensaje.';return;}
+    var ultimos=estados.slice(0,6).map(function(e){return e.telefono+' '+e.etapa.replace('ESTADO_','')+': '+e.detalle;});
+    if(salida){
+      salida.innerHTML=ultimos.map(function(t){return '<div style="margin-top:4px">'+esc(t)+'</div>';}).join('');
+      salida.style.color=estados.some(function(e){return e.etapa==='ESTADO_FAILED';})?'var(--pink)':'var(--green)';
+    }
+  }).catch(function(err){if(salida)salida.textContent='No se pudo consultar la entrega: '+err.message;});
 }
 
 function setMantMsg(msg) {

@@ -222,6 +222,8 @@ assert(api.includes("'Pendiente de confirmación'"), 'Los pedidos web deben espe
 assert(api.includes('adminConfirmarStockYHabilitarPago'), 'El panel debe confirmar stock antes de habilitar el pago');
 assert(api.includes('_notificarWhatsAppAdministradores(alertaWhatsApp, codigoPedido)'), 'Un pedido nuevo debe alertar también por WhatsApp al administrador');
 assert(api.includes('adminProbarAlertasPedido'), 'El panel debe permitir probar Telegram y WhatsApp');
+assert(api.includes("'ESTADO_' + nombreEstado"), 'El webhook debe registrar si Meta entregó o rechazó la alerta');
+assert(api.includes('adminEstadoAlertasPedido'), 'Administración debe poder consultar el resultado posterior de entrega');
 assert(system.includes('ALERTA_WHATSAPP_ADMIN'), 'Los WhatsApp administrativos deben ser configurables');
 assert(admin.includes('PROBAR ALERTAS AHORA'), 'Administración debe mostrar el botón de prueba de alertas');
 assert(api.includes('_aplicarReservasCatalogo'), 'El catálogo debe descontar las reservas virtuales del disponible');
