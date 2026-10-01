@@ -329,6 +329,33 @@ function adminGetCupones(sesion) {
   }) };
 }
 
+function _normalizarTelefonosAlertaWhatsappMaxup(valor) {
+  return String(valor || '')
+    .split(/[;,\n]+/)
+    .map(function(telefono) { return String(telefono || '').replace(/\D/g, ''); })
+    .filter(function(telefono, indice, lista) {
+      return telefono.length >= 10 && telefono.length <= 15 && lista.indexOf(telefono) === indice;
+    })
+    .join(',');
+}
+
+function _deduplicarConfiguracionMaxup(hoja) {
+  if (!hoja || hoja.getLastRow() < 3) return 0;
+  var claves = hoja.getRange(2, 1, hoja.getLastRow() - 1, 1).getDisplayValues();
+  var vistas = {};
+  var duplicadas = [];
+  claves.forEach(function(fila, indice) {
+    var clave = String(fila[0] || '').trim();
+    if (!clave) return;
+    if (vistas[clave]) duplicadas.push(indice + 2);
+    else vistas[clave] = true;
+  });
+  duplicadas.sort(function(a, b) { return b - a; }).forEach(function(fila) {
+    hoja.deleteRow(fila);
+  });
+  return duplicadas.length;
+}
+
 function adminConfiguracion(sesion, valores) {
   _validarSesionAdmin(sesion);
   var hoja = _asegurarHojaConfiguracion();
@@ -337,20 +364,38 @@ function adminConfiguracion(sesion, valores) {
     var filas = hoja.getRange(2, 1, Math.max(hoja.getLastRow() - 1, 1), 2).getValues();
     Object.keys(valores).forEach(function(k) {
       if (permitidas.indexOf(k) < 0) return;
-      var encontrado = false;
+      var valor = String(valores[k] == null ? '' : valores[k]);
+      if (k === 'ALERTA_WHATSAPP_ADMIN') {
+        valor = _normalizarTelefonosAlertaWhatsappMaxup(valor);
+        if (!valor) throw new Error('Ingresá al menos un WhatsApp válido para las alertas.');
+      }
+      var encontrados = 0;
       for (var i = 0; i < filas.length; i++) {
-        if (String(filas[i][0]) === k) {
-          hoja.getRange(i + 2, 2).setValue(String(valores[k]));
-          encontrado = true;
-          break;
+        if (String(filas[i][0] || '').trim() === k) {
+          // Se actualizan todas las coincidencias antes de depurarlas. Así una
+          // fila duplicada antigua nunca vuelve a imponer un valor obsoleto.
+          hoja.getRange(i + 2, 2).setValue(valor);
+          encontrados++;
         }
       }
-      if (!encontrado) hoja.appendRow([k, String(valores[k]), '']);
+      if (!encontrados) hoja.appendRow([k, valor, '']);
     });
+    var duplicadasEliminadas = _deduplicarConfiguracionMaxup(hoja);
+    SpreadsheetApp.flush();
     CacheService.getScriptCache().remove('CONFIG_MAXUP_V3');
-    _registrarAuditoria('CONFIGURACION', 'Parametros comerciales actualizados', 'administracion');
+    _registrarAuditoria(
+      'CONFIGURACION',
+      'Parametros comerciales actualizados' + (duplicadasEliminadas ? ' | duplicados eliminados: ' + duplicadasEliminadas : ''),
+      'administracion'
+    );
   }
-  return { ok: true, valores: _leerConfiguracionMaxup(), publica: _configPublicaMaxup() };
+  var guardada = _leerConfiguracionMaxup();
+  return {
+    ok: true,
+    valores: guardada,
+    publica: _configPublicaMaxup(),
+    alertasWhatsapp: _normalizarTelefonosAlertaWhatsappMaxup(guardada.ALERTA_WHATSAPP_ADMIN).split(',').filter(String)
+  };
 }
 
 function adminGetAuditoria(sesion, limite) {

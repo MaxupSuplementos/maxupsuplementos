@@ -989,6 +989,7 @@ function cargarConfigCentral(){
       +'<div class="stats-grid">'
       +campoCfgTexto('cfgAlertaWhatsapp','WhatsApp de administradores',v.ALERTA_WHATSAPP_ADMIN||'5491168461457,5493875104606')
       +'</div>'
+      +'<div id="cfgAlertaGuardada" style="font-size:.78rem;color:var(--green);margin-top:7px">Guardados actualmente: '+esc(v.ALERTA_WHATSAPP_ADMIN||'ninguno')+'</div>'
       +'<button type="button" class="filtro-btn" style="margin-top:10px" onclick="probarAlertasPedido()">🔔 PROBAR ALERTAS AHORA</button>'
       +'<div id="resultadoPruebaAlertas" style="font-size:.78rem;color:var(--gray);margin-top:8px"></div>'
       +'</div>'
@@ -1042,6 +1043,14 @@ function campoCfgTexto(id,label,value){
 
 function guardarConfigCentral(){
   function n(id){ return Number(document.getElementById(id).value); }
+  var alertaWhatsapp=String((document.getElementById('cfgAlertaWhatsapp')||{}).value||'')
+    .split(/[;,\n]+/)
+    .map(function(v){return String(v||'').replace(/\D/g,'');})
+    .filter(function(v,i,a){return v.length>=10&&v.length<=15&&a.indexOf(v)===i;});
+  if(!alertaWhatsapp.length){showToast('❌ Ingresá al menos un WhatsApp válido');return;}
+  if(alertaWhatsapp.some(function(v){return v==='5491168461458';})){
+    showToast('❌ El número correcto termina en 1457, no en 1458');return;
+  }
   var descuentosMonto=[
     {minimo:n('cfgMonto2'),pct:n('cfgMontoPct2')/100,label:n('cfgMontoPct2')+'% off por compra desde $'+n('cfgMonto2').toLocaleString('es-AR')},
     {minimo:n('cfgMonto1'),pct:n('cfgMontoPct1')/100,label:n('cfgMontoPct1')+'% off por compra desde $'+n('cfgMonto1').toLocaleString('es-AR')}
@@ -1057,12 +1066,15 @@ function guardarConfigCentral(){
     PAGO_CBU:String((document.getElementById('cfgPagoCbu')||{}).value||''),
     PAGO_TITULAR:String((document.getElementById('cfgPagoTitular')||{}).value||''),
     PAGO_CUENTA:String((document.getElementById('cfgPagoCuenta')||{}).value||''),
-    ALERTA_WHATSAPP_ADMIN:String((document.getElementById('cfgAlertaWhatsapp')||{}).value||''),
+    ALERTA_WHATSAPP_ADMIN:alertaWhatsapp.join(','),
     CLUB_POPUP_EXCLUIDOS:String((document.getElementById('cfgClubExcluidos')||{}).value||'')
   };
   postAdmin({accion:'admin_configuracion',sesion:clave,valores:valores}).then(function(data){
       if(!data.ok) throw new Error(data.error||'Error');
-      showToast('✅ Configuración guardada'); cargarConfigCentral();
+      var guardados=(data.alertasWhatsapp||[]);
+      if(!guardados.length)throw new Error('El servidor no confirmó los WhatsApp guardados');
+      showToast('✅ WhatsApp guardados: '+guardados.join(', '));
+      cargarConfigCentral();
     }).catch(function(err){showToast('❌ '+err.message);});
 }
 
