@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-01",
-  "generado": "2026-10-01T19:09:16.816Z",
+  "fecha": "2026-10-02",
+  "generado": "2026-10-02T17:50:47.894Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Protein Bar 46g - Chocolate",
+      "titulo": "Citrato Magnesio X 500 Grs - Neutro",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Protein Bar 46g - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato Magnesio X 500 Grs - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Gelatina con Colageno 150g - Frutilla",
+      "titulo": "Vitamin Gold 30cap",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Vitamin Gold 30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Creatina Monohidratada x 1kg",
+      "titulo": "Pancakes Proteicos - Chocolate",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Creatina Monohidratada x 1kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Pancakes Proteicos - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Kit 3 bandas tipo cinta de tela circular importada Sonnos",
+      "titulo": "Power Band 2000*22*0,45mm",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Kit 3 bandas tipo cinta de tela circular importada Sonnos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Power Band 2000*22*0,45mm\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Catsuit Corto Con Manga",
+      "titulo": "Catsuit Corto Relieve",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Catsuit Corto Con Manga\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Catsuit Corto Relieve\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
