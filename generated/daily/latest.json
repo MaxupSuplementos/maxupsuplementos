@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-02",
-  "generado": "2026-10-02T18:40:41.742Z",
+  "fecha": "2026-10-03",
+  "generado": "2026-10-03T16:11:20.606Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Citrato Magnesio X 500 Grs - Neutro",
+      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Citrato Magnesio X 500 Grs - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Vitamin Gold 30cap",
+      "titulo": "Proteina Fit + Colageno",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Vitamin Gold 30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Proteina Fit + Colageno\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Pancakes Proteicos - Chocolate",
+      "titulo": "Kit 5 bandas circulares tipo cinta latex c/funda",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Pancakes Proteicos - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Kit 5 bandas circulares tipo cinta latex c/funda\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Power Band 2000*22*0,45mm",
+      "titulo": "NAD+ Resveratrol x30cap",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Power Band 2000*22*0,45mm\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "NAD+ Resveratrol x30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Catsuit Corto Relieve",
+      "titulo": "Top Deportivo Con Broches",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Catsuit Corto Relieve\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Top Deportivo Con Broches\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
