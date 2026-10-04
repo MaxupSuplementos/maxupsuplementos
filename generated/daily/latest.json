@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-03",
-  "generado": "2026-10-03T17:35:16.546Z",
+  "fecha": "2026-10-04",
+  "generado": "2026-10-04T16:50:18.278Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
+      "titulo": "Bolso T80 - Verde Menta",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Bolso T80 - Verde Menta\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Proteina Fit + Colageno",
+      "titulo": "Thermo Fuel Max",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Proteina Fit + Colageno\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Thermo Fuel Max\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Kit 5 bandas circulares tipo cinta latex c/funda",
+      "titulo": "Barra Proteica 50Gr - Blanco",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Kit 5 bandas circulares tipo cinta latex c/funda\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Barra Proteica 50Gr - Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "NAD+ Resveratrol x30cap",
+      "titulo": "Whey y Creatina Doypack 2lb - Chocolate",
       "file": "generated/daily/current/04.jpg",
-      "caption": "NAD+ Resveratrol x30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey y Creatina Doypack 2lb - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Top Deportivo Con Broches",
+      "titulo": "Catsuit Corto Suplex",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Top Deportivo Con Broches\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Catsuit Corto Suplex\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
