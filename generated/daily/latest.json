@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-04",
-  "generado": "2026-10-04T17:49:16.356Z",
+  "fecha": "2026-10-05",
+  "generado": "2026-10-05T20:39:46.506Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Bolso T80 - Verde Menta",
+      "titulo": "Colageno Sport X 330 Grs - Naranja",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Bolso T80 - Verde Menta\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Colageno Sport X 330 Grs - Naranja\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Thermo Fuel Max",
+      "titulo": "Cinturon Lumbar - 1",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Thermo Fuel Max\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Cinturon Lumbar - 1\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Barra Proteica 50Gr - Blanco",
+      "titulo": "Protein Bar 65g - Limon con Chocolate",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Barra Proteica 50Gr - Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Protein Bar 65g - Limon con Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Whey y Creatina Doypack 2lb - Chocolate",
+      "titulo": "Citrato De Magnesio 144G",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Whey y Creatina Doypack 2lb - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato De Magnesio 144G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Catsuit Corto Suplex",
+      "titulo": "Top Con Tiras",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Catsuit Corto Suplex\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Top Con Tiras\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
