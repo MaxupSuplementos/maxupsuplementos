@@ -1,28 +1,28 @@
 {
-  "fecha": "2026-10-05",
-  "generado": "2026-10-05T21:24:27.900Z",
+  "fecha": "2026-10-06",
+  "generado": "2026-10-06T18:18:35.532Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Colageno Sport X 330 Grs - Naranja",
+      "titulo": "Citrato Magnesio X 500 Grs - Neutro",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Colageno Sport X 330 Grs - Naranja\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato Magnesio X 500 Grs - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Cinturon Lumbar - 1",
+      "titulo": "Bolso T80 - Negro",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Cinturon Lumbar - 1\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Bolso T80 - Negro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Protein Bar 65g - Limon con Chocolate",
+      "titulo": "Whey Protein Truemade X 2,05 Lb - Chocolate",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Protein Bar 65g - Limon con Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey Protein Truemade X 2,05 Lb - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
@@ -34,9 +34,9 @@
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Top Con Tiras",
+      "titulo": "SIN MANGAS Punisher",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Top Con Tiras\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "SIN MANGAS Punisher\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
