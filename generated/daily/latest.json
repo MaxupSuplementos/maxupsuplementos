@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-06",
-  "generado": "2026-10-06T19:01:58.099Z",
+  "fecha": "2026-10-07",
+  "generado": "2026-10-07T18:53:23.649Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Citrato Magnesio X 500 Grs - Neutro",
+      "titulo": "N.O Gold Oxido Nitrico X 195G",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Citrato Magnesio X 500 Grs - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "N.O Gold Oxido Nitrico X 195G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Bolso T80 - Negro",
+      "titulo": "Mini Licuadora Portátil",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Bolso T80 - Negro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mini Licuadora Portátil\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Whey Protein Truemade X 2,05 Lb - Chocolate",
+      "titulo": "Banda elastica larga c/manijas y anclaje T. Media",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Whey Protein Truemade X 2,05 Lb - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Banda elastica larga c/manijas y anclaje T. Media\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Citrato De Magnesio 144G",
+      "titulo": "L-Carnitina 1500 x60Caps",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Citrato De Magnesio 144G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L-Carnitina 1500 x60Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "SIN MANGAS Punisher",
+      "titulo": "Conjunto Deportivo",
       "file": "generated/daily/current/05.jpg",
-      "caption": "SIN MANGAS Punisher\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Conjunto Deportivo\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
