@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-07",
-  "generado": "2026-10-07T19:33:33.524Z",
+  "fecha": "2026-10-08",
+  "generado": "2026-10-08T18:50:22.100Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "N.O Gold Oxido Nitrico X 195G",
+      "titulo": "Vitamin Gold 30cap",
       "file": "generated/daily/current/01.jpg",
-      "caption": "N.O Gold Oxido Nitrico X 195G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Vitamin Gold 30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Mini Licuadora Portátil",
+      "titulo": "Citrato Magnesio X 500 Grs - Neutro",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Mini Licuadora Portátil\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato Magnesio X 500 Grs - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Banda elastica larga c/manijas y anclaje T. Media",
+      "titulo": "Whey Advanced 1Kg - Frutilla",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Banda elastica larga c/manijas y anclaje T. Media\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey Advanced 1Kg - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "L-Carnitina 1500 x60Caps",
+      "titulo": "Colageno Sport X 330 Grs - Frutilla",
       "file": "generated/daily/current/04.jpg",
-      "caption": "L-Carnitina 1500 x60Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Colageno Sport X 330 Grs - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Conjunto Deportivo",
+      "titulo": "Short Pollera Suplex",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Conjunto Deportivo\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Short Pollera Suplex\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
