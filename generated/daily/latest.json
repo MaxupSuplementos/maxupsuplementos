@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-08",
-  "generado": "2026-10-08T19:24:56.887Z",
+  "fecha": "2026-10-09",
+  "generado": "2026-10-09T18:19:52.224Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Vitamin Gold 30cap",
+      "titulo": "Zma-B 120Cap",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Vitamin Gold 30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Zma-B 120Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Citrato Magnesio X 500 Grs - Neutro",
+      "titulo": "Muñequera drb neoprene boomerang x unidad",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Citrato Magnesio X 500 Grs - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Muñequera drb neoprene boomerang x unidad\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Whey Advanced 1Kg - Frutilla",
+      "titulo": "Barra Proteica 50Gr - Negro",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Whey Advanced 1Kg - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Barra Proteica 50Gr - Negro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Colageno Sport X 330 Grs - Frutilla",
+      "titulo": "N.O Gold Oxido Nitrico X 195G",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Colageno Sport X 330 Grs - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "N.O Gold Oxido Nitrico X 195G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Short Pollera Suplex",
+      "titulo": "SHORT BOLSILLO Animal",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Short Pollera Suplex\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "SHORT BOLSILLO Animal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
