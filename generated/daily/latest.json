@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-09",
-  "generado": "2026-10-09T18:58:33.319Z",
+  "fecha": "2026-10-10",
+  "generado": "2026-10-10T17:19:21.783Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Zma-B 120Cap",
+      "titulo": "Star V8 Simple",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Zma-B 120Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Star V8 Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Muñequera drb neoprene boomerang x unidad",
+      "titulo": "Creatina X 300 Grs - Doypack",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Muñequera drb neoprene boomerang x unidad\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina X 300 Grs - Doypack\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Barra Proteica 50Gr - Negro",
+      "titulo": "Power Band 2000*65*0,45mm",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Barra Proteica 50Gr - Negro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Power Band 2000*65*0,45mm\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "N.O Gold Oxido Nitrico X 195G",
+      "titulo": "NAD+ Resveratrol x30cap",
       "file": "generated/daily/current/04.jpg",
-      "caption": "N.O Gold Oxido Nitrico X 195G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "NAD+ Resveratrol x30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "SHORT BOLSILLO Animal",
+      "titulo": "TRICO",
       "file": "generated/daily/current/05.jpg",
-      "caption": "SHORT BOLSILLO Animal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "TRICO\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
