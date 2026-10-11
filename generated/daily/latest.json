@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-10",
-  "generado": "2026-10-10T17:59:22.825Z",
+  "fecha": "2026-10-11",
+  "generado": "2026-10-11T17:40:38.748Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Star V8 Simple",
+      "titulo": "Power Band 2000*65*0,45mm",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Star V8 Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Power Band 2000*65*0,45mm\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Creatina X 300 Grs - Doypack",
+      "titulo": "Citrato Magnesio X 500 Grs - Neutro",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Creatina X 300 Grs - Doypack\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato Magnesio X 500 Grs - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Power Band 2000*65*0,45mm",
+      "titulo": "Energy Gel 42g - Limon",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Power Band 2000*65*0,45mm\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Energy Gel 42g - Limon\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "NAD+ Resveratrol x30cap",
+      "titulo": "Protein Bar 46g - Chocolate Brownie",
       "file": "generated/daily/current/04.jpg",
-      "caption": "NAD+ Resveratrol x30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Protein Bar 46g - Chocolate Brownie\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "TRICO",
+      "titulo": "Set de Toallas 3 piezas",
       "file": "generated/daily/current/05.jpg",
-      "caption": "TRICO\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Set de Toallas 3 piezas\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
