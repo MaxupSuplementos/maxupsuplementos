@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-11",
-  "generado": "2026-10-11T18:25:49.724Z",
+  "fecha": "2026-10-12",
+  "generado": "2026-10-12T21:14:20.745Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Power Band 2000*65*0,45mm",
+      "titulo": "Glutamina X 300 Grs En Pote",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Power Band 2000*65*0,45mm\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Glutamina X 300 Grs En Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Citrato Magnesio X 500 Grs - Neutro",
+      "titulo": "Tope Barra Olimpica",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Citrato Magnesio X 500 Grs - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Tope Barra Olimpica\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Energy Gel 42g - Limon",
+      "titulo": "Whey Protein Truemade X 2,05 Lb - Cookies",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Energy Gel 42g - Limon\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey Protein Truemade X 2,05 Lb - Cookies\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Protein Bar 46g - Chocolate Brownie",
+      "titulo": "Gelatina con Colageno 150g - Frutilla",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Protein Bar 46g - Chocolate Brownie\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Set de Toallas 3 piezas",
+      "titulo": "CLASICA  Animal",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Set de Toallas 3 piezas\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "CLASICA  Animal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
