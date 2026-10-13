@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-12",
-  "generado": "2026-10-12T21:51:26.325Z",
+  "fecha": "2026-10-13",
+  "generado": "2026-10-13T19:13:29.541Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Glutamina X 300 Grs En Pote",
+      "titulo": "Mtor Bcaa  X 270 Grs. - Frutilla Lima",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Glutamina X 300 Grs En Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mtor Bcaa  X 270 Grs. - Frutilla Lima\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Tope Barra Olimpica",
+      "titulo": "Omega 3 1000Mg 200 Cap",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Tope Barra Olimpica\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Omega 3 1000Mg 200 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Whey Protein Truemade X 2,05 Lb - Cookies",
+      "titulo": "Proteina 7900 Pote - Vainilla",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Whey Protein Truemade X 2,05 Lb - Cookies\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Proteina 7900 Pote - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Gelatina con Colageno 150g - Frutilla",
+      "titulo": "Recovery Drink 540G - Naranja",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Recovery Drink 540G - Naranja\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "CLASICA  Animal",
+      "titulo": "Short c/Cordel DEGRADÉ",
       "file": "generated/daily/current/05.jpg",
-      "caption": "CLASICA  Animal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Short c/Cordel DEGRADÉ\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
