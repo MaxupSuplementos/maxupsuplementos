@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-13",
-  "generado": "2026-10-13T19:57:17.829Z",
+  "fecha": "2026-10-14",
+  "generado": "2026-10-14T17:04:16.687Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Mtor Bcaa  X 270 Grs. - Frutilla Lima",
+      "titulo": "Muñequera Elastico par",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Mtor Bcaa  X 270 Grs. - Frutilla Lima\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Muñequera Elastico par\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Omega 3 1000Mg 200 Cap",
+      "titulo": "Pump V8 X285G - Grape",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Omega 3 1000Mg 200 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Pump V8 X285G - Grape\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Proteina 7900 Pote - Vainilla",
+      "titulo": "Maxi Gain 1250g - Frutilla",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Proteina 7900 Pote - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Maxi Gain 1250g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Recovery Drink 540G - Naranja",
+      "titulo": "Just Whey x2Lb - Neutro",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Recovery Drink 540G - Naranja\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Just Whey x2Lb - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Short c/Cordel DEGRADÉ",
+      "titulo": "Musculosa Alo",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Short c/Cordel DEGRADÉ\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Musculosa Alo\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
