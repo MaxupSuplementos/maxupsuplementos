@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-14",
-  "generado": "2026-10-14T18:10:30.037Z",
+  "fecha": "2026-10-15",
+  "generado": "2026-10-15T16:52:35.024Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Muñequera Elastico par",
+      "titulo": "Bioaction Simple",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Muñequera Elastico par\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Bioaction Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Pump V8 X285G - Grape",
+      "titulo": "Vitamina C (Acido Ascorbico)",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Pump V8 X285G - Grape\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Vitamina C (Acido Ascorbico)\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Maxi Gain 1250g - Frutilla",
+      "titulo": "Iso Gold Protein 2Lb - Vainilla",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Maxi Gain 1250g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Iso Gold Protein 2Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Just Whey x2Lb - Neutro",
+      "titulo": "Mancuernas recubiertas 1kg",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Just Whey x2Lb - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mancuernas recubiertas 1kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Musculosa Alo",
+      "titulo": "Catsuit Corto Taza Definida",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Musculosa Alo\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Catsuit Corto Taza Definida\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
