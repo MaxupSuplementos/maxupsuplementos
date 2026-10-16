@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-15",
-  "generado": "2026-10-15T17:52:47.626Z",
+  "fecha": "2026-10-16",
+  "generado": "2026-10-16T16:33:13.989Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Bioaction Simple",
+      "titulo": "Venda para Boxeo 3m",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Bioaction Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Venda para Boxeo 3m\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Vitamina C (Acido Ascorbico)",
+      "titulo": "Citrato De Magnesio 60 Cap",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Vitamina C (Acido Ascorbico)\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato De Magnesio 60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Iso Gold Protein 2Lb - Vainilla",
+      "titulo": "Beta Alanina x300g",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Iso Gold Protein 2Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Beta Alanina x300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Mancuernas recubiertas 1kg",
+      "titulo": "L-Carnitina 1500 x60Caps",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Mancuernas recubiertas 1kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L-Carnitina 1500 x60Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Catsuit Corto Taza Definida",
+      "titulo": "COMPRESION CORTA  Animal",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Catsuit Corto Taza Definida\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "COMPRESION CORTA  Animal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
