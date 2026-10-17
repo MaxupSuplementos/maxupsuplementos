@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-16",
-  "generado": "2026-10-16T17:41:02.368Z",
+  "fecha": "2026-10-17",
+  "generado": "2026-10-17T15:27:47.677Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Venda para Boxeo 3m",
+      "titulo": "Creatina X 1Kg - Pote",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Venda para Boxeo 3m\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina X 1Kg - Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Citrato De Magnesio 60 Cap",
+      "titulo": "Thermo Fuel Max",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Citrato De Magnesio 60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Thermo Fuel Max\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Beta Alanina x300g",
+      "titulo": "Citrato Magnesio X 500 Grs - Frutos Rojos",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Beta Alanina x300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato Magnesio X 500 Grs - Frutos Rojos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "L-Carnitina 1500 x60Caps",
+      "titulo": "Star V8 Simple",
       "file": "generated/daily/current/04.jpg",
-      "caption": "L-Carnitina 1500 x60Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Star V8 Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "COMPRESION CORTA  Animal",
+      "titulo": "MANGA LARGA Punisher",
       "file": "generated/daily/current/05.jpg",
-      "caption": "COMPRESION CORTA  Animal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "MANGA LARGA Punisher\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
