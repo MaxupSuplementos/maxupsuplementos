@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-18",
-  "generado": "2026-10-18T16:50:26.132Z",
+  "fecha": "2026-10-19",
+  "generado": "2026-10-19T18:42:07.575Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Barra Proteica 50Gr - Blanco con Cookies",
+      "titulo": "L- Glutamina X300G",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Barra Proteica 50Gr - Blanco con Cookies\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L- Glutamina X300G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Shaker Maxup Simple Blanco",
+      "titulo": "Creatina Monohidrato 300Gr",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Shaker Maxup Simple Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina Monohidrato 300Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Ejercitador de dedos tension alta",
+      "titulo": "Ultra Mass X 1,5 Kgs - Vainilla",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Ejercitador de dedos tension alta\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Ultra Mass X 1,5 Kgs - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Fat Burner X60Cap",
+      "titulo": "Hydroplus Endurance X700G - Blue Razz",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Fat Burner X60Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Hydroplus Endurance X700G - Blue Razz\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "MANGA LARGA Universal",
+      "titulo": "Short Pollera",
       "file": "generated/daily/current/05.jpg",
-      "caption": "MANGA LARGA Universal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Short Pollera\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
