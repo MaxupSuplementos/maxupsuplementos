@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-19",
-  "generado": "2026-10-19T19:27:54.916Z",
+  "fecha": "2026-10-20",
+  "generado": "2026-10-20T16:53:40.152Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "L- Glutamina X300G",
+      "titulo": "Power Band 2000*32*0,45mm",
       "file": "generated/daily/current/01.jpg",
-      "caption": "L- Glutamina X300G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Power Band 2000*32*0,45mm\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Creatina Monohidrato 300Gr",
+      "titulo": "Creatina X 300 Grs - Doypack",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Creatina Monohidrato 300Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina X 300 Grs - Doypack\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Ultra Mass X 1,5 Kgs - Vainilla",
+      "titulo": "Hmb 60Cap",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Ultra Mass X 1,5 Kgs - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Hmb 60Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Hydroplus Endurance X700G - Blue Razz",
+      "titulo": "Enaccion Multivitaminico 30Cap",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Hydroplus Endurance X700G - Blue Razz\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Enaccion Multivitaminico 30Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Short Pollera",
+      "titulo": "SHORT BOLSILLO Gold Gym",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Short Pollera\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "SHORT BOLSILLO Gold Gym\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
