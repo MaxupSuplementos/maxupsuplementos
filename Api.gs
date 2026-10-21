@@ -2745,12 +2745,16 @@ function obtenerCatalogoMayorista() {
     var img        = row[8] ? row[8].toString() : '';
     var desc       = row[9] ? row[9].toString() : '';
     var skuMayo    = colsMayo.sku >= 0 ? String(row[colsMayo.sku] || '') : _skuDeterministico(catAct, nombre, 'SUP');
+    var categoriaMayo = inferirCat(nombre + ' ' + desc);
+    // El filtro mayorista agrupa magnesio, omega y minerales con vitaminas.
+    if (categoriaMayo === 'magnesio') categoriaMayo = 'vitamin';
 
     prods.push({
       id: skuMayo || (nombre.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 30) + '_' + i),
       sku: skuMayo,
       name: nombre, brand: catAct,
-      cat: categoriaNormalizada(catAct),
+      // catAct es la marca de la sección, no la categoría del producto.
+      cat: categoriaMayo,
       precio: precio,
       precio_lista: _calcularPrecioListaTresCuotas(precio),
       precio_mayorista: precioMayo,

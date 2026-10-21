@@ -365,15 +365,19 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,8,15,.96);
 
     <!-- Filtros -->
     <div class="filtros" id="filtrosCat">
-      <button class="fil-btn activo" onclick="filtrarCat('todas',this)">Todas</button>
-      <button class="fil-btn" onclick="filtrarCat('proteina',this)">Proteína</button>
-      <button class="fil-btn" onclick="filtrarCat('creatina',this)">Creatina</button>
-      <button class="fil-btn" onclick="filtrarCat('aminoacido',this)">Aminoácidos</button>
-      <button class="fil-btn" onclick="filtrarCat('preworkout',this)">Pre-entreno</button>
-      <button class="fil-btn" onclick="filtrarCat('quemador',this)">Quemadores</button>
-      <button class="fil-btn" onclick="filtrarCat('gainer',this)">Gainers</button>
-      <button class="fil-btn" onclick="filtrarCat('colageno',this)">Colágeno</button>
-      <button class="fil-btn" onclick="filtrarCat('vitamin',this)">Vitaminas</button>
+      <button class="fil-btn activo" data-cat="todas" onclick="filtrarCat('todas',this)">Todas</button>
+      <button class="fil-btn" data-cat="proteina" onclick="filtrarCat('proteina',this)">Proteína</button>
+      <button class="fil-btn" data-cat="creatina" onclick="filtrarCat('creatina',this)">Creatina</button>
+      <button class="fil-btn" data-cat="aminoacido" onclick="filtrarCat('aminoacido',this)">Aminoácidos</button>
+      <button class="fil-btn" data-cat="preworkout" onclick="filtrarCat('preworkout',this)">Pre-entreno</button>
+      <button class="fil-btn" data-cat="quemador" onclick="filtrarCat('quemador',this)">Quemadores</button>
+      <button class="fil-btn" data-cat="gainer" onclick="filtrarCat('gainer',this)">Gainers</button>
+      <button class="fil-btn" data-cat="colageno" onclick="filtrarCat('colageno',this)">Colágeno</button>
+      <button class="fil-btn" data-cat="vitamin" onclick="filtrarCat('vitamin',this)">Vitaminas y minerales</button>
+      <button class="fil-btn" data-cat="hidratacion" onclick="filtrarCat('hidratacion',this)">Hidratación</button>
+      <button class="fil-btn" data-cat="barra" onclick="filtrarCat('barra',this)">Alimentos</button>
+      <button class="fil-btn" data-cat="shaker" onclick="filtrarCat('shaker',this)">Shakers</button>
+      <button class="fil-btn" data-cat="accesorio" onclick="filtrarCat('accesorio',this)">Accesorios</button>
     </div>
 
     <!-- Grid productos -->
@@ -612,8 +616,10 @@ function entrarZonaMayorista(productos) {
   document.getElementById('userEmpresa').textContent = sesionActual.negocio || sesionActual.empresa || '';
   document.getElementById('userAvatar').textContent = sesionActual.nombre.charAt(0).toUpperCase();
 
-  productosmayo = productos;
-  productosayo = productosmayo;
+  productosmayo = (productos || []).map(function(p) {
+    p.cat = categoriaProductoMayorista(p);
+    return p;
+  });
   readURLMayo();
   renderProductos(catActual);
 }
@@ -639,8 +645,40 @@ function readURLMayo(){
   var p=new URLSearchParams(location.search);
   if(p.get('cat')){
     catActual=p.get('cat');
-    document.querySelectorAll('.fil-btn').forEach(function(b){b.classList.toggle('activo',b.textContent.toLowerCase().indexOf(catActual)>=0||(catActual==='todas'&&b.textContent.toLowerCase().indexOf('todas')>=0));});
+    document.querySelectorAll('.fil-btn').forEach(function(b){
+      b.classList.toggle('activo', b.getAttribute('data-cat') === catActual);
+    });
   }
+}
+
+function normalizarTextoMayorista(valor) {
+  return String(valor || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/ñ/g, 'n');
+}
+
+function inferirCategoriaMayorista(producto) {
+  var n = normalizarTextoMayorista([producto.name, producto.nombre, producto.desc, producto.descripcion].join(' '));
+  if (/whey.{0,5}bar|low.{0,5}carb.{0,10}bar|protein.{0,5}bar|barra|snack|granola|pancake|cupcake|omelette|gelatina|mani.{0,5}king/.test(n)) return 'barra';
+  if (/shaker|licuadora|\bvaso\b|botella|bidon|mini.{0,8}batidora|mamushka/.test(n)) return 'shaker';
+  if (/guante|cinturon|lumbar|rueda.{0,15}abdom|mancuerna|straps|callera|rodillera|codera|munequera|hand.{0,8}grip|ejercitador|bolso|scoop|llavero|vincha|banda.{0,30}elastic|tobillera|pelota|pilates|faja|neoprene|venda|boxeo|\bcono\b|soga|colchoneta/.test(n)) return 'accesorio';
+  if (/creatin/.test(n)) return 'creatina';
+  if (/gainer|ultra.{0,5}mass|mutant.{0,5}mass|nitro.{0,5}gain|mass.{0,5}fusion|extreme.{0,5}mass|mass.{0,5}builder/.test(n)) return 'gainer';
+  if (/whey|wh3y|proteina|protein|\bprote\b|caseina|isolate|pea.{0,5}prot|bio.{0,5}prot/.test(n)) return 'proteina';
+  if (/bcaa|glutamin|aminoacid|taurina|arginina|leucina|eaa|hmb|carnitin/.test(n)) return 'aminoacido';
+  if (/pre.{0,5}work|pre.{0,5}entren|pump|tnt|dynamite|beta.{0,5}alan|oxido.{0,4}nitric|nitrico|\bn\.o\b/.test(n)) return 'preworkout';
+  if ((/colag|collagen|flexo|glucosamin|condroitin/.test(n)) && !/gelatina/.test(n)) return 'colageno';
+  if (/thermo|fat.{0,5}burn|cla |quemad|lipo|termogen|black.{0,4}cuts/.test(n)) return 'quemador';
+  if (/omega|vitam|magnesio|zinc|calcio|resveratrol|ashwagandha|astaxantina|zma|cafeina|nad |multivit|citrato|bisglicinato/.test(n)) return 'vitamin';
+  if (/hidrat|iso.{0,5}sport|electro|recovery.{0,5}drink|sport.{0,5}drink|just.{0,5}carb|hydromax|hydroplus|energy.{0,5}gel|maltodextri|isotonic/.test(n)) return 'hidratacion';
+  return 'otro';
+}
+
+function categoriaProductoMayorista(producto) {
+  var cat = normalizarTextoMayorista(producto.cat || producto.categoria || producto.category).trim();
+  if (cat === 'magnesio') cat = 'vitamin';
+  var validas = {proteina:1, creatina:1, aminoacido:1, preworkout:1, quemador:1, gainer:1, colageno:1, vitamin:1, hidratacion:1, barra:1, shaker:1, accesorio:1};
+  return validas[cat] ? cat : inferirCategoriaMayorista(producto);
 }
 
 function filtrarCat(cat, btn) {
@@ -653,7 +691,7 @@ function filtrarCat(cat, btn) {
 
 function renderProductos(cat) {
   var grid = document.getElementById('mayoGrid');
-  var lista = cat === 'todas' ? productosayo : productosayo.filter(function(p){ return p.cat === cat; });
+  var lista = cat === 'todas' ? productosmayo : productosmayo.filter(function(p){ return categoriaProductoMayorista(p) === cat; });
 
   if (!lista || !lista.length) {
     grid.innerHTML = '<div style="color:var(--gray);grid-column:1/-1;padding:20px;text-align:center">No hay productos en esta categoría con precio mayorista.</div>';
@@ -689,7 +727,7 @@ function renderProductos(cat) {
 // CARRITO
 // ══════════════════════════════════════
 function agregarAlCarrito(prodId) {
-  var prod = productosayo.find(function(p){ return p.id === prodId; });
+  var prod = productosmayo.find(function(p){ return p.id === prodId; });
   if (!prod) return;
 
   var item = carrito.find(function(i){ return i.id === prodId; });
@@ -888,9 +926,6 @@ function mostrarMsg(el, tipo, texto) {
   el.style.display = 'block';
 }
 
-// Array de productos mayoristas (alias de productosmayo)
-var productosayo = productosmayo;
-
 // ══════════════════════════════════════
 // INIT — restaurar sesión si hay
 // ══════════════════════════════════════
@@ -904,8 +939,6 @@ var productosayo = productosmayo;
       .then(function(r){ return r.json(); })
       .then(function(data) {
         if (data.ok && data.productos) {
-          productosmayo = data.productos;
-          productosayo = productosmayo;
           entrarZonaMayorista(data.productos);
         } else {
           localStorage.removeItem('maxup_mayo_sesion');
