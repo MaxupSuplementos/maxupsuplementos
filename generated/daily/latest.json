@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-20",
-  "generado": "2026-10-20T18:06:13.820Z",
+  "fecha": "2026-10-21",
+  "generado": "2026-10-21T17:06:13.427Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Power Band 2000*32*0,45mm",
+      "titulo": "Creatina Monohidratada x 1kg",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Power Band 2000*32*0,45mm\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina Monohidratada x 1kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Creatina X 300 Grs - Doypack",
+      "titulo": "Ejercitador de dedos tension alta",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Creatina X 300 Grs - Doypack\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Ejercitador de dedos tension alta\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Hmb 60Cap",
+      "titulo": "Manteca de Mani King Original 350Gr",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Hmb 60Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Manteca de Mani King Original 350Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Enaccion Multivitaminico 30Cap",
+      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Enaccion Multivitaminico 30Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "SHORT BOLSILLO Gold Gym",
+      "titulo": "Catsuit ESPALDA V",
       "file": "generated/daily/current/05.jpg",
-      "caption": "SHORT BOLSILLO Gold Gym\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Catsuit ESPALDA V\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
