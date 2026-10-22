@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-21",
-  "generado": "2026-10-21T18:15:07.293Z",
+  "fecha": "2026-10-22",
+  "generado": "2026-10-22T17:05:05.711Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Creatina Monohidratada x 1kg",
+      "titulo": "Cinturon Lumbar - 1",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Creatina Monohidratada x 1kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Cinturon Lumbar - 1\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Ejercitador de dedos tension alta",
+      "titulo": "Whey Protein Truemade X 2,05 Lb - Vainilla",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Ejercitador de dedos tension alta\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey Protein Truemade X 2,05 Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Manteca de Mani King Original 350Gr",
+      "titulo": "Zma X60 Cap",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Manteca de Mani King Original 350Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Zma X60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
+      "titulo": "Gelatina con Colageno 150g - Frutilla",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Catsuit ESPALDA V",
+      "titulo": "MUSCULOSA SPORT Exa",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Catsuit ESPALDA V\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "MUSCULOSA SPORT Exa\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
