@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-22",
-  "generado": "2026-10-22T18:09:22.604Z",
+  "fecha": "2026-10-23",
+  "generado": "2026-10-23T16:59:19.238Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Cinturon Lumbar - 1",
+      "titulo": "Citrato Magnesio X 500 Grs - Neutro",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Cinturon Lumbar - 1\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato Magnesio X 500 Grs - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Whey Protein Truemade X 2,05 Lb - Vainilla",
+      "titulo": "Ejercitador de Mandibula",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Whey Protein Truemade X 2,05 Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Ejercitador de Mandibula\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Zma X60 Cap",
+      "titulo": "Whey 3Kg - Frutilla",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Zma X60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey 3Kg - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Gelatina con Colageno 150g - Frutilla",
+      "titulo": "Shaker Maxup Simple Negro",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Shaker Maxup Simple Negro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "MUSCULOSA SPORT Exa",
+      "titulo": "Catsuit Corto con frunce",
       "file": "generated/daily/current/05.jpg",
-      "caption": "MUSCULOSA SPORT Exa\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Catsuit Corto con frunce\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
