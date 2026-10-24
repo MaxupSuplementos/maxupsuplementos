@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-23",
-  "generado": "2026-10-23T17:57:20.101Z",
+  "fecha": "2026-10-24",
+  "generado": "2026-10-24T15:51:18.347Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Citrato Magnesio X 500 Grs - Neutro",
+      "titulo": "Iso Gold Protein 2Lb - Vainilla",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Citrato Magnesio X 500 Grs - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Iso Gold Protein 2Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Ejercitador de Mandibula",
+      "titulo": "Beta Alanina x300g",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Ejercitador de Mandibula\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Beta Alanina x300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Whey 3Kg - Frutilla",
+      "titulo": "Whey y Creatina Doypack 2lb - Chocolate",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Whey 3Kg - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey y Creatina Doypack 2lb - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Shaker Maxup Simple Negro",
+      "titulo": "Mtor Bcaa  X 270 Grs. - Frutilla Lima",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Shaker Maxup Simple Negro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mtor Bcaa  X 270 Grs. - Frutilla Lima\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Catsuit Corto con frunce",
+      "titulo": "Short Econo",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Catsuit Corto con frunce\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Short Econo\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
