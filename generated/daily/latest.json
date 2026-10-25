@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-24",
-  "generado": "2026-10-24T16:54:42.672Z",
+  "fecha": "2026-10-25",
+  "generado": "2026-10-25T16:04:39.943Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Iso Gold Protein 2Lb - Vainilla",
+      "titulo": "L-Carnitine 1000 X60 Comp",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Iso Gold Protein 2Lb - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L-Carnitine 1000 X60 Comp\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Beta Alanina x300g",
+      "titulo": "Barra Proteica 50Gr - Negro",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Beta Alanina x300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Barra Proteica 50Gr - Negro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Whey y Creatina Doypack 2lb - Chocolate",
+      "titulo": "Resveratrol By Pampita",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Whey y Creatina Doypack 2lb - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Resveratrol By Pampita\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Mtor Bcaa  X 270 Grs. - Frutilla Lima",
+      "titulo": "Creatina Monohidrato 300g",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Mtor Bcaa  X 270 Grs. - Frutilla Lima\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina Monohidrato 300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Short Econo",
+      "titulo": "Oxford Suplex Sin Frunce",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Short Econo\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Oxford Suplex Sin Frunce\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
