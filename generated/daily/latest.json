@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-25",
-  "generado": "2026-10-25T17:12:47.273Z",
+  "fecha": "2026-10-26",
+  "generado": "2026-10-26T18:39:34.606Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "L-Carnitine 1000 X60 Comp",
+      "titulo": "Multivitaminico 30cap",
       "file": "generated/daily/current/01.jpg",
-      "caption": "L-Carnitine 1000 X60 Comp\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Multivitaminico 30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Barra Proteica 50Gr - Negro",
+      "titulo": "Hand grip regulable de 5 a 100kg",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Barra Proteica 50Gr - Negro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Hand grip regulable de 5 a 100kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Resveratrol By Pampita",
+      "titulo": "Whey 3Kg - Frutilla",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Resveratrol By Pampita\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey 3Kg - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Creatina Monohidrato 300g",
+      "titulo": "Everlast con compartimento",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Creatina Monohidrato 300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Everlast con compartimento\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Oxford Suplex Sin Frunce",
+      "titulo": "Short Bicolor",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Oxford Suplex Sin Frunce\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Short Bicolor\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
