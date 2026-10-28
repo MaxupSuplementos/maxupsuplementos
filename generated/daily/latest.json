@@ -1,21 +1,21 @@
 {
-  "fecha": "2026-10-27",
-  "generado": "2026-10-27T18:55:20.350Z",
+  "fecha": "2026-10-28",
+  "generado": "2026-10-28T18:20:08.836Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "L-Carnitine 1000 X60 Comp",
+      "titulo": "Protein Bar 65g - Limon con Chocolate",
       "file": "generated/daily/current/01.jpg",
-      "caption": "L-Carnitine 1000 X60 Comp\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Protein Bar 65g - Limon con Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Iso Sport Bebida Isotonoca 1190g - Limonada Rosa",
+      "titulo": "EAA`S Aminoacidos - Limon",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Iso Sport Bebida Isotonoca 1190g - Limonada Rosa\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "EAA`S Aminoacidos - Limon\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
@@ -27,16 +27,16 @@
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
+      "titulo": "Botella Sport",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Botella Sport\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "SIN MANGAS Animal",
+      "titulo": "REMERA animal",
       "file": "generated/daily/current/05.jpg",
-      "caption": "SIN MANGAS Animal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "REMERA animal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
