@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-28",
-  "generado": "2026-10-28T19:04:27.841Z",
+  "fecha": "2026-10-29",
+  "generado": "2026-10-29T18:25:46.909Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Protein Bar 65g - Limon con Chocolate",
+      "titulo": "Creatina Monohidratada x 300g",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Protein Bar 65g - Limon con Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina Monohidratada x 300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "EAA`S Aminoacidos - Limon",
+      "titulo": "Hand grip regulable de 5 a 60kg",
       "file": "generated/daily/current/02.jpg",
-      "caption": "EAA`S Aminoacidos - Limon\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Hand grip regulable de 5 a 60kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Calleras de Cuero Talle Unico - par",
+      "titulo": "Push up manija de flexiones triangular con agarre ergonómico (par)",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Calleras de Cuero Talle Unico - par\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Push up manija de flexiones triangular con agarre ergonómico (par)\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Botella Sport",
+      "titulo": "Resveratrol By Pampita",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Botella Sport\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Resveratrol By Pampita\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "REMERA animal",
+      "titulo": "Calza Larga Sin Frunce Bolsillo Lateral",
       "file": "generated/daily/current/05.jpg",
-      "caption": "REMERA animal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Calza Larga Sin Frunce Bolsillo Lateral\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
