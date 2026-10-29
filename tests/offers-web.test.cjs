@@ -11,7 +11,7 @@ const api = fs.readFileSync(path.join(root, '..', '..', 'tmp', 'apps-script-offe
 
 assert.doesNotThrow(() => new Function(api), 'Api.gs debe conservar sintaxis JavaScript válida');
 
-const start = api.indexOf('function _precioOfertaWebValido_');
+const start = api.indexOf('function _normalizarEncabezadoOfertaWeb_');
 const end = api.indexOf('// También se puede ejecutar manualmente', start);
 assert.ok(start >= 0 && end > start, 'falta el validador de precio oferta');
 const ctx = {};
@@ -20,6 +20,16 @@ assert.equal(ctx._precioOfertaWebValido_(25000, 30000), 25000);
 assert.equal(ctx._precioOfertaWebValido_(30000, 30000), 0, 'el precio igual no es oferta');
 assert.equal(ctx._precioOfertaWebValido_(35000, 30000), 0, 'un importe mayor no se publica como oferta');
 assert.equal(ctx._precioOfertaWebValido_('', 30000), 0, 'vacío desactiva la oferta');
+const sabores = [
+  { nombre: 'Whey Pro - Chocolate', marca: 'NUTRILAB', precio_regular: 32000, precio_venta: 32000, precio_oferta: 28000, en_oferta: true },
+  { nombre: 'Whey Pro - Vainilla', marca: 'NUTRILAB', precio_regular: 32000, precio_venta: 32000, precio_oferta: 0, en_oferta: false }
+];
+ctx._aplicarOfertasPorGrupoWeb_(sabores);
+assert.deepEqual(
+  sabores.map((p) => [p.precio_venta, p.precio_oferta, p.en_oferta]),
+  [[28000, 28000, true], [28000, 28000, true]],
+  'una oferta debe mantenerse igual en todos los sabores agrupados'
+);
 
 assert.match(api, /setValue\('Precio oferta'\)/, 'la API debe crear la columna automáticamente');
 assert.match(api, /precio_regular:\s*precioUnit/, 'indumentaria debe conservar el precio anterior');
