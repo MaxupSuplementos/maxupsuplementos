@@ -83,6 +83,9 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 .cnombre{font-size:.83rem;font-weight:600;color:var(--white);line-height:1.3}
 .ccodigo{font-size:.67rem;color:#444}
 .cprecio{font-size:1rem;font-weight:800;color:var(--cyan);margin-top:3px}
+.cprecio.oferta{color:#ff3b57;font-size:1.14rem;text-shadow:0 0 14px rgba(255,59,87,.25)}
+.cprecio-old{font-size:.7rem;color:#888;text-decoration:line-through;margin-top:3px}
+.offer-badge-i{position:absolute;top:9px;left:9px;z-index:12;padding:5px 10px;border-radius:999px;background:linear-gradient(135deg,#ff1f45,#b40020);border:1px solid rgba(255,110,125,.75);box-shadow:0 5px 18px rgba(255,31,69,.35);color:#fff;font-size:.68rem;font-weight:900;letter-spacing:.08em}
 .ctarjeta{font-size:.68rem;color:#555}
 /* TALLE PILLS en card */
 .cvars{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
@@ -120,6 +123,8 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 .mcodigo{font-size:.7rem;color:#555;margin-bottom:12px}
 .mprecios{margin-bottom:14px}
 .mprecio{font-size:1.4rem;font-weight:800;color:var(--cyan)}
+.mprice-old{display:block;font-size:.78rem;color:#888;text-decoration:line-through}
+.mprice-offer{display:block;color:#ff3b57;font-size:1.55rem;font-weight:900;text-shadow:0 0 16px rgba(255,59,87,.28)}
 .mtarjeta{font-size:.78rem;color:#555}
 .msect{font-size:.68rem;font-weight:700;letter-spacing:.13em;color:var(--gray);text-transform:uppercase;margin:12px 0 8px}
 /* TALLES en modal */
@@ -182,6 +187,7 @@ body{background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;mi
 .nuevos-card-brand{font-size:.65rem;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 .nuevos-card-name{font-size:.8rem;color:#fff;font-weight:600;margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nuevos-card-price{font-size:.9rem;color:var(--cyan);font-weight:700}
+.nuevos-card-price.oferta{color:#ff3b57;font-weight:900}
 .nuevos-badge{background:var(--grad);color:#000;font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.03em}
 .nuevos-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .nuevos-title{margin-bottom:0}
@@ -547,12 +553,15 @@ function render(){
     var agotado=p._agotado;
     var stockTxt=agotado?'AGOTADO':(last?'&#161;&#218;ltimas!':' '+p.stock+' disp.');
     var stockClass=agotado?'agotado':(last?'last':'ok');
+    var enOferta=p.en_oferta===true&&Number(p.precio_regular)>Number(p.precio);
     return'<div class="card'+(agotado?' card-agotado':'')+'" onclick="aModal('+idx+')">'
-      +'<div class="card-img-wrap">'+imgHtml+(agotado?'<div class="agotado-overlay">AGOTADO</div>':'')+'</div>'
+      +'<div class="card-img-wrap">'+(enOferta?'<div class="offer-badge-i">OFERTA</div>':'')+imgHtml+(agotado?'<div class="agotado-overlay">AGOTADO</div>':'')+'</div>'
       +'<div class="cbody">'
       +(p.marca?'<div class="cmarca">'+p.marca+'</div>':'')+'<div class="ccat">'+p.cat+'</div>'
       +'<div class="cnombre">'+p.nombre+'</div>'
-      +(p.codigo?'<div class="ccodigo">#'+p.codigo+'</div>':'')+'<div class="cprecio">$'+p.precio.toLocaleString('es-AR')+'</div>'
+      +(p.codigo?'<div class="ccodigo">#'+p.codigo+'</div>':'')
+      +(enOferta?'<div class="cprecio-old">Antes: $'+Number(p.precio_regular).toLocaleString('es-AR')+'</div>':'')
+      +'<div class="cprecio'+(enOferta?' oferta':'')+'">'+(enOferta?'OFERTA ':'')+'$'+p.precio.toLocaleString('es-AR')+'</div>'
       +'<div class="ctarjeta">Tarjeta $'+(p.precio_lista||Math.round(p.precio*1.06)).toLocaleString('es-AR')+'</div>'
       +'<div class="cvars">'+pills+'</div>'
       +'<div class="cstock '+stockClass+'">'+stockTxt+'</div>'
@@ -647,7 +656,10 @@ function aModal(idx){
   document.getElementById('mMarca').textContent=p.marca||'';
   document.getElementById('mNombre').textContent=p.nombre;
   document.getElementById('mCodigo').textContent=p.codigo?'Código: #'+p.codigo:'';
-  document.getElementById('mPrecio').textContent='$'+p.precio.toLocaleString('es-AR')+' efectivo';
+  var enOferta=p.en_oferta===true&&Number(p.precio_regular)>Number(p.precio);
+  document.getElementById('mPrecio').innerHTML=enOferta
+    ? '<span class="mprice-old">Antes: $'+Number(p.precio_regular).toLocaleString('es-AR')+'</span><span class="mprice-offer">OFERTA $'+p.precio.toLocaleString('es-AR')+'</span>'
+    : '$'+p.precio.toLocaleString('es-AR')+' efectivo';
   document.getElementById('mTarjeta').textContent='Tarjeta: $'+(p.precio_lista||Math.round(p.precio*1.06)).toLocaleString('es-AR');
 
   // Talles únicos
@@ -922,6 +934,18 @@ async function cargarSheets(){
     NUEVOS_SERVER_I = Array.isArray(d.nuevos_ingresos) ? d.nuevos_ingresos : null;
     PRODS_ALL=filtrarAgotados(d.prendas);
     PRODS=PRODS_ALL.slice();
+    // Mantener el carrito guardado, pero actualizar sus precios si comenzó o
+    // terminó una oferta desde la última visita.
+    if(Array.isArray(cartI)&&cartI.length){
+      cartI.forEach(function(item){
+        var vigente=PRODS_ALL.find(function(p){
+          return (item.codigo&&p.codigo&&String(item.codigo)===String(p.codigo))
+            || ((p.nombre||'')===(item.nombre||'')&&(p.marca||'')===(item.marca||''));
+        });
+        if(vigente&&Number(vigente.precio)>0){item.precio=Number(vigente.precio);item.precio_lista=Number(vigente.precio_lista)||0;}
+      });
+      saveCartI();updateBadgeI();
+    }
     readURL();
     buildFiltros();render();
     renderNuevosI();
@@ -1004,12 +1028,13 @@ function renderNuevosI(){
   track.innerHTML=nuevos.map(function(p){
     var idx=PRODS_ALL.indexOf(p);
     var imgUrl=proxyImg(p.imagenes&&p.imagenes.length?p.imagenes[0]:(p.img||''));
+    var enOferta=p.en_oferta===true&&Number(p.precio_regular)>Number(p.precio);
     return '<div class="nuevos-card" onclick="aModal('+idx+')">'
       +'<div class="nuevos-card-img">'+(imgUrl?'<img src="'+imgUrl+'" alt="'+p.nombre+'" loading="lazy">':'<span style="font-size:2.5rem;display:flex;align-items:center;justify-content:center;height:100%">👗</span>')+'</div>'
       +'<div class="nuevos-card-body">'
       +'<div class="nuevos-card-brand">'+(p.marca||'')+'</div>'
       +'<div class="nuevos-card-name">'+p.nombre+'</div>'
-      +'<div class="nuevos-card-price">$'+p.precio.toLocaleString('es-AR')+'</div>'
+      +'<div class="nuevos-card-price'+(enOferta?' oferta':'')+'">'+(enOferta?'OFERTA ':'')+'$'+p.precio.toLocaleString('es-AR')+'</div>'
       +'</div></div>';
   }).join('');
   _initAutoCarousel(track);

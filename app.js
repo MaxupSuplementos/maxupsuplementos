@@ -3440,9 +3440,12 @@ function getInitialFlavorImg(p, flavor){
 function buildCard(p, cardIndex){
   const totalStock = p.flavors.reduce((s,f)=>s+f.stock,0);
   const multiFlav = p.flavors.length > 1;
-  const badgeHtml = p.badge ? `<div class="prod-badge badge-${p.badge}">${p.badgeText||''}</div>` : '';
   const firstFlavor = getInitialFlavor(p);
   const initialFlavorImg = getInitialFlavorImg(p, firstFlavor);
+  const enOferta = Number(p.priceAnterior) > Number(p.price);
+  const badgeHtml = enOferta
+    ? '<div class="prod-badge badge-oferta">OFERTA</div>'
+    : (p.badge ? `<div class="prod-badge badge-${p.badge}">${p.badgeText||''}</div>` : '');
 
   // ── GALLERY: support "imgs" array OR legacy single "img" ──
   // In the PRODUCTS data you can use:
@@ -3490,7 +3493,7 @@ function buildCard(p, cardIndex){
       ${flavorOpts}
     </select>` : `<input type="hidden" class="flavor-select" data-pid="${p.id}" value="${firstFlavor.name}">`;
 
-  const precioLista = p.price_tarjeta || _precioListaDesdeContado(p.price);
+  const precioLista = p.price_tarjeta || _precioListaDesdeContado(p.priceAnterior || p.price);
   const cuota3 = precioLista / 3;
   // Si mostramos el catálogo guardado de la visita anterior, dejamos navegar
   // y filtrar de inmediato pero no permitimos comprar hasta validar el stock.
@@ -3523,9 +3526,9 @@ function buildCard(p, cardIndex){
     ${flavorSel}
     <div class="prod-footer">
       <div>
-        ${p.priceAnterior ? `<div style="font-size:.7rem;color:#888;text-decoration:line-through;margin-bottom:2px">Antes: ${fmt(p.priceAnterior)}</div>` : ''}
-        <div class="prod-price-label">PRECIO CONTADO</div>
-        <div class="prod-price-val${p.priceAnterior ? ' price-oferta' : ''}" id="price-${p.id}">${fmt(p.price)}</div>
+        ${enOferta ? `<div class="price-anterior">Antes: ${fmt(p.priceAnterior)}</div>` : ''}
+        <div class="prod-price-label">${enOferta ? 'OFERTA CONTADO' : 'PRECIO CONTADO'}</div>
+        <div class="prod-price-val${enOferta ? ' price-oferta' : ''}" id="price-${p.id}">${fmt(p.price)}</div>
         <div class="prod-price-methods">EFECTIVO · TRANSFERENCIA · DÉBITO · CRÉDITO 1 PAGO</div>
         <div class="prod-cuotas-box">
           <strong>3 CUOTAS FIJAS DE ${fmtCuota(cuota3)}</strong>
@@ -5245,6 +5248,9 @@ async function cargarDesdeSheets(silencioso) {
         // Precio unitario = contado. Precio De Lista puede estar en cualquier
         // columna: la API lo encuentra por el encabezado de la hoja.
         const precio_efectivo = Number(p.precio_venta || p['Precio unitario'] || 0);
+        const precio_regular  = Number(p.precio_regular || p['Precio unitario'] || precio_efectivo || 0);
+        const precio_oferta   = Number(p.precio_oferta || 0);
+        const en_oferta       = p.en_oferta === true && precio_oferta > 0 && precio_oferta < precio_regular;
         const precio_tarjeta  = Number(p.precio_lista  || p['Precio De Lista'] || _precioListaDesdeContado(precio_efectivo) || 0);
         const stock    = Number(p.stock || p['Cantidad en stock'] || 0);
         // Corregir categorías genéricas o evidentemente equivocadas y conservar
@@ -5270,9 +5276,11 @@ async function cargarDesdeSheets(silencioso) {
           imgs_sheet: imgArr.length > 1 ? imgArr : null,
           desc: desc,
           price: precio_efectivo,
+          priceAnterior: en_oferta ? precio_regular : null,
           price_tarjeta: precio_tarjeta,
           flavors: [{ name: 'Unidad', stock: stock }],
-          badge: null
+          badge: en_oferta ? 'oferta' : null,
+          badgeText: en_oferta ? 'OFERTA' : ''
         };
       });
     
@@ -5291,6 +5299,14 @@ async function cargarDesdeSheets(silencioso) {
           _sheetImgs: [], // array de imágenes adicionales del Sheet
           img: p.img || '',
         };
+      }
+      // Una oferta cargada en cualquiera de las filas/sabores se aplica a la
+      // ficha agrupada completa, que es como el cliente ve el producto.
+      if (p.priceAnterior && (!grouped[groupKey].priceAnterior || p.price < grouped[groupKey].price)) {
+        grouped[groupKey].price = p.price;
+        grouped[groupKey].priceAnterior = p.priceAnterior;
+        grouped[groupKey].badge = 'oferta';
+        grouped[groupKey].badgeText = 'OFERTA';
       }
       // Acumular imágenes múltiples del Sheet
       if (p.imgs_sheet) {
@@ -5317,6 +5333,18 @@ async function cargarDesdeSheets(silencioso) {
       delete p.imgs_sheet;
       PRODUCTS.push(p);
     });
+
+    // Si el visitante ya tenía el producto en el carrito, actualizar el valor
+    // al precio vigente para que también reciba la oferta sin volver a agregarlo.
+    if (Array.isArray(cart) && cart.length) {
+      cart.forEach(function(item) {
+        var vigente = PRODUCTS.find(function(prod){ return String(prod.id) === String(item.pid); });
+        if (vigente && Number(vigente.price) > 0) item.price = Number(vigente.price);
+      });
+      try { localStorage.setItem('maxup_cart_v3', JSON.stringify(cart)); } catch (eCart) {}
+      renderCart();
+      updateBadge();
+    }
 
     _catalogoSoloCache = false;
     _catalogoSheetsCargado = true;
@@ -5659,10 +5687,12 @@ function openProdModal(pid) {
   document.getElementById('modalNombre').textContent = p.name || '';
   document.getElementById('modalDesc').textContent = p.desc || 'Suplemento de alta calidad para deportistas y personas activas.';
 
-  const tarjeta = p.price_tarjeta || _precioListaDesdeContado(p.price);
+  const tarjeta = p.price_tarjeta || _precioListaDesdeContado(p.priceAnterior || p.price);
   document.getElementById('modalPrecioTarjeta').innerHTML =
     `<strong>3 CUOTAS FIJAS DE ${fmtCuota(tarjeta / 3)}</strong><span>Precio total financiado: ${fmt(tarjeta)}</span>`;
-  document.getElementById('modalPrecioCash').textContent = `$${p.price.toLocaleString('es-AR')}`;
+  document.getElementById('modalPrecioCash').innerHTML = p.priceAnterior && p.priceAnterior > p.price
+    ? '<span class="modal-price-old">Antes: '+fmt(p.priceAnterior)+'</span><span class="modal-price-offer">OFERTA '+fmt(p.price)+'</span>'
+    : fmt(p.price);
 
   // Flavors
   const flavorWrap = document.getElementById('modalFlavorWrap');

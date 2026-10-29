@@ -29,7 +29,7 @@ assert.match(app, /let ITEMS_POR_PAGINA = 12/,
 assert.match(app, /cardIndex<4\?'eager':'lazy'/,
   'solo las primeras imágenes visibles deben competir por la red');
 
-const version = '20260930-primera-vista';
+const version = '20261029-ofertas-web';
 assert.match(index, new RegExp(`app\\.js\\?v=${version}`));
 assert.match(sw, new RegExp(`app\\.js\\?v=${version}`));
 assert.match(sw, /return cached \|\| actualizacion/,

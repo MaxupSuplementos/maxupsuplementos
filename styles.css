@@ -196,9 +196,11 @@ body.light .footer{background:rgba(0,0,0,.03)}
 .badge-hot{background:rgba(255,0,153,.2);color:var(--pink);border:1px solid rgba(255,0,153,.3)}
 .badge-new{background:rgba(0,200,255,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.3)}
 .badge-sale{background:rgba(255,165,0,.15);color:#FFA500;border:1px solid rgba(255,165,0,.3)}
-.badge-oferta{background:rgba(0,230,118,.15);color:#00E676;border:1px solid rgba(0,230,118,.3)}
-.price-anterior{text-decoration:line-through;color:#888;font-size:.85em;margin-right:6px}
-.price-oferta{color:#00E676;font-weight:700}
+.badge-oferta{background:linear-gradient(135deg,#ff1f45,#b40020);color:#fff;border:1px solid rgba(255,90,110,.75);box-shadow:0 5px 18px rgba(255,31,69,.34);font-weight:900}
+.price-anterior{text-decoration:line-through;color:#999;font-size:.72rem;margin-bottom:2px}
+.price-oferta{background:none!important;color:#ff3b57!important;-webkit-text-fill-color:#ff3b57!important;font-weight:900;text-shadow:0 0 16px rgba(255,59,87,.28)}
+.modal-price-old{display:block;color:#999;font:600 .78rem Rajdhani,sans-serif;text-decoration:line-through;margin-bottom:2px}
+.modal-price-offer{display:block;color:#ff3b57;font-weight:900;text-shadow:0 0 18px rgba(255,59,87,.3)}
 
 /* Qty + Add to cart */
 .prod-actions{display:flex;gap:10px;align-items:center}
