@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-29",
-  "generado": "2026-10-29T19:13:55.243Z",
+  "fecha": "2026-10-30",
+  "generado": "2026-10-30T18:01:59.155Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Creatina Monohidratada x 300g",
+      "titulo": "Proteina 7900 Pote - Vainilla",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Creatina Monohidratada x 300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Proteina 7900 Pote - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Hand grip regulable de 5 a 60kg",
+      "titulo": "Live Fem (Multivitamínico) 150Gr",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Hand grip regulable de 5 a 60kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Live Fem (Multivitamínico) 150Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Push up manija de flexiones triangular con agarre ergonómico (par)",
+      "titulo": "Lipo Gold Elite X60Cap",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Push up manija de flexiones triangular con agarre ergonómico (par)\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Lipo Gold Elite X60Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Resveratrol By Pampita",
+      "titulo": "Banda circular tipo cinta tela talle 2 - violeta",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Resveratrol By Pampita\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Banda circular tipo cinta tela talle 2 - violeta\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Calza Larga Sin Frunce Bolsillo Lateral",
+      "titulo": "Remerón Superpoderosas",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Calza Larga Sin Frunce Bolsillo Lateral\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Remerón Superpoderosas\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
