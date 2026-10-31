@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-10-30",
-  "generado": "2026-10-30T18:51:24.827Z",
+  "fecha": "2026-10-31",
+  "generado": "2026-10-31T17:14:25.386Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Proteina 7900 Pote - Vainilla",
+      "titulo": "Barra Proteica 50Gr - Blanco",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Proteina 7900 Pote - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Barra Proteica 50Gr - Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Live Fem (Multivitamínico) 150Gr",
+      "titulo": "Mtor Bcaa  X 270 Grs. - Frutos Rojos",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Live Fem (Multivitamínico) 150Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mtor Bcaa  X 270 Grs. - Frutos Rojos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Lipo Gold Elite X60Cap",
+      "titulo": "Ashwagandha con Vit C - 60cap",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Lipo Gold Elite X60Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Ashwagandha con Vit C - 60cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Banda circular tipo cinta tela talle 2 - violeta",
+      "titulo": "Creatina Monohidrato 300Gr",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Banda circular tipo cinta tela talle 2 - violeta\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina Monohidrato 300Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Remerón Superpoderosas",
+      "titulo": "Catsuit Corto Taza Blanca",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Remerón Superpoderosas\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Catsuit Corto Taza Blanca\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
