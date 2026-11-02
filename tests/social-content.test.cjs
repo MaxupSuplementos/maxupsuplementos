@@ -358,6 +358,23 @@ test('Meta guarda el progreso para reintentar sin duplicar historias', () => {
   assert.match(workflow, /Guardar progreso para evitar publicaciones duplicadas/);
 });
 
+test('ninguna publicación sale si la fotografía del producto no cargó', () => {
+  const promo = read('promo.html');
+  const generator = read('tools/generate-daily-social.mjs');
+  const publisher = read('tools/publish-meta-social.mjs');
+  const scripts = [...promo.matchAll(/<script(?:[^>]*)>([\s\S]*?)<\/script>/gi)].map(match => match[1]);
+  assert.ok(scripts.length, 'promo.html debe contener su generador');
+  scripts.forEach(script => assert.doesNotThrow(() => new Function(script)));
+  assert.match(promo, /function dailyImageCandidates\(rawUrl\)/);
+  assert.match(promo, /i\\\.ibb\\\.co/,
+    'Las fotos alojadas en i.ibb.co deben cargarse directamente antes de intentar el proxy');
+  assert.match(promo, /throw new Error\('No se pudo cargar la foto de '/);
+  assert.match(generator, /Se canceló la publicación porque faltan fotos/);
+  assert.match(publisher, /async function waitForPublicImage\(imageUrl\)/);
+  assert.match(publisher, /validPublishedJpeg/);
+  assert.match(publisher, /if \(publishInstagram \|\| publishFacebook\) await waitForPublicImage\(imageUrl\)/);
+});
+
 test('los beneficios reservan un margen para que el número no tape las letras', () => {
   const promo = read('promo.html');
   assert.match(promo, /const textLeft=x\+58,textRight=x\+w-20,textCenter=/);

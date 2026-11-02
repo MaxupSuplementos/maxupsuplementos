@@ -40,6 +40,39 @@ const baseRaw = `https://raw.githubusercontent.com/${repository}/${revision}/`;
 
 const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 
+function validPublishedJpeg(bytes, contentType) {
+  return String(contentType || '').toLowerCase().startsWith('image/')
+    && bytes.length > 50000
+    && bytes[0] === 0xff
+    && bytes[1] === 0xd8
+    && bytes[2] === 0xff;
+}
+
+async function waitForPublicImage(imageUrl) {
+  let lastProblem = 'sin respuesta';
+  for (let attempt = 1; attempt <= 18; attempt += 1) {
+    try {
+      const response = await fetch(imageUrl, {
+        cache: 'no-store',
+        headers: { Accept: 'image/jpeg,image/*;q=0.9,*/*;q=0.1' },
+        signal: AbortSignal.timeout(20000)
+      });
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const contentType = response.headers.get('content-type') || '';
+      if (response.ok && validPublishedJpeg(bytes, contentType)) {
+        console.log(`Foto pública verificada (${bytes.length} bytes).`);
+        return;
+      }
+      lastProblem = `HTTP ${response.status}, ${contentType || 'sin tipo'}, ${bytes.length} bytes`;
+    } catch (error) {
+      lastProblem = error.message;
+    }
+    console.log(`La foto todavía no está disponible para Meta (${attempt}/18): ${lastProblem}`);
+    if (attempt < 18) await sleep(5000);
+  }
+  throw new Error(`La foto no quedó disponible públicamente y no se publicará: ${lastProblem}`);
+}
+
 async function graph(path, payload, authToken = token) {
   const response = await fetch(`https://graph.facebook.com/${graphVersion}/${path}`, {
     method: 'POST', body: new URLSearchParams({ ...payload, access_token: authToken })
@@ -80,7 +113,10 @@ if (pageId) {
 for (const [index, item] of manifest.items.entries()) {
   const itemKey = `${manifest.fecha}|${item.file}|${item.titulo}`;
   const imageUrl = baseRaw + item.file;
-  if (igUserId && index >= skipInstagramCount && !publishedInstagram.has(itemKey)) {
+  const publishInstagram = igUserId && index >= skipInstagramCount && !publishedInstagram.has(itemKey);
+  const publishFacebook = pageId && index >= skipFacebookCount && !publishedFacebook.has(itemKey);
+  if (publishInstagram || publishFacebook) await waitForPublicImage(imageUrl);
+  if (publishInstagram) {
     const container = await graph(`${igUserId}/media`, { image_url: imageUrl, media_type: 'STORIES' });
     await waitForInstagramContainer(container.id);
     await graph(`${igUserId}/media_publish`, { creation_id: container.id });
@@ -90,7 +126,7 @@ for (const [index, item] of manifest.items.entries()) {
   } else if (igUserId) {
     console.log(`Historia de Instagram omitida para evitar duplicados: ${item.titulo}`);
   }
-  if (pageId && index >= skipFacebookCount && !publishedFacebook.has(itemKey)) {
+  if (publishFacebook) {
     const captionBase = String(item.caption || item.titulo || '').trim();
     const caption = captionBase.includes(websiteUrl)
       ? captionBase

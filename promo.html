@@ -133,9 +133,37 @@ function findProduct(q){
 }
 
 const fmt=n=>'$'+n.toLocaleString('es-AR');
-function li(url){
+function li(url,timeoutMs){
+  if(!url)return Promise.resolve(null);
   if(ic[url])return Promise.resolve(ic[url]);
-  return new Promise(r=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>{ic[url]=i;r(i)};i.onerror=()=>r(null);i.src=url});
+  return new Promise(resolve=>{
+    const i=new Image();let settled=false;
+    const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);if(value)ic[url]=value;resolve(value)};
+    const timer=setTimeout(()=>finish(null),Number(timeoutMs)||18000);
+    i.crossOrigin='anonymous';i.onload=()=>finish(i);i.onerror=()=>finish(null);i.src=url;
+  });
+}
+
+function dailyImageCandidates(rawUrl){
+  const original=String(rawUrl||'').trim();
+  if(!original)return [];
+  if(original.indexOf('data:')===0||original.indexOf('images.weserv.nl')>=0)return [original];
+  const proxy='https://images.weserv.nl/?url='+encodeURIComponent(original.replace(/^https?:\/\//,''))+'&w=500&output=webp&q=82';
+  // i.ibb.co ya permite CORS. Pasarlo primero por weserv provoca demoras y
+  // fallos intermitentes, por eso usamos la foto original como primera opción.
+  return /https?:\/\/i\.ibb\.co\//i.test(original)?[original,proxy]:[proxy,original];
+}
+
+async function loadDailyProductImage(p){
+  const candidates=Array.isArray(p.imgCandidates)&&p.imgCandidates.length?p.imgCandidates:[p.img];
+  for(let attempt=1;attempt<=2;attempt++){
+    for(const candidate of candidates){
+      const image=await li(candidate,18000);
+      if(image&&image.naturalWidth>20&&image.naturalHeight>20)return image;
+    }
+    if(attempt<2)await new Promise(resolve=>setTimeout(resolve,1500));
+  }
+  throw new Error('No se pudo cargar la foto de '+String(p.n||'este producto'));
 }
 
 // Drawing helpers
@@ -441,7 +469,7 @@ async function drawNeonBackdrop(ctx,W,H){
 }
 
 async function drawNeonProductHero(ctx,p,W,box){
-  const img=await li(p.img);
+  const img=await loadDailyProductImage(p);
   box=box||{};
   const x=Number.isFinite(box.x)?box.x:W/2-310,y=Number.isFinite(box.y)?box.y:330;
   const w=box.w||620,h=box.h||610,cx=x+w/2;
@@ -450,12 +478,10 @@ async function drawNeonProductHero(ctx,p,W,box){
   glow.addColorStop(0,'rgba(255,255,255,.18)');glow.addColorStop(.45,'rgba(0,200,255,.12)');glow.addColorStop(1,'rgba(255,0,153,0)');
   ctx.fillStyle=glow;ctx.fillRect(x-100,y-80,w+200,h+160);
   rr(ctx,x,y,w,h,34);ctx.fillStyle='rgba(0,0,0,.16)';ctx.fill();
-  if(img){
-    const ratio=img.width/img.height;let dw,dh;const maxW=w-24,maxH=h-20;
-    if(ratio>maxW/maxH){dw=maxW;dh=maxW/ratio}else{dh=maxH;dw=maxH*ratio}
-    ctx.shadowColor='rgba(0,200,255,.65)';ctx.shadowBlur=24;
-    ctx.drawImage(img,cx-dw/2,y+h/2-dh/2,dw,dh);
-  }
+  const ratio=img.width/img.height;let dw,dh;const maxW=w-24,maxH=h-20;
+  if(ratio>maxW/maxH){dw=maxW;dh=maxW/ratio}else{dh=maxH;dw=maxH*ratio}
+  ctx.shadowColor='rgba(0,200,255,.65)';ctx.shadowBlur=24;
+  ctx.drawImage(img,cx-dw/2,y+h/2-dh/2,dw,dh);
   ctx.restore();
 }
 
@@ -643,16 +669,14 @@ async function init(){
     if(data.productos && data.productos.length>0){
       P=data.productos.map(function(pr){
         var imgUrl=String(pr.imagen_url||'').trim();
-        // Si la imagen no pasa por weserv, proxyarla para evitar CORS
-        if(imgUrl && imgUrl.indexOf('weserv.nl')<0 && imgUrl.indexOf('data:')<0){
-          imgUrl='https://images.weserv.nl/?url='+encodeURIComponent(imgUrl.replace(/^https?:\/\//,''))+'&w=500&output=webp&q=82';
-        }
+        var imgCandidates=dailyImageCandidates(imgUrl);
         return {
           id:pr.id||pr.nombre,
           n:pr.nombre||'',
           b:pr.marca||'',
           p:Number(pr.precio_venta)||0,
-          img:imgUrl,
+          img:imgCandidates[0]||'',
+          imgCandidates:imgCandidates,
           cat:pr.categoria||'otros',
           desc:pr.descripcion||'',
           pubDesc:pr.descripcion_publicacion||'',
@@ -677,10 +701,8 @@ async function init(){
       if(!dataInd.ok||!Array.isArray(dataInd.prendas))throw new Error(dataInd.error||'Sin indumentaria');
       I=dataInd.prendas.map(function(pr,index){
         var imgUrl=String(pr.img||'').trim();
-        if(imgUrl&&imgUrl.indexOf('weserv.nl')<0&&imgUrl.indexOf('data:')<0){
-          imgUrl='https://images.weserv.nl/?url='+encodeURIComponent(imgUrl.replace(/^https?:\/\//,''))+'&w=500&output=webp&q=82';
-        }
-        return {id:'ind-'+(pr.codigo||index),n:pr.nombre||'',b:pr.marca||'MAXUP',p:Number(pr.precio)||0,img:imgUrl,cat:'indumentaria '+(pr.cat||''),kind:'indumentaria',stock:Number(pr.stock)||0};
+        var imgCandidates=dailyImageCandidates(imgUrl);
+        return {id:'ind-'+(pr.codigo||index),n:pr.nombre||'',b:pr.marca||'MAXUP',p:Number(pr.precio)||0,img:imgCandidates[0]||'',imgCandidates:imgCandidates,cat:'indumentaria '+(pr.cat||''),kind:'indumentaria',stock:Number(pr.stock)||0};
       });
     }catch(err){
       I=[];

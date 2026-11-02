@@ -98,8 +98,20 @@ try {
     return cards.length === 5
       && types.filter(type => type === 'suplemento').length === 4
       && types.filter(type => type === 'indumentaria').length === 1
-      && cards.every(card => card.querySelector('.daily-status')?.textContent.includes('Lista para publicar'));
+      && cards.every(card => {
+        const status = card.querySelector('.daily-status')?.textContent || '';
+        return status.includes('Lista para publicar') || status.includes('No se pudo generar');
+      });
   }, undefined, { timeout: 300000 });
+
+  const estados = await page.evaluate(() => [...document.querySelectorAll('.daily-card')].map(card => ({
+    titulo: card.querySelector('h2')?.textContent?.trim() || 'Producto',
+    estado: card.querySelector('.daily-status')?.textContent?.trim() || ''
+  })));
+  const fallidas = estados.filter(item => !item.estado.includes('Lista para publicar'));
+  if (fallidas.length) {
+    throw new Error(`Se canceló la publicación porque faltan fotos: ${fallidas.map(item => `${item.titulo}: ${item.estado}`).join(' | ')}`);
+  }
 
   const placas = await page.evaluate(() => [...document.querySelectorAll('.daily-card')].map((card, index) => ({
     orden: index + 1,
