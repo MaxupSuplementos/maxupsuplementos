@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-01",
-  "generado": "2026-11-01T18:33:37.294Z",
+  "fecha": "2026-11-02",
+  "generado": "2026-11-02T15:11:37.042Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Zma X60 Cap",
+      "titulo": "Whey Advanced 1Kg - Chocolate",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Zma X60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey Advanced 1Kg - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
+      "titulo": "Astaxantina 30cap",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Astaxantina 30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Collagen Sport Naranja X 360 Grs",
+      "titulo": "Energy Gel 42g - Limon",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Collagen Sport Naranja X 360 Grs\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Energy Gel 42g - Limon\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Citrato De Magnesio 144G",
+      "titulo": "Ejercitador abdominal de piso",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Citrato De Magnesio 144G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Ejercitador abdominal de piso\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Calza Larga Bicolor",
+      "titulo": "Calza Larga Oxford Prelavada",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Calza Larga Bicolor\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Calza Larga Oxford Prelavada\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
