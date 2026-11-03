@@ -396,6 +396,36 @@ function proxyImg(url){
   return 'https://images.weserv.nl/?url='+clean+'&w=400&output=webp&q=82';
 }
 
+// Si el optimizador externo no responde en una red o celular, intentar la
+// foto original. Así una caída de images.weserv.nl no rompe el catálogo.
+function originalImgI(url){
+  if(!url)return '';
+  try{
+    var parsed=new URL(url,location.href);
+    if(parsed.hostname==='images.weserv.nl'){
+      var original=parsed.searchParams.get('url')||'';
+      if(original&&!/^https?:\/\//i.test(original))original='https://'+original.replace(/^\/+/, '');
+      return original;
+    }
+  }catch(e){}
+  return url;
+}
+
+function recuperarImagenI(img){
+  if(!img||img.dataset.fallbackOriginal==='1'){
+    if(img){img.onerror=null;img.style.visibility='hidden';}
+    return;
+  }
+  var original=originalImgI(img.currentSrc||img.src||'');
+  if(original&&original!==(img.currentSrc||img.src||'')){
+    img.dataset.fallbackOriginal='1';
+    img.src=original;
+    return;
+  }
+  img.onerror=null;
+  img.style.visibility='hidden';
+}
+
 function syncURL(){
   var p=new URLSearchParams();
   if(generoA!=='M')p.set('genero',generoA);
@@ -528,9 +558,9 @@ function render(){
     } else {
       var galId='gi'+idx;
       if(imgs.length===1){
-        imgHtml='<img src="'+imgs[0]+'" alt="'+p.nombre+'" loading="lazy">';
+        imgHtml='<img src="'+imgs[0]+'" alt="'+p.nombre+'" loading="lazy" onerror="recuperarImagenI(this)">';
       } else {
-        var slides=imgs.map(function(u,si){return'<div class="gal-slide'+(si===0?' active':'')+'"><img src="'+u+'" alt="'+p.nombre+'" loading="'+(si===0?'eager':'lazy')+'"></div>';}).join('');
+        var slides=imgs.map(function(u,si){return'<div class="gal-slide'+(si===0?' active':'')+'"><img src="'+u+'" alt="'+p.nombre+'" loading="'+(si===0?'eager':'lazy')+'" onerror="recuperarImagenI(this)"></div>';}).join('');
         var dots=imgs.map(function(_,si){return'<button class="gal-dot-i'+(si===0?' active':'')+'" onclick="galGoI(\''+galId+'\','+si+',event)"></button>';}).join('');
         imgHtml='<div id="'+galId+'" style="position:relative;width:100%;height:100%">'+slides
           +'<button class="gal-btn-i prev-i" onclick="galMoveI(\''+galId+'\',-1,event)">&#8249;</button>'
@@ -642,10 +672,10 @@ function aModal(idx){
   if(!imgs.length){
     imgWrap.innerHTML='<span style="font-size:4rem">&#128085;</span>';
   } else if(imgs.length===1){
-    imgWrap.innerHTML='<img src="'+imgs[0]+'" alt="'+p.nombre+'">';
+    imgWrap.innerHTML='<img src="'+imgs[0]+'" alt="'+p.nombre+'" onerror="recuperarImagenI(this)">';
   } else {
     var slides=imgs.map(function(u,si){
-      return'<div class="gal-slide'+(si===0?' active':'')+'" style="position:absolute;top:0;left:0;width:100%;height:100%;display:'+(si===0?'flex':'none')+';align-items:center;justify-content:center"><img src="'+u+'" alt="'+p.nombre+'" style="max-width:100%;max-height:280px;object-fit:contain;padding:10px"></div>';
+      return'<div class="gal-slide'+(si===0?' active':'')+'" style="position:absolute;top:0;left:0;width:100%;height:100%;display:'+(si===0?'flex':'none')+';align-items:center;justify-content:center"><img src="'+u+'" alt="'+p.nombre+'" style="max-width:100%;max-height:280px;object-fit:contain;padding:10px" onerror="recuperarImagenI(this)"></div>';
     }).join('');
     imgWrap.innerHTML='<div id="mGal" style="position:relative;width:100%;height:100%">'+slides
       +'<button class="gal-btn-i prev-i" onclick="galMoveI(\'mGal\',-1,event)" style="opacity:1">&#8249;</button>'
@@ -842,7 +872,7 @@ function renderCartI(){
   cartI.forEach(function(item){
     var el=document.createElement('div');el.className='cart-item-i';
     var k=item.key.replace(/'/g,"\\'");
-    el.innerHTML='<div class="ci-thumb-i">'+(item.img?'<img src="'+item.img+'" alt="'+item.nombre+'">':'<span style="font-size:1.5rem;display:flex;align-items:center;justify-content:center;height:100%">👗</span>')+'</div>'
+    el.innerHTML='<div class="ci-thumb-i">'+(item.img?'<img src="'+item.img+'" alt="'+item.nombre+'" onerror="recuperarImagenI(this)">':'<span style="font-size:1.5rem;display:flex;align-items:center;justify-content:center;height:100%">👗</span>')+'</div>'
       +'<div class="ci-info-i">'
       +'<div class="ci-name-i">'+item.nombre+'</div>'
       +'<div class="ci-detail-i">'+(item.marca?item.marca+' · ':'')+item.talle+(item.color?' · '+item.color:'')+'</div>'
@@ -1030,7 +1060,7 @@ function renderNuevosI(){
     var imgUrl=proxyImg(p.imagenes&&p.imagenes.length?p.imagenes[0]:(p.img||''));
     var enOferta=p.en_oferta===true&&Number(p.precio_regular)>Number(p.precio);
     return '<div class="nuevos-card" onclick="aModal('+idx+')">'
-      +'<div class="nuevos-card-img">'+(imgUrl?'<img src="'+imgUrl+'" alt="'+p.nombre+'" loading="lazy">':'<span style="font-size:2.5rem;display:flex;align-items:center;justify-content:center;height:100%">👗</span>')+'</div>'
+      +'<div class="nuevos-card-img">'+(imgUrl?'<img src="'+imgUrl+'" alt="'+p.nombre+'" loading="lazy" onerror="recuperarImagenI(this)">':'<span style="font-size:2.5rem;display:flex;align-items:center;justify-content:center;height:100%">👗</span>')+'</div>'
       +'<div class="nuevos-card-body">'
       +'<div class="nuevos-card-brand">'+(p.marca||'')+'</div>'
       +'<div class="nuevos-card-name">'+p.nombre+'</div>'
