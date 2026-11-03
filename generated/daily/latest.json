@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-02",
-  "generado": "2026-11-02T22:27:45.316Z",
+  "fecha": "2026-11-03",
+  "generado": "2026-11-03T19:29:10.149Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Whey Advanced 1Kg - Chocolate",
+      "titulo": "L-Carnitine 1000 X60 Comp",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Whey Advanced 1Kg - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L-Carnitine 1000 X60 Comp\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Astaxantina 30cap",
+      "titulo": "Venda para Boxeo 3m",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Astaxantina 30cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Venda para Boxeo 3m\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Energy Gel 42g - Limon",
+      "titulo": "IDN Simple",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Energy Gel 42g - Limon\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "IDN Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Ejercitador abdominal de piso",
+      "titulo": "Glicinato de Magnesio 60cap",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Ejercitador abdominal de piso\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Glicinato de Magnesio 60cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Calza Larga Oxford Prelavada",
+      "titulo": "Conjunto",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Calza Larga Oxford Prelavada\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Conjunto\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
