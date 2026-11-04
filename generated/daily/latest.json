@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-03",
-  "generado": "2026-11-03T20:16:46.551Z",
+  "fecha": "2026-11-04",
+  "generado": "2026-11-04T20:31:41.148Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "L-Carnitine 1000 X60 Comp",
+      "titulo": "Straps cinta para levantamiento - par",
       "file": "generated/daily/current/01.jpg",
-      "caption": "L-Carnitine 1000 X60 Comp\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Straps cinta para levantamiento - par\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Venda para Boxeo 3m",
+      "titulo": "Omega 3 1000Mg 200 Cap",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Venda para Boxeo 3m\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Omega 3 1000Mg 200 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "IDN Simple",
+      "titulo": "Barra Proteica 50Gr - Blanco",
       "file": "generated/daily/current/03.jpg",
-      "caption": "IDN Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Barra Proteica 50Gr - Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Glicinato de Magnesio 60cap",
+      "titulo": "Pre Work 240G - Limonada",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Glicinato de Magnesio 60cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Pre Work 240G - Limonada\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Conjunto",
+      "titulo": "Top con Cierre",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Conjunto\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Top con Cierre\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
