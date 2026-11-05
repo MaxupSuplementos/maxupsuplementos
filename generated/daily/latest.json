@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-04",
-  "generado": "2026-11-04T20:31:41.148Z",
+  "fecha": "2026-11-05",
+  "generado": "2026-11-05T20:48:42.687Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Straps cinta para levantamiento - par",
+      "titulo": "Whey Advanced 1Kg - Frutilla",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Straps cinta para levantamiento - par\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey Advanced 1Kg - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Omega 3 1000Mg 200 Cap",
+      "titulo": "L-Carnitine 1000 X60 Comp",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Omega 3 1000Mg 200 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L-Carnitine 1000 X60 Comp\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Barra Proteica 50Gr - Blanco",
+      "titulo": "Colageno Hidrolizado 200Gr Pote",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Barra Proteica 50Gr - Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Colageno Hidrolizado 200Gr Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Pre Work 240G - Limonada",
+      "titulo": "Creatina Monohidratada x 1kg",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Pre Work 240G - Limonada\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina Monohidratada x 1kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Top con Cierre",
+      "titulo": "ABIERTA Punisher",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Top con Cierre\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "ABIERTA Punisher\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
