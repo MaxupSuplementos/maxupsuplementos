@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-05",
-  "generado": "2026-11-05T20:48:42.687Z",
+  "fecha": "2026-11-06",
+  "generado": "2026-11-06T20:04:36.348Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Whey Advanced 1Kg - Frutilla",
+      "titulo": "Kit 3 bandas tipo cinta de tela circular importada Sonnos",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Whey Advanced 1Kg - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Kit 3 bandas tipo cinta de tela circular importada Sonnos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "L-Carnitine 1000 X60 Comp",
+      "titulo": "Gelatina con Colageno 150g - Frutilla",
       "file": "generated/daily/current/02.jpg",
-      "caption": "L-Carnitine 1000 X60 Comp\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Colageno Hidrolizado 200Gr Pote",
+      "titulo": "Creatina 250Gr",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Colageno Hidrolizado 200Gr Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina 250Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Creatina Monohidratada x 1kg",
+      "titulo": "Protein Bar 65g - Limon con Chocolate",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Creatina Monohidratada x 1kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Protein Bar 65g - Limon con Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "ABIERTA Punisher",
+      "titulo": "REMERA punisher",
       "file": "generated/daily/current/05.jpg",
-      "caption": "ABIERTA Punisher\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "REMERA punisher\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
