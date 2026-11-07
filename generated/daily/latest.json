@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-06",
-  "generado": "2026-11-06T20:04:36.348Z",
+  "fecha": "2026-11-07",
+  "generado": "2026-11-07T17:46:01.768Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Kit 3 bandas tipo cinta de tela circular importada Sonnos",
+      "titulo": "EAA`S Aminoacidos - Limon",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Kit 3 bandas tipo cinta de tela circular importada Sonnos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "EAA`S Aminoacidos - Limon\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Gelatina con Colageno 150g - Frutilla",
+      "titulo": "Barra Proteica 50Gr - Blanco con Cookies",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Barra Proteica 50Gr - Blanco con Cookies\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Creatina 250Gr",
+      "titulo": "Colageno Hidrolizado 200Gr Pote",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Creatina 250Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Colageno Hidrolizado 200Gr Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Protein Bar 65g - Limon con Chocolate",
+      "titulo": "Citrato De Magnesio 60 Cap",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Protein Bar 65g - Limon con Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato De Magnesio 60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "REMERA punisher",
+      "titulo": "Calza Batik detalle en ambas piernas",
       "file": "generated/daily/current/05.jpg",
-      "caption": "REMERA punisher\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Calza Batik detalle en ambas piernas\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
