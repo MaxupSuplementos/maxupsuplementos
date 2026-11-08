@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-07",
-  "generado": "2026-11-07T18:15:59.615Z",
+  "fecha": "2026-11-08",
+  "generado": "2026-11-08T17:53:47.283Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "EAA`S Aminoacidos - Limon",
+      "titulo": "Bidon 1,5L Maxup",
       "file": "generated/daily/current/01.jpg",
-      "caption": "EAA`S Aminoacidos - Limon\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Bidon 1,5L Maxup\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Barra Proteica 50Gr - Blanco con Cookies",
+      "titulo": "Hydroplus Endurance X700G - Blue Razz",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Barra Proteica 50Gr - Blanco con Cookies\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Hydroplus Endurance X700G - Blue Razz\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Colageno Hidrolizado 200Gr Pote",
+      "titulo": "Testo Gold 120 Caps",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Colageno Hidrolizado 200Gr Pote\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Testo Gold 120 Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Citrato De Magnesio 60 Cap",
+      "titulo": "Pre Work Gold X 280 Grs",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Citrato De Magnesio 60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Pre Work Gold X 280 Grs\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Calza Batik detalle en ambas piernas",
+      "titulo": "Catsuit Corto Cierre al Frente",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Calza Batik detalle en ambas piernas\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Catsuit Corto Cierre al Frente\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
