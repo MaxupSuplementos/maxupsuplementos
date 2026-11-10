@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-09",
-  "generado": "2026-11-09T23:08:27.338Z",
+  "fecha": "2026-11-10",
+  "generado": "2026-11-10T19:39:51.799Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Barra Proteica 50Gr - Blanco con Cookies",
+      "titulo": "Gelatina con Colageno 150g - Frutilla",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Barra Proteica 50Gr - Blanco con Cookies\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Colageno Sport X 330 Grs - Naranja",
+      "titulo": "Whey 3Kg - Frutilla",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Colageno Sport X 330 Grs - Naranja\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey 3Kg - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "IDN Simple",
+      "titulo": "Pre Work Gold X 280 Grs",
       "file": "generated/daily/current/03.jpg",
-      "caption": "IDN Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Pre Work Gold X 280 Grs\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Cafeina 200 - 30 Cap",
+      "titulo": "Hand grip regulable de 5 a 100kg",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Cafeina 200 - 30 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Hand grip regulable de 5 a 100kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "MANGA LARGA Punisher",
+      "titulo": "REMERA universal",
       "file": "generated/daily/current/05.jpg",
-      "caption": "MANGA LARGA Punisher\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "REMERA universal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
