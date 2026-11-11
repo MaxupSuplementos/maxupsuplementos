@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-10",
-  "generado": "2026-11-10T20:35:33.999Z",
+  "fecha": "2026-11-11",
+  "generado": "2026-11-11T19:32:40.594Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Gelatina con Colageno 150g - Frutilla",
+      "titulo": "Colageno Sport X 330 Grs - Naranja",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Colageno Sport X 330 Grs - Naranja\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Whey 3Kg - Frutilla",
+      "titulo": "Creatina Powder 300G",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Whey 3Kg - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina Powder 300G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Pre Work Gold X 280 Grs",
+      "titulo": "Llavero Maxup",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Pre Work Gold X 280 Grs\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Llavero Maxup\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Hand grip regulable de 5 a 100kg",
+      "titulo": "Hydroplus Endurance X700G - Blue Razz",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Hand grip regulable de 5 a 100kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Hydroplus Endurance X700G - Blue Razz\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "REMERA universal",
+      "titulo": "Short Corto Sin Frunce",
       "file": "generated/daily/current/05.jpg",
-      "caption": "REMERA universal\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Short Corto Sin Frunce\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
