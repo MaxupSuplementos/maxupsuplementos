@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-11",
-  "generado": "2026-11-11T19:32:40.594Z",
+  "fecha": "2026-11-12",
+  "generado": "2026-11-12T19:50:32.614Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Colageno Sport X 330 Grs - Naranja",
+      "titulo": "L-Carnitina 1500 x60Caps",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Colageno Sport X 330 Grs - Naranja\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L-Carnitina 1500 x60Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Creatina Powder 300G",
+      "titulo": "Hydroplus Endurance X700G - Blue Razz",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Creatina Powder 300G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Hydroplus Endurance X700G - Blue Razz\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Llavero Maxup",
+      "titulo": "Hand grip regulable de 5 a 60kg",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Llavero Maxup\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Hand grip regulable de 5 a 60kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Hydroplus Endurance X700G - Blue Razz",
+      "titulo": "Whey 3Kg - Frutilla",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Hydroplus Endurance X700G - Blue Razz\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey 3Kg - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Short Corto Sin Frunce",
+      "titulo": "Short Batik en V",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Short Corto Sin Frunce\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Short Batik en V\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
