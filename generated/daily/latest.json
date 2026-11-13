@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-12",
-  "generado": "2026-11-12T21:04:43.479Z",
+  "fecha": "2026-11-13",
+  "generado": "2026-11-13T19:35:42.081Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "L-Carnitina 1500 x60Caps",
+      "titulo": "Creatina Monohidrato 300g",
       "file": "generated/daily/current/01.jpg",
-      "caption": "L-Carnitina 1500 x60Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina Monohidrato 300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Hydroplus Endurance X700G - Blue Razz",
+      "titulo": "Medicine Ball 12Lb Everlast",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Hydroplus Endurance X700G - Blue Razz\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Medicine Ball 12Lb Everlast\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Hand grip regulable de 5 a 60kg",
+      "titulo": "Gelatina con Colageno 150g - Frutilla",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Hand grip regulable de 5 a 60kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Whey 3Kg - Frutilla",
+      "titulo": "Testo Gold 120 Caps",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Whey 3Kg - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Testo Gold 120 Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Short Batik en V",
+      "titulo": "Catsuit Corto Con Manga",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Short Batik en V\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Catsuit Corto Con Manga\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
