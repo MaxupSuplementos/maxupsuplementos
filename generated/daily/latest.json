@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-13",
-  "generado": "2026-11-13T20:39:00.131Z",
+  "fecha": "2026-11-14",
+  "generado": "2026-11-14T17:57:21.618Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Creatina Monohidrato 300g",
+      "titulo": "Creatina Monohidrato 300Gr",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Creatina Monohidrato 300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina Monohidrato 300Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Medicine Ball 12Lb Everlast",
+      "titulo": "Just Whey x2Lb - Neutro",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Medicine Ball 12Lb Everlast\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Just Whey x2Lb - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Gelatina con Colageno 150g - Frutilla",
+      "titulo": "Maltodextrina Fructosa - Neutro",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Maltodextrina Fructosa - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Testo Gold 120 Caps",
+      "titulo": "Tx3 Black Cuts 60Cap",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Testo Gold 120 Caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Tx3 Black Cuts 60Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Catsuit Corto Con Manga",
+      "titulo": "Top Deportivo Con Broches",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Catsuit Corto Con Manga\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Top Deportivo Con Broches\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
