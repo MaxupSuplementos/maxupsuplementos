@@ -19,8 +19,10 @@ assert.match(app, /Buscando coincidencias en el catálogo actualizado/,
   'un filtro temprano no debe mostrar falsamente que no hay resultados');
 
 const llamadasLiquidaciones = app.match(/cargarLiquidaciones\(\);/g) || [];
-assert.equal(llamadasLiquidaciones.length, 1,
-  'las ofertas deben cargarse bajo demanda y no competir dos veces con el catálogo al iniciar');
+assert.equal(llamadasLiquidaciones.length, 2,
+  'debe existir una carga automática posterior al catálogo y otra al abrir la sección manualmente');
+assert.match(app, /renderAll\(\);[\s\S]{0,500}cargarLiquidaciones\(\);/,
+  'las ofertas automáticas deben esperar a que el catálogo principal ya esté visible');
 
 assert.match(index, /<option value="12">VER 12 POR PÁGINA<\/option>/,
   'la primera vista debe limitarse a doce productos');
@@ -29,7 +31,7 @@ assert.match(app, /let ITEMS_POR_PAGINA = 12/,
 assert.match(app, /cardIndex<4\?'eager':'lazy'/,
   'solo las primeras imágenes visibles deben competir por la red');
 
-const version = '20261029-ofertas-web';
+const version = '20261116-liquidaciones';
 assert.match(index, new RegExp(`app\\.js\\?v=${version}`));
 assert.match(sw, new RegExp(`app\\.js\\?v=${version}`));
 assert.match(sw, /return cached \|\| actualizacion/,

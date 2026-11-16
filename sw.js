@@ -1,13 +1,13 @@
 // MAXUP Service Worker — Cache & Offline
-const CACHE_NAME = 'maxup-v25-ofertas-web';
+const CACHE_NAME = 'maxup-v26-liquidaciones';
 // OJO: si un asset de esta lista no existe (404), addAll falla y NO se cachea nada.
 // mantenimiento.webp se descarga solo si el mantenimiento se activa.
 const ASSETS = [
   './',
   './index.html',
   './privacidad.html',
-  './styles.css?v=20261029-ofertas-web',
-  './app.js?v=20261029-ofertas-web',
+  './styles.css?v=20261116-liquidaciones',
+  './app.js?v=20261116-liquidaciones',
   './logo.png',
   './logo-transparent.png',
   './favicon.png',

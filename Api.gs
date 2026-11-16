@@ -29,7 +29,8 @@ function _getConfig() {
       WA_VERIFY_TOKEN:  props.getProperty('WA_VERIFY_TOKEN')   || '',
       WA_ACCESS_TOKEN:  props.getProperty('WA_ACCESS_TOKEN')   || '',
       WA_PHONE_ID:      props.getProperty('WA_PHONE_ID')       || '',
-      WA_GRAPH_VERSION: props.getProperty('WA_GRAPH_VERSION')  || 'v26.0'
+      WA_GRAPH_VERSION: props.getProperty('WA_GRAPH_VERSION')  || 'v26.0',
+      WA_ADMIN_EMAIL:   props.getProperty('WA_ADMIN_EMAIL')    || 'maxups24@gmail.com'
     };
   } catch(e) {
     _CONFIG = {
@@ -42,7 +43,8 @@ function _getConfig() {
       WA_VERIFY_TOKEN:  '',
       WA_ACCESS_TOKEN:  '',
       WA_PHONE_ID:      '',
-      WA_GRAPH_VERSION: 'v26.0'
+      WA_GRAPH_VERSION: 'v26.0',
+      WA_ADMIN_EMAIL:   'maxups24@gmail.com'
     };
   }
   return _CONFIG;
@@ -236,6 +238,8 @@ function doPost(e) {
     if (data.accion === 'admin_reenviar_pago')   return _jsonOut(adminConfirmarStockYHabilitarPago(data.sesion, data.pedido, true));
     if (data.accion === 'admin_confirmar_pago')  return _jsonOut(adminConfirmarPagoPedido(data.sesion, data.pedido));
     if (data.accion === 'admin_vencer')        return _jsonOut(adminGetPorVencer(data.sesion, data.dias));
+    if (data.accion === 'admin_ofertas_web')   return _jsonOut(adminGetOfertasWeb(data.sesion));
+    if (data.accion === 'admin_oferta_guardar') return _jsonOut(adminGuardarOfertaWeb(data.sesion, data.ref, data.precio));
     if (data.accion === 'admin_dashboard')     return _jsonOut(adminGetDashboard(data.sesion));
     if (data.accion === 'admin_mantenimiento') return _jsonOut(adminMantenimiento(data.sesion, data.activo, data.mensaje));
     if (data.accion === 'admin_mayoristas')    return adminMayoristas({ sesion: data.sesion });
@@ -264,6 +268,21 @@ function doPost(e) {
     if (data.accion === 'caja_cerrar')      return _jsonOut(cerrarJornadaCajaMaxup(data.sesion));
     if (data.accion === 'caja_aplicar')     return _jsonOut(registrarVentaCajaMaxup(data.datos, data.sesion));
     if (data.accion === 'caja_derivados')   return _jsonOut(actualizarDerivadosCajaMaxup(data.sesion));
+    if (data.accion === 'caja_v2_sync') {
+      var claveCajaV2 = String(PropertiesService.getScriptProperties().getProperty('CAJA_V2_IMPORT_SECRET') || CAJA_V2_IMPORT_SECRET || '');
+      if (String(data.clave || '') !== claveCajaV2) {
+        throw new Error('Clave de sincronización inválida');
+      }
+      configurarSincronizacionCajaV2(data.clave, CAJA_V2_URL);
+      return _jsonOut(sincronizarDatosCajaV2());
+    }
+    if (data.accion === 'caja_v2_cerrar') {
+      var claveCierreCajaV2 = String(PropertiesService.getScriptProperties().getProperty('CAJA_V2_IMPORT_SECRET') || CAJA_V2_IMPORT_SECRET || '');
+      if (String(data.clave || '') !== claveCierreCajaV2) {
+        throw new Error('Clave de sincronización inválida');
+      }
+      return _jsonOut(cerrarVentasCajaV2(data.ventas));
+    }
 
     if (data.accion === 'club_estado')         return _jsonOut(estadoClubMaxup(data.email, data.telefono));
     if (data.accion === 'club_registro')       return _jsonOut(registrarClubMaxup(data));
@@ -931,13 +950,128 @@ function guardarResena(data) {
   }
 }
 
+function _normalizarEncabezadoOfertaWeb_(value) {
+  return String(value || '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+}
+
+function _buscarColumnaPrecioOfertaWeb_(hoja, filaHeader) {
+  if (!hoja || hoja.getLastColumn() < 1) return -1;
+  var headers = hoja.getRange(filaHeader, 1, 1, hoja.getLastColumn()).getDisplayValues()[0];
+  for (var i = 0; i < headers.length; i++) {
+    var h = _normalizarEncabezadoOfertaWeb_(headers[i]);
+    if (h === 'precio oferta' || h === 'precio en oferta' || h === 'oferta web') return i + 1;
+  }
+  return -1;
+}
+
+// Crea la columna una sola vez y siempre al final, para no desplazar ninguna
+// de las columnas que ya utiliza la caja, el stock o las ventas.
+function _asegurarColumnaPrecioOfertaWeb_(hoja, filaHeader) {
+  if (!hoja) return -1;
+  var existente = _buscarColumnaPrecioOfertaWeb_(hoja, filaHeader);
+  if (existente > 0) return existente;
+
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(5000);
+    existente = _buscarColumnaPrecioOfertaWeb_(hoja, filaHeader);
+    if (existente > 0) return existente;
+
+    var columna = hoja.getLastColumn() + 1;
+    hoja.getRange(filaHeader, columna)
+      .setValue('Precio oferta')
+      .setNote('Dejá vacío para usar el precio normal. Escribí un importe menor al precio unitario para mostrar OFERTA en la web.')
+      .setBackground('#B91C1C')
+      .setFontColor('#FFFFFF')
+      .setFontWeight('bold')
+      .setHorizontalAlignment('center');
+    hoja.setColumnWidth(columna, 125);
+    if (hoja.getMaxRows() > filaHeader) {
+      hoja.getRange(filaHeader + 1, columna, hoja.getMaxRows() - filaHeader, 1)
+        .setNumberFormat('$ #,##0')
+        .setBackground('#FFF5F5');
+    }
+    return columna;
+  } catch (e) {
+    Logger.log('No se pudo asegurar Precio oferta en ' + hoja.getName() + ': ' + e.message);
+    return _buscarColumnaPrecioOfertaWeb_(hoja, filaHeader);
+  } finally {
+    try { lock.releaseLock(); } catch (eLock) {}
+  }
+}
+
+function _precioOfertaWebValido_(valor, precioRegular) {
+  var oferta = Number(valor) || 0;
+  var regular = Number(precioRegular) || 0;
+  return oferta > 0 && regular > 0 && oferta < regular ? oferta : 0;
+}
+
+function _claveGrupoOfertaWeb_(producto) {
+  var nombre = String(producto && producto.nombre || '').trim();
+  var separador = nombre.lastIndexOf(' - ');
+  if (separador > 0) nombre = nombre.substring(0, separador).trim();
+  return _normalizarEncabezadoOfertaWeb_(producto && producto.marca) + '||'
+    + _normalizarEncabezadoOfertaWeb_(nombre);
+}
+
+// La tienda agrupa sabores como una sola ficha. Si se carga una oferta en una
+// de esas filas, la aplicamos al grupo completo para que tarjeta, carrito y
+// validación final siempre usen exactamente el mismo importe.
+function _aplicarOfertasPorGrupoWeb_(productos) {
+  var grupos = {};
+  (productos || []).forEach(function(producto) {
+    var clave = _claveGrupoOfertaWeb_(producto);
+    if (!grupos[clave]) grupos[clave] = { items: [], ofertas: [] };
+    grupos[clave].items.push(producto);
+    if (Number(producto.precio_oferta) > 0) grupos[clave].ofertas.push(Number(producto.precio_oferta));
+  });
+  Object.keys(grupos).forEach(function(clave) {
+    var grupo = grupos[clave];
+    if (!grupo.ofertas.length) return;
+    var oferta = Math.min.apply(null, grupo.ofertas);
+    var validaParaTodos = grupo.items.every(function(item) {
+      return oferta > 0 && oferta < (Number(item.precio_regular) || 0);
+    });
+    if (!validaParaTodos) return;
+    grupo.items.forEach(function(item) {
+      item.precio_venta = oferta;
+      item.precio_oferta = oferta;
+      item.en_oferta = true;
+    });
+  });
+  return productos;
+}
+
+// También se puede ejecutar manualmente desde Apps Script. Normalmente no hace
+// falta: la primera carga del catálogo deja ambas columnas listas.
+function instalarPreciosOfertaWeb() {
+  var ss = _getSS();
+  var resultado = {};
+  var catalogo = ss.getSheetByName('CATALOGO');
+  if (catalogo) resultado.CATALOGO = _asegurarColumnaPrecioOfertaWeb_(catalogo, 1);
+  var suplementos = ss.getSheetByName('SUPLEMENTOS');
+  if (suplementos) resultado.SUPLEMENTOS = _asegurarColumnaPrecioOfertaWeb_(suplementos, 2);
+  var indumentaria = ss.getSheetByName('INDUMENTARIA');
+  if (indumentaria) resultado.INDUMENTARIA = _asegurarColumnaPrecioOfertaWeb_(indumentaria, 2);
+  try { ss.toast('Columnas Precio oferta listas. Dejá vacío para quitar una oferta.', 'MAXUP', 7); } catch (e) {}
+  return { ok: true, columnas: resultado };
+}
+
 function getCatalogo() {
   var ss   = _getSS();
   var hoja = ss.getSheetByName('CATALOGO');
   var resultado;
-  if (hoja && hoja.getLastRow() > 1) resultado = getCatalogoDesdeHojaCatalogo(hoja);
+  if (hoja && hoja.getLastRow() > 1) {
+    _asegurarColumnaPrecioOfertaWeb_(hoja, 1);
+    resultado = getCatalogoDesdeHojaCatalogo(hoja);
+  }
   hoja = ss.getSheetByName('SUPLEMENTOS');
-  if (!resultado && hoja) resultado = getCatalogoDesdeSuplemetos(hoja);
+  if (!resultado && hoja) {
+    _asegurarColumnaPrecioOfertaWeb_(hoja, 2);
+    resultado = getCatalogoDesdeSuplemetos(hoja);
+  }
   if (!resultado) resultado = { productos: [], total: 0, error: 'No se encontró hoja CATALOGO ni SUPLEMENTOS' };
   _aplicarReservasCatalogo(resultado.productos);
   if (!ss.getSheetByName(_HOJA_FICHAS_PUBLICACIONES)) {
@@ -968,8 +1102,10 @@ function getCatalogoDesdeHojaCatalogo(hoja) {
     var p = {};
     headers.forEach(function(h, j) { p[h] = row[j]; });
     var nombre = String(p.nombre || '').trim();
-    var precio = Number(p.precio_venta || p.precio_lista || 0);
-    if (!nombre || precio <= 0) return;
+    var precioRegular = Number(p.precio_venta || p.precio_lista || 0);
+    var precioOferta = _precioOfertaWebValido_(p.precio_oferta || p.precio_en_oferta || p.oferta_web, precioRegular);
+    var precio = precioOferta || precioRegular;
+    if (!nombre || precioRegular <= 0) return;
     if (p.activo === false || p.activo === 'FALSE') return;
     // Soportar múltiples imágenes separadas por salto de línea o ;
     var imagenRaw = String(p.imagen_url || '').trim();
@@ -977,12 +1113,15 @@ function getCatalogoDesdeHojaCatalogo(hoja) {
     productos.push({
       id: p.sku || p.id || (i + 1), sku: String(p.sku || p.id || '').trim(), nombre: nombre, marca: String(p.marca || '').trim(),
       categoria: String(p.categoria || 'otros').trim(),
-      precio_venta: precio, precio_lista: Number(p.precio_lista || precio),
+      precio_venta: precio, precio_regular: precioRegular,
+      precio_oferta: precioOferta, en_oferta: precioOferta > 0,
+      precio_lista: Number(p.precio_lista || precioRegular),
       stock: Number(p.stock || 0), imagen_url: imagenes[0] || '', imagenes: imagenes,
       descripcion: String(p.descripcion || '').trim(),
     });
   });
   var _itemsSup = productos.map(function(p){ return { key:(p.marca||'')+'||'+p.nombre, stock:Number(p.stock)||0, marca:p.marca||'', nombre:p.nombre }; });
+  _aplicarOfertasPorGrupoWeb_(productos);
   return { productos: productos, total: productos.length, fuente: 'CATALOGO', timestamp: new Date().toISOString(), nuevos_ingresos: _calcularNuevosIngresos('SUP', _itemsSup) };
 }
 
@@ -999,7 +1138,7 @@ function _columnasCatalogoSuplementos(datos) {
     var producto = headers.indexOf('producto');
     if (producto < 0) continue;
 
-    var contado = -1, lista = -1, stock = -1, imagen = -1, descripcion = -1, sku = -1;
+    var contado = -1, lista = -1, stock = -1, imagen = -1, descripcion = -1, sku = -1, oferta = -1;
     for (var c = 0; c < headers.length; c++) {
       var h = headers[c];
       if (contado < 0 && (h === 'precio unitario' || h === 'precio contado' || h === 'precio efectivo')) contado = c;
@@ -1008,6 +1147,7 @@ function _columnasCatalogoSuplementos(datos) {
       if (imagen < 0 && (h === 'imagen url' || h === 'imagen_url' || h === 'imagen')) imagen = c;
       if (descripcion < 0 && h === 'descripcion') descripcion = c;
       if (sku < 0 && (h === 'sku' || h === 'codigo sku' || h === 'codigo_sku')) sku = c;
+      if (oferta < 0 && (h === 'precio oferta' || h === 'precio en oferta' || h === 'oferta web')) oferta = c;
     }
     return {
       filaHeader: f,
@@ -1017,10 +1157,11 @@ function _columnasCatalogoSuplementos(datos) {
       stock: stock >= 0 ? stock : 3,
       imagen: imagen >= 0 ? imagen : 8,
       descripcion: descripcion >= 0 ? descripcion : 9,
-      sku: sku
+      sku: sku,
+      oferta: oferta
     };
   }
-  return { filaHeader: 1, producto: 0, contado: 1, lista: 4, stock: 3, imagen: 8, descripcion: 9, sku: -1 };
+  return { filaHeader: 1, producto: 0, contado: 1, lista: 4, stock: 3, imagen: 8, descripcion: 9, sku: -1, oferta: -1 };
 }
 
 function getCatalogoDesdeSuplemetos(hoja) {
@@ -1042,6 +1183,9 @@ function getCatalogoDesdeSuplemetos(hoja) {
     var precio_lista = Number(col2) || 0;
     var stock        = Number(col3) || 0;
     if (precio_unit <= 0 && precio_lista <= 0) return;
+    var precio_oferta = columnas.oferta >= 0
+      ? _precioOfertaWebValido_(row[columnas.oferta], precio_unit)
+      : 0;
     var imagenRaw   = String(row[columnas.imagen] || '').trim();
     var descripcion = String(row[columnas.descripcion] || '').trim();
     // Soportar múltiples imágenes separadas por salto de línea o ;
@@ -1054,12 +1198,15 @@ function getCatalogoDesdeSuplemetos(hoja) {
       id: (columnas.sku >= 0 && row[columnas.sku]) ? String(row[columnas.sku]) : _skuDeterministico(marcaActual, col0, 'SUP'),
       sku: (columnas.sku >= 0 && row[columnas.sku]) ? String(row[columnas.sku]) : _skuDeterministico(marcaActual, col0, 'SUP'),
       nombre: col0, marca: marcaActual, categoria: _cat,
-      precio_venta: precio_unit, precio_lista: precio_lista || precio_unit,
+      precio_venta: precio_oferta || precio_unit, precio_regular: precio_unit,
+      precio_oferta: precio_oferta, en_oferta: precio_oferta > 0,
+      precio_lista: precio_lista || precio_unit,
       stock: stock, imagen_url: imagenes[0] || '', imagenes: imagenes,
       descripcion: descripcion,
     });
   });
 
+  _aplicarOfertasPorGrupoWeb_(productos);
   var _itemsSup = productos.map(function(p){ return { key:(p.marca||'')+'||'+p.nombre, stock:Number(p.stock)||0, marca:p.marca||'', nombre:p.nombre }; });
   return { productos: productos, total: productos.length, fuente: 'SUPLEMENTOS', timestamp: new Date().toISOString(), nuevos_ingresos: _calcularNuevosIngresos('SUP', _itemsSup) };
 }
@@ -2111,6 +2258,253 @@ function adminGetClientesDescuento(clave) {
 }
 
 // ════════════════════════════════════════════════════════════
+//  OFERTAS MANUALES DE LA WEB
+// ════════════════════════════════════════════════════════════
+
+function _nombreBaseOfertaWeb_(nombre) {
+  nombre = String(nombre || '').trim();
+  var separador = nombre.lastIndexOf(' - ');
+  return separador > 0 ? nombre.substring(0, separador).trim() : nombre;
+}
+
+function _crearRefOfertaWeb_(datos) {
+  return Utilities.base64EncodeWebSafe(JSON.stringify(datos || {}), Utilities.Charset.UTF_8);
+}
+
+function _leerRefOfertaWeb_(ref) {
+  try {
+    return JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(ref || ''))).getDataAsString());
+  } catch (e) {
+    throw new Error('No se pudo identificar el producto elegido. Actualizá la lista e intentá de nuevo.');
+  }
+}
+
+function _listarProductosOfertaWeb_() {
+  var productos = [];
+  var catalogo = getCatalogo();
+  var fuente = String(catalogo.fuente || 'SUPLEMENTOS');
+  var grupos = {};
+
+  (catalogo.productos || []).forEach(function(p) {
+    var grupo = _claveGrupoOfertaWeb_(p);
+    var regular = Number(p.precio_regular || p.precio_venta || 0);
+    if (!grupos[grupo]) {
+      grupos[grupo] = {
+        tipo: 'SUP', fuente: fuente, grupo: grupo,
+        nombre: _nombreBaseOfertaWeb_(p.nombre), marca: String(p.marca || ''),
+        stock: 0, precioRegular: regular, precioOferta: 0,
+        imagen: String(p.imagen_url || ''), categoria: String(p.categoria || '')
+      };
+    }
+    grupos[grupo].stock += Number(p.stock) || 0;
+    if (regular > 0 && (!grupos[grupo].precioRegular || regular < grupos[grupo].precioRegular)) {
+      grupos[grupo].precioRegular = regular;
+    }
+    var oferta = Number(p.precio_oferta) || 0;
+    if (oferta > 0 && (!grupos[grupo].precioOferta || oferta < grupos[grupo].precioOferta)) {
+      grupos[grupo].precioOferta = oferta;
+    }
+    if (!grupos[grupo].imagen && p.imagen_url) grupos[grupo].imagen = String(p.imagen_url);
+  });
+
+  Object.keys(grupos).forEach(function(k) {
+    var item = grupos[k];
+    item.ref = _crearRefOfertaWeb_({ tipo:item.tipo, fuente:item.fuente, grupo:item.grupo, nombre:item.nombre, marca:item.marca });
+    item.enOferta = item.precioOferta > 0 && item.precioOferta < item.precioRegular;
+    productos.push(item);
+  });
+
+  var indumentaria = getIndumentaria();
+  (indumentaria.prendas || []).forEach(function(p) {
+    var regular = Number(p.precio_regular || p.precio || 0);
+    var oferta = Number(p.precio_oferta) || 0;
+    var refDatos = {
+      tipo:'IND', marca:String(p.marca || ''), codigo:String(p.codigo || ''),
+      nombre:String(p.nombre || '')
+    };
+    productos.push({
+      tipo:'IND', fuente:'INDUMENTARIA', nombre:String(p.nombre || ''), marca:String(p.marca || ''),
+      codigo:String(p.codigo || ''), stock:Number(p.stock) || 0,
+      precioRegular:regular, precioOferta:oferta,
+      imagen:String(p.img || (p.imagenes && p.imagenes[0]) || ''), categoria:String(p.cat || 'Indumentaria'),
+      ref:_crearRefOfertaWeb_(refDatos), enOferta:oferta > 0 && oferta < regular
+    });
+  });
+
+  productos.sort(function(a, b) {
+    if (a.enOferta !== b.enOferta) return a.enOferta ? -1 : 1;
+    var ma = _normalizarEncabezadoOfertaWeb_(a.marca);
+    var mb = _normalizarEncabezadoOfertaWeb_(b.marca);
+    if (ma !== mb) return ma.localeCompare(mb);
+    return _normalizarEncabezadoOfertaWeb_(a.nombre).localeCompare(_normalizarEncabezadoOfertaWeb_(b.nombre));
+  });
+  return productos;
+}
+
+function adminGetOfertasWeb(sesion) {
+  _validarSesionAdmin(sesion);
+  var productos = _listarProductosOfertaWeb_();
+  return {
+    ok:true,
+    productos:productos,
+    ofertas:productos.filter(function(p) { return p.enOferta; }),
+    total:productos.length
+  };
+}
+
+function _guardarOfertaSuplementoWeb_(ref, precio) {
+  var ss = _getSS();
+  var nombreHoja = String(ref.fuente || 'SUPLEMENTOS').toUpperCase() === 'CATALOGO' ? 'CATALOGO' : 'SUPLEMENTOS';
+  var hoja = ss.getSheetByName(nombreHoja);
+  if (!hoja) throw new Error('No se encontró la hoja ' + nombreHoja + '.');
+  var filaHeader = nombreHoja === 'CATALOGO' ? 1 : 2;
+  var columnaOferta = _asegurarColumnaPrecioOfertaWeb_(hoja, filaHeader);
+  var datos = hoja.getDataRange().getValues();
+  var filas = [];
+  var precios = [];
+
+  if (nombreHoja === 'CATALOGO') {
+    var headers = datos[0].map(_normalizarEncabezadoOfertaWeb_);
+    var colNombre = headers.indexOf('nombre');
+    var colMarca = headers.indexOf('marca');
+    var colPrecio = headers.indexOf('precio venta');
+    if (colPrecio < 0) colPrecio = headers.indexOf('precio lista');
+    for (var i = 1; i < datos.length; i++) {
+      var producto = { nombre:datos[i][colNombre], marca:colMarca >= 0 ? datos[i][colMarca] : '' };
+      if (_claveGrupoOfertaWeb_(producto) !== String(ref.grupo || '')) continue;
+      filas.push(i + 1);
+      precios.push(Number(datos[i][colPrecio]) || 0);
+    }
+  } else {
+    var columnas = _columnasCatalogoSuplementos(datos);
+    var marcaActual = '';
+    for (var s = 0; s < datos.length; s++) {
+      var nombre = String(datos[s][columnas.producto] || '').trim();
+      if (!nombre || s === columnas.filaHeader || nombre.toLowerCase() === 'producto') continue;
+      var contado = datos[s][columnas.contado];
+      if (nombre && (contado === null || contado === '')) { marcaActual = nombre; continue; }
+      var productoSup = { nombre:nombre, marca:marcaActual };
+      if (_claveGrupoOfertaWeb_(productoSup) !== String(ref.grupo || '')) continue;
+      filas.push(s + 1);
+      precios.push(Number(contado) || 0);
+    }
+  }
+
+  if (!filas.length) throw new Error('El producto cambió de lugar o ya no existe. Actualizá la lista.');
+  if (precio > 0 && precios.some(function(p) { return p <= 0 || precio >= p; })) {
+    throw new Error('El precio especial debe ser menor al precio normal de todas sus presentaciones.');
+  }
+  filas.forEach(function(fila) {
+    var celda = hoja.getRange(fila, columnaOferta);
+    if (precio > 0) celda.setValue(precio).setNumberFormat('$ #,##0');
+    else celda.clearContent();
+  });
+  return filas.length;
+}
+
+function _guardarOfertaIndumentariaWeb_(ref, precio) {
+  var hoja = _getSS().getSheetByName('INDUMENTARIA');
+  if (!hoja) throw new Error('No se encontró la hoja INDUMENTARIA.');
+  var columnaOferta = _asegurarColumnaPrecioOfertaWeb_(hoja, 2);
+  var datos = hoja.getDataRange().getValues();
+  var filas = [];
+  var precios = [];
+  var marcaActual = '';
+  var lastBase = '';
+  var lastCodigo = '';
+  var objetivo = _normalizarEncabezadoOfertaWeb_(ref.marca) + '||'
+    + _normalizarEncabezadoOfertaWeb_(ref.codigo) + '||'
+    + _normalizarEncabezadoOfertaWeb_(ref.nombre);
+
+  for (var i = 2; i < datos.length; i++) {
+    var row = datos[i];
+    var codigo = String(row[0] || '').trim();
+    var nombre = String(row[1] || '').trim();
+    var color = String(row[2] || '').trim();
+    var precioUnit = Number(row[3]) || 0;
+    var precioList = Number(row[4]) || 0;
+    if (!nombre && !color && precioUnit === 0) continue;
+    if (nombre && precioUnit === 0 && precioList === 0) {
+      var encabezado = nombre.toUpperCase();
+      if (encabezado === 'HOMBRE' || encabezado === 'HOMBRES' || encabezado === 'MASCULINO'
+          || encabezado === 'MUJER' || encabezado === 'MUJERES' || encabezado === 'FEMENINO') {
+        marcaActual = ''; lastBase = ''; lastCodigo = '';
+      } else {
+        marcaActual = nombre; lastBase = ''; lastCodigo = '';
+      }
+      continue;
+    }
+    if (codigo) lastCodigo = codigo;
+    if (nombre) lastBase = extraerTalle(nombre).base;
+    if (!lastBase) continue;
+    var clave = _normalizarEncabezadoOfertaWeb_(marcaActual) + '||'
+      + _normalizarEncabezadoOfertaWeb_(lastCodigo) + '||'
+      + _normalizarEncabezadoOfertaWeb_(lastBase);
+    if (clave !== objetivo) continue;
+    filas.push(i + 1);
+    precios.push(precioUnit);
+  }
+
+  if (!filas.length) throw new Error('La prenda cambió de lugar o ya no existe. Actualizá la lista.');
+  if (precio > 0 && precios.some(function(p) { return p <= 0 || precio >= p; })) {
+    throw new Error('El precio especial debe ser menor al precio normal de todas las variantes.');
+  }
+  filas.forEach(function(fila) {
+    var celda = hoja.getRange(fila, columnaOferta);
+    if (precio > 0) celda.setValue(precio).setNumberFormat('$ #,##0');
+    else celda.clearContent();
+  });
+  return filas.length;
+}
+
+function adminGuardarOfertaWeb(sesion, refCodificada, precioOferta) {
+  _validarSesionAdmin(sesion);
+  var ref = _leerRefOfertaWeb_(refCodificada);
+  var precio = Math.round(Number(precioOferta) || 0);
+  if (precio < 0) throw new Error('El precio no puede ser negativo.');
+  // Crear la columna antes de tomar el candado general. Así la primera oferta
+  // también funciona aunque la hoja todavía no tenga "Precio oferta".
+  var nombreHoja = ref.tipo === 'IND'
+    ? 'INDUMENTARIA'
+    : (String(ref.fuente || '').toUpperCase() === 'CATALOGO' ? 'CATALOGO' : 'SUPLEMENTOS');
+  var hojaOferta = _getSS().getSheetByName(nombreHoja);
+  if (!hojaOferta) throw new Error('No se encontró la hoja ' + nombreHoja + '.');
+  _asegurarColumnaPrecioOfertaWeb_(hojaOferta, nombreHoja === 'CATALOGO' ? 1 : 2);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var filas = ref.tipo === 'IND'
+      ? _guardarOfertaIndumentariaWeb_(ref, precio)
+      : _guardarOfertaSuplementoWeb_(ref, precio);
+    SpreadsheetApp.flush();
+    _registrarAuditoria(
+      precio > 0 ? 'OFERTA WEB ACTIVADA' : 'OFERTA WEB QUITADA',
+      String(ref.marca || '') + ' · ' + String(ref.nombre || '') + (precio > 0 ? ' · $' + precio : ''),
+      'panel administracion'
+    );
+    CacheService.getScriptCache().remove('OFERTAS_PUBLICAS_V2');
+    return { ok:true, filasActualizadas:filas, precio:precio, mensaje:precio > 0 ? 'Oferta publicada.' : 'Oferta quitada.' };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function _leerOfertasManualesWeb_() {
+  return _listarProductosOfertaWeb_().filter(function(p) {
+    return p.enOferta && p.stock > 0;
+  }).map(function(p) {
+    var ahorro = Math.max(0, Number(p.precioRegular) - Number(p.precioOferta));
+    return {
+      tipo:'manual', urgencia:'oferta', tipoProducto:p.tipo,
+      nombre:p.nombre, marca:p.marca, stock:p.stock, imagen:p.imagen,
+      precio:Number(p.precioOferta), precioOferta:Number(p.precioOferta),
+      precioRegular:Number(p.precioRegular), ahorro:ahorro,
+      descuento:p.precioRegular > 0 ? Math.round(ahorro / p.precioRegular * 100) : 0
+    };
+  });
+}
+
+// ════════════════════════════════════════════════════════════
 //  OFERTAS / VENCIMIENTOS
 // ════════════════════════════════════════════════════════════
 
@@ -2174,8 +2568,27 @@ function _leerOfertasHoja(diasLimite) {
 }
 
 function getOfertas() {
-  var productos = _leerOfertasHoja(50);
-  return { ok: true, productos: productos, total: productos.length };
+  var cache = CacheService.getScriptCache();
+  var guardado = cache.get('OFERTAS_PUBLICAS_V2');
+  if (guardado) {
+    try { return JSON.parse(guardado); } catch (eCache) {}
+  }
+  var manuales = _leerOfertasManualesWeb_();
+  var ocupados = {};
+  manuales.forEach(function(p) {
+    ocupados[_normalizarEncabezadoOfertaWeb_(p.marca) + '||' + _normalizarEncabezadoOfertaWeb_(p.nombre)] = true;
+  });
+  var vencimientos = _leerOfertasHoja(50).filter(function(p) {
+    var clave = _normalizarEncabezadoOfertaWeb_(p.marca) + '||' + _normalizarEncabezadoOfertaWeb_(_nombreBaseOfertaWeb_(p.nombre));
+    if (ocupados[clave]) return false;
+    p.tipo = 'vencimiento';
+    p.precioRegular = Number(p.precio) || 0;
+    return true;
+  });
+  var productos = manuales.concat(vencimientos);
+  var respuesta = { ok: true, productos: productos, total: productos.length };
+  try { cache.put('OFERTAS_PUBLICAS_V2', JSON.stringify(respuesta), 60); } catch (ePut) {}
+  return respuesta;
 }
 
 function adminGetPorVencer(clave, dias) {
@@ -2745,16 +3158,12 @@ function obtenerCatalogoMayorista() {
     var img        = row[8] ? row[8].toString() : '';
     var desc       = row[9] ? row[9].toString() : '';
     var skuMayo    = colsMayo.sku >= 0 ? String(row[colsMayo.sku] || '') : _skuDeterministico(catAct, nombre, 'SUP');
-    var categoriaMayo = inferirCat(nombre + ' ' + desc);
-    // El filtro mayorista agrupa magnesio, omega y minerales con vitaminas.
-    if (categoriaMayo === 'magnesio') categoriaMayo = 'vitamin';
 
     prods.push({
       id: skuMayo || (nombre.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 30) + '_' + i),
       sku: skuMayo,
       name: nombre, brand: catAct,
-      // catAct es la marca de la sección, no la categoría del producto.
-      cat: categoriaMayo,
+      cat: categoriaNormalizada(catAct),
       precio: precio,
       precio_lista: _calcularPrecioListaTresCuotas(precio),
       precio_mayorista: precioMayo,
@@ -3033,6 +3442,8 @@ function getIndumentaria() {
     var hoja = _getSS().getSheetByName('INDUMENTARIA');
     if (!hoja) return { ok: false, error: 'Hoja INDUMENTARIA no encontrada', prendas: [] };
 
+    var columnaOferta = _asegurarColumnaPrecioOfertaWeb_(hoja, 2);
+    var indiceOferta = columnaOferta > 0 ? columnaOferta - 1 : -1;
     var datos = hoja.getDataRange().getValues();
     var mapa  = {};
     var orden = [];
@@ -3057,6 +3468,7 @@ function getIndumentaria() {
       var precioList = parseFloat(row[4]) || 0;
       var stock      = parseInt(row[5]) || 0;
       var imgRaw     = row[9] ? row[9].toString().trim() : '';
+      var precioOferta = indiceOferta >= 0 ? _precioOfertaWebValido_(row[indiceOferta], precioUnit) : 0;
 
       if (!nombre && !color && precioUnit === 0) continue;
 
@@ -3117,12 +3529,24 @@ function getIndumentaria() {
         var genero = generoActual;
         if (MEN_BRANDS.indexOf(marcaActual.toUpperCase()) >= 0) genero = 'H';
         mapa[clave] = {
-          codigo: codigo, nombre: lastBase, precio: precioUnit,
+          codigo: codigo, nombre: lastBase,
+          precio: precioOferta || precioUnit,
+          precio_regular: precioUnit,
+          precio_oferta: precioOferta,
+          en_oferta: precioOferta > 0,
           precio_lista: precioList || Math.round(precioUnit * 1.06),
           stock: 0, cat: detectarCatIndum(lastBase),
           marca: marcaActual, genero: genero, img: imgUrl, imagenes: [], variantes: []
         };
         orden.push(clave);
+      }
+
+      // Si cualquiera de las variantes de la prenda tiene una oferta válida,
+      // mostrar ese precio promocional en la ficha agrupada.
+      if (precioOferta > 0 && (!mapa[clave].precio_oferta || precioOferta < mapa[clave].precio_oferta)) {
+        mapa[clave].precio_oferta = precioOferta;
+        mapa[clave].precio = precioOferta;
+        mapa[clave].en_oferta = true;
       }
 
       if (lastCodigo && !mapa[clave].codigo) mapa[clave].codigo = lastCodigo;
@@ -4848,6 +5272,7 @@ var WA_TTL_ESTADO = 21600; // 6 horas, maximo de CacheService
 var WA_ATENCION_HUMANA_1 = '5491168461457';
 var WA_ATENCION_HUMANA_2 = '5493875104606';
 var WA_RESPUESTAS_HEADERS = ['Tema','Palabras clave','Respuesta de MAXUP','Activo','Prioridad'];
+var WA_CHATS_HEADERS = ['Fecha y hora','Telefono','Nombre','Direccion','Mensaje','Tipo','ID Meta'];
 
 function _waAsegurarRespuestasMaxup() {
   var ss = _getSS();
@@ -4868,9 +5293,160 @@ function _waAsegurarRespuestasMaxup() {
   return hoja;
 }
 
+function _waAsegurarChatsMaxup() {
+  var ss = _getSS();
+  var hoja = ss.getSheetByName('ASISTENTE_CHATS');
+  if (!hoja) hoja = ss.insertSheet('ASISTENTE_CHATS');
+  if (hoja.getLastRow() === 0 || String(hoja.getRange(1,1).getValue() || '') !== WA_CHATS_HEADERS[0]) {
+    hoja.getRange(1,1,1,WA_CHATS_HEADERS.length).setValues([WA_CHATS_HEADERS]);
+    hoja.getRange(1,1,1,WA_CHATS_HEADERS.length)
+      .setFontWeight('bold').setBackground('#111827').setFontColor('#00C8FF');
+    hoja.setFrozenRows(1);
+    hoja.setColumnWidth(1,150);
+    hoja.setColumnWidth(2,130);
+    hoja.setColumnWidth(3,180);
+    hoja.setColumnWidth(4,100);
+    hoja.setColumnWidth(5,520);
+    hoja.setColumnWidth(6,130);
+    hoja.setColumnWidth(7,210);
+    hoja.getRange('A:A').setNumberFormat('dd/mm/yyyy hh:mm:ss');
+    hoja.getRange('E:E').setWrap(true);
+  }
+  return hoja;
+}
+
+function abrirConversacionesMax() {
+  var ss = _getSS();
+  var hoja = _waAsegurarChatsMaxup();
+  ss.setActiveSheet(hoja);
+  hoja.activate();
+  return {ok:true,hoja:hoja.getName()};
+}
+
+function _waNombreContacto_(value, telefono) {
+  var contactos = (value && value.contacts) || [];
+  var buscado = String(telefono || '').replace(/\D/g, '');
+  for (var i = 0; i < contactos.length; i++) {
+    var contacto = contactos[i] || {};
+    var waId = String(contacto.wa_id || '').replace(/\D/g, '');
+    if (!waId || waId === buscado) {
+      return String((contacto.profile && contacto.profile.name) || '').trim();
+    }
+  }
+  return '';
+}
+
+function _waRegistrarChat_(telefono, nombre, direccion, mensaje, tipo, idMeta) {
+  try {
+    var hoja = _waAsegurarChatsMaxup();
+    hoja.appendRow([
+      new Date(),
+      String(telefono || '').replace(/\D/g, ''),
+      String(nombre || '').trim().slice(0,120),
+      String(direccion || '').toUpperCase(),
+      String(mensaje || '').trim().slice(0,3900),
+      String(tipo || '').trim().slice(0,80),
+      String(idMeta || '').trim().slice(0,240)
+    ]);
+    var excedentes = hoja.getLastRow() - 3001;
+    if (excedentes > 0) hoja.deleteRows(2, excedentes);
+    return true;
+  } catch (e) {
+    Logger.log('Historial de Max: ' + e.message);
+    return false;
+  }
+}
+
+function _waUltimosMensajes_(telefono, limite) {
+  try {
+    var hoja = _waAsegurarChatsMaxup();
+    var ultima = hoja.getLastRow();
+    if (ultima < 2) return [];
+    var cantidad = Math.min(ultima - 1, 250);
+    var filas = hoja.getRange(ultima - cantidad + 1, 1, cantidad, WA_CHATS_HEADERS.length).getValues();
+    var buscado = String(telefono || '').replace(/\D/g, '');
+    var mensajes = filas.filter(function(r){
+      return String(r[1] || '').replace(/\D/g, '') === buscado && String(r[4] || '').trim();
+    }).map(function(r){
+      return {fecha:r[0],nombre:String(r[2]||''),direccion:String(r[3]||''),mensaje:String(r[4]||''),tipo:String(r[5]||'')};
+    });
+    return mensajes.slice(-Math.max(1, Number(limite) || 8));
+  } catch (e) {
+    Logger.log('Lectura historial de Max: ' + e.message);
+    return [];
+  }
+}
+
+function _waUltimaConsultaCliente_(telefono) {
+  var mensajes = _waUltimosMensajes_(telefono, 20);
+  for (var i = mensajes.length - 1; i >= 0; i--) {
+    if (mensajes[i].direccion === 'CLIENTE') return mensajes[i].mensaje;
+  }
+  return '';
+}
+
+function _waResumenConversacion_(telefono, limite) {
+  return _waUltimosMensajes_(telefono, limite).map(function(item){
+    var quien = item.direccion === 'MAX' ? 'Max' : (item.nombre || 'Cliente');
+    return quien + ': ' + String(item.mensaje || '').replace(/\s+/g, ' ').slice(0,500);
+  }).join('\n');
+}
+
+function _waAvisarNuevaConsulta_(telefono, nombre, texto) {
+  if (!String(texto || '').trim()) return;
+  try {
+    var cache = CacheService.getScriptCache();
+    var clave = 'WA_CONSULTA_NUEVA_' + _hashSeguro(telefono);
+    if (cache.get(clave)) return;
+    cache.put(clave, '1', 1800);
+    var enlace = 'https://wa.me/' + String(telefono || '').replace(/\D/g, '')
+      + '?text=' + encodeURIComponent('Hola, te escribimos de MAXUP por tu consulta con Max: ' + String(texto).slice(0,500));
+    _notificarTelegram(
+      '💬 Nueva consulta a Max\nCliente: ' + (String(nombre || '').trim() || 'Sin nombre')
+        + '\nTelefono: +' + telefono
+        + '\nMensaje: ' + String(texto || '').replace(/\s+/g, ' ').slice(0,900),
+      {botonTexto:'Responder al cliente',botonUrl:enlace}
+    );
+  } catch (e) {
+    Logger.log('Aviso de nueva consulta: ' + e.message);
+  }
+}
+
+function _waAvisarDerivacion_(telefono, motivo) {
+  var consulta = _waUltimaConsultaCliente_(telefono) || String(motivo || 'consulta');
+  var resumen = _waResumenConversacion_(telefono, 8);
+  var enlace = 'https://wa.me/' + String(telefono || '').replace(/\D/g, '')
+    + '?text=' + encodeURIComponent('Hola, te escribimos de MAXUP por tu consulta con Max: ' + consulta.slice(0,500));
+  var cache = CacheService.getScriptCache();
+  var clave = 'WA_DERIVACION_' + _hashSeguro(telefono);
+  if (!cache.get(clave)) {
+    cache.put(clave, '1', 600);
+    var aviso = '🙋 Max solicita atencion humana\nTelefono: +' + telefono
+      + '\nMotivo: ' + String(motivo || 'consulta')
+      + '\nUltima consulta: ' + consulta.slice(0,700)
+      + (resumen ? '\n\nConversacion reciente:\n' + resumen.slice(0,2500) : '');
+    try {
+      _notificarTelegram(aviso, {botonTexto:'Responder al cliente',botonUrl:enlace});
+    } catch (eTelegram) {}
+    try {
+      var email = String(_getConfig().WA_ADMIN_EMAIL || '').trim();
+      if (email) MailApp.sendEmail({
+        to: email,
+        subject: 'Max solicita atencion humana - ' + String(telefono || '').slice(-4),
+        name: 'MAXUP Suplementos',
+        body: aviso + '\n\nResponder al cliente:\n' + enlace
+      });
+    } catch (eEmail) {
+      Logger.log('Aviso por email de Max: ' + eEmail.message);
+    }
+  }
+  return {consulta:consulta,enlace:enlace,resumen:resumen};
+}
+
 function configurarAsistenteWhatsApp() {
   var hoja = _waAsegurarRespuestasMaxup();
-  return {ok:true,hoja:hoja.getName(),respuestas:Math.max(0,hoja.getLastRow()-1),mensaje:'El asistente usa esta hoja para responder con el estilo de MAXUP.'};
+  var chats = _waAsegurarChatsMaxup();
+  return {ok:true,hoja:hoja.getName(),historial:chats.getName(),respuestas:Math.max(0,hoja.getLastRow()-1),mensaje:'El asistente usa esta hoja para responder y guarda las conversaciones en ASISTENTE_CHATS.'};
 }
 
 function _waRespuestaPersonalizada(normal) {
@@ -4959,14 +5535,29 @@ function _procesarWebhookWhatsApp(payload) {
         _waRegistrarDiagnostico('MENSAJE_RECIBIDO', telefono, 'Meta entrego correctamente el mensaje al asistente.');
 
         try {
-          if (!_waPermitirMensaje(telefono)) continue;
           var texto = _waTextoEntrante(mensaje);
+          var nombreContacto = _waNombreContacto_(value, telefono);
+          _waRegistrarChat_(
+            telefono,
+            nombreContacto,
+            'CLIENTE',
+            texto || '[Mensaje ' + String(mensaje.type || 'no compatible') + ']',
+            String(mensaje.type || ''),
+            messageId
+          );
+          _waAvisarNuevaConsulta_(telefono, nombreContacto, texto);
+          if (!_waPermitirMensaje(telefono)) continue;
           if (!texto) {
-            _enviarWhatsAppTexto(telefono, 'Por ahora puedo leer mensajes de texto. Escribi *menu* para ver las opciones.');
+            var respuestaNoTexto = 'Por ahora puedo leer mensajes de texto. Escribi *menu* para ver las opciones.';
+            _enviarWhatsAppTexto(telefono, respuestaNoTexto);
+            _waRegistrarChat_(telefono, 'Max', 'MAX', respuestaNoTexto, 'respuesta', '');
             continue;
           }
           var respuesta = _resolverAsistenteWhatsApp(telefono, texto);
-          if (respuesta) _enviarWhatsAppTexto(telefono, respuesta);
+          if (respuesta) {
+            _enviarWhatsAppTexto(telefono, respuesta);
+            _waRegistrarChat_(telefono, 'Max', 'MAX', respuesta, 'respuesta', '');
+          }
         } catch (errMensaje) {
           _waRegistrarDiagnostico('ERROR_AL_RESPONDER', telefono, errMensaje.message);
           Logger.log('WhatsApp: no se pudo procesar un mensaje (' + errMensaje.message + ')');
@@ -5441,10 +6032,9 @@ function _waRespuestaEntregas() {
 
 function _waDerivarHumano(telefono, motivo) {
   _waGuardarEstado(telefono, 'HUMANO');
-  try {
-    _notificarTelegram('🙋 WhatsApp solicita atencion humana\nTelefono: +' + telefono + '\nMotivo: ' + String(motivo || 'consulta'));
-  } catch (e) {}
-  var texto = encodeURIComponent('Hola MAXUP, Max me derivo para continuar mi consulta con una persona.');
+  var aviso = _waAvisarDerivacion_(telefono, motivo);
+  var consulta = String((aviso && aviso.consulta) || motivo || 'consulta').replace(/\s+/g, ' ').slice(0,600);
+  var texto = encodeURIComponent('Hola MAXUP, Max me derivo para continuar con una persona. Mi consulta fue: ' + consulta);
   return 'Te comunico directamente con el equipo de *MAXUP*. Elegi cualquiera de estas dos opciones:\n\n'
     + '📲 *Atencion 1:* https://wa.me/' + WA_ATENCION_HUMANA_1 + '?text=' + texto + '\n'
     + '📲 *Atencion 2:* https://wa.me/' + WA_ATENCION_HUMANA_2 + '?text=' + texto + '\n\n'

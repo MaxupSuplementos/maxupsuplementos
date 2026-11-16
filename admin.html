@@ -241,6 +241,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <button class="tab" onclick="switchTab('cupones',this)">🏷️ Cupones</button>
     <button class="tab" onclick="switchTab('club',this)">🎁 Club & Sorteos</button>
     <button class="tab" onclick="switchTab('descuentos',this)">🎁 Descuentos</button>
+    <button class="tab" onclick="switchTab('ofertas',this)">🔥 Ofertas</button>
     <button class="tab" onclick="switchTab('vencer',this)">⏰ Por vencer <span class="badge" id="badgeVencer"></span></button>
     <button class="tab" id="tabBtnMayoristas" onclick="switchTab('mayoristas',this)">🏭 Mayoristas <span class="badge" id="badgeMayoristas"></span></button>
     <button class="tab" onclick="switchTab('log',this)">📋 Actividad</button>
@@ -255,6 +256,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.92);backdrop-fil
     <div id="tabCupones" style="display:none"></div>
     <div id="tabClub" style="display:none"></div>
     <div id="tabDescuentos" style="display:none"></div>
+    <div id="tabOfertas" style="display:none"></div>
     <div id="tabVencer" style="display:none"></div>
     <div id="tabMayoristas" style="display:none"></div>
     <div id="tabLog" style="display:none"></div>
@@ -466,7 +468,7 @@ function detenerAutoRefresh() {
 }
 
 // ── TABS ─────────────────────────────────────────────────────
-var ALL_TABS = ['resumen','dashboard','pedidos','stock','cupones','club','descuentos','vencer','mayoristas','log','ajustes'];
+var ALL_TABS = ['resumen','dashboard','pedidos','stock','cupones','club','descuentos','ofertas','vencer','mayoristas','log','ajustes'];
 
 function switchTab(tab, el) {
   tabActual = tab;
@@ -482,6 +484,7 @@ function switchTab(tab, el) {
   if (tab === 'cupones')     cargarCuponesSheets();
   if (tab === 'club')        cargarClub();
   if (tab === 'descuentos')  cargarDescuentos();
+  if (tab === 'ofertas')     cargarOfertasWeb();
   if (tab === 'vencer')      cargarVencer();
   if (tab === 'mayoristas')  cargarMayoristas();
   if (tab === 'log')         cargarLog();
@@ -490,7 +493,7 @@ function switchTab(tab, el) {
 
 function recargarTab() {
   var fn = {resumen:cargarResumen,dashboard:cargarDashboard,pedidos:cargarPedidos,stock:cargarStock,
-    cupones:cargarCuponesSheets,club:cargarClub,descuentos:cargarDescuentos,vencer:cargarVencer,mayoristas:cargarMayoristas,log:cargarLog,ajustes:cargarAjustes};
+    cupones:cargarCuponesSheets,club:cargarClub,descuentos:cargarDescuentos,ofertas:cargarOfertasWeb,vencer:cargarVencer,mayoristas:cargarMayoristas,log:cargarLog,ajustes:cargarAjustes};
   if(fn[tabActual]) fn[tabActual]();
 }
 
@@ -873,6 +876,128 @@ function cargarDescuentos() {
     });
     el.innerHTML = html;
   }).catch(function(){ el.innerHTML = '<div class="empty-txt">⚠️ No se pudo conectar.</div>'; });
+}
+
+// ── OFERTAS Y LIQUIDACIÓN ───────────────────────────────────
+var _ofertasWebProductos = [];
+var _ofertaWebSeleccionada = null;
+
+function cargarOfertasWeb() {
+  var el = document.getElementById('tabOfertas');
+  el.innerHTML = '<div class="loading-txt">Cargando productos y ofertas...</div>';
+  postAdmin({accion:'admin_ofertas_web', sesion:clave}).then(function(data) {
+    if (!data.ok) throw new Error(data.error || 'No se pudieron cargar las ofertas');
+    _ofertasWebProductos = data.productos || [];
+    _ofertaWebSeleccionada = null;
+    renderPanelOfertasWeb(data.ofertas || []);
+  }).catch(function(err) {
+    el.innerHTML = '<div class="empty-txt">⚠️ ' + esc(err.message) + '</div>';
+  });
+}
+
+function renderPanelOfertasWeb(ofertas) {
+  var el = document.getElementById('tabOfertas');
+  var html = '<div class="section-title">🔥 <span>Ofertas y liquidación</span></div>'
+    + '<div style="background:linear-gradient(135deg,rgba(255,49,88,.12),rgba(255,0,153,.07));border:1px solid rgba(255,73,101,.3);border-radius:12px;padding:16px;margin-bottom:16px;line-height:1.55">'
+    + '<strong style="color:#ff6178">Elegí cualquier producto y escribí el precio especial.</strong><br>'
+    + '<span style="color:var(--gray);font-size:.84rem">Aparecerá automáticamente en el apartado Ofertas y Liquidación de la tienda, con el precio anterior tachado. Para quitarlo, usá el botón Quitar oferta.</span></div>'
+    + '<div style="background:var(--dark2);border:1px solid rgba(0,200,255,.18);border-radius:12px;padding:16px;margin-bottom:22px">'
+    + '<label style="display:block;font-size:.75rem;color:var(--gray);margin-bottom:6px">BUSCAR PRODUCTO</label>'
+    + '<input class="filtro-input" id="ofertaBuscar" type="search" placeholder="Ej.: creatina gold, whey pro, catsuit..." autocomplete="off" oninput="buscarProductoOfertaWeb()" style="width:100%;font-size:1rem;padding:11px 13px">'
+    + '<div id="ofertaResultados" style="margin-top:8px;max-height:280px;overflow:auto"></div>'
+    + '<div id="ofertaSeleccion" style="display:none;margin-top:14px;padding:14px;border:1px solid rgba(0,230,118,.25);border-radius:10px;background:rgba(0,230,118,.05)"></div>'
+    + '<div id="ofertaPrecioWrap" style="display:none;margin-top:12px;gap:8px;align-items:end;flex-wrap:wrap">'
+    + '<label style="flex:1;min-width:190px;font-size:.75rem;color:var(--gray)">PRECIO DE OFERTA / LIQUIDACIÓN'
+    + '<input class="filtro-input" id="ofertaPrecio" type="number" min="1" step="1" inputmode="numeric" placeholder="$ Precio especial" style="display:block;width:100%;margin-top:5px;font-size:1.05rem;padding:11px 13px"></label>'
+    + '<button class="btn-estado btn-listo" onclick="guardarOfertaWeb()" style="padding:11px 20px;font-size:.88rem">🔥 PUBLICAR OFERTA</button></div>'
+    + '</div>'
+    + '<div class="section-title">Ofertas activas <span>(' + ofertas.length + ')</span></div>';
+
+  if (!ofertas.length) {
+    html += '<div class="empty-txt">Todavía no hay productos con precio especial.</div>';
+  } else {
+    ofertas.forEach(function(p) {
+      var ahorro = Math.max(0, Number(p.precioRegular || 0) - Number(p.precioOferta || 0));
+      var pct = p.precioRegular > 0 ? Math.round(ahorro / p.precioRegular * 100) : 0;
+      html += '<div style="background:var(--dark2);border:1px solid rgba(255,73,101,.22);border-left:3px solid #ff4965;border-radius:10px;padding:13px 14px;margin-bottom:9px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">'
+        + '<div style="flex:1;min-width:220px"><div style="font-weight:800">' + esc(p.nombre) + '</div>'
+        + '<div style="font-size:.78rem;color:var(--gray)">' + esc(p.marca) + ' · ' + (p.tipo==='IND'?'Indumentaria':'Suplemento') + ' · Stock: ' + Number(p.stock||0) + '</div></div>'
+        + '<div style="text-align:right"><div style="font-size:.75rem;color:#888;text-decoration:line-through">' + fmt(p.precioRegular) + '</div>'
+        + '<div style="color:#ff6178;font-family:Bebas Neue,sans-serif;font-size:1.35rem">' + fmt(p.precioOferta) + '</div>'
+        + '<div style="font-size:.7rem;color:var(--green)">' + pct + '% menos</div></div>'
+        + '<button class="btn-estado btn-cancelar" onclick="quitarOfertaWeb(\'' + encodeURIComponent(p.ref) + '\')">QUITAR OFERTA</button></div>';
+    });
+  }
+  el.innerHTML = html;
+}
+
+function _normalizarBusquedaOfertaWeb(valor) {
+  return String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+
+function buscarProductoOfertaWeb() {
+  var entrada = document.getElementById('ofertaBuscar');
+  var cont = document.getElementById('ofertaResultados');
+  var q = _normalizarBusquedaOfertaWeb(entrada && entrada.value);
+  if (!q) { cont.innerHTML = '<div style="color:#777;font-size:.8rem;padding:8px 2px">Escribí el nombre o la marca.</div>'; return; }
+  var palabras = q.split(/\s+/).filter(Boolean);
+  var resultados = _ofertasWebProductos.filter(function(p) {
+    var texto = _normalizarBusquedaOfertaWeb((p.marca||'') + ' ' + (p.nombre||'') + ' ' + (p.categoria||''));
+    return palabras.every(function(x) { return texto.indexOf(x) >= 0; });
+  }).slice(0, 30);
+  if (!resultados.length) { cont.innerHTML = '<div class="empty-txt" style="padding:14px">No encontré coincidencias.</div>'; return; }
+  cont.innerHTML = resultados.map(function(p) {
+    var sinStock = Number(p.stock||0) <= 0;
+    return '<button type="button" onclick="seleccionarProductoOfertaWeb(\'' + encodeURIComponent(p.ref) + '\')"'
+      + (sinStock ? ' disabled' : '')
+      + ' style="width:100%;display:flex;justify-content:space-between;gap:10px;text-align:left;padding:10px 12px;margin-bottom:5px;background:' + (p.enOferta?'rgba(255,73,101,.08)':'rgba(255,255,255,.035)') + ';border:1px solid ' + (p.enOferta?'rgba(255,73,101,.28)':'rgba(255,255,255,.07)') + ';border-radius:8px;color:#fff;cursor:' + (sinStock?'not-allowed':'pointer') + ';opacity:' + (sinStock?'.48':'1') + ';font-family:Rajdhani,sans-serif">'
+      + '<span><strong>' + esc(p.nombre) + '</strong><br><small style="color:#888">' + esc(p.marca) + ' · ' + (p.tipo==='IND'?'Indumentaria':'Suplemento') + '</small></span>'
+      + '<span style="text-align:right;white-space:nowrap"><strong style="color:var(--cyan)">' + fmt(p.precioRegular) + '</strong><br><small style="color:' + (p.enOferta?'#ff6178':'#777') + '">' + (p.enOferta?('Oferta '+fmt(p.precioOferta)):('Stock '+Number(p.stock||0))) + '</small></span></button>';
+  }).join('');
+}
+
+function seleccionarProductoOfertaWeb(refCodificada) {
+  var ref = decodeURIComponent(refCodificada);
+  _ofertaWebSeleccionada = _ofertasWebProductos.find(function(p) { return p.ref === ref; }) || null;
+  if (!_ofertaWebSeleccionada) { showToast('⚠️ Actualizá la lista e intentá de nuevo'); return; }
+  var p = _ofertaWebSeleccionada;
+  var caja = document.getElementById('ofertaSeleccion');
+  caja.style.display = 'block';
+  caja.innerHTML = '<strong style="color:var(--green)">✓ ' + esc(p.nombre) + '</strong><br>'
+    + '<span style="font-size:.82rem;color:var(--gray)">' + esc(p.marca) + ' · Precio normal ' + fmt(p.precioRegular) + ' · Stock ' + Number(p.stock||0) + '</span>';
+  document.getElementById('ofertaPrecioWrap').style.display = 'flex';
+  var input = document.getElementById('ofertaPrecio');
+  input.value = p.precioOferta > 0 ? p.precioOferta : '';
+  input.max = Math.max(1, Number(p.precioRegular||0)-1);
+  input.focus();
+}
+
+function guardarOfertaWeb() {
+  var p = _ofertaWebSeleccionada;
+  var precio = Math.round(Number((document.getElementById('ofertaPrecio')||{}).value) || 0);
+  if (!p) { showToast('Elegí primero un producto'); return; }
+  if (precio <= 0 || precio >= Number(p.precioRegular||0)) {
+    showToast('El precio especial debe ser menor a ' + fmt(p.precioRegular));
+    return;
+  }
+  showToast('⏳ Publicando oferta...');
+  postAdmin({accion:'admin_oferta_guardar', sesion:clave, ref:p.ref, precio:precio}).then(function(data) {
+    if (!data.ok) throw new Error(data.error || 'No se pudo guardar');
+    showToast('✅ Oferta publicada en la tienda');
+    cargarOfertasWeb();
+  }).catch(function(err) { showToast('❌ ' + err.message); });
+}
+
+function quitarOfertaWeb(refCodificada) {
+  var ref = decodeURIComponent(refCodificada);
+  var p = _ofertasWebProductos.find(function(x) { return x.ref === ref; });
+  if (!p || !confirm('¿Quitar la oferta de ' + p.nombre + '? Volverá a mostrarse su precio normal.')) return;
+  showToast('⏳ Quitando oferta...');
+  postAdmin({accion:'admin_oferta_guardar', sesion:clave, ref:ref, precio:0}).then(function(data) {
+    if (!data.ok) throw new Error(data.error || 'No se pudo quitar');
+    showToast('✅ Oferta quitada');
+    cargarOfertasWeb();
+  }).catch(function(err) { showToast('❌ ' + err.message); });
 }
 
 // ── POR VENCER ───────────────────────────────────────────────

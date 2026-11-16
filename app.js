@@ -4700,15 +4700,29 @@ async function cargarLiquidaciones() {
     var res = await fetch(API_LIQ + '?accion=ofertas');
     var data = await res.json();
     if (!data.ok || !data.productos || data.productos.length === 0) {
+      var vacia = document.getElementById('liquidaciones');
+      if (vacia) vacia.style.display = 'none';
       _liquidacionesCargadas = true;
       return;
     }
 
     var seccion = document.getElementById('liquidaciones');
     var grid = document.getElementById('liquidacionesGrid');
-    // No mostrar automáticamente — el usuario entra por el botón del nav
+    // Si hay una oferta activa, el apartado queda visible sin depender de que
+    // el cliente encuentre primero el enlace del menú.
+    if (seccion) seccion.style.display = 'block';
+
+    function escOferta(valor) {
+      return String(valor == null ? '' : valor).replace(/[&<>"']/g, function(c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+      });
+    }
+    function precioOferta(valor) {
+      return '$' + Number(valor || 0).toLocaleString('es-AR');
+    }
 
     var URGENCIA_CONFIG = {
+      oferta:   { color:'#FF6178', bg:'linear-gradient(135deg,rgba(255,49,88,.2),rgba(255,0,153,.13))', label:'🔥 OFERTA / LIQUIDACIÓN', border:'rgba(255,71,109,.55)' },
       vencido:  { color:'#FF3D3D', bg:'rgba(255,61,61,.12)',  label:'💀 VENCIDO',         border:'rgba(255,61,61,.4)' },
       critico:  { color:'#FF3D3D', bg:'rgba(255,61,61,.1)',   label:'🚨 VENCE EN DÍAS',    border:'rgba(255,61,61,.35)' },
       urgente:  { color:'#FFA500', bg:'rgba(255,165,0,.1)',   label:'⚠️ ÚLTIMAS UNIDADES', border:'rgba(255,165,0,.35)' },
@@ -4717,33 +4731,47 @@ async function cargarLiquidaciones() {
     };
 
     grid.innerHTML = data.productos.map(function(p) {
+      var esManual = p.tipo === 'manual' && Number(p.precioOferta || p.precio) > 0;
       var cfg = URGENCIA_CONFIG[p.urgencia] || URGENCIA_CONFIG.atencion;
-      var diasTxt = p.diasRestantes < 0
-        ? 'Venció hace ' + Math.abs(p.diasRestantes) + ' días'
-        : p.diasRestantes === 0 ? 'Vence HOY'
-        : 'Vence en ' + p.diasRestantes + ' días';
+      var diasTxt = esManual
+        ? (Number(p.descuento) > 0 ? Number(p.descuento) + '% MENOS' : 'PRECIO ESPECIAL')
+        : p.diasRestantes < 0
+          ? 'Venció hace ' + Math.abs(p.diasRestantes) + ' días'
+          : p.diasRestantes === 0 ? 'Vence HOY'
+          : 'Vence en ' + p.diasRestantes + ' días';
+      var precioPublicado = Number(p.precioOferta || p.precio) || 0;
       var waMsg = encodeURIComponent(
         'Hola MAXUP! Quiero consultar por esta oferta:\n' +
         'Marca: ' + (p.marca || 'Sin marca informada') + '\n' +
         'Producto: ' + p.nombre + '\n' +
-        'Precio publicado: $' + Number(p.precio).toLocaleString('es-AR') + '\n' +
-        '¿Tienen precio especial?'
+        'Precio publicado: $' + precioPublicado.toLocaleString('es-AR') + '\n' +
+        (esManual ? 'Quiero reservarlo.' : '¿Tienen precio especial?')
       );
+      var imagen = esManual && p.imagen
+        ? '<div style="height:170px;background:radial-gradient(circle at 50% 45%,rgba(0,200,255,.12),transparent 68%);display:flex;align-items:center;justify-content:center;padding:12px">'
+          + '<img src="' + escOferta(p.imagen) + '" alt="' + escOferta(p.nombre) + '" loading="lazy" style="max-width:100%;max-height:100%;object-fit:contain" onerror="this.parentElement.style.display=\'none\'">'
+          + '</div>'
+        : '';
+      var bloquePrecio = esManual
+        ? '<div><div style="font-size:.76rem;color:#888;text-decoration:line-through">Antes ' + precioOferta(p.precioRegular) + '</div>'
+          + '<div style="font-size:1.55rem;font-weight:900;color:#ff4965">' + precioOferta(precioPublicado) + '</div></div>'
+        : '<span style="font-size:1.4rem;font-weight:700;color:var(--cyan)">' + precioOferta(p.precio) + '</span>';
       return '<div style="background:var(--dark2);border:1px solid ' + cfg.border + ';border-radius:12px;overflow:hidden">'
         + '<div style="background:' + cfg.bg + ';border-bottom:1px solid ' + cfg.border + ';padding:6px 12px;display:flex;justify-content:space-between;align-items:center">'
         + '<span style="color:' + cfg.color + ';font-size:.72rem;font-weight:700">' + cfg.label + '</span>'
         + '<span style="color:' + cfg.color + ';font-size:.72rem;font-weight:700">' + diasTxt + '</span>'
         + '</div>'
+        + imagen
         + '<div style="padding:14px">'
-        + '<div style="font-size:.78rem;color:#888;margin-bottom:4px">' + p.marca + '</div>'
-        + '<div style="font-weight:700;font-size:.92rem;margin-bottom:8px;line-height:1.3">' + p.nombre + '</div>'
+        + '<div style="font-size:.78rem;color:#888;margin-bottom:4px">' + escOferta(p.marca) + '</div>'
+        + '<div style="font-weight:700;font-size:.98rem;margin-bottom:8px;line-height:1.3">' + escOferta(p.nombre) + '</div>'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
-        + '<span style="font-size:1.4rem;font-weight:700;color:var(--cyan)">$' + Number(p.precio).toLocaleString('es-AR') + '</span>'
+        + bloquePrecio
         + '<span style="font-size:.75rem;color:#666">Stock: ' + p.stock + '</span>'
         + '</div>'
         + '<a href="https://wa.me/5493876233406?text=' + waMsg + '" target="_blank"'
         + ' style="display:block;text-align:center;padding:8px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border-radius:8px;font-size:.85rem;font-weight:700;letter-spacing:.06em;text-decoration:none">'
-        + '📲 CONSULTAR PRECIO ESPECIAL</a>'
+        + (esManual ? '📲 PEDIR ESTA OFERTA' : '📲 CONSULTAR PRECIO ESPECIAL') + '</a>'
         + '</div></div>';
     }).join('');
     _liquidacionesCargadas = true;
@@ -5351,6 +5379,9 @@ async function cargarDesdeSheets(silencioso) {
     _catalogoUltimaCargaMs = Date.now();
     _guardarCatalogoRapido_();
     renderAll();
+    // Las ofertas se consultan recién después de mostrar el catálogo principal.
+    // Así la sección aparece sola cuando corresponde, sin demorar productos ni filtros.
+    if (!_liquidacionesCargadas && !_liquidacionesCargando) cargarLiquidaciones();
     // Solo subir al inicio si el usuario NO scrolleó mientras cargaba
     // (respeta la posición donde dejó la vista) y si no hay anclas (#seccion)
     if(window.scrollY < 50 && !location.hash) window.scrollTo(0, 0);
