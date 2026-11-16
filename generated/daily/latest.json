@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-15",
-  "generado": "2026-11-15T19:28:23.759Z",
+  "fecha": "2026-11-16",
+  "generado": "2026-11-16T21:56:21.007Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Creatina Monohidrato 300Gr",
+      "titulo": "Vegetal Protein Isolate 2Lb - Neutro",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Creatina Monohidrato 300Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Vegetal Protein Isolate 2Lb - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Pancakes Proteicos - Chocolate",
+      "titulo": "Medicine Ball 12Lb Everlast",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Pancakes Proteicos - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Medicine Ball 12Lb Everlast\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Cafeina 200 - 30 Cap",
+      "titulo": "Citrato De Magnesio 60 Cap",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Cafeina 200 - 30 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato De Magnesio 60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Ejercitador de Mandibula",
+      "titulo": "Enaccion Multivitaminico 30Cap",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Ejercitador de Mandibula\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Enaccion Multivitaminico 30Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Remerón Lola",
+      "titulo": "Conjunto Corto Morley",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Remerón Lola\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Conjunto Corto Morley\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
