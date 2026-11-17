@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-16",
-  "generado": "2026-11-16T23:00:54.360Z",
+  "fecha": "2026-11-17",
+  "generado": "2026-11-17T20:48:03.491Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Vegetal Protein Isolate 2Lb - Neutro",
+      "titulo": "Gold Simple",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Vegetal Protein Isolate 2Lb - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Gold Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Medicine Ball 12Lb Everlast",
+      "titulo": "Maltodextrina Fructosa - Neutro",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Medicine Ball 12Lb Everlast\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Maltodextrina Fructosa - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Citrato De Magnesio 60 Cap",
+      "titulo": "Hand grip regulable de 5 a 100kg",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Citrato De Magnesio 60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Hand grip regulable de 5 a 100kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Enaccion Multivitaminico 30Cap",
+      "titulo": "Beta Alanina x300g",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Enaccion Multivitaminico 30Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Beta Alanina x300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Conjunto Corto Morley",
+      "titulo": "Catsuit Largo Oxford",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Conjunto Corto Morley\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Catsuit Largo Oxford\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
