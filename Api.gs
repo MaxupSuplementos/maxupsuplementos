@@ -30,7 +30,9 @@ function _getConfig() {
       WA_ACCESS_TOKEN:  props.getProperty('WA_ACCESS_TOKEN')   || '',
       WA_PHONE_ID:      props.getProperty('WA_PHONE_ID')       || '',
       WA_GRAPH_VERSION: props.getProperty('WA_GRAPH_VERSION')  || 'v26.0',
-      WA_ADMIN_EMAIL:   props.getProperty('WA_ADMIN_EMAIL')    || 'maxups24@gmail.com'
+      WA_ADMIN_EMAIL:   props.getProperty('WA_ADMIN_EMAIL')    || 'maxups24@gmail.com',
+      GEMINI_API_KEY:   props.getProperty('GEMINI_API_KEY')    || '',
+      GEMINI_MODEL:     props.getProperty('GEMINI_MODEL')      || 'gemini-3.5-flash-lite'
     };
   } catch(e) {
     _CONFIG = {
@@ -44,7 +46,9 @@ function _getConfig() {
       WA_ACCESS_TOKEN:  '',
       WA_PHONE_ID:      '',
       WA_GRAPH_VERSION: 'v26.0',
-      WA_ADMIN_EMAIL:   'maxups24@gmail.com'
+      WA_ADMIN_EMAIL:   'maxups24@gmail.com',
+      GEMINI_API_KEY:   '',
+      GEMINI_MODEL:     'gemini-3.5-flash-lite'
     };
   }
   return _CONFIG;
@@ -5599,14 +5603,18 @@ function _waNormalizar(texto) {
 }
 
 function _waMenu() {
-  return 'Hola! Soy *Max*, el asistente virtual de *MAXUP*.\n\n'
-    + 'Puedo ayudarte con:\n'
-    + '*1* - Buscar producto, beneficios, stock y precio\n'
-    + '*2* - Consultar el estado de un pedido\n'
-    + '*3* - Medios de pago y 3 cuotas\n'
-    + '*4* - Envios y retiro\n'
-    + '*5* - Hablar con un asesor de MAXUP\n\n'
-    + 'Responde con un numero. En cualquier momento escribi *menu* para volver a este menu principal.';
+  return '¡Hola! Soy *Max*, el asistente virtual de *MAXUP*.\n\n'
+    + 'Podés escribirme con tus propias palabras o elegir una opción:\n'
+    + '*1* - Productos, beneficios, stock y precios\n'
+    + '*2* - Estado de un pedido\n'
+    + '*3* - Medios de pago y cuotas\n'
+    + '*4* - Envíos y retiro\n'
+    + '*5* - Hablar con un asesor\n'
+    + '*6* - Horarios y ubicación\n'
+    + '*7* - Promociones y liquidación\n'
+    + '*8* - Compras mayoristas\n\n'
+    + 'Por ejemplo: *¿a qué hora abren?*, *precio de creatina Gold* o *¿dónde queda el local?*\n'
+    + 'En cualquier momento escribí *menu* para volver a este menu principal.';
 }
 
 function _waEsConsultaGeneralCatalogo(normal) {
@@ -5636,14 +5644,253 @@ function _waExtraerConsultaProducto_(texto) {
 }
 
 function _waAyudaBusquedaProducto_() {
-  return 'No pude identificar con seguridad el producto que buscás. No hace falta repetir toda la pregunta.\n\n'
-    + 'Escribime solamente una palabra clave, una marca o el nombre. Por ejemplo:\n'
+  return 'Quiero asegurarme de mostrarte el producto correcto. ¿Recordás el nombre, la marca o para qué lo necesitás?\n\n'
+    + 'Podés responder, por ejemplo:\n'
     + '• *óxido nítrico*\n'
     + '• *creatina Star*\n'
     + '• *magnesio citrato*\n'
-    + '• *proteína ENA*\n\n'
-    + 'También podés elegir una categoría: *proteínas*, *creatinas*, *aminoácidos*, *pre entrenos*, *vitaminas* o *accesorios*.\n'
-    + 'Escribí *menu* para volver al menú principal o *5* para hablar con un asesor.';
+    + '• *algo para aumentar fuerza*\n\n'
+    + 'También podés elegir: *proteínas*, *creatinas*, *aminoácidos*, *pre entrenos*, *vitaminas* o *accesorios*.\n'
+    + 'Si preferís atención personal, escribí *asesor*.';
+}
+
+function _waConfigNegocio_() {
+  var cfg = {};
+  try { cfg = _leerConfiguracionMaxup(); } catch (e) {}
+  return {
+    direccion: String(cfg.LOCAL_DIRECCION || 'Calixto Gauna 1045, Barrio El Cruce, General Güemes, Salta').trim(),
+    maps: String(cfg.LOCAL_MAPS_URL || 'https://www.google.com/maps/search/?api=1&query=Calixto+Gauna+1045%2C+General+Guemes%2C+Salta').trim(),
+    dias: String(cfg.LOCAL_HORARIO_DIAS || 'Lunes a sábado').trim(),
+    manana: String(cfg.LOCAL_HORARIO_MANANA || '09:00-13:00').trim(),
+    tarde: String(cfg.LOCAL_HORARIO_TARDE || '18:00-21:30').trim(),
+    domingo: String(cfg.LOCAL_HORARIO_DOMINGO || 'Cerrado').trim(),
+    modelo: String(cfg.ASISTENTE_GEMINI_MODELO || _getConfig().GEMINI_MODEL || 'gemini-3.5-flash-lite').trim()
+  };
+}
+
+function _waRangoHorario_(texto) {
+  var partes = String(texto || '').match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+  if (!partes) return null;
+  return {
+    inicio: Number(partes[1]) * 60 + Number(partes[2]),
+    fin: Number(partes[3]) * 60 + Number(partes[4]),
+    inicioTexto: partes[1].padStart(2, '0') + ':' + partes[2],
+    finTexto: partes[3].padStart(2, '0') + ':' + partes[4]
+  };
+}
+
+function _waEstadoHorarioActual_() {
+  var cfg = _waConfigNegocio_();
+  var zona = 'America/Argentina/Buenos_Aires';
+  var ahora = new Date();
+  var dia = Number(Utilities.formatDate(ahora, zona, 'u'));
+  if (!isFinite(dia) || dia < 1 || dia > 7) dia = ahora.getDay() || 7;
+  var hora = Number(Utilities.formatDate(ahora, zona, 'H'));
+  var minuto = Number(Utilities.formatDate(ahora, zona, 'm'));
+  var actual = hora * 60 + minuto;
+  var manana = _waRangoHorario_(cfg.manana);
+  var tarde = _waRangoHorario_(cfg.tarde);
+  var nombres = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+
+  if (dia === 7) return { abierto:false, detalle:'Hoy domingo el local está cerrado.', proximo:'Abrimos el lunes a las ' + (manana ? manana.inicioTexto : '09:00') + '.', dia:nombres[dia - 1] };
+  if (manana && actual >= manana.inicio && actual < manana.fin) return { abierto:true, detalle:'Ahora estamos abiertos hasta las ' + manana.finTexto + '.', proximo:'También atendemos de ' + cfg.tarde + '.', dia:nombres[dia - 1] };
+  if (tarde && actual >= tarde.inicio && actual < tarde.fin) return { abierto:true, detalle:'Ahora estamos abiertos hasta las ' + tarde.finTexto + '.', proximo:'', dia:nombres[dia - 1] };
+  if (manana && actual < manana.inicio) return { abierto:false, detalle:'Ahora el local está cerrado.', proximo:'Hoy abrimos a las ' + manana.inicioTexto + '.', dia:nombres[dia - 1] };
+  if (manana && tarde && actual >= manana.fin && actual < tarde.inicio) return { abierto:false, detalle:'Ahora el local está cerrado.', proximo:'Volvemos a abrir hoy a las ' + tarde.inicioTexto + '.', dia:nombres[dia - 1] };
+  var proximoDia = dia === 6 ? 'el lunes' : 'mañana';
+  return { abierto:false, detalle:'Ahora el local está cerrado.', proximo:'Volvemos a abrir ' + proximoDia + ' a las ' + (manana ? manana.inicioTexto : '09:00') + '.', dia:nombres[dia - 1] };
+}
+
+function _waEsConsultaHorarios_(normal) {
+  normal = _waNormalizar(normal);
+  return /\bhorario|a que hora|que hora|cuando (?:abren|cierran|atienden)|que dias? (?:abren|atienden)|hora.*(?:abren|cierran|atienden)|\babren\b|\bcierran\b|\babierto|\babierta|estan atendiendo|atienden hoy|trabajan hoy|atienden manana/.test(normal);
+}
+
+function _waEsConsultaUbicacion_(normal) {
+  normal = _waNormalizar(normal);
+  if (/\bpedido\b|\benvio\b|\bpaquete\b/.test(normal)) return false;
+  return /donde (?:queda|quedan|estan|es)|\bdireccion\b|\bubicacion\b|como llego|google maps|mapa del local/.test(normal);
+}
+
+function _waRespuestaHorarios_() {
+  var cfg = _waConfigNegocio_();
+  var estado = _waEstadoHorarioActual_();
+  return '*Horarios de MAXUP*\n\n'
+    + '🕘 ' + cfg.dias + ':\n'
+    + '• Mañana: ' + cfg.manana + '\n'
+    + '• Tarde: ' + cfg.tarde + '\n'
+    + '• Domingo: ' + cfg.domingo + '\n\n'
+    + (estado.abierto ? '🟢 ' : '🔴 ') + estado.detalle
+    + (estado.proximo ? '\n' + estado.proximo : '')
+    + '\n\n📍 ' + cfg.direccion;
+}
+
+function _waRespuestaUbicacion_() {
+  var cfg = _waConfigNegocio_();
+  return '*Dónde estamos*\n\n📍 ' + cfg.direccion
+    + '\n🗺️ Abrir en Google Maps: ' + cfg.maps
+    + '\n\n' + _waRespuestaHorarios_();
+}
+
+function _waRespuestaPromociones_() {
+  return '*Promociones y liquidación*\n\n'
+    + 'Podés ver las ofertas vigentes y los productos disponibles directamente en:\n'
+    + 'https://maxupsuplementos.com.ar/?ofertas=1\n\n'
+    + 'Si me escribís el nombre de un producto, te confirmo el precio y el stock actual.';
+}
+
+function _waRespuestaMayorista_() {
+  return '*Compras mayoristas MAXUP*\n\n'
+    + 'Podés consultar condiciones y solicitar acceso desde:\n'
+    + 'https://maxupsuplementos.com.ar/mayorista.html\n\n'
+    + 'Si ya tenés cuenta y necesitás ayuda, escribí *asesor*.';
+}
+
+function _waRespuestaAclaratoria_() {
+  return 'No quiero hacerte repetir toda la consulta. ¿Sobre cuál de estos temas necesitás ayuda?\n\n'
+    + '• *producto, precio o stock*\n'
+    + '• *horarios o ubicación*\n'
+    + '• *pedido, pago o envío*\n'
+    + '• *promoción o compra mayorista*\n'
+    + '• *asesor* para hablar con una persona';
+}
+
+function _waRegistrarNoEntendida_(telefono, texto, estado) {
+  try {
+    var ss = _getSS();
+    var hoja = ss.getSheetByName('ASISTENTE_NO_ENTENDIDAS');
+    if (!hoja) {
+      hoja = ss.insertSheet('ASISTENTE_NO_ENTENDIDAS');
+      hoja.appendRow(['Fecha y hora','Telefono','Mensaje','Estado previo','Revisada']);
+      hoja.getRange(1,1,1,5).setFontWeight('bold').setBackground('#111827').setFontColor('#00C8FF');
+      hoja.getRange(2,5,Math.max(hoja.getMaxRows()-1,1),1).insertCheckboxes();
+      hoja.setFrozenRows(1);
+    }
+    hoja.appendRow([new Date(),'***'+String(telefono||'').replace(/\D/g,'').slice(-4),String(texto||'').slice(0,1200),String((estado&&estado.paso)||'MENU'),false]);
+    var excedentes=hoja.getLastRow()-1001;
+    if(excedentes>0) hoja.deleteRows(2,excedentes);
+  } catch(e) { Logger.log('Consulta no entendida: '+e.message); }
+}
+
+function configurarGeminiMax() {
+  var ui = SpreadsheetApp.getUi();
+  var respuesta = ui.prompt(
+    'Configurar Gemini para Max',
+    'Pegá la API key creada en Google AI Studio. La clave se guardará protegida en Script Properties y no se escribirá en ninguna celda.',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (respuesta.getSelectedButton() !== ui.Button.OK) return {ok:false,cancelado:true};
+  var clave = String(respuesta.getResponseText() || '').trim();
+  if (!/^AIza[0-9A-Za-z_-]{20,}$/.test(clave)) {
+    ui.alert('La clave no parece válida. Copiala completa desde Google AI Studio y volvé a intentarlo.');
+    return {ok:false,error:'Clave inválida'};
+  }
+  PropertiesService.getScriptProperties().setProperty('GEMINI_API_KEY', clave);
+  _CONFIG = null;
+  var prueba = _waInterpretarConGemini_('5490000000000', '¿A qué hora abren?', {paso:'MENU'}, true);
+  if (prueba && prueba.intent === 'HORARIOS') {
+    ui.alert('✅ Gemini quedó conectado con Max.\n\nLa IA interpretará consultas confusas, pero horarios, stock y precios seguirán saliendo del sistema real de MAXUP.');
+    return {ok:true,modelo:_waConfigNegocio_().modelo};
+  }
+  ui.alert('La clave quedó guardada, pero la prueba no respondió correctamente. Max seguirá funcionando con sus reglas gratuitas y se podrá volver a probar luego.');
+  return {ok:false,guardada:true};
+}
+
+function desactivarGeminiMax() {
+  PropertiesService.getScriptProperties().deleteProperty('GEMINI_API_KEY');
+  _CONFIG = null;
+  return {ok:true};
+}
+
+function _waInterpretarConGemini_(telefono, texto, estado, sinCache) {
+  var cfg = _getConfig();
+  var apiKey = String(cfg.GEMINI_API_KEY || '').trim();
+  if (!apiKey) return null;
+  var normal = _waNormalizar(texto);
+  if (!normal) return null;
+  var cache = CacheService.getScriptCache();
+  var cacheKey = 'WA_GEMINI_' + _hashSeguro(normal + '|' + String((estado&&estado.paso)||''));
+  if (!sinCache) {
+    var guardado = cache.get(cacheKey);
+    if (guardado) { try { return JSON.parse(guardado); } catch(eCache) {} }
+  }
+
+  var historial = _waUltimosMensajes_(telefono, 5).map(function(item) {
+    return (item.direccion === 'MAX' ? 'Max' : 'Cliente') + ': ' + String(item.mensaje || '').replace(/\s+/g,' ').slice(0,350);
+  }).join('\n');
+  var prompt = [
+    'Clasificá el último mensaje de un cliente de una tienda de suplementos deportivos.',
+    'No respondas la consulta ni inventes datos. Devolvé solamente JSON válido.',
+    'Intenciones permitidas: HORARIOS, UBICACION, PRODUCTO, PEDIDO, PAGOS, ENTREGAS, MAYORISTA, PROMOCIONES, HUMANO, SALUDO, ACLARAR.',
+    'Para PRODUCTO extraé en consulta_producto el producto, categoría, marca, presentación u objetivo útil para buscar en un catálogo.',
+    'Para PEDIDO extraé codigo_pedido si aparece. Si falta información usá ACLARAR y escribí una pregunta breve.',
+    'Formato: {"intent":"...","consulta_producto":"","codigo_pedido":"","confianza":0.0,"pregunta_aclaratoria":""}',
+    historial ? 'Conversación reciente:\n' + historial : '',
+    'Último mensaje: ' + String(texto || '').slice(0,800)
+  ].filter(Boolean).join('\n\n');
+
+  try {
+    var modelo = _waConfigNegocio_().modelo || cfg.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(modelo) + ':generateContent';
+    var response = UrlFetchApp.fetch(url, {
+      method:'post',
+      contentType:'application/json',
+      headers:{'x-goog-api-key':apiKey},
+      payload:JSON.stringify({
+        contents:[{role:'user',parts:[{text:prompt}]}],
+        generationConfig:{temperature:0.1,maxOutputTokens:240,responseMimeType:'application/json'}
+      }),
+      muteHttpExceptions:true
+    });
+    var status = response.getResponseCode();
+    var body = String(response.getContentText() || '');
+    if (status < 200 || status >= 300) throw new Error('HTTP ' + status + ': ' + body.slice(0,400));
+    var data = JSON.parse(body);
+    var parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts || [];
+    var raw = parts.map(function(p){return String(p.text||'');}).join('').replace(/^```(?:json)?\s*|\s*```$/g,'').trim();
+    var interpretacion = JSON.parse(raw);
+    var permitidas = {HORARIOS:1,UBICACION:1,PRODUCTO:1,PEDIDO:1,PAGOS:1,ENTREGAS:1,MAYORISTA:1,PROMOCIONES:1,HUMANO:1,SALUDO:1,ACLARAR:1};
+    interpretacion.intent = String(interpretacion.intent || '').toUpperCase();
+    if (!permitidas[interpretacion.intent]) return null;
+    interpretacion.consulta_producto = String(interpretacion.consulta_producto || '').replace(/[\r\n]+/g,' ').trim().slice(0,160);
+    interpretacion.codigo_pedido = String(interpretacion.codigo_pedido || '').replace(/[^A-Za-z0-9-]/g,'').slice(0,40);
+    interpretacion.pregunta_aclaratoria = String(interpretacion.pregunta_aclaratoria || '').replace(/[\r\n]+/g,' ').trim().slice(0,240);
+    interpretacion.confianza = Math.max(0,Math.min(1,Number(interpretacion.confianza)||0));
+    if (!sinCache) cache.put(cacheKey,JSON.stringify(interpretacion),3600);
+    return interpretacion;
+  } catch (e) {
+    _waRegistrarDiagnostico('GEMINI_FALLBACK',telefono,'Max siguió con reglas gratuitas: '+String(e.message||e).slice(0,700));
+    return null;
+  }
+}
+
+function _waResponderInterpretacionGemini_(telefono, texto, estado, interpretacion) {
+  if (!interpretacion || Number(interpretacion.confianza) < 0.55) return '';
+  switch (interpretacion.intent) {
+    case 'HORARIOS': return _waRespuestaHorarios_();
+    case 'UBICACION': return _waRespuestaUbicacion_();
+    case 'PAGOS': return _waRespuestaPagos();
+    case 'ENTREGAS': return _waRespuestaEntregas();
+    case 'PROMOCIONES': return _waRespuestaPromociones_();
+    case 'MAYORISTA': return _waRespuestaMayorista_();
+    case 'HUMANO': return _waDerivarHumano(telefono,'solicitud interpretada por Max');
+    case 'SALUDO': return _waMenu();
+    case 'PEDIDO':
+      if (interpretacion.codigo_pedido) return _waRespuestaPedido(interpretacion.codigo_pedido.replace(/^MXP(?=\d)/i,'MXP-'));
+      _waGuardarEstado(telefono,'PEDIDO',{fallos:0});
+      return 'Enviame el código de tu pedido. Por ejemplo: *MXP-8111*.';
+    case 'PRODUCTO':
+      var consulta = interpretacion.consulta_producto || texto;
+      var resultado = _waBuscarProductos(telefono,consulta,true);
+      if (resultado) {
+        _waGuardarEstado(telefono,'PRODUCTO',{fallos:0});
+        return resultado;
+      }
+      return 'Entendí que buscás *' + String(consulta).slice(0,120) + '*, pero necesito un dato más para mostrarte algo correcto.\n\n' + _waAyudaBusquedaProducto_();
+    case 'ACLARAR':
+      return interpretacion.pregunta_aclaratoria || _waRespuestaAclaratoria_();
+  }
+  return '';
 }
 
 function _waClaveEstado(telefono) {
@@ -5659,10 +5906,14 @@ function _waLeerEstado(telefono) {
   }
 }
 
-function _waGuardarEstado(telefono, paso) {
+function _waGuardarEstado(telefono, paso, extra) {
+  var actual = _waLeerEstado(telefono);
+  var siguiente = { paso: paso, fecha: new Date().toISOString(), fallos: 0 };
+  Object.keys(actual || {}).forEach(function(k) { if (k !== 'paso' && k !== 'fecha' && k !== 'fallos') siguiente[k] = actual[k]; });
+  Object.keys(extra || {}).forEach(function(k) { siguiente[k] = extra[k]; });
   CacheService.getScriptCache().put(
     _waClaveEstado(telefono),
-    JSON.stringify({ paso: paso, fecha: new Date().toISOString() }),
+    JSON.stringify(siguiente),
     WA_TTL_ESTADO
   );
 }
@@ -5739,6 +5990,16 @@ function _waDetalleProducto(p) {
   return salida.join('\n');
 }
 
+function _waConsultaProductoContextual_(telefono,texto) {
+  var normal=_waNormalizar(texto);
+  var seleccionado=_waProductoSeleccionado_(telefono);
+  if(!seleccionado || !normal || /otra marca|otro producto|cambiar producto/.test(normal)) return texto;
+  var palabras=normal.split(' ').filter(Boolean);
+  var seguimiento=palabras.length<=5 && /^(y\b|la\b|el\b|de\b|del\b|pote\b|doypack\b|sabor\b|cuanto\b|precio\b|stock\b|otra presentacion)/.test(normal);
+  if(!seguimiento) return texto;
+  return [seleccionado.marca,_waCategoriaProducto(seleccionado),texto].filter(Boolean).join(' ');
+}
+
 function _resolverAsistenteWhatsApp(telefono, texto) {
   var normal = _waNormalizar(texto);
   var estado = _waLeerEstado(telefono);
@@ -5761,7 +6022,27 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
       + _waDerivarHumano(telefono, 'consulta de salud o dosificacion');
   }
 
-  if (/persona|humano|asesor|vendedor|atencion/.test(normal)) {
+  if (_waEsConsultaHorarios_(normal) || normal === '6') {
+    _waGuardarEstado(telefono,'MENU',{fallos:0});
+    return _waRespuestaHorarios_();
+  }
+
+  if (_waEsConsultaUbicacion_(normal)) {
+    _waGuardarEstado(telefono,'MENU',{fallos:0});
+    return _waRespuestaUbicacion_();
+  }
+
+  if (normal === '7' || /promocion|promociones|\bpromo\b|\boferta\b|ofertas|liquidacion|descuento vigente/.test(normal)) {
+    _waGuardarEstado(telefono,'MENU',{fallos:0});
+    return _waRespuestaPromociones_();
+  }
+
+  if (normal === '8' || /mayorista|mayoristas|reventa|revender|comprar por mayor/.test(normal)) {
+    _waGuardarEstado(telefono,'MENU',{fallos:0});
+    return _waRespuestaMayorista_();
+  }
+
+  if (/(?:hablar|comunicar|pasar|contactar|quiero|necesito).*(?:persona|humano|asesor|vendedor)|^(?:persona|humano|asesor|vendedor|atencion humana)$/.test(normal)) {
     return _waDerivarHumano(telefono, 'solicitud de un asesor de MAXUP');
   }
 
@@ -5792,8 +6073,16 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
         + '\n\nPodés preguntarme por sus *beneficios*, *precio* o *stock*. Para atención personalizada escribí *asesor*.';
       return 'Esa opción ya venció o no está disponible. Escribí nuevamente el producto que buscás o *asesor*.';
     }
-    _waGuardarEstado(telefono, 'PRODUCTO');
-    return _waBuscarProductos(telefono,texto,false);
+    var consultaContextual=_waConsultaProductoContextual_(telefono,texto);
+    var resultadoContextual=_waBuscarProductos(telefono,consultaContextual,true);
+    if(resultadoContextual){
+      _waGuardarEstado(telefono,'PRODUCTO',{fallos:0});
+      return resultadoContextual;
+    }
+    var interpretacionProducto=_waInterpretarConGemini_(telefono,texto,estado,false);
+    var respuestaProducto=_waResponderInterpretacionGemini_(telefono,texto,estado,interpretacionProducto);
+    if(respuestaProducto) return respuestaProducto;
+    return _waAyudaBusquedaProducto_();
   }
   if (estado.paso === 'PEDIDO') {
     var codigoPedido = normal.toUpperCase().match(/(?:MXP-?)?\d{3,}/);
@@ -5825,17 +6114,27 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
   if (normal === '5') {
     return _waDerivarHumano(telefono, 'solicitud del cliente');
   }
-
   var personalizada=_waRespuestaPersonalizada(normal);
   if(personalizada) return personalizada+'\n\nEscribí *menu* para ver todas las opciones.';
 
   var posibleProducto=_waBuscarProductos(telefono,texto,true);
   if(posibleProducto){
-    _waGuardarEstado(telefono,'PRODUCTO');
+    _waGuardarEstado(telefono,'PRODUCTO',{fallos:0});
     return posibleProducto;
   }
 
-  return 'No llegue a entender la consulta.\n\n' + _waMenu();
+  var interpretacion=_waInterpretarConGemini_(telefono,texto,estado,false);
+  var respuestaGemini=_waResponderInterpretacionGemini_(telefono,texto,estado,interpretacion);
+  if(respuestaGemini) return respuestaGemini;
+
+  _waRegistrarNoEntendida_(telefono,texto,estado);
+  var fallos=(Number(estado.fallos)||0)+1;
+  if(fallos>=2){
+    return 'No quiero hacerte perder tiempo con más preguntas.\n\n'
+      + _waDerivarHumano(telefono,'Max no pudo interpretar dos mensajes consecutivos');
+  }
+  _waGuardarEstado(telefono,'ACLARAR',{fallos:fallos});
+  return _waRespuestaAclaratoria_();
 }
 
 function _waEsConsultaSalud(normal) {
@@ -5926,9 +6225,45 @@ function _waDescripcionCortaProducto_(p) {
   return primera.length>170?primera.slice(0,167).replace(/\s+\S*$/,'')+'...':primera;
 }
 
+function _waDistanciaTexto_(a,b) {
+  a=String(a||''); b=String(b||'');
+  if(a===b) return 0;
+  if(!a.length) return b.length;
+  if(!b.length) return a.length;
+  var anterior=[];
+  for(var j=0;j<=b.length;j++) anterior[j]=j;
+  for(var i=1;i<=a.length;i++){
+    var actual=[i];
+    for(var k=1;k<=b.length;k++){
+      actual[k]=Math.min(actual[k-1]+1,anterior[k]+1,anterior[k-1]+(a.charAt(i-1)===b.charAt(k-1)?0:1));
+    }
+    anterior=actual;
+  }
+  return anterior[b.length];
+}
+
+function _waTokenCoincide_(token,base,baseTokens) {
+  if(base.indexOf(token)>=0) return true;
+  var tolerancia=token.length>=8?2:(token.length>=4?1:0);
+  if(!tolerancia) return false;
+  return (baseTokens||[]).some(function(parte){
+    if(Math.abs(parte.length-token.length)>tolerancia) return false;
+    if(_waDistanciaTexto_(token,parte)<=tolerancia) return true;
+    // Un error muy habitual al escribir desde el teléfono es invertir dos
+    // letras contiguas (por ejemplo, "glod" en lugar de "gold").
+    if(token.length!==parte.length) return false;
+    var distintas=[];
+    for(var i=0;i<token.length;i++) if(token.charAt(i)!==parte.charAt(i)) distintas.push(i);
+    return distintas.length===2
+      && distintas[1]===distintas[0]+1
+      && token.charAt(distintas[0])===parte.charAt(distintas[1])
+      && token.charAt(distintas[1])===parte.charAt(distintas[0]);
+  });
+}
+
 function _waBuscarProductos(telefono, consulta, silencioso) {
   var normal = _waExtraerConsultaProducto_(consulta);
-  var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1 };
+  var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1, y:1, o:1, otra:1, otro:1, dame:1, mostrar:1 };
   var categoriaConsulta = _waCategoriaConsulta(normal);
   var categoriaFlexible = /\boxido\b|\bnitrico\b|nitric oxide/.test(normal);
   var tokens = normal.split(' ').filter(function(t) {
@@ -5946,13 +6281,16 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
     if (hay <= 0) return;
     if (categoriaConsulta && !categoriaFlexible && _waCategoriaProducto(p) !== categoriaConsulta) return;
     var base = _waNormalizar(String(p.marca || '') + ' ' + String(p.nombre || ''));
+    var baseTokens=base.split(' ').filter(Boolean);
     // Todos los términos específicos deben coincidir. Así "proteína STAR"
-    // exige categoría proteína + marca/nombre STAR y nunca mezcla creatinas.
-    var coincideTodo = tokens.every(function(t) { return base.indexOf(t) >= 0; });
+    // exige categoría proteína + marca/nombre STAR. Se tolera uno o dos errores
+    // de escritura para que "creatina glod" encuentre "creatina Gold".
+    var coincideTodo = tokens.every(function(t) { return _waTokenCoincide_(t,base,baseTokens); });
     if (!coincideTodo) return;
     var puntaje = 0;
     tokens.forEach(function(t) {
-      if (base.indexOf(t) >= 0) puntaje += (base === t ? 4 : 1);
+      if (base.indexOf(t) >= 0) puntaje += (base === t ? 4 : 2);
+      else if (_waTokenCoincide_(t,base,baseTokens)) puntaje += 1;
     });
     if (base.indexOf(normal) >= 0) puntaje += 3;
     if (categoriaConsulta) puntaje += 5;
@@ -6047,6 +6385,24 @@ function probarBusquedaOxidoNitricoMax() {
     pruebaAsistenteWhatsApp('precio del quemador de grasa')
   ];
   Logger.log(JSON.stringify(resultados));
+  return resultados;
+}
+
+function probarAsistenteHibridoMax() {
+  var telefono='5490000000000';
+  var consultas=[
+    '¿A qué hora abren?',
+    '¿Dónde queda el local?',
+    'precio de creatina glod',
+    'algo para aumentar fuerza',
+    'quiero comprar por mayor'
+  ];
+  var resultados=consultas.map(function(consulta){
+    _waLimpiarEstado(telefono);
+    return {consulta:consulta,respuesta:_resolverAsistenteWhatsApp(telefono,consulta)};
+  });
+  var resumen=resultados.map(function(r){return 'CLIENTE: '+r.consulta+'\nMAX: '+String(r.respuesta||'').slice(0,700);}).join('\n\n──────────\n\n');
+  SpreadsheetApp.getUi().alert('PRUEBA DE MAX HÍBRIDO\n\n'+resumen.slice(0,7000));
   return resultados;
 }
 

@@ -19,6 +19,13 @@ var CONFIG_MAXUP_DEFAULTS = {
   PAGO_CBU: '',
   PAGO_TITULAR: 'Ruben Dario Ghiggia',
   PAGO_CUENTA: 'Mercado Pago',
+  LOCAL_DIRECCION: 'Calixto Gauna 1045, Barrio El Cruce, General Güemes, Salta',
+  LOCAL_MAPS_URL: 'https://www.google.com/maps/search/?api=1&query=Calixto+Gauna+1045%2C+General+Guemes%2C+Salta',
+  LOCAL_HORARIO_DIAS: 'Lunes a sábado',
+  LOCAL_HORARIO_MANANA: '09:00-13:00',
+  LOCAL_HORARIO_TARDE: '18:00-21:30',
+  LOCAL_HORARIO_DOMINGO: 'Cerrado',
+  ASISTENTE_GEMINI_MODELO: 'gemini-3.5-flash-lite',
   ALERTA_WHATSAPP_ADMIN: '5491168461457,5493875104606',
   CLUB_POPUP_EXCLUIDOS: ''
 };
@@ -64,6 +71,13 @@ function _asegurarHojaConfiguracion() {
     PAGO_CBU: 'CBU o CVU que se envia solo al confirmar pedidos por transferencia',
     PAGO_TITULAR: 'Titular de la cuenta para transferencias',
     PAGO_CUENTA: 'Banco o billetera de la cuenta para transferencias',
+    LOCAL_DIRECCION: 'Dirección completa que Max informa a los clientes',
+    LOCAL_MAPS_URL: 'Enlace de Google Maps que Max envía junto con la ubicación',
+    LOCAL_HORARIO_DIAS: 'Días habituales de atención del local',
+    LOCAL_HORARIO_MANANA: 'Horario de mañana en formato HH:MM-HH:MM',
+    LOCAL_HORARIO_TARDE: 'Horario de tarde en formato HH:MM-HH:MM',
+    LOCAL_HORARIO_DOMINGO: 'Texto que Max informa para los domingos',
+    ASISTENTE_GEMINI_MODELO: 'Modelo de Gemini usado sólo para interpretar mensajes ambiguos',
     ALERTA_WHATSAPP_ADMIN: 'Numeros de WhatsApp que reciben nuevos pedidos, separados por coma',
     CLUB_POPUP_EXCLUIDOS: 'Correos o telefonos que no ven la invitacion emergente del Club'
   };

@@ -31,6 +31,8 @@ function onOpen() {
     .createMenu('🛒 MAXUP')
     .addItem('🧾 Abrir Caja rápida', 'abrirCajaMaxup')
     .addItem('💬 Ver conversaciones de Max', 'abrirConversacionesMax')
+    .addItem('🤖 Configurar Gemini para Max', 'configurarGeminiMax')
+    .addItem('🧪 Probar asistente híbrido', 'probarAsistenteHibridoMax')
     .addItem('⚙️ Activar/desactivar Caja al abrir', 'alternarCajaAutomaticaMaxup')
     .addItem('📦 Exportar datos para Caja V2', 'exportarDatosCajaV2')
     .addSeparator()
