@@ -232,20 +232,52 @@ test('Max muestra como máximo seis suplementos y describe consultas específica
 
 test('Max ofrece asesor cuando una marca reconocida no tiene stock', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'Api.gs'), 'utf8');
-  const helpers = source.match(/function _waMarcaSolicitada_[\s\S]*?(?=function _waBuscarProductos\()/);
+  const helpers = source.match(/function _waTokenMarcaCoincide_[\s\S]*?(?=function _waBuscarProductos\()/);
   assert.ok(helpers);
   const run = new Function(`
     function _waNormalizar(v){return String(v||'').toLowerCase();}
     function _waCategoriaProducto(p){return p.categoria;}
-    function _waTokenCoincide_(a,b){return a===b;}
+    function _waDistanciaTexto_(){return 99;}
     ${helpers[0]}
-    const productos=[{marca:'GOLD NUTRITION',categoria:'creatina',stock:0}];
+    const productos=[
+      {marca:'GOLD NUTRITION',categoria:'creatina',stock:0},
+      {marca:'QUELOPALEO',categoria:'barra',stock:0}
+    ];
     const marca=_waMarcaSolicitada_('creatina gold',productos,'creatina');
-    return _waRespuestaSinStock_('creatina gold','creatina',marca);
+    return {
+      respuesta:_waRespuestaSinStock_('creatina gold','creatina',marca),
+      falsa:_waMarcaSolicitada_('necesito algo para mi libido que me recomiendas',productos,'')
+    };
   `);
-  const respuesta=run();
-  assert.match(respuesta,/GOLD NUTRITION/);
-  assert.match(respuesta,/no contamos/i);
-  assert.match(respuesta,/asesor/);
+  const resultado=run();
+  assert.match(resultado.respuesta,/GOLD NUTRITION/);
+  assert.match(resultado.respuesta,/no contamos/i);
+  assert.match(resultado.respuesta,/asesor/);
+  assert.equal(resultado.falsa,'','La palabra "que" no debe confundirse con QUELOPALEO');
+});
+
+test('Max relaciona libido con ashwagandha y ZMA sin prometer resultados', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'Api.gs'), 'utf8');
+  const bloque = source.match(/function _waEsConsultaLibido_[\s\S]*?(?=function _waTokenMarcaCoincide_\()/);
+  assert.ok(bloque);
+  const run = new Function(`
+    function _waNormalizar(v){return String(v||'').toLowerCase();}
+    function getCatalogo(){return {productos:[
+      {marca:'LAPPIEL',nombre:'Ashwagandha 60 Caps',stock:2,precio_venta:28000,precio_lista:31000},
+      {marca:'HOCH SPORT',nombre:'ZMA-B 120 Caps',stock:3,precio_venta:23000,precio_lista:26000},
+      {marca:'QUELOPALEO',nombre:'Pancake',stock:4,precio_venta:5000}
+    ]};}
+    function _waGuardarResultadosProductos(){}
+    function _waDescripcionCortaProducto_(){return '';}
+    function _waMoneda(v){return '$'+v;}
+    ${bloque[0]}
+    return {detecta:_waEsConsultaLibido_('necesito subir mi libido'),respuesta:_waRespuestaLibido_('549000')};
+  `);
+  const resultado=run();
+  assert.equal(resultado.detecta,true);
+  assert.match(resultado.respuesta,/Ashwagandha/);
+  assert.match(resultado.respuesta,/ZMA-B/);
+  assert.match(resultado.respuesta,/no hay un suplemento que garantice/i);
+  assert.doesNotMatch(resultado.respuesta,/QUELOPALEO/);
 });
 

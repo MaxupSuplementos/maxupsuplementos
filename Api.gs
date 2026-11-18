@@ -5836,7 +5836,7 @@ function _waInterpretarConGemini_(telefono, texto, estado, sinCache) {
   var normal = _waNormalizar(texto);
   if (!normal) return null;
   var cache = CacheService.getScriptCache();
-  var cacheKey = 'WA_GEMINI_V3_' + _hashSeguro(normal + '|' + String((estado&&estado.paso)||''));
+  var cacheKey = 'WA_GEMINI_V4_' + _hashSeguro(normal + '|' + String((estado&&estado.paso)||''));
   if (!sinCache) {
     var guardado = cache.get(cacheKey);
     if (guardado) { try { return JSON.parse(guardado); } catch(eCache) {} }
@@ -5849,7 +5849,7 @@ function _waInterpretarConGemini_(telefono, texto, estado, sinCache) {
     'Clasificá el último mensaje de un cliente de una tienda de suplementos deportivos.',
     'No respondas la consulta ni inventes datos. Devolvé solamente JSON válido.',
     'Intenciones permitidas: HORARIOS, UBICACION, PRODUCTO, PEDIDO, PAGOS, ENTREGAS, MAYORISTA, PROMOCIONES, HUMANO, SALUDO, ACLARAR.',
-    'Para PRODUCTO traducí el objetivo del cliente a una búsqueda útil del catálogo. Familias: bajar de peso/definición=quemadores; subir de peso/superávit=gainer; masa muscular/recuperación=proteína; fuerza/potencia=creatina; energía o enfoque=pre entreno salvo que diga barra/snack/gel; articulaciones/tendones/piel=colágeno; hidratación/electrolitos=isotónicos; descanso/calambres=magnesio o ZMA; estrés/relajación=ashwagandha; salud cardiovascular=omega 3; antioxidantes=resveratrol.',
+    'Para PRODUCTO traducí el objetivo del cliente a una búsqueda útil del catálogo. Familias: bajar de peso/definición=quemadores; subir de peso/superávit=gainer; masa muscular/recuperación=proteína; fuerza/potencia=creatina; energía o enfoque=pre entreno salvo que diga barra/snack/gel; articulaciones/tendones/piel=colágeno; hidratación/electrolitos=isotónicos; descanso/calambres=magnesio o ZMA; estrés/relajación=ashwagandha; libido/deseo sexual=ashwagandha o ZMA sin prometer un efecto; salud cardiovascular=omega 3; antioxidantes=resveratrol.',
     'No inventes ni heredes una marca de mensajes anteriores. Incluí una marca en consulta_producto únicamente si aparece escrita en el último mensaje del cliente.',
     'Para PEDIDO extraé codigo_pedido si aparece. Si falta información usá ACLARAR y escribí una pregunta breve.',
     'Formato: {"intent":"...","consulta_producto":"","codigo_pedido":"","confianza":0.0,"pregunta_aclaratoria":""}',
@@ -6048,6 +6048,11 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
     return 'Para dosis, contraindicaciones o temas de salud no doy respuestas automaticas. '
       + 'Te paso con una persona; si corresponde, consulta tambien a un profesional de salud.\n\n'
       + _waDerivarHumano(telefono, 'consulta de salud o dosificacion');
+  }
+
+  if (_waEsConsultaLibido_(normal)) {
+    _waGuardarEstado(telefono,'PRODUCTO',{fallos:0});
+    return _waRespuestaLibido_(telefono);
   }
 
   if (_waEsConsultaHorarios_(normal) || normal === '6') {
@@ -6329,6 +6334,55 @@ function _waTokenCoincide_(token,base,baseTokens) {
   });
 }
 
+function _waEsConsultaLibido_(normal) {
+  normal=_waNormalizar(normal);
+  return /\blibido\b|deseo sexual|apetito sexual/.test(normal);
+}
+
+function _waRespuestaLibido_(telefono) {
+  var productos=(getCatalogo().productos||[]).filter(function(p){
+    if(Number(p.stock||0)<=0) return false;
+    var texto=_waNormalizar(String(p.marca||'')+' '+String(p.nombre||''));
+    return /\bashwagandha\b|\bzma(?:-b)?\b/.test(texto);
+  }).slice(0,6);
+  if(!productos.length){
+    return '*Sobre libido y bienestar:* el estrés, el descanso, la nutrición y otros factores pueden influir. En este momento no tenemos ashwagandha ni ZMA con stock.\n\nSi querés, te comunico con un *asesor* de MAXUP.';
+  }
+  _waGuardarResultadosProductos(telefono,productos.map(function(p){return {p:p,puntaje:1};}));
+  var salida=[
+    '*Sobre libido y bienestar:* no hay un suplemento que garantice aumentarla. El estrés, el descanso y el estado nutricional pueden influir.',
+    '\nDentro de lo que tenemos, la *ashwagandha* puede acompañar el manejo del estrés y la relajación; el *ZMA* complementa zinc, magnesio y vitamina B6, relacionados con funciones normales del organismo y la recuperación.',
+    '\n*Opciones con stock:*'
+  ];
+  productos.forEach(function(p,i){
+    var contado=Number(p.precio_venta||0),lista=Number(p.precio_lista||contado);
+    var breve=_waDescripcionCortaProducto_(p);
+    salida.push('\n*'+(i+1)+'. '+String(p.marca||'')+' - '+String(p.nombre||'')+'*'
+      +(breve?'\n'+breve:'')
+      +'\nContado: '+_waMoneda(contado)
+      +(lista>0?' · 3 cuotas de '+_waMoneda(Math.ceil(lista/3)):'')
+      +'\nStock: '+Number(p.stock||0)+' unidad'+(Number(p.stock||0)===1?'':'es'));
+  });
+  salida.push('\n¿Querés más información sobre alguna opción? Respondé con el número. Si la consulta es personal o el cambio de libido persiste, escribí *asesor*.');
+  return salida.join('\n');
+}
+
+function _waTokenMarcaCoincide_(consulta,marca) {
+  consulta=String(consulta||''); marca=String(marca||'');
+  if(consulta===marca) return true;
+  if(consulta.length<4 || marca.length<4) return false;
+  var tolerancia=consulta.length>=8?2:1;
+  if(Math.abs(consulta.length-marca.length)>tolerancia) return false;
+  if(_waDistanciaTexto_(consulta,marca)<=tolerancia) return true;
+  if(consulta.length!==marca.length) return false;
+  var distintas=[];
+  for(var i=0;i<consulta.length;i++) if(consulta.charAt(i)!==marca.charAt(i)) distintas.push(i);
+  return distintas.length===2
+    && distintas[1]===distintas[0]+1
+    && consulta.charAt(distintas[0])===marca.charAt(distintas[1])
+    && consulta.charAt(distintas[1])===marca.charAt(distintas[0]);
+}
+
 function _waMarcaSolicitada_(normal, productos, categoria) {
   var consultaTokens=String(normal||'').split(' ').filter(Boolean);
   var vistas={};
@@ -6346,9 +6400,7 @@ function _waMarcaSolicitada_(normal, productos, categoria) {
     var candidata=candidatas[i];
     if(String(normal||'').indexOf(candidata.normal)>=0) return candidata.original;
     if(candidata.tokens.some(function(tokenMarca){
-      return consultaTokens.some(function(tokenConsulta){
-        return _waTokenCoincide_(tokenConsulta,tokenMarca,[tokenMarca]);
-      });
+      return consultaTokens.some(function(tokenConsulta){return _waTokenMarcaCoincide_(tokenConsulta,tokenMarca);});
     })) return candidata.original;
   }
   return '';
