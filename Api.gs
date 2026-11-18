@@ -5849,7 +5849,7 @@ function _waInterpretarConGemini_(telefono, texto, estado, sinCache) {
     'Clasificá el último mensaje de un cliente de una tienda de suplementos deportivos.',
     'No respondas la consulta ni inventes datos. Devolvé solamente JSON válido.',
     'Intenciones permitidas: HORARIOS, UBICACION, PRODUCTO, PEDIDO, PAGOS, ENTREGAS, MAYORISTA, PROMOCIONES, HUMANO, SALUDO, ACLARAR.',
-    'Para PRODUCTO extraé en consulta_producto el producto, categoría, marca, presentación u objetivo útil para buscar en un catálogo. Interpretá bajar de peso, adelgazar, perder grasa o definición como quemadores de grasa.',
+    'Para PRODUCTO traducí el objetivo del cliente a una búsqueda útil del catálogo. Familias: bajar de peso/definición=quemadores; subir de peso/superávit=gainer; masa muscular/recuperación=proteína; fuerza/potencia=creatina; energía o enfoque antes de entrenar=pre entreno; articulaciones/tendones/piel=colágeno; hidratación/electrolitos=isotónicos; descanso/calambres=magnesio o ZMA; estrés/relajación=ashwagandha; salud cardiovascular=omega 3; antioxidantes=resveratrol.',
     'Para PEDIDO extraé codigo_pedido si aparece. Si falta información usá ACLARAR y escribí una pregunta breve.',
     'Formato: {"intent":"...","consulta_producto":"","codigo_pedido":"","confianza":0.0,"pregunta_aclaratoria":""}',
     historial ? 'Conversación reciente:\n' + historial : '',
@@ -6126,7 +6126,11 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
     if (normal === '1' || consultaDirecta.length < 2) {
       return _waAyudaBusquedaProducto_();
     }
-    return _waBuscarProductos(telefono,consultaDirecta,false);
+    var respuestaDirecta=_waBuscarProductos(telefono,texto,true);
+    if(respuestaDirecta) return respuestaDirecta;
+    var interpretacionDirecta=_waInterpretarConGemini_(telefono,texto,estado,false);
+    var respuestaInterpretada=_waResponderInterpretacionGemini_(telefono,texto,estado,interpretacionDirecta);
+    return respuestaInterpretada || _waAyudaBusquedaProducto_();
   }
   if (normal === '2' || /estado.*pedido|seguir.*pedido|donde.*pedido/.test(normal)) {
     _waGuardarEstado(telefono, 'PEDIDO');
@@ -6166,6 +6170,22 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
 
 function _waEsConsultaSalud(normal) {
   return /dosis|dosificacion|como tomar|cuanto tomar|embaraz|presion|diabetes|medicamento|contraindic|efecto secundario|enfermedad|lesion/.test(normal);
+}
+
+function _waConsultaPorObjetivo_(normal) {
+  normal=_waNormalizar(normal);
+  if(/bajar (?:de )?peso|perder (?:grasa|peso)|reducir (?:grasa|peso)|quemar grasa|adelgazar|adelgazamiento|definicion|controlar (?:el )?peso/.test(normal)) return 'quemador';
+  if(/subir (?:de )?peso|aumentar (?:de )?peso|ganar (?:de )?peso|superavit calorico|sumar calorias|mas calorias|aumentar volumen/.test(normal)) return 'gainer';
+  if(/ganar masa muscular|aumentar masa muscular|desarrollar musculo|crecer musculo|recuperacion muscular|recuperar musculo|mantener masa muscular/.test(normal)) return 'proteina';
+  if(/aumentar (?:la )?fuerza|ganar fuerza|mas fuerza|potencia|explosividad|rendimiento en (?:series|pesas|fuerza)/.test(normal)) return 'creatina';
+  if(/energia (?:para|antes de) entrenar|mas energia.*entren|enfoque.*entren|activar.*entren|cansancio.*entren|rendir mas.*entren/.test(normal)) return 'pre entreno';
+  if(/articulacion|articulaciones|tendon|tendones|cartilago|tejido conectivo|cuidar (?:la )?piel|fortalecer (?:las )?unas/.test(normal)) return 'colageno';
+  if(/hidratar|hidratacion|reponer liquidos|reponer sales|electrolitos|isotonico|durante el entrenamiento/.test(normal)) return 'hidratacion';
+  if(/calambre|calambres|relajacion muscular|descansar mejor|mejorar (?:el )?descanso|dormir mejor|calidad (?:del )?sueno/.test(normal)) return 'magnesio';
+  if(/manejar (?:el )?estres|reducir (?:el )?estres|relajacion mental|sentirme mas relajad/.test(normal)) return 'ashwagandha';
+  if(/salud cardiovascular|cuidar (?:el )?corazon|trigliceridos|epa|dha/.test(normal)) return 'omega 3';
+  if(/antioxidante|estres oxidativo|proteccion celular/.test(normal)) return 'resveratrol';
+  return '';
 }
 
 function _waCategoriaConsulta(normal) {
@@ -6340,7 +6360,9 @@ function _waRespuestaSinStock_(normal,categoria,marca) {
 }
 
 function _waBuscarProductos(telefono, consulta, silencioso) {
-  var normal = _waExtraerConsultaProducto_(consulta);
+  var normalOriginal=_waNormalizar(consulta);
+  var consultaObjetivo=_waConsultaPorObjetivo_(normalOriginal);
+  var normal = consultaObjetivo || _waExtraerConsultaProducto_(consulta);
   var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1, algo:1, alguna:1, algun:1, opcion:1, opciones:1, ayuda:1, ayudar:1, y:1, o:1, otra:1, otro:1, dame:1, mostrar:1 };
   var categoriaConsulta = _waCategoriaConsulta(normal);
   var categoriaFlexible = /\boxido\b|\bnitrico\b|nitric oxide/.test(normal);
@@ -6353,13 +6375,17 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
 
   var catalogo = getCatalogo();
   var productos = catalogo.productos || [];
-  var marcaSolicitada=_waMarcaSolicitada_(normal,productos,categoriaConsulta);
+  var marcaSolicitada=_waMarcaSolicitada_(normalOriginal,productos,categoriaConsulta);
+  if(consultaObjetivo && marcaSolicitada){
+    _waNormalizar(marcaSolicitada).split(' ').filter(function(t){return t.length>2 && t!=='nutrition' && tokens.indexOf(t)<0;}).forEach(function(t){tokens.push(t);});
+  }
   var coincidencias = [];
   productos.forEach(function(p) {
     var hay = Number(p.stock || 0);
     if (hay <= 0) return;
     if (categoriaConsulta && !categoriaFlexible && _waCategoriaProducto(p) !== categoriaConsulta) return;
-    var base = _waNormalizar(String(p.marca || '') + ' ' + String(p.nombre || ''));
+    var beneficios=Array.isArray(p.beneficios_publicacion)?p.beneficios_publicacion.join(' '):'';
+    var base = _waNormalizar(String(p.marca || '') + ' ' + String(p.nombre || '') + ' ' + String(p.descripcion_publicacion||p.descripcion||'') + ' ' + beneficios);
     var baseTokens=base.split(' ').filter(Boolean);
     // Todos los términos específicos deben coincidir. Así "proteína STAR"
     // exige categoría proteína + marca/nombre STAR. Se tolera uno o dos errores

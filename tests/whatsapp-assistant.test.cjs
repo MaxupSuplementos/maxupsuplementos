@@ -46,14 +46,16 @@ test('Max extrae óxido nítrico de una pregunta completa y encuentra el product
   const normalizar = source.match(/function _waNormalizar[\s\S]*?(?=function _waMenu\()/);
   const extraer = source.match(/function _waExtraerConsultaProducto_[\s\S]*?(?=function _waAyudaBusquedaProducto_\()/);
   const ayuda = source.match(/function _waAyudaBusquedaProducto_[\s\S]*?(?=function _waClaveEstado\()/);
+  const objetivo = source.match(/function _waConsultaPorObjetivo_[\s\S]*?(?=function _waCategoriaConsulta\()/);
   const categoria = source.match(/function _waCategoriaConsulta[\s\S]*?(?=function _waCategoriaProducto\()/);
   const fuzzy = source.match(/function _waDistanciaTexto_[\s\S]*?(?=function _waBuscarProductos\()/);
   const buscar = source.match(/function _waBuscarProductos[\s\S]*?(?=function _waMoneda\()/);
-  assert.ok(normalizar && extraer && ayuda && categoria && fuzzy && buscar, 'No se encontraron las funciones de búsqueda inteligente');
+  assert.ok(normalizar && extraer && ayuda && objetivo && categoria && fuzzy && buscar, 'No se encontraron las funciones de búsqueda inteligente');
   const run = new Function(`
     ${normalizar[0]}
     ${extraer[0]}
     ${ayuda[0]}
+    ${objetivo[0]}
     ${categoria[0]}
     function _waTokenGenericoCategoria() { return false; }
     function _waCategoriaProducto(p) { return p.categoria; }
@@ -94,6 +96,7 @@ test('Max entiende quemador de grasa y muestra reseña, precios, cuotas y stock'
     ${take('_waNormalizar', '_waMenu')}
     ${take('_waExtraerConsultaProducto_', '_waAyudaBusquedaProducto_')}
     ${take('_waAyudaBusquedaProducto_', '_waClaveEstado')}
+    ${take('_waConsultaPorObjetivo_', '_waCategoriaConsulta')}
     ${take('_waCategoriaConsulta', '_waCategoriaProducto')}
     ${take('_waTokenGenericoCategoria', '_waDescripcionCategoria_')}
     ${take('_waDescripcionCategoria_', '_waBuscarProductos')}
@@ -107,12 +110,18 @@ test('Max entiende quemador de grasa y muestra reseña, precios, cuotas y stock'
       {nombre:'Thermo Energy',marca:'STAR',categoria:'quemador',stock:3,precio_venta:20000,precio_lista:24000,descripcion:'Fórmula termogénica para acompañar una etapa de definición.'},
       {nombre:'Lipo Black',marca:'NUTREMAX',categoria:'quemador',stock:2,precio_venta:22000,precio_lista:27000,descripcion:'Combina ingredientes orientados a energía y actividad física.'},
       {nombre:'Whey Protein',marca:'ENA',categoria:'proteina',stock:5,precio_venta:30000,descripcion:'Proteína de suero.'},
+      {nombre:'Mass Gainer',marca:'ENA',categoria:'gainer',stock:3,precio_venta:48000,descripcion:'Aporte de calorías para acompañar una etapa de volumen.'},
+      {nombre:'Creatina 300g',marca:'GOLD',categoria:'creatina',stock:3,precio_venta:29000,descripcion:'Acompaña fuerza y potencia.'},
+      {nombre:'Collagen Sport',marca:'STAR',categoria:'colageno',stock:3,precio_venta:25000,descripcion:'Acompaña articulaciones y tejidos conectivos.'},
       {nombre:'Omega 3 Fish Oil 60 Caps',marca:'STAR',categoria:'magnesio',stock:4,precio_venta:34000,descripcion:'Aceite de pescado con EPA y DHA.'},
       {nombre:'ZMA 90 Caps',marca:'STAR',categoria:'magnesio',stock:2,precio_venta:22000,descripcion:'Zinc, magnesio y vitamina B6.'}
     ]}; }
     return {
       quemador:_waBuscarProductos('5490000000000','precio del quemador de grasa',false),
       objetivo:_waBuscarProductos('5490000000000','hola tenes algo para bajar de peso',false),
+      subir:_waBuscarProductos('5490000000000','hola tenes algo para subir de peso',false),
+      fuerza:_waBuscarProductos('5490000000000','quiero algo para ganar fuerza',false),
+      articulaciones:_waBuscarProductos('5490000000000','busco algo para cuidar mis articulaciones',false),
       omega:_waBuscarProductos('5490000000000','omega 3',false)
     };
   `);
@@ -128,6 +137,10 @@ test('Max entiende quemador de grasa y muestra reseña, precios, cuotas y stock'
   assert.match(resultado.objetivo, /Sobre los quemadores de grasa/);
   assert.match(resultado.objetivo, /Thermo Energy/);
   assert.doesNotMatch(resultado.objetivo, /necesito un dato más/i);
+  assert.match(resultado.subir, /Mass Gainer/);
+  assert.match(resultado.subir, /ganadores de peso/);
+  assert.match(resultado.fuerza, /Creatina 300g/);
+  assert.match(resultado.articulaciones, /Collagen Sport/);
   assert.match(resultado.omega, /Sobre el Omega 3/);
   assert.match(resultado.omega, /Omega 3 Fish Oil/);
   assert.doesNotMatch(resultado.omega, /ZMA 90 Caps/);
