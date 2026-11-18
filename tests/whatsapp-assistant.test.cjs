@@ -112,6 +112,8 @@ test('Max entiende quemador de grasa y muestra reseña, precios, cuotas y stock'
       {nombre:'Whey Protein',marca:'ENA',categoria:'proteina',stock:5,precio_venta:30000,descripcion:'Proteína de suero.'},
       {nombre:'Mass Gainer',marca:'ENA',categoria:'gainer',stock:3,precio_venta:48000,descripcion:'Aporte de calorías para acompañar una etapa de volumen.'},
       {nombre:'Creatina 300g',marca:'GOLD',categoria:'creatina',stock:3,precio_venta:29000,descripcion:'Acompaña fuerza y potencia.'},
+      {nombre:'Pre Work Focus',marca:'STAR',categoria:'preworkout',stock:3,precio_venta:31000,descripcion:'Acompaña energía y enfoque antes de entrenar.'},
+      {nombre:'Protein Bar',marca:'NUTRILAB',categoria:'barra',stock:8,precio_venta:4000,descripcion:'Barrita práctica que aporta energía entre comidas.'},
       {nombre:'Collagen Sport',marca:'STAR',categoria:'colageno',stock:3,precio_venta:25000,descripcion:'Acompaña articulaciones y tejidos conectivos.'},
       {nombre:'Omega 3 Fish Oil 60 Caps',marca:'STAR',categoria:'magnesio',stock:4,precio_venta:34000,descripcion:'Aceite de pescado con EPA y DHA.'},
       {nombre:'ZMA 90 Caps',marca:'STAR',categoria:'magnesio',stock:2,precio_venta:22000,descripcion:'Zinc, magnesio y vitamina B6.'}
@@ -121,6 +123,8 @@ test('Max entiende quemador de grasa y muestra reseña, precios, cuotas y stock'
       objetivo:_waBuscarProductos('5490000000000','hola tenes algo para bajar de peso',false),
       subir:_waBuscarProductos('5490000000000','hola tenes algo para subir de peso',false),
       fuerza:_waBuscarProductos('5490000000000','quiero algo para ganar fuerza',false),
+      energia:_waBuscarProductos('5490000000000','hola necesito algo que me de energia que tenes',false),
+      dudaCreatina:_waBuscarProductos('5490000000000','lei que la creatina me ayudaria puede ser',false),
       articulaciones:_waBuscarProductos('5490000000000','busco algo para cuidar mis articulaciones',false),
       omega:_waBuscarProductos('5490000000000','omega 3',false)
     };
@@ -140,6 +144,10 @@ test('Max entiende quemador de grasa y muestra reseña, precios, cuotas y stock'
   assert.match(resultado.subir, /Mass Gainer/);
   assert.match(resultado.subir, /ganadores de peso/);
   assert.match(resultado.fuerza, /Creatina 300g/);
+  assert.match(resultado.energia, /Pre Work Focus/);
+  assert.doesNotMatch(resultado.energia, /Protein Bar/);
+  assert.match(resultado.dudaCreatina, /Creatina 300g/);
+  assert.doesNotMatch(resultado.dudaCreatina, /NUTRILAB/);
   assert.match(resultado.articulaciones, /Collagen Sport/);
   assert.match(resultado.omega, /Sobre el Omega 3/);
   assert.match(resultado.omega, /Omega 3 Fish Oil/);

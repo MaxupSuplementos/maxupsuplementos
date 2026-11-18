@@ -5654,7 +5654,7 @@ function _waRespuestaCatalogoGeneral() {
 
 function _waExtraerConsultaProducto_(texto) {
   return _waNormalizar(texto)
-    .replace(/\b(hola|max|maxup|buenas|buen|dia|tarde|noche|por|favor|me|mi|das|dame|decime|podes|podrias|quisiera|quiero|necesito|saber|consultar|consulta|pregunta|informacion|info|referencia|referencias|detalle|detalles|sobre|acerca|respecto|producto|productos|suplemento|suplementos|buscar|busco|precio|precios|stock|tenes|tienen|hay|beneficio|beneficios|sirve|contiene|composicion|ingrediente|ingredientes|que|cual|cuales|es|son|para|de|del|la|el|los|las|un|una|algo|algun|alguna|mostrar|mostrame)\b/g, ' ')
+    .replace(/\b(hola|max|maxup|buenas|buen|dia|tarde|noche|por|favor|me|mi|das|dame|decime|podes|podrias|quisiera|quiero|necesito|saber|consultar|consulta|pregunta|informacion|info|referencia|referencias|detalle|detalles|sobre|acerca|respecto|producto|productos|suplemento|suplementos|buscar|busco|precio|precios|stock|tenes|tienen|hay|beneficio|beneficios|sirve|contiene|composicion|ingrediente|ingredientes|que|cual|cuales|es|son|para|de|del|la|el|los|las|un|una|algo|algun|alguna|mostrar|mostrame|lei|escuche|dijeron|recomendaron|ayudaria|ayuda|ayudar|puede|podria|funciona|funcionaria|verdad|cierto|capaz|tal|vez)\b/g, ' ')
     .replace(/\s+/g, ' ').trim();
 }
 
@@ -5836,7 +5836,7 @@ function _waInterpretarConGemini_(telefono, texto, estado, sinCache) {
   var normal = _waNormalizar(texto);
   if (!normal) return null;
   var cache = CacheService.getScriptCache();
-  var cacheKey = 'WA_GEMINI_' + _hashSeguro(normal + '|' + String((estado&&estado.paso)||''));
+  var cacheKey = 'WA_GEMINI_V3_' + _hashSeguro(normal + '|' + String((estado&&estado.paso)||''));
   if (!sinCache) {
     var guardado = cache.get(cacheKey);
     if (guardado) { try { return JSON.parse(guardado); } catch(eCache) {} }
@@ -5849,7 +5849,8 @@ function _waInterpretarConGemini_(telefono, texto, estado, sinCache) {
     'Clasificá el último mensaje de un cliente de una tienda de suplementos deportivos.',
     'No respondas la consulta ni inventes datos. Devolvé solamente JSON válido.',
     'Intenciones permitidas: HORARIOS, UBICACION, PRODUCTO, PEDIDO, PAGOS, ENTREGAS, MAYORISTA, PROMOCIONES, HUMANO, SALUDO, ACLARAR.',
-    'Para PRODUCTO traducí el objetivo del cliente a una búsqueda útil del catálogo. Familias: bajar de peso/definición=quemadores; subir de peso/superávit=gainer; masa muscular/recuperación=proteína; fuerza/potencia=creatina; energía o enfoque antes de entrenar=pre entreno; articulaciones/tendones/piel=colágeno; hidratación/electrolitos=isotónicos; descanso/calambres=magnesio o ZMA; estrés/relajación=ashwagandha; salud cardiovascular=omega 3; antioxidantes=resveratrol.',
+    'Para PRODUCTO traducí el objetivo del cliente a una búsqueda útil del catálogo. Familias: bajar de peso/definición=quemadores; subir de peso/superávit=gainer; masa muscular/recuperación=proteína; fuerza/potencia=creatina; energía o enfoque=pre entreno salvo que diga barra/snack/gel; articulaciones/tendones/piel=colágeno; hidratación/electrolitos=isotónicos; descanso/calambres=magnesio o ZMA; estrés/relajación=ashwagandha; salud cardiovascular=omega 3; antioxidantes=resveratrol.',
+    'No inventes ni heredes una marca de mensajes anteriores. Incluí una marca en consulta_producto únicamente si aparece escrita en el último mensaje del cliente.',
     'Para PEDIDO extraé codigo_pedido si aparece. Si falta información usá ACLARAR y escribí una pregunta breve.',
     'Formato: {"intent":"...","consulta_producto":"","codigo_pedido":"","confianza":0.0,"pregunta_aclaratoria":""}',
     historial ? 'Conversación reciente:\n' + historial : '',
@@ -6179,6 +6180,7 @@ function _waConsultaPorObjetivo_(normal) {
   if(/ganar masa muscular|aumentar masa muscular|desarrollar musculo|crecer musculo|recuperacion muscular|recuperar musculo|mantener masa muscular/.test(normal)) return 'proteina';
   if(/aumentar (?:la )?fuerza|ganar fuerza|mas fuerza|potencia|explosividad|rendimiento en (?:series|pesas|fuerza)/.test(normal)) return 'creatina';
   if(/energia (?:para|antes de) entrenar|mas energia.*entren|enfoque.*entren|activar.*entren|cansancio.*entren|rendir mas.*entren/.test(normal)) return 'pre entreno';
+  if(!/\b(barra|barritas?|snack|gel)\b/.test(normal) && /(?:algo|suplemento).*(?:dar|de|tener|aportar).*energia|necesito.*energia|quiero.*energia|falta.*energia|sin energia/.test(normal)) return 'pre entreno';
   if(/articulacion|articulaciones|tendon|tendones|cartilago|tejido conectivo|cuidar (?:la )?piel|fortalecer (?:las )?unas/.test(normal)) return 'colageno';
   if(/hidratar|hidratacion|reponer liquidos|reponer sales|electrolitos|isotonico|durante el entrenamiento/.test(normal)) return 'hidratacion';
   if(/calambre|calambres|relajacion muscular|descansar mejor|mejorar (?:el )?descanso|dormir mejor|calidad (?:del )?sueno/.test(normal)) return 'magnesio';
@@ -6363,7 +6365,7 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
   var normalOriginal=_waNormalizar(consulta);
   var consultaObjetivo=_waConsultaPorObjetivo_(normalOriginal);
   var normal = consultaObjetivo || _waExtraerConsultaProducto_(consulta);
-  var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1, algo:1, alguna:1, algun:1, opcion:1, opciones:1, ayuda:1, ayudar:1, y:1, o:1, otra:1, otro:1, dame:1, mostrar:1 };
+  var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, ser:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1, algo:1, alguna:1, algun:1, opcion:1, opciones:1, ayuda:1, ayudar:1, ayudaria:1, lei:1, escuche:1, dijeron:1, recomendaron:1, puede:1, podria:1, funciona:1, funcionaria:1, verdad:1, cierto:1, y:1, o:1, otra:1, otro:1, dame:1, mostrar:1 };
   var categoriaConsulta = _waCategoriaConsulta(normal);
   var categoriaFlexible = /\boxido\b|\bnitrico\b|nitric oxide/.test(normal);
   var tokens = normal.split(' ').filter(function(t) {
