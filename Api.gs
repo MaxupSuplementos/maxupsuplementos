@@ -5602,8 +5602,23 @@ function _waNormalizar(texto) {
     .replace(/[^a-z0-9\s-]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function _waSaludoMomento_() {
+  try {
+    var hora = Number(Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'H'));
+    if (hora >= 6 && hora < 12) return '¡Buen día!';
+    if (hora >= 12 && hora < 20) return '¡Buenas tardes!';
+    return '¡Buenas noches!';
+  } catch (e) {
+    return '¡Hola!';
+  }
+}
+
+function _waPresentacionMax_() {
+  return _waSaludoMomento_() + ' Soy *Max*, el asistente de *MAXUP*.';
+}
+
 function _waMenu() {
-  return '¡Hola! Soy *Max*, el asistente virtual de *MAXUP*.\n\n'
+  return _waPresentacionMax_() + '\n\n'
     + 'Podés escribirme con tus propias palabras o elegir una opción:\n'
     + '*1* - Productos, beneficios, stock y precios\n'
     + '*2* - Estado de un pedido\n'
@@ -5626,7 +5641,7 @@ function _waEsConsultaGeneralCatalogo(normal) {
 }
 
 function _waRespuestaCatalogoGeneral() {
-  return '¡Claro! Soy *Max* y te asesoro para encontrar una opción con stock.\n\n'
+  return _waPresentacionMax_() + '\n\nTe ayudo a encontrar una opción con stock.\n\n'
     + 'Decime qué querés ver:\n'
     + '• *proteínas*\n'
     + '• *creatinas*\n'
@@ -6161,6 +6176,8 @@ function _waCategoriaConsulta(normal) {
   if (/\b(preworkout|preentreno|pre-entreno|vasodilatador|vasodilatadores|bombeo|pump|oxido|nitrico)\b|pre entreno|nitric oxide/.test(normal)) return 'preworkout';
   if (/\b(colageno|colagenos|collagen)\b/.test(normal)) return 'colageno';
   if (/\b(quemador|quemadores|termogenico|termogenicos|lipo|adelgazar)\b|fat burner|quemar grasa|bajar de peso/.test(normal)) return 'quemador';
+  if (/\b(magnesio|bisglicinato|glicinato|zma|omega ?3|fish oil)\b/.test(normal)) return 'magnesio';
+  if (/\b(ashwagandha|resveratrol|nad\+?|coenzima|antioxidante)\b/.test(normal)) return 'vitamin';
   if (/\b(vitamina|vitaminas|mineral|minerales)\b/.test(normal)) return 'vitamin';
   if (/\b(hidratacion|isotonico|isotonicos|electrolito|electrolitos)\b/.test(normal)) return 'hidratacion';
   if (/\b(barra|barras|snack|snacks)\b/.test(normal)) return 'barra';
@@ -6178,6 +6195,7 @@ function _waCategoriaProducto(p) {
     preentreno:'preworkout', 'pre entreno':'preworkout',
     colagenos:'colageno', collagen:'colageno',
     quemadores:'quemador', termogenico:'quemador', termogenicos:'quemador',
+    magnesios:'magnesio', omega:'magnesio', omega3:'magnesio', zma:'magnesio',
     vitamina:'vitamin', vitaminas:'vitamin', minerales:'vitamin',
     isotonico:'hidratacion', isotonicos:'hidratacion',
     barras:'barra', snacks:'barra',
@@ -6198,6 +6216,9 @@ function _waTokenGenericoCategoria(token, categoria) {
     preworkout:{preworkout:1,preentreno:1,vasodilatador:1,vasodilatadores:1,bombeo:1,pump:1},
     colageno:{colageno:1,colagenos:1,collagen:1},
     quemador:{quemador:1,quemadores:1,termogenico:1,termogenicos:1,grasa:1,grasas:1,fat:1,burner:1,burners:1,lipo:1,quemar:1,bajar:1,peso:1,adelgazar:1},
+    // Omega 3, ZMA y los distintos tipos de magnesio comparten el filtro de
+    // la tienda, pero acá conservamos esas palabras para no mezclarlos entre sí.
+    magnesio:{},
     vitamin:{vitamina:1,vitaminas:1,mineral:1,minerales:1},
     hidratacion:{hidratacion:1,isotonico:1,isotonicos:1,electrolito:1,electrolitos:1},
     barra:{barra:1,barras:1,snack:1,snacks:1},
@@ -6211,6 +6232,18 @@ function _waDescripcionCategoria_(categoria, normal) {
   if (/\boxido\b|\bnitrico\b|nitric oxide/.test(normal)) {
     return '*Sobre el óxido nítrico:* estos suplementos suelen aportar precursores como arginina o citrulina. Están orientados a favorecer el flujo sanguíneo, la congestión muscular y el rendimiento durante el entrenamiento.';
   }
+  if (/\bomega ?3\b|fish oil/.test(normal)) {
+    return '*Sobre el Omega 3:* aporta ácidos grasos como EPA y DHA. Se usa para complementar la alimentación y acompañar la salud cardiovascular, cerebral y el equilibrio de la respuesta inflamatoria, según la concentración de cada fórmula.';
+  }
+  if (/\bashwagandha\b/.test(normal)) {
+    return '*Sobre la ashwagandha:* es un adaptógeno utilizado para acompañar el manejo del estrés, la relajación y la calidad del descanso. Sus efectos dependen del extracto y de cada persona.';
+  }
+  if (/\bzma\b/.test(normal)) {
+    return '*Sobre el ZMA:* combina zinc, magnesio y vitamina B6. Complementa estos micronutrientes y acompaña la función muscular, el sistema nervioso, el metabolismo energético y la recuperación nocturna.';
+  }
+  if (/\bresveratrol\b/.test(normal)) {
+    return '*Sobre el resveratrol:* es un compuesto antioxidante de origen vegetal. Se utiliza como complemento para acompañar la protección frente al estrés oxidativo y el bienestar general.';
+  }
   var textos = {
     proteina:'*Sobre las proteínas:* ayudan a completar el aporte diario de proteína y acompañan la recuperación y el mantenimiento de masa muscular.',
     creatina:'*Sobre las creatinas:* acompañan la fuerza, la potencia y el rendimiento en esfuerzos intensos y repetidos.',
@@ -6219,6 +6252,7 @@ function _waDescripcionCategoria_(categoria, normal) {
     preworkout:'*Sobre los pre entrenos:* están formulados para acompañar energía, enfoque, resistencia o congestión antes de entrenar, según sus ingredientes.',
     colageno:'*Sobre los colágenos:* aportan péptidos o nutrientes orientados al cuidado de articulaciones, piel y tejidos conectivos, según la fórmula.',
     quemador:'*Sobre los quemadores de grasa:* son fórmulas termogénicas que suelen aportar estimulantes y otros ingredientes para acompañar energía, actividad física y una etapa de definición.',
+    magnesio:'*Sobre magnesio, Omega 3 y ZMA:* son suplementos diferentes que complementan nutrientes específicos. Decime cuál te interesa y te explico sus beneficios y las opciones con stock.',
     vitamin:'*Sobre vitaminas y minerales:* ayudan a complementar micronutrientes específicos de la alimentación, según la composición de cada producto.',
     hidratacion:'*Sobre hidratación:* estas opciones aportan líquidos, electrolitos o carbohidratos para acompañar la hidratación y el rendimiento.',
     barra:'*Sobre barras y snacks:* son opciones prácticas para sumar nutrientes y energía entre comidas o alrededor del entrenamiento.',
@@ -6273,6 +6307,38 @@ function _waTokenCoincide_(token,base,baseTokens) {
   });
 }
 
+function _waMarcaSolicitada_(normal, productos, categoria) {
+  var consultaTokens=String(normal||'').split(' ').filter(Boolean);
+  var vistas={};
+  var candidatas=[];
+  (productos||[]).forEach(function(p){
+    if(categoria && _waCategoriaProducto(p)!==categoria) return;
+    var original=String(p.marca||'').trim();
+    var marca=_waNormalizar(original);
+    if(!marca || vistas[marca]) return;
+    vistas[marca]=1;
+    candidatas.push({original:original,normal:marca,tokens:marca.split(' ').filter(function(t){return t.length>2 && t!=='nutrition' && t!=='suplementos';})});
+  });
+  candidatas.sort(function(a,b){return b.normal.length-a.normal.length;});
+  for(var i=0;i<candidatas.length;i++){
+    var candidata=candidatas[i];
+    if(String(normal||'').indexOf(candidata.normal)>=0) return candidata.original;
+    if(candidata.tokens.some(function(tokenMarca){
+      return consultaTokens.some(function(tokenConsulta){
+        return _waTokenCoincide_(tokenConsulta,tokenMarca,[tokenMarca]);
+      });
+    })) return candidata.original;
+  }
+  return '';
+}
+
+function _waRespuestaSinStock_(normal,categoria,marca) {
+  var tema=marca ? 'la marca *'+marca+'*' : '*'+String(normal||'ese producto').slice(0,100)+'*';
+  var texto='En este momento no contamos con '+tema+' en stock';
+  if(categoria) texto+=' dentro de esta categoría';
+  return texto+'.\n\nSi querés, puedo mostrarte otra marca disponible o comunicarte con un *asesor* de MAXUP.';
+}
+
 function _waBuscarProductos(telefono, consulta, silencioso) {
   var normal = _waExtraerConsultaProducto_(consulta);
   var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1, y:1, o:1, otra:1, otro:1, dame:1, mostrar:1 };
@@ -6287,6 +6353,7 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
 
   var catalogo = getCatalogo();
   var productos = catalogo.productos || [];
+  var marcaSolicitada=_waMarcaSolicitada_(normal,productos,categoriaConsulta);
   var coincidencias = [];
   productos.forEach(function(p) {
     var hay = Number(p.stock || 0);
@@ -6314,6 +6381,10 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
     return Number(b.p.stock || 0) - Number(a.p.stock || 0);
   });
   if (!coincidencias.length) {
+    // Si reconocemos la marca, la respuesta debe ser concreta y no hacer que
+    // el cliente repita su consulta. Para categorías sin opciones también
+    // informamos la falta de stock y ofrecemos atención personal.
+    if(marcaSolicitada || categoriaConsulta) return _waRespuestaSinStock_(normal,categoriaConsulta,marcaSolicitada);
     return silencioso?'':_waAyudaBusquedaProducto_();
   }
 
@@ -6325,7 +6396,7 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
   var totalCoincidencias = coincidencias.length;
   var introduccion=_waDescripcionCategoria_(categoriaConsulta,normal);
   var bloques=[],visibles=[],largo=introduccion.length+120;
-  for(var vi=0;vi<coincidencias.length && vi<30;vi++){
+  for(var vi=0;vi<coincidencias.length && vi<6;vi++){
     var prod=coincidencias[vi].p;
     var contado=Number(prod.precio_venta||0),lista=Number(prod.precio_lista||contado);
     var breve=_waDescripcionCortaProducto_(prod);
@@ -6342,8 +6413,8 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
   _waGuardarResultadosProductos(telefono,visibles);
 
   var salida = [introduccion,'\n*Tengo '+totalCoincidencias+' opciones con stock:*'].concat(bloques);
-  if(totalCoincidencias>visibles.length) salida.push('\nHay ' + (totalCoincidencias-visibles.length) + ' opciones más. Escribí una marca o sabor para afinar la búsqueda.');
-  salida.push('\nRespondé con el número para ampliar sus beneficios, precio y stock. También podés escribir otro producto, *asesor* para atención personalizada o *menu* para volver.');
+  if(totalCoincidencias>visibles.length) salida.push('\nTe mostré 6 opciones. Hay ' + (totalCoincidencias-visibles.length) + ' más: escribime una marca, presentación o sabor para afinar la búsqueda.');
+  salida.push('\n¿Querés más información sobre alguno en particular o preferís consultar una marca? Respondé con el número o escribí la marca. También podés escribir *asesor* para atención personalizada.');
   return salida.join('\n');
 }
 

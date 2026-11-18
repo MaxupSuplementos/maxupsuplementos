@@ -106,11 +106,17 @@ test('Max entiende quemador de grasa y muestra reseña, precios, cuotas y stock'
     function getCatalogo() { return {productos:[
       {nombre:'Thermo Energy',marca:'STAR',categoria:'quemador',stock:3,precio_venta:20000,precio_lista:24000,descripcion:'Fórmula termogénica para acompañar una etapa de definición.'},
       {nombre:'Lipo Black',marca:'NUTREMAX',categoria:'quemador',stock:2,precio_venta:22000,precio_lista:27000,descripcion:'Combina ingredientes orientados a energía y actividad física.'},
-      {nombre:'Whey Protein',marca:'ENA',categoria:'proteina',stock:5,precio_venta:30000,descripcion:'Proteína de suero.'}
+      {nombre:'Whey Protein',marca:'ENA',categoria:'proteina',stock:5,precio_venta:30000,descripcion:'Proteína de suero.'},
+      {nombre:'Omega 3 Fish Oil 60 Caps',marca:'STAR',categoria:'magnesio',stock:4,precio_venta:34000,descripcion:'Aceite de pescado con EPA y DHA.'},
+      {nombre:'ZMA 90 Caps',marca:'STAR',categoria:'magnesio',stock:2,precio_venta:22000,descripcion:'Zinc, magnesio y vitamina B6.'}
     ]}; }
-    return _waBuscarProductos('5490000000000','precio del quemador de grasa',false);
+    return {
+      quemador:_waBuscarProductos('5490000000000','precio del quemador de grasa',false),
+      omega:_waBuscarProductos('5490000000000','omega 3',false)
+    };
   `);
-  const respuesta = run();
+  const resultado = run();
+  const respuesta = resultado.quemador;
   assert.match(respuesta, /Sobre los quemadores de grasa/);
   assert.match(respuesta, /Thermo Energy/);
   assert.match(respuesta, /Fórmula termogénica/);
@@ -118,6 +124,9 @@ test('Max entiende quemador de grasa y muestra reseña, precios, cuotas y stock'
   assert.match(respuesta, /Stock: 3 unidades/);
   assert.match(respuesta, /asesor/);
   assert.doesNotMatch(respuesta, /Whey Protein/);
+  assert.match(resultado.omega, /Sobre el Omega 3/);
+  assert.match(resultado.omega, /Omega 3 Fish Oil/);
+  assert.doesNotMatch(resultado.omega, /ZMA 90 Caps/);
 });
 
 test('Max reconoce horarios y ubicación sin necesitar Gemini', () => {
@@ -170,5 +179,48 @@ test('La configuración de Gemini acepta formatos nuevos y limpia el portapapele
     _waLimpiarApiKeyGemini_('nueva\u200B_clave_google_1234567890')
   ];`);
   assert.deepEqual(run(), ['nueva_clave_google_1234567890', 'nueva_clave_google_1234567890']);
+});
+
+test('Max saluda según la hora y se presenta como asistente de MAXUP', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'Api.gs'), 'utf8');
+  const block = source.match(/function _waSaludoMomento_[\s\S]*?(?=function _waEsConsultaGeneralCatalogo\()/);
+  assert.ok(block);
+  const run = new Function(`
+    const Utilities={formatDate:()=> '15'};
+    ${block[0]}
+    return _waMenu();
+  `);
+  const respuesta=run();
+  assert.match(respuesta,/Buenas tardes/);
+  assert.match(respuesta,/asistente de \*MAXUP\*/);
+});
+
+test('Max muestra como máximo seis suplementos y describe consultas específicas', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'Api.gs'), 'utf8');
+  assert.match(source,/vi<coincidencias\.length && vi<6/);
+  assert.match(source,/Sobre el Omega 3/);
+  assert.match(source,/Sobre la ashwagandha/);
+  assert.match(source,/Sobre el ZMA/);
+  assert.match(source,/Sobre el resveratrol/);
+  assert.match(source,/¿Querés más información sobre alguno en particular/);
+});
+
+test('Max ofrece asesor cuando una marca reconocida no tiene stock', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'Api.gs'), 'utf8');
+  const helpers = source.match(/function _waMarcaSolicitada_[\s\S]*?(?=function _waBuscarProductos\()/);
+  assert.ok(helpers);
+  const run = new Function(`
+    function _waNormalizar(v){return String(v||'').toLowerCase();}
+    function _waCategoriaProducto(p){return p.categoria;}
+    function _waTokenCoincide_(a,b){return a===b;}
+    ${helpers[0]}
+    const productos=[{marca:'GOLD NUTRITION',categoria:'creatina',stock:0}];
+    const marca=_waMarcaSolicitada_('creatina gold',productos,'creatina');
+    return _waRespuestaSinStock_('creatina gold','creatina',marca);
+  `);
+  const respuesta=run();
+  assert.match(respuesta,/GOLD NUTRITION/);
+  assert.match(respuesta,/no contamos/i);
+  assert.match(respuesta,/asesor/);
 });
 
