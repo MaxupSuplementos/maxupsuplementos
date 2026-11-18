@@ -180,8 +180,35 @@ function _normalizarClienteCupon(v) {
   return String(v || '').replace(/\D/g, '').trim() || _normalizarHeaderV3(v || 'sin_cliente');
 }
 
+function _normalizarPorcentajeCuponEntrada(valor) {
+  var pct = Number(valor);
+  if (!isFinite(pct) || pct <= 0) return 0;
+  if (pct <= 1) pct *= 100;
+  return Math.min(100, Math.round(pct * 100) / 100);
+}
+
+function _repararFormatoPorcentajesCuponesSiHaceFalta(hoja) {
+  if (!hoja || hoja.getLastRow() < 2) return 0;
+  var cantidad = hoja.getLastRow() - 1;
+  var codigos = hoja.getRange(2, 1, cantidad, 1).getDisplayValues();
+  var rangoPct = hoja.getRange(2, 3, cantidad, 1);
+  var valores = rangoPct.getValues();
+  var formatos = rangoPct.getNumberFormats();
+  var corregidos = 0;
+  for (var i = 0; i < cantidad; i++) {
+    if (!String(codigos[i][0] || '').trim()) continue;
+    var normalizado = _normalizarPorcentajeCuponEntrada(valores[i][0]);
+    if (Number(valores[i][0]) !== normalizado || formatos[i][0] !== '0.##"%"') {
+      hoja.getRange(i + 2, 3).setNumberFormat('0.##"%"').setValue(normalizado);
+      corregidos++;
+    }
+  }
+  return corregidos;
+}
+
 function _datosCupones() {
   var hoja = _asegurarHojaCupones();
+  _repararFormatoPorcentajesCuponesSiHaceFalta(hoja);
   if (hoja.getLastRow() < 2) return [];
   return hoja.getRange(2, 1, hoja.getLastRow() - 1, CUPONES_HEADERS.length).getValues().map(function(r, i) {
     var pctRaw = Number(r[2]) || 0;
@@ -248,6 +275,15 @@ function _validarCuponVigente(codigo, cliente) {
 
 function _listarCuponesPublicos() {
   var cache = CacheService.getScriptCache();
+  // Reparar siempre antes de devolver la configuracion publica. Asi una celda
+  // que Sheets haya dejado visualmente en 500% se corrige aunque el listado
+  // publico estuviera en cache.
+  try {
+    var reparados = _repararFormatoPorcentajesCuponesSiHaceFalta(_asegurarHojaCupones());
+    if (reparados) cache.remove('CUPONES_PUBLICOS_V1');
+  } catch (e0) {
+    Logger.log('Cupones: no se pudo normalizar el formato: ' + e0.message);
+  }
   var cached = cache.get('CUPONES_PUBLICOS_V1');
   if (cached) { try { return JSON.parse(cached); } catch(e) {} }
   var salida = {};
@@ -284,8 +320,11 @@ function _actualizarCuponEdit(e, soloLocal) {
   var fila = e.range.getRow();
   var codigo = String(hoja.getRange(fila, 1).getValue() || '').trim().toUpperCase().replace(/\s+/g, '');
   hoja.getRange(fila, 1).setValue(codigo);
-  var pct = Number(hoja.getRange(fila, 3).getValue()) || 0;
-  if (pct > 0 && pct <= 1) hoja.getRange(fila, 3).setValue(pct * 100);
+  var celdaPct = hoja.getRange(fila, 3);
+  var pct = _normalizarPorcentajeCuponEntrada(celdaPct.getValue());
+  // Restablecer tambien el formato: al escribir 5%, Sheets suele imponer el
+  // formato porcentual nativo y un valor 5 termina viendose como 500%.
+  celdaPct.setNumberFormat('0.##"%"').setValue(pct);
   var activo = _cuponBooleano(hoja.getRange(fila, 4).getValue());
   var duracion = Math.max(0, Number(hoja.getRange(fila, 7).getValue()) || 0);
   if (e.range.getColumn() === 4 && activo) {
@@ -299,6 +338,20 @@ function _actualizarCuponEdit(e, soloLocal) {
   }
   CacheService.getScriptCache().remove('CUPONES_PUBLICOS_V1');
   if (!soloLocal) _refrescarResumenCupones();
+}
+
+function corregirPorcentajesCupones() {
+  var hoja = _asegurarHojaCupones();
+  var cantidad = Math.max(hoja.getLastRow() - 1, 0);
+  if (!cantidad) return { ok: true, corregidos: 0 };
+  var rango = hoja.getRange(2, 3, cantidad, 1);
+  var valores = rango.getValues().map(function(fila) {
+    return [_normalizarPorcentajeCuponEntrada(fila[0])];
+  });
+  rango.setNumberFormat('0.##"%"').setValues(valores);
+  CacheService.getScriptCache().remove('CUPONES_PUBLICOS_V1');
+  _refrescarResumenCupones();
+  return { ok: true, corregidos: cantidad };
 }
 
 function _registrarUsoCupon(cupon, cliente, pedido, totalAntes, descuento) {
@@ -439,23 +492,45 @@ function asegurarSkuProductos() {
     colSku = hoja.getLastColumn();
     hoja.getRange(cols.filaHeader + 1, colSku + 1).setValue('SKU');
   }
-  var marca = '', actualizados = 0, vistos = {}, duplicados = [];
+  var marca = '', actualizados = 0, vistos = {}, duplicados = [], reparados = [];
   var salida = [];
   for (var r = cols.filaHeader + 1; r < datos.length; r++) {
     var nombre = String(datos[r][cols.producto] || '').trim();
-    var contado = datos[r][cols.contado];
     if (!nombre) { salida.push(['']); continue; }
-    if (contado === '' || contado === null) { marca = nombre; salida.push(['']); continue; }
-    var sku = String(datos[r][colSku] || '').trim() || _skuDeterministico(marca, nombre, 'SUP');
-    if (!datos[r][colSku]) actualizados++;
-    if (vistos[sku]) duplicados.push(sku + ' (' + (r + 1) + ')');
-    vistos[sku] = true;
+    var esMarca = (typeof _esFilaMarcaSuplementos_ === 'function')
+      ? _esFilaMarcaSuplementos_(datos[r], cols)
+      : ((datos[r][cols.contado] === '' || datos[r][cols.contado] === null) &&
+         (cols.lista < 0 || datos[r][cols.lista] === '' || datos[r][cols.lista] === null));
+    if (esMarca) {
+      marca = nombre; salida.push(['']); continue;
+    }
+    var identidad = _normalizarHeaderV3(marca) + '|' + _normalizarHeaderV3(nombre);
+    var skuAnterior = String(datos[r][colSku] || '').trim();
+    var skuCanonico = _skuDeterministico(marca, nombre, 'SUP');
+    var sku = skuAnterior || skuCanonico;
+    var claveSku = sku.toUpperCase();
+    if (vistos[claveSku]) {
+      if (vistos[claveSku].identidad === identidad) {
+        duplicados.push(sku + ' (filas ' + vistos[claveSku].fila + ' y ' + (r + 1) + ')');
+      } else {
+        sku = skuCanonico;
+        claveSku = sku.toUpperCase();
+        if (vistos[claveSku] && vistos[claveSku].identidad !== identidad) {
+          duplicados.push(sku + ' (colisión entre filas ' + vistos[claveSku].fila + ' y ' + (r + 1) + ')');
+        } else {
+          reparados.push((r + 1) + ': ' + skuAnterior + ' → ' + sku);
+        }
+      }
+    }
+    if (sku !== skuAnterior) actualizados++;
+    vistos[claveSku] = { identidad: identidad, fila: r + 1, nombre: nombre, marca: marca };
     salida.push([sku]);
   }
   if (salida.length) hoja.getRange(cols.filaHeader + 2, colSku + 1, salida.length, 1).setValues(salida);
   hoja.getRange(cols.filaHeader + 1, colSku + 1).setFontWeight('bold').setBackground('#111827').setFontColor('#ffffff');
-  _registrarAuditoria('SKU', 'SKU completados: ' + actualizados + '; duplicados: ' + duplicados.length, 'sistema');
-  return { ok: duplicados.length === 0, actualizados: actualizados, duplicados: duplicados };
+  _registrarAuditoria('SKU', 'SKU completados/reparados: ' + actualizados + '; duplicados: ' + duplicados.length +
+    (reparados.length ? '; reparados: ' + reparados.slice(0, 20).join(' | ') : ''), 'sistema');
+  return { ok: duplicados.length === 0, actualizados: actualizados, duplicados: duplicados, reparados: reparados };
 }
 
 function _actualizarSkuEdit(e) {

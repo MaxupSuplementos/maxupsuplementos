@@ -30,7 +30,9 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('🛒 MAXUP')
     .addItem('🧾 Abrir Caja rápida', 'abrirCajaMaxup')
+    .addItem('💬 Ver conversaciones de Max', 'abrirConversacionesMax')
     .addItem('⚙️ Activar/desactivar Caja al abrir', 'alternarCajaAutomaticaMaxup')
+    .addItem('📦 Exportar datos para Caja V2', 'exportarDatosCajaV2')
     .addSeparator()
     .addItem('Registrar Venta (formulario)', 'abrirFormularioVenta')
     .addItem('Nuevo Cliente', 'abrirFormularioCliente')
@@ -384,22 +386,140 @@ function _claveProductoStock(marca, nombre) {
   return _normalizarNombre(marca) + '||' + _normalizarNombre(nombre);
 }
 
+// Lee SUPLEMENTOS usando su estructura real. Un texto en mayusculas no alcanza
+// para considerarlo marca: la fila tambien debe tener vacios los precios. Esto
+// evita que un producto escrito en mayusculas cambie accidentalmente la marca
+// de todos los productos que vienen debajo.
+function _indexarCatalogoStock_(datos) {
+  datos = datos || [];
+  var columnas = (typeof _columnasCatalogoSuplementos === 'function')
+    ? _columnasCatalogoSuplementos(datos)
+    : { filaHeader: 1, producto: 0, contado: 1, lista: 4, stock: 3, sku: -1 };
+  var porClave = {}, porSku = {}, productos = [], errores = [], marcaActual = '';
+
+  for (var i = columnas.filaHeader + 1; i < datos.length; i++) {
+    var row = datos[i];
+    var nombre = String(row[columnas.producto] || '').trim();
+    if (!nombre) continue;
+    if (_esFilaMarcaSuplementos_(row, columnas)) {
+      marcaActual = nombre;
+      continue;
+    }
+    if (!marcaActual) {
+      errores.push('SUPLEMENTOS fila ' + (i + 1) + ': "' + nombre + '" no tiene una marca encima.');
+      continue;
+    }
+
+    var clave = _claveProductoStock(marcaActual, nombre);
+    var sku = columnas.sku >= 0 ? String(row[columnas.sku] || '').trim() : '';
+    var producto = {
+      fila: i + 1, indice: i, nombre: nombre, marca: marcaActual,
+      clave: clave, sku: sku, row: row
+    };
+    if (porClave[clave]) {
+      errores.push(
+        'SUPLEMENTOS filas ' + porClave[clave].fila + ' y ' + producto.fila +
+        ': producto repetido "' + marcaActual + ' — ' + nombre + '".'
+      );
+    } else {
+      porClave[clave] = producto;
+    }
+    if (sku) {
+      var skuNorm = _normalizarNombre(sku);
+      if (porSku[skuNorm] && porSku[skuNorm].clave !== clave) {
+        errores.push(
+          'SUPLEMENTOS filas ' + porSku[skuNorm].fila + ' y ' + producto.fila +
+          ': el SKU "' + sku + '" pertenece a dos productos distintos.'
+        );
+      } else {
+        porSku[skuNorm] = producto;
+      }
+    }
+    productos.push(producto);
+  }
+  return { columnas: columnas, porClave: porClave, porSku: porSku, productos: productos, errores: errores };
+}
+
+function _tienePresentacionStock_(nombre) {
+  return /\b(pote|doy\s*pack|doypack|bolsa|sachet|sobre|frasco|envase|caja|pack|botella|blister)\b/i
+    .test(_normalizarNombre(nombre));
+}
+
+function _familiaPresentacionStock_(nombre) {
+  return _normalizarNombre(nombre)
+    .replace(/\b(pote|doy\s*pack|doypack|bolsa|sachet|sobre|frasco|envase|caja|pack|botella|blister)\b/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+// Control previo obligatorio para registrar mercaderia. No modifica datos.
+// Si encuentra una identidad ambigua, detiene el proceso antes de que el stock
+// pueda terminar en otra marca o en otra presentacion (por ejemplo pote/doypack).
+function _validarIdentidadesStock_(ss) {
+  ss = ss || ((typeof _getSS === 'function') ? _getSS() : SpreadsheetApp.getActiveSpreadsheet());
+  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+  var hojaSD = ss.getSheetByName('STOCK_DETALLADO');
+  if (!hojaSup || !hojaSD) return { ok: false, errores: ['No se encontró SUPLEMENTOS o STOCK_DETALLADO.'] };
+
+  var datosSup = hojaSup.getDataRange().getValues();
+  var catalogo = _indexarCatalogoStock_(datosSup);
+  var errores = catalogo.errores.slice();
+  var datosSD = hojaSD.getDataRange().getValues();
+  var vistosDetalle = {};
+
+  for (var i = 1; i < datosSD.length; i++) {
+    var row = datosSD[i];
+    var nombre = String(row[0] || '').trim();
+    var marca = String(row[1] || '').trim();
+    var tieneDatos = row.slice(0, 5).some(function(v) { return v !== '' && v !== null; });
+    if (!tieneDatos) continue;
+    if (!nombre || !marca) {
+      errores.push('STOCK_DETALLADO fila ' + (i + 1) + ': completá Producto y Marca antes de registrar.');
+      continue;
+    }
+    var clave = _claveProductoStock(marca, nombre);
+    if (!vistosDetalle[clave]) vistosDetalle[clave] = { nombre: nombre, marca: marca, filas: [] };
+    vistosDetalle[clave].filas.push(i + 1);
+    if (catalogo.porClave[clave]) continue;
+
+    // Un producto nuevo con presentacion explicita es seguro y se puede crear.
+    // Un nombre generico que coincide con una familia existente debe aclarar
+    // Pote/Doypack/etc.; de lo contrario no hay forma segura de decidir.
+    if (!_tienePresentacionStock_(nombre)) {
+      var marcaNorm = _normalizarNombre(marca);
+      var familia = _familiaPresentacionStock_(nombre);
+      var candidatos = catalogo.productos.filter(function(p) {
+        return _normalizarNombre(p.marca) === marcaNorm &&
+          _familiaPresentacionStock_(p.nombre) === familia &&
+          _tienePresentacionStock_(p.nombre);
+      });
+      if (candidatos.length) {
+        errores.push(
+          'STOCK_DETALLADO fila ' + (i + 1) + ': "' + marca + ' — ' + nombre +
+          '" es ambiguo. Escribí la presentación exacta, por ejemplo: ' +
+          candidatos.map(function(p) { return p.nombre; }).join(' / ') + '.'
+        );
+      }
+    }
+  }
+  return { ok: errores.length === 0, errores: errores, catalogo: catalogo, detalle: vistosDetalle };
+}
+
+function _mensajeErroresIdentidadStock_(resultado) {
+  var errores = (resultado && resultado.errores) || [];
+  return '⛔ NO SE REGISTRÓ NINGÚN STOCK\n\n' +
+    errores.slice(0, 12).map(function(e) { return '• ' + e; }).join('\n') +
+    (errores.length > 12 ? '\n• ... y ' + (errores.length - 12) + ' problema(s) más.' : '') +
+    '\n\nCorregí esas filas y volvé a presionar Registrar stock.';
+}
+
 // Busca una fila de producto dentro de SUPLEMENTOS respetando la marca de la
 // seccion. Devuelve el indice base 0 o -1 si no existe.
 function _buscarFilaProductoSuplementos(datos, nombreProducto, marcaProducto) {
   var claveBuscar = _claveProductoStock(marcaProducto, nombreProducto);
   if (!marcaProducto || !nombreProducto) return -1;
-  var marcaActual = '';
-  for (var i = 0; i < datos.length; i++) {
-    var nombre = String(datos[i][0] || '').trim();
-    if (_esEncabezadoMarca(nombre)) {
-      marcaActual = nombre;
-      continue;
-    }
-    if (!nombre) continue;
-    if (_claveProductoStock(marcaActual, nombre) === claveBuscar) return i;
-  }
-  return -1;
+  var catalogo = _indexarCatalogoStock_(datos);
+  if (catalogo.errores.length) throw new Error(catalogo.errores[0]);
+  return catalogo.porClave[claveBuscar] ? catalogo.porClave[claveBuscar].indice : -1;
 }
 
 function _descontarStockDetalladoBatch(hoja, datos, nombreProducto, cantidad, marcaProducto) {
@@ -642,11 +762,13 @@ function unificarNombresStock() {
 // sola después de cada venta). Para el cartel, usar la versión Manual.
 // ══════════════════════════════════════════════════════════
 function actualizarStockPrincipal() {
-  try {
     var ss = (typeof _getSS === 'function') ? _getSS() : SpreadsheetApp.getActiveSpreadsheet();
     var hojaSup = ss.getSheetByName('SUPLEMENTOS');
     var hojaSD  = ss.getSheetByName('STOCK_DETALLADO');
     if (!hojaSup || !hojaSD) return 0;
+
+    var validacion = _validarIdentidadesStock_(ss);
+    if (!validacion.ok) throw new Error(_mensajeErroresIdentidadStock_(validacion));
 
     // Sumar stock por marca + nombre en STOCK_DETALLADO
     var datosSD = hojaSD.getDataRange().getValues();
@@ -663,40 +785,37 @@ function actualizarStockPrincipal() {
 
     // Volcar la suma en la col D de los productos que tienen lote
     var datosSup = hojaSup.getDataRange().getValues();
+    var catalogo = _indexarCatalogoStock_(datosSup);
+    if (catalogo.errores.length) throw new Error(catalogo.errores[0]);
     var cambios = 0;
-    var marcaActual = '';
-    for (var j = 0; j < datosSup.length; j++) {
-      var nombre = String(datosSup[j][0] || '').trim();
-      if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
-      var precio = Number(datosSup[j][1]) || 0;
-      if (!nombre || precio <= 0) continue;   // saltar marcas/secciones
-      var claveSup = _claveProductoStock(marcaActual, nombre);
-      if (!(claveSup in sumas)) continue;     // sin lote → no tocar (accesorios)
+    catalogo.productos.forEach(function(producto) {
+      var claveSup = producto.clave;
+      if (!(claveSup in sumas)) return;       // sin lote → no tocar (accesorios)
       var nuevo  = sumas[claveSup];
-      var actual = Number(datosSup[j][3]) || 0;
+      var actual = Number(producto.row[catalogo.columnas.stock]) || 0;
       if (actual !== nuevo) {
-        hojaSup.getRange(j + 1, 4).setValue(nuevo);
+        hojaSup.getRange(producto.fila, catalogo.columnas.stock + 1).setValue(nuevo);
         cambios++;
       }
-    }
+    });
     return cambios;
-  } catch(e) {
-    Logger.log('Error actualizarStockPrincipal: ' + e.message);
-    return 0;
-  }
 }
 
 // Versión con cartel, para el botón del menú (cargás mercadería nueva
 // en STOCK_DETALLADO y apretás esto para reflejarla en la hoja principal).
 function actualizarStockPrincipalManual() {
-  var cambios = actualizarStockPrincipal();
-  SpreadsheetApp.getUi().alert(
-    '🔄 STOCK PRINCIPAL ACTUALIZADO\n\n' +
-    'Productos actualizados en la columna D de SUPLEMENTOS: ' + cambios + '\n' +
-    '(sumando sus lotes de STOCK_DETALLADO).\n\n' +
-    'Los productos sin lote (accesorios, shakers, etc.) no se tocan: ' +
-    'su stock se sigue cargando a mano en la columna D.'
-  );
+  try {
+    var cambios = actualizarStockPrincipal();
+    SpreadsheetApp.getUi().alert(
+      '🔄 STOCK PRINCIPAL ACTUALIZADO\n\n' +
+      'Productos actualizados en la columna D de SUPLEMENTOS: ' + cambios + '\n' +
+      '(sumando sus lotes de STOCK_DETALLADO).\n\n' +
+      'Los productos sin lote (accesorios, shakers, etc.) no se tocan: ' +
+      'su stock se sigue cargando a mano en la columna D.'
+    );
+  } catch (e) {
+    SpreadsheetApp.getUi().alert(String(e.message || e));
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -980,6 +1099,13 @@ function crearProductosFaltantes(opciones) {
     return { ok: false, error: 'No se encontró SUPLEMENTOS o STOCK_DETALLADO.' };
   }
 
+  var validacionInicial = _validarIdentidadesStock_(ss);
+  if (!validacionInicial.ok) {
+    var mensajeIdentidad = _mensajeErroresIdentidadStock_(validacionInicial);
+    if (!automatico) ui.alert(mensajeIdentidad);
+    return { ok: false, error: mensajeIdentidad, errores: validacionInicial.errores };
+  }
+
   // 1) Productos de STOCK_DETALLADO: suma de stock + nombre + marca
   var datosSD = hojaSD.getDataRange().getValues();
   var sumas = {}, infoSD = {};
@@ -1251,19 +1377,37 @@ function registrarStockEntrante() {
   // 1) Crear productos nuevos si los hay (la función avisa y pide confirmación)
   var altas = crearProductosFaltantes();
   if (!altas || !altas.ok) return; // Si se canceló, no registrar parcialmente.
+  var ui = SpreadsheetApp.getUi();
+  var lock = LockService.getScriptLock();
+  var mensajeFinal = '';
+  try {
+    try { lock.waitLock(30000); }
+    catch (eLock) { throw new Error('La Caja o la planilla están ocupadas. Esperá unos segundos y volvé a presionar Registrar stock.'); }
 
-  // 2) Sincronizar el stock principal
-  var cambios = actualizarStockPrincipal();
+    // Se valida de nuevo dentro del mismo bloqueo que usa la Caja rápida.
+    // Así una venta y una carga de mercadería nunca pueden cruzarse.
+    var ss = (typeof _getSS === 'function') ? _getSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var validacion = _validarIdentidadesStock_(ss);
+    if (!validacion.ok) throw new Error(_mensajeErroresIdentidadStock_(validacion));
 
-  // 3) Refrescar reposición
-  try { actualizarHojaReposicion(); } catch(e) {}
+    // 2) Sincronizar el stock principal por MARCA + NOMBRE COMPLETO.
+    var cambios = actualizarStockPrincipal();
 
-  SpreadsheetApp.getUi().alert(
-    '📦 STOCK ENTRANTE REGISTRADO\n\n' +
-    '🔄 Productos con stock actualizado en SUPLEMENTOS: ' + cambios + '\n\n' +
-    'Si se crearon productos nuevos, acordate de ponerles el PRECIO ' +
-    '(celda roja en SUPLEMENTOS).'
-  );
+    // 3) Refrescar reposición
+    try { actualizarHojaReposicion(); } catch(eRepo) { Logger.log('Reposición: ' + eRepo.message); }
+
+    mensajeFinal =
+      '📦 STOCK ENTRANTE REGISTRADO\n\n' +
+      '🔄 Productos con stock actualizado en SUPLEMENTOS: ' + cambios + '\n\n' +
+      'Cada cantidad se vinculó por marca + nombre completo + presentación.\n' +
+      'Si se crearon productos nuevos, acordate de ponerles el PRECIO ' +
+      '(celda roja en SUPLEMENTOS).';
+  } catch (e) {
+    mensajeFinal = String(e.message || e);
+  } finally {
+    try { lock.releaseLock(); } catch (eRelease) {}
+  }
+  ui.alert(mensajeFinal);
 }
 
 // ══════════════════════════════════════════════════════════
