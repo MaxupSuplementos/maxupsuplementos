@@ -5654,7 +5654,7 @@ function _waRespuestaCatalogoGeneral() {
 
 function _waExtraerConsultaProducto_(texto) {
   return _waNormalizar(texto)
-    .replace(/\b(hola|max|maxup|buenas|buen|dia|tarde|noche|por|favor|me|mi|das|dame|decime|podes|podrias|quisiera|quiero|necesito|saber|consultar|consulta|pregunta|informacion|info|referencia|referencias|detalle|detalles|sobre|acerca|respecto|producto|productos|suplemento|suplementos|buscar|busco|precio|precios|stock|tenes|tienen|hay|beneficio|beneficios|sirve|contiene|composicion|ingrediente|ingredientes|que|cual|cuales|es|son|para|de|del|la|el|los|las|un|una|algun|alguna|mostrar|mostrame)\b/g, ' ')
+    .replace(/\b(hola|max|maxup|buenas|buen|dia|tarde|noche|por|favor|me|mi|das|dame|decime|podes|podrias|quisiera|quiero|necesito|saber|consultar|consulta|pregunta|informacion|info|referencia|referencias|detalle|detalles|sobre|acerca|respecto|producto|productos|suplemento|suplementos|buscar|busco|precio|precios|stock|tenes|tienen|hay|beneficio|beneficios|sirve|contiene|composicion|ingrediente|ingredientes|que|cual|cuales|es|son|para|de|del|la|el|los|las|un|una|algo|algun|alguna|mostrar|mostrame)\b/g, ' ')
     .replace(/\s+/g, ' ').trim();
 }
 
@@ -5849,7 +5849,7 @@ function _waInterpretarConGemini_(telefono, texto, estado, sinCache) {
     'Clasificá el último mensaje de un cliente de una tienda de suplementos deportivos.',
     'No respondas la consulta ni inventes datos. Devolvé solamente JSON válido.',
     'Intenciones permitidas: HORARIOS, UBICACION, PRODUCTO, PEDIDO, PAGOS, ENTREGAS, MAYORISTA, PROMOCIONES, HUMANO, SALUDO, ACLARAR.',
-    'Para PRODUCTO extraé en consulta_producto el producto, categoría, marca, presentación u objetivo útil para buscar en un catálogo.',
+    'Para PRODUCTO extraé en consulta_producto el producto, categoría, marca, presentación u objetivo útil para buscar en un catálogo. Interpretá bajar de peso, adelgazar, perder grasa o definición como quemadores de grasa.',
     'Para PEDIDO extraé codigo_pedido si aparece. Si falta información usá ACLARAR y escribí una pregunta breve.',
     'Formato: {"intent":"...","consulta_producto":"","codigo_pedido":"","confianza":0.0,"pregunta_aclaratoria":""}',
     historial ? 'Conversación reciente:\n' + historial : '',
@@ -6175,7 +6175,7 @@ function _waCategoriaConsulta(normal) {
   if (/\b(aminoacido|aminoacidos|amino|bcaa|eaa|glutamina|glutamine|arginina|citrulina|agmatina)\b/.test(normal)) return 'aminoacido';
   if (/\b(preworkout|preentreno|pre-entreno|vasodilatador|vasodilatadores|bombeo|pump|oxido|nitrico)\b|pre entreno|nitric oxide/.test(normal)) return 'preworkout';
   if (/\b(colageno|colagenos|collagen)\b/.test(normal)) return 'colageno';
-  if (/\b(quemador|quemadores|termogenico|termogenicos|lipo|adelgazar)\b|fat burner|quemar grasa|bajar de peso/.test(normal)) return 'quemador';
+  if (/\b(quemador|quemadores|termogenico|termogenicos|lipo|adelgazar|adelgazamiento|definicion)\b|fat burner|quemar grasa|bajar (?:de )?peso|perder (?:grasa|peso)|reducir (?:grasa|peso)|controlar (?:el )?peso/.test(normal)) return 'quemador';
   if (/\b(magnesio|bisglicinato|glicinato|zma|omega ?3|fish oil)\b/.test(normal)) return 'magnesio';
   if (/\b(ashwagandha|resveratrol|nad\+?|coenzima|antioxidante)\b/.test(normal)) return 'vitamin';
   if (/\b(vitamina|vitaminas|mineral|minerales)\b/.test(normal)) return 'vitamin';
@@ -6215,7 +6215,7 @@ function _waTokenGenericoCategoria(token, categoria) {
     aminoacido:{aminoacido:1,aminoacidos:1,amino:1},
     preworkout:{preworkout:1,preentreno:1,vasodilatador:1,vasodilatadores:1,bombeo:1,pump:1},
     colageno:{colageno:1,colagenos:1,collagen:1},
-    quemador:{quemador:1,quemadores:1,termogenico:1,termogenicos:1,grasa:1,grasas:1,fat:1,burner:1,burners:1,lipo:1,quemar:1,bajar:1,peso:1,adelgazar:1},
+    quemador:{quemador:1,quemadores:1,termogenico:1,termogenicos:1,grasa:1,grasas:1,fat:1,burner:1,burners:1,lipo:1,quemar:1,bajar:1,peso:1,adelgazar:1,adelgazamiento:1,perder:1,reducir:1,controlar:1,definicion:1},
     // Omega 3, ZMA y los distintos tipos de magnesio comparten el filtro de
     // la tienda, pero acá conservamos esas palabras para no mezclarlos entre sí.
     magnesio:{},
@@ -6341,7 +6341,7 @@ function _waRespuestaSinStock_(normal,categoria,marca) {
 
 function _waBuscarProductos(telefono, consulta, silencioso) {
   var normal = _waExtraerConsultaProducto_(consulta);
-  var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1, y:1, o:1, otra:1, otro:1, dame:1, mostrar:1 };
+  var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1, algo:1, alguna:1, algun:1, opcion:1, opciones:1, ayuda:1, ayudar:1, y:1, o:1, otra:1, otro:1, dame:1, mostrar:1 };
   var categoriaConsulta = _waCategoriaConsulta(normal);
   var categoriaFlexible = /\boxido\b|\bnitrico\b|nitric oxide/.test(normal);
   var tokens = normal.split(' ').filter(function(t) {

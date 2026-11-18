@@ -112,6 +112,7 @@ test('Max entiende quemador de grasa y muestra reseña, precios, cuotas y stock'
     ]}; }
     return {
       quemador:_waBuscarProductos('5490000000000','precio del quemador de grasa',false),
+      objetivo:_waBuscarProductos('5490000000000','hola tenes algo para bajar de peso',false),
       omega:_waBuscarProductos('5490000000000','omega 3',false)
     };
   `);
@@ -124,6 +125,9 @@ test('Max entiende quemador de grasa y muestra reseña, precios, cuotas y stock'
   assert.match(respuesta, /Stock: 3 unidades/);
   assert.match(respuesta, /asesor/);
   assert.doesNotMatch(respuesta, /Whey Protein/);
+  assert.match(resultado.objetivo, /Sobre los quemadores de grasa/);
+  assert.match(resultado.objetivo, /Thermo Energy/);
+  assert.doesNotMatch(resultado.objetivo, /necesito un dato más/i);
   assert.match(resultado.omega, /Sobre el Omega 3/);
   assert.match(resultado.omega, /Omega 3 Fish Oil/);
   assert.doesNotMatch(resultado.omega, /ZMA 90 Caps/);
