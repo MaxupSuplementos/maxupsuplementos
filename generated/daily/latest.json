@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-17",
-  "generado": "2026-11-17T21:53:28.463Z",
+  "fecha": "2026-11-18",
+  "generado": "2026-11-18T20:24:34.417Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Gold Simple",
+      "titulo": "Kit 5 bandas circulares tipo cinta latex c/funda",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Gold Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Kit 5 bandas circulares tipo cinta latex c/funda\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Maltodextrina Fructosa - Neutro",
+      "titulo": "Creatina 250Gr",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Maltodextrina Fructosa - Neutro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina 250Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Hand grip regulable de 5 a 100kg",
+      "titulo": "Citrato De Magnesio 144G",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Hand grip regulable de 5 a 100kg\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato De Magnesio 144G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Beta Alanina x300g",
+      "titulo": "Barra Proteica 50Gr - Blanco",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Beta Alanina x300g\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Barra Proteica 50Gr - Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Catsuit Largo Oxford",
+      "titulo": "Short c/Cordel BATIK",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Catsuit Largo Oxford\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Short c/Cordel BATIK\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
