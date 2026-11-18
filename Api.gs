@@ -5772,6 +5772,15 @@ function _waRegistrarNoEntendida_(telefono, texto, estado) {
   } catch(e) { Logger.log('Consulta no entendida: '+e.message); }
 }
 
+function _waLimpiarApiKeyGemini_(valor) {
+  var clave = String(valor || '').trim();
+  // Permite pegar tanto la clave sola como GEMINI_API_KEY="..." y elimina
+  // caracteres invisibles que a veces agrega el portapapeles del navegador.
+  clave = clave.replace(/^GEMINI_API_KEY\s*=\s*/i, '').trim();
+  clave = clave.replace(/^["']|["']$/g, '');
+  return clave.replace(/[\s\u200B-\u200D\uFEFF]/g, '');
+}
+
 function configurarGeminiMax() {
   var ui = SpreadsheetApp.getUi();
   var respuesta = ui.prompt(
@@ -5780,9 +5789,12 @@ function configurarGeminiMax() {
     ui.ButtonSet.OK_CANCEL
   );
   if (respuesta.getSelectedButton() !== ui.Button.OK) return {ok:false,cancelado:true};
-  var clave = String(respuesta.getResponseText() || '').trim();
-  if (!/^AIza[0-9A-Za-z_-]{20,}$/.test(clave)) {
-    ui.alert('La clave no parece válida. Copiala completa desde Google AI Studio y volvé a intentarlo.');
+  var clave = _waLimpiarApiKeyGemini_(respuesta.getResponseText());
+  // Google puede cambiar el prefijo o la longitud de sus claves. Evitamos
+  // adivinar el formato: sólo rechazamos valores claramente incompletos y la
+  // validación definitiva la realiza la propia API de Gemini en la prueba.
+  if (clave.length < 20 || clave.length > 300) {
+    ui.alert('La clave parece incompleta. En Google AI Studio presioná el botón “Copiar clave de API” (el icono de dos cuadrados) y pegala nuevamente.');
     return {ok:false,error:'Clave inválida'};
   }
   PropertiesService.getScriptProperties().setProperty('GEMINI_API_KEY', clave);

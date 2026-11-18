@@ -161,3 +161,14 @@ test('La búsqueda tolera errores simples en la marca', () => {
   assert.equal(run(), true);
 });
 
+test('La configuración de Gemini acepta formatos nuevos y limpia el portapapeles', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'Api.gs'), 'utf8');
+  const limpiar = source.match(/function _waLimpiarApiKeyGemini_[\s\S]*?(?=function configurarGeminiMax\()/);
+  assert.ok(limpiar, 'No se encontró la limpieza de la clave de Gemini');
+  const run = new Function(`${limpiar[0]}; return [
+    _waLimpiarApiKeyGemini_('  GEMINI_API_KEY="nueva_clave_google_1234567890"  '),
+    _waLimpiarApiKeyGemini_('nueva\u200B_clave_google_1234567890')
+  ];`);
+  assert.deepEqual(run(), ['nueva_clave_google_1234567890', 'nueva_clave_google_1234567890']);
+});
+
