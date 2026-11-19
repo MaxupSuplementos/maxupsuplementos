@@ -289,3 +289,28 @@ test('Max relaciona libido con ashwagandha y ZMA sin prometer resultados', () =>
   assert.doesNotMatch(resultado.respuesta,/QUELOPALEO/);
 });
 
+test('Max compara ZMA con Testo Gold y no busca toda la frase como producto', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'Api.gs'), 'utf8');
+  const bloque = source.match(/function _waEsComparacionZmaTesto_[\s\S]*?(?=function _waEsConsultaLibido_\()/);
+  assert.ok(bloque);
+  const run = new Function(`
+    function _waNormalizar(v){return String(v||'').toLowerCase();}
+    function getCatalogo(){return {productos:[
+      {marca:'STAR NUTRITION',nombre:'ZMA 90 Caps',stock:2,precio_venta:22000,precio_lista:25000},
+      {marca:'GOLD NUTRITION',nombre:'Testo Gold 120 Caps',stock:4,precio_venta:29800,precio_lista:33000}
+    ]};}
+    function _waGuardarResultadosProductos(){}
+    function _waMoneda(v){return '$'+v;}
+    ${bloque[0]}
+    const texto='que tiene de distinto el zma del testo';
+    return {detecta:_waEsComparacionZmaTesto_(texto),respuesta:_waRespuestaComparacionZmaTesto_('549000')};
+  `);
+  const resultado=run();
+  assert.equal(resultado.detecta,true);
+  assert.match(resultado.respuesta,/Diferencia entre ZMA y Testo Gold/);
+  assert.match(resultado.respuesta,/ZMA 90 Caps/);
+  assert.match(resultado.respuesta,/Testo Gold 120 Caps/);
+  assert.match(resultado.respuesta,/fórmula mineral más directa/);
+  assert.doesNotMatch(resultado.respuesta,/no contamos con.*TIENE DISTINTO/i);
+});
+

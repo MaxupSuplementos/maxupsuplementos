@@ -5837,7 +5837,7 @@ function _waInterpretarConGemini_(telefono, texto, estado, sinCache) {
   var normal = _waNormalizar(texto);
   if (!normal) return null;
   var cache = CacheService.getScriptCache();
-  var cacheKey = 'WA_GEMINI_V5_' + _hashSeguro(normal + '|' + String((estado&&estado.paso)||''));
+  var cacheKey = 'WA_GEMINI_V6_' + _hashSeguro(normal + '|' + String((estado&&estado.paso)||''));
   if (!sinCache) {
     var guardado = cache.get(cacheKey);
     if (guardado) { try { return JSON.parse(guardado); } catch(eCache) {} }
@@ -6050,6 +6050,11 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
     return 'Para dosis, contraindicaciones o temas de salud no doy respuestas automaticas. '
       + 'Te paso con una persona; si corresponde, consulta tambien a un profesional de salud.\n\n'
       + _waDerivarHumano(telefono, 'consulta de salud o dosificacion');
+  }
+
+  if (_waEsComparacionZmaTesto_(normal)) {
+    _waGuardarEstado(telefono,'PRODUCTO',{fallos:0});
+    return _waRespuestaComparacionZmaTesto_(telefono);
   }
 
   if (_waEsConsultaLibido_(normal)) {
@@ -6351,6 +6356,45 @@ function _waTokenCoincide_(token,base,baseTokens) {
       && token.charAt(distintas[0])===parte.charAt(distintas[1])
       && token.charAt(distintas[1])===parte.charAt(distintas[0]);
   });
+}
+
+function _waEsComparacionZmaTesto_(normal) {
+  normal=_waNormalizar(normal);
+  return /\bzma(?:-b)?\b/.test(normal) && /\btesto(?: gold)?\b/.test(normal);
+}
+
+function _waRespuestaComparacionZmaTesto_(telefono) {
+  var todos=(getCatalogo().productos||[]);
+  var zma=[],testo=[];
+  todos.forEach(function(p){
+    if(Number(p.stock||0)<=0) return;
+    var texto=_waNormalizar(String(p.marca||'')+' '+String(p.nombre||''));
+    if(/\bzma(?:-b)?\b/.test(texto)) zma.push(p);
+    else if(/\btesto(?: gold)?\b/.test(texto)) testo.push(p);
+  });
+  var elegibles=zma.slice(0,3).concat(testo.slice(0,3));
+  if(elegibles.length) _waGuardarResultadosProductos(telefono,elegibles.map(function(p){return {p:p,puntaje:1};}));
+  var salida=[
+    '*Diferencia entre ZMA y Testo Gold*',
+    '\n• *ZMA:* combina principalmente zinc, magnesio y vitamina B6. Se usa para complementar esos micronutrientes y acompañar función muscular, sistema nervioso, metabolismo energético y recuperación.',
+    '\n• *Testo Gold:* además de vitaminas y minerales, incorpora extractos como Tribulus según su fórmula. Está presentado como soporte de vitalidad y función hormonal normal; no es una hormona ni garantiza aumentar testosterona o libido.',
+    '\nEn resumen: *ZMA es una fórmula mineral más directa*; *Testo Gold es una fórmula combinada con extractos y orientación hormonal*.'
+  ];
+  function agregarGrupo(titulo,lista,offset){
+    salida.push('\n*'+titulo+' con stock:*');
+    if(!lista.length){ salida.push('• No tenemos opciones disponibles en este momento.'); return; }
+    lista.slice(0,3).forEach(function(p,i){
+      var contado=Number(p.precio_venta||0),listaPrecio=Number(p.precio_lista||contado);
+      salida.push('\n*'+(offset+i+1)+'. '+String(p.marca||'')+' - '+String(p.nombre||'')+'*'
+        +'\nContado: '+_waMoneda(contado)
+        +(listaPrecio>0?' · 3 cuotas de '+_waMoneda(Math.ceil(listaPrecio/3)):'')
+        +'\nStock: '+Number(p.stock||0)+' unidad'+(Number(p.stock||0)===1?'':'es'));
+    });
+  }
+  agregarGrupo('ZMA',zma,0);
+  agregarGrupo('Testo Gold',testo,Math.min(zma.length,3));
+  salida.push('\n¿Querés que amplíe alguno? Respondé con su número. Si buscás una recomendación personal, escribí *asesor*.');
+  return salida.join('\n');
 }
 
 function _waEsConsultaLibido_(normal) {
