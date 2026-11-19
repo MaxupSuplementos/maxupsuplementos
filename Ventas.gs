@@ -2376,7 +2376,7 @@ function _reposicionPrioridad_(stock, vendidos30, cobertura, cantidad) {
 // Lista automática de compra: registra lo vendido, lo descuenta cuando vuelve
 // a entrar mercadería y reparte las cantidades entre AG, Colo y One Fit.
 function actualizarHojaReposicion() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = (typeof _getSS === 'function') ? _getSS() : SpreadsheetApp.getActiveSpreadsheet();
   var hojaSup = ss.getSheetByName('SUPLEMENTOS');
   if (!hojaSup) return;
   var hojaRep = ss.getSheetByName('REPOSICION') || ss.insertSheet('REPOSICION');
