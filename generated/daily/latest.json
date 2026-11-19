@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-18",
-  "generado": "2026-11-18T21:34:01.484Z",
+  "fecha": "2026-11-19",
+  "generado": "2026-11-19T20:28:10.324Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Kit 5 bandas circulares tipo cinta latex c/funda",
+      "titulo": "Flexo Drink 390g - Pomelo Rosado",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Kit 5 bandas circulares tipo cinta latex c/funda\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Flexo Drink 390g - Pomelo Rosado\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Creatina 250Gr",
+      "titulo": "Whey Protein Platinum 3Kg - Vainilla",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Creatina 250Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey Protein Platinum 3Kg - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Citrato De Magnesio 144G",
+      "titulo": "Citrato De Magnesio 60 Cap",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Citrato De Magnesio 144G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Citrato De Magnesio 60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Barra Proteica 50Gr - Blanco",
+      "titulo": "Kit 3 bandas tipo cinta de tela circular importada Sonnos",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Barra Proteica 50Gr - Blanco\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Kit 3 bandas tipo cinta de tela circular importada Sonnos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Short c/Cordel BATIK",
+      "titulo": "Conjunto",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Short c/Cordel BATIK\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Conjunto\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
