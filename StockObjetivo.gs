@@ -242,6 +242,7 @@ function crearControlStockObjetivo() {
 function agregarMenuStockObjetivo() {
   SpreadsheetApp.getUi().createMenu('📦 STOCK OBJETIVO')
     .addItem('Actualizar lista y análisis', 'crearControlStockObjetivo')
+    .addItem('Actualizar lista de compras por proveedor', 'actualizarHojaReposicion')
     .addItem('Actualizar proveedores, precios y comparativa', 'actualizarPreciosMayoristasMaxup')
     .addItem('Instalar revisión semanal', 'instalarActualizacionSemanalProveedores')
     .addItem('Abrir configuración de proveedores', 'abrirConfiguracionProveedoresMaxup')

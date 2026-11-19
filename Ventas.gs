@@ -2208,24 +2208,198 @@ function _formatoPrecio(num) {
   return resultado;
 }
 
-// Ordenada por URGENCIA REAL: primero lo que MÁS se vendió en los últimos
-// 30 días (lo que más gente necesita), y a igual venta, lo de menos stock.
-function actualizarHojaReposicion() {
-  const ss      = SpreadsheetApp.getActiveSpreadsheet();
-  const hojaSup = ss.getSheetByName('SUPLEMENTOS');
-  if (!hojaSup) return;
+function _reposicionNorm_(valor) {
+  return String(valor || '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
 
-  let hojaRep = ss.getSheetByName('REPOSICION');
-  if (!hojaRep) {
-    hojaRep = ss.insertSheet('REPOSICION');
+function _reposicionProveedorClave_(valor) {
+  var normal = _reposicionNorm_(valor);
+  if (normal.indexOf('ag suplementos') >= 0 || normal === 'ag') return 'AG SUPLEMENTOS';
+  if (normal.indexOf('colo') >= 0) return 'COLO MAYORISTA';
+  if (normal.indexOf('one fit') >= 0 || normal.indexOf('revendedor') >= 0) return 'ONE FIT';
+  return String(valor || '').trim();
+}
+
+// Lee el objetivo y la comparativa que ya genera STOCK_OBJETIVO. Si el
+// comparador semanal todavía no encontró el artículo, usa el proveedor manual
+// de PROVEEDORES. Así REPOSICION nunca inventa un proveedor por similitud.
+function _reposicionLeerCompras_(ss) {
+  var salida = {};
+  var hoja = ss.getSheetByName('STOCK_OBJETIVO');
+  if (hoja && hoja.getLastRow() > 1) {
+    var datos = hoja.getDataRange().getValues();
+    var filaHeader = -1;
+    for (var f = 0; f < Math.min(10, datos.length); f++) {
+      var posibles = datos[f].map(_reposicionNorm_);
+      if (posibles.indexOf('producto') >= 0 && posibles.indexOf('marca') >= 0) {
+        filaHeader = f;
+        break;
+      }
+    }
+    if (filaHeader >= 0) {
+      var headers = datos[filaHeader].map(_reposicionNorm_);
+      function col(nombre) { return headers.indexOf(_reposicionNorm_(nombre)); }
+      var cProducto = col('Producto');
+      var cMarca = col('Marca');
+      var cObjetivo = col('Stock objetivo');
+      var cProveedor = col('Comprar en');
+      var cFuente = col('Fuente');
+      var cCosto = col('Costo unitario puesto');
+      var cCostoManual = col('Costo compra unitario');
+      var cAg = col('AG puesto local');
+      var cColo = col('Colo puesto local');
+      var cOne = col('One Fit puesto local');
+      for (var r = filaHeader + 1; r < datos.length; r++) {
+        var producto = cProducto >= 0 ? String(datos[r][cProducto] || '').trim() : '';
+        var marca = cMarca >= 0 ? String(datos[r][cMarca] || '').trim() : '';
+        if (!producto || !marca) continue;
+        var clave = _claveProductoStock(marca, producto);
+        salida[clave] = {
+          objetivo: cObjetivo >= 0 ? Math.max(0, Number(datos[r][cObjetivo]) || 0) : 0,
+          proveedor: _reposicionProveedorClave_(
+            (cProveedor >= 0 && datos[r][cProveedor]) || (cFuente >= 0 && datos[r][cFuente]) || ''
+          ),
+          costo: cCosto >= 0 ? Math.max(0, Number(datos[r][cCosto]) || 0) : 0,
+          costoManual: cCostoManual >= 0 ? Math.max(0, Number(datos[r][cCostoManual]) || 0) : 0,
+          ag: cAg >= 0 ? Math.max(0, Number(datos[r][cAg]) || 0) : 0,
+          colo: cColo >= 0 ? Math.max(0, Number(datos[r][cColo]) || 0) : 0,
+          one: cOne >= 0 ? Math.max(0, Number(datos[r][cOne]) || 0) : 0
+        };
+      }
+    }
   }
 
-  const STOCK_MINIMO = 3;
-  const datos = hojaSup.getDataRange().getValues();
-  const hoy   = new Date();
-  const fechaStr = Utilities.formatDate(hoy, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
+  // Completar los proveedores habituales cargados manualmente.
+  var hojaProv = ss.getSheetByName('PROVEEDORES');
+  if (hojaProv && hojaProv.getLastRow() >= 12) {
+    var manuales = hojaProv.getRange(12, 1, hojaProv.getLastRow() - 11, Math.min(11, hojaProv.getLastColumn())).getValues();
+    manuales.forEach(function(row) {
+      var producto = String(row[0] || '').trim();
+      var marca = String(row[1] || '').trim();
+      var proveedor = _reposicionProveedorClave_(row[8]);
+      var costo = Math.max(0, Number(row[9]) || 0);
+      if (!producto || !marca || !proveedor) return;
+      var clave = _claveProductoStock(marca, producto);
+      if (!salida[clave]) salida[clave] = { objetivo:0, proveedor:'', costo:0, costoManual:0, ag:0, colo:0, one:0 };
+      if (!salida[clave].proveedor) salida[clave].proveedor = proveedor;
+      if (!salida[clave].costo && costo) salida[clave].costo = costo;
+      if (proveedor === 'AG SUPLEMENTOS' && !salida[clave].ag) salida[clave].ag = costo;
+      if (proveedor === 'COLO MAYORISTA' && !salida[clave].colo) salida[clave].colo = costo;
+      if (proveedor === 'ONE FIT' && !salida[clave].one) salida[clave].one = costo;
+    });
+  }
+  return salida;
+}
 
-  // Contar unidades vendidas por producto en los últimos 30 días (VentasDiarias)
+// Guarda una foto mínima del stock. Cada baja suma una unidad pendiente de
+// reposición y cada carga de mercadería la descuenta. Esto permite que incluso
+// un artículo con stock todavía alto aparezca en la lista después de venderse.
+function _reposicionActualizarPendientes_(ss, catalogo, fechaStr) {
+  var nombreHoja = '_REPOSICION_ESTADO';
+  var hoja = ss.getSheetByName(nombreHoja);
+  var anteriores = {};
+  if (!hoja) {
+    hoja = ss.insertSheet(nombreHoja);
+    hoja.getRange(1, 1, 1, 6).setValues([['Clave','Marca','Producto','Stock anterior','Pendiente por ventas','Actualizado']]);
+  } else if (hoja.getLastRow() > 1) {
+    var filas = hoja.getRange(2, 1, hoja.getLastRow() - 1, 6).getValues();
+    filas.forEach(function(row) {
+      var clave = String(row[0] || '').trim();
+      if (clave) anteriores[clave] = { stock:Number(row[3]) || 0, pendiente:Math.max(0, Number(row[4]) || 0) };
+    });
+  }
+
+  var pendientes = {};
+  var nuevas = catalogo.map(function(producto) {
+    var anterior = anteriores[producto.clave];
+    var pendiente = anterior ? anterior.pendiente : 0;
+    if (anterior) {
+      var diferencia = anterior.stock - producto.stock;
+      if (diferencia > 0) pendiente += diferencia;
+      else if (diferencia < 0) pendiente = Math.max(0, pendiente + diferencia);
+    }
+    pendiente = Math.max(0, Math.round(pendiente));
+    pendientes[producto.clave] = pendiente;
+    return [producto.clave, producto.marca, producto.nombre, producto.stock, pendiente, fechaStr];
+  });
+
+  hoja.clearContents();
+  hoja.getRange(1, 1, 1, 6).setValues([['Clave','Marca','Producto','Stock anterior','Pendiente por ventas','Actualizado']]);
+  if (nuevas.length) hoja.getRange(2, 1, nuevas.length, 6).setValues(nuevas);
+  try { hoja.hideSheet(); } catch (eOcultar) {}
+  return pendientes;
+}
+
+function _reposicionElegirProveedor_(info, marca) {
+  info = info || { proveedor:'', costo:0, costoManual:0, ag:0, colo:0, one:0 };
+  var proveedor = _reposicionProveedorClave_(info.proveedor);
+  if (/^(accesorios|shakers)$/i.test(String(marca || '').trim())) proveedor = 'AG SUPLEMENTOS';
+
+  var opciones = [
+    { proveedor:'AG SUPLEMENTOS', costo:Number(info.ag) || 0 },
+    { proveedor:'COLO MAYORISTA', costo:Number(info.colo) || 0 },
+    { proveedor:'ONE FIT', costo:Number(info.one) || 0 }
+  ].filter(function(x) { return x.costo > 0; });
+  if (!proveedor && opciones.length) {
+    opciones.sort(function(a, b) { return a.costo - b.costo; });
+    var ag = opciones.filter(function(x) { return x.proveedor === 'AG SUPLEMENTOS'; })[0];
+    proveedor = ag && ag.costo <= opciones[0].costo * 1.03 ? ag.proveedor : opciones[0].proveedor;
+  }
+
+  var costo = 0;
+  if (proveedor === 'AG SUPLEMENTOS') costo = Number(info.ag) || 0;
+  else if (proveedor === 'COLO MAYORISTA') costo = Number(info.colo) || 0;
+  else if (proveedor === 'ONE FIT') costo = Number(info.one) || 0;
+  if (!costo) costo = Number(info.costo) || Number(info.costoManual) || 0;
+  return { proveedor:proveedor || '⚠️ REVISAR PROVEEDOR', costo:costo };
+}
+
+function _reposicionPrioridad_(stock, vendidos30, cobertura, cantidad) {
+  var puntos = Math.min(60, vendidos30 * 6) + Math.min(35, cantidad * 5);
+  if (stock <= 0) puntos += 130;
+  else if (stock === 1) puntos += 100;
+  else if (stock <= 3) puntos += 70;
+  if (cobertura !== '') {
+    if (cobertura <= 7) puntos += 40;
+    else if (cobertura <= 15) puntos += 25;
+    else if (cobertura <= 30) puntos += 10;
+  }
+  var nivel = stock <= 0 ? 1 : (stock === 1 || (cobertura !== '' && cobertura <= 7)) ? 2 :
+    (stock <= 3 || vendidos30 >= 3) ? 3 : 4;
+  var etiqueta = nivel === 1 ? '🔴 1 · COMPRAR PRIMERO' : nivel === 2 ? '🟠 2 · MUY URGENTE' :
+    nivel === 3 ? '🟡 3 · PRÓXIMA COMPRA' : '🔵 4 · PUEDE ESPERAR';
+  return { nivel:nivel, puntos:puntos, etiqueta:etiqueta };
+}
+
+// Lista automática de compra: registra lo vendido, lo descuenta cuando vuelve
+// a entrar mercadería y reparte las cantidades entre AG, Colo y One Fit.
+function actualizarHojaReposicion() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hojaSup = ss.getSheetByName('SUPLEMENTOS');
+  if (!hojaSup) return;
+  var hojaRep = ss.getSheetByName('REPOSICION') || ss.insertSheet('REPOSICION');
+  var fechaStr = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
+  var datos = hojaSup.getDataRange().getValues();
+  var catalogo = [];
+  var marcaActual = '';
+
+  for (var i = 2; i < datos.length; i++) {
+    var nombre = String(datos[i][0] || '').trim();
+    var precio = Number(datos[i][1]) || 0;
+    var stock = Math.max(0, Number(datos[i][3]) || 0);
+    if (!nombre) continue;
+    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
+    if (!precio || !marcaActual) continue;
+    catalogo.push({
+      nombre:nombre, marca:marcaActual, stock:stock, precio:precio,
+      clave:_claveProductoStock(marcaActual, nombre)
+    });
+  }
+
+  var pendientes = _reposicionActualizarPendientes_(ss, catalogo, fechaStr);
+  var compras = _reposicionLeerCompras_(ss);
   var ventas30 = {};
   try {
     var hojaVD = ss.getSheetByName('VentasDiarias');
@@ -2233,88 +2407,113 @@ function actualizarHojaReposicion() {
       var vd = hojaVD.getDataRange().getValues();
       var hace30 = new Date(); hace30.setDate(hace30.getDate() - 30);
       for (var v = 0; v < vd.length; v++) {
-        var f = vd[v][0];
-        if (!f || typeof f === 'string') continue;   // saltar headers y TOTALes
-        var fechaV = new Date(f);
-        if (isNaN(fechaV.getTime()) || fechaV < hace30) continue;
-        var marcaV = String(vd[v][2] || '').trim();
-        var nomV = String(vd[v][1] || '').trim();
-        if (!nomV || !marcaV) continue;
-        var claveV = _claveProductoStock(marcaV, nomV);
-        ventas30[claveV] = (ventas30[claveV] || 0) + (Number(vd[v][3]) || 0);
+        var fecha = vd[v][0];
+        if (!fecha || typeof fecha === 'string') continue;
+        var fechaVenta = new Date(fecha);
+        if (isNaN(fechaVenta.getTime()) || fechaVenta < hace30) continue;
+        var marcaVenta = String(vd[v][2] || '').trim();
+        var productoVenta = String(vd[v][1] || '').trim();
+        if (!marcaVenta || !productoVenta) continue;
+        var claveVenta = _claveProductoStock(marcaVenta, productoVenta);
+        ventas30[claveVenta] = (ventas30[claveVenta] || 0) + (Number(vd[v][3]) || 0);
       }
     }
-  } catch(eV) {}
+  } catch (eVentas) {}
 
-  const productos = [];
-  let marcaActual = '';
+  var lista = [];
+  catalogo.forEach(function(producto) {
+    var info = compras[producto.clave] || { objetivo:0, proveedor:'', costo:0, costoManual:0, ag:0, colo:0, one:0 };
+    var pendiente = Math.max(0, Number(pendientes[producto.clave]) || 0);
+    var vendidos = Math.max(0, Number(ventas30[producto.clave]) || 0);
+    var faltanteObjetivo = info.objetivo > 0 ? Math.max(0, info.objetivo - producto.stock) : 0;
+    var faltanteBase = producto.stock <= 3 ? Math.max(0, 4 - producto.stock) : 0;
+    var comprar = Math.max(pendiente, faltanteObjetivo, faltanteBase);
+    if (comprar <= 0) return;
+    var cobertura = vendidos > 0 ? Math.round(producto.stock / (vendidos / 30)) : '';
+    var prioridad = _reposicionPrioridad_(producto.stock, vendidos, cobertura, comprar);
+    var proveedor = _reposicionElegirProveedor_(info, producto.marca);
+    var estado = producto.stock <= 0 ? 'SIN STOCK' : producto.stock === 1 ? 'CRÍTICO' :
+      producto.stock <= 3 ? 'STOCK BAJO' : pendiente > 0 ? 'VENDIDO · REPONER' : 'BAJO OBJETIVO';
+    lista.push({
+      prioridad:prioridad, producto:producto, objetivo:Number(info.objetivo) || 0,
+      pendiente:pendiente, vendidos:vendidos, cobertura:cobertura, comprar:comprar,
+      estado:estado, proveedor:proveedor.proveedor, costo:proveedor.costo,
+      total:proveedor.costo ? proveedor.costo * comprar : ''
+    });
+  });
+  lista.sort(function(a, b) {
+    return (a.prioridad.nivel - b.prioridad.nivel) || (b.prioridad.puntos - a.prioridad.puntos) ||
+      (b.vendidos - a.vendidos) || (a.producto.stock - b.producto.stock);
+  });
 
-  for (let i = 2; i < datos.length; i++) {
-    const row    = datos[i];
-    const nombre = String(row[0] || '').trim();
-    const precio = Number(row[1]);
-    const stock  = Number(row[3]) || 0;
-
-    if (!nombre) continue;
-    // Encabezado de marca = celda escrita TODA EN MAYÚSCULA
-    if (_esEncabezadoMarca(nombre)) { marcaActual = nombre; continue; }
-
-    if (stock <= STOCK_MINIMO) {
-      const vendidos = ventas30[_claveProductoStock(marcaActual, nombre)] || 0;
-      productos.push([
-        nombre,
-        marcaActual,
-        stock,
-        stock === 0 ? '🔴 SIN STOCK' : stock === 1 ? '🟠 CRÍTICO' : '🟡 BAJO',
-        vendidos,
-        precio,
-        fechaStr
-      ]);
-    }
-  }
-
+  if (hojaRep.getFilter()) hojaRep.getFilter().remove();
+  hojaRep.getDataRange().breakApart();
   hojaRep.clearContents();
   hojaRep.clearFormats();
+  var headers = [['Prioridad','Producto','Marca','Stock actual','Stock objetivo','Pendiente por ventas',
+    'Vendidos 30 días','Cobertura (días)','A comprar','Estado','Proveedor recomendado',
+    'Pedir a AG','Pedir a Colo','Pedir a One Fit','Costo unitario puesto','Total estimado','Última actualización']];
+  hojaRep.getRange(1, 1, 1, headers[0].length).setValues(headers)
+    .setBackground('#1a1a2e').setFontColor('#00C8FF').setFontWeight('bold').setWrap(true);
 
-  const headerRange = hojaRep.getRange(1, 1, 1, 7);
-  headerRange.setValues([['Producto', 'Marca', 'Stock actual', 'Estado', 'Vendidos (30d)', 'Precio', 'Última actualización']]);
-  headerRange.setBackground('#1a1a2e').setFontColor('#00C8FF').setFontWeight('bold');
-
-  if (productos.length > 0) {
-    // Más vendidos primero; a igual venta, el de menos stock
-    productos.sort(function(a, b) { return (b[4] - a[4]) || (a[2] - b[2]); });
-    const dataRange = hojaRep.getRange(2, 1, productos.length, 7);
-    dataRange.setValues(productos);
-
-    // Forzar formatos: si estas celdas quedaron con formato de FECHA de una
-    // versión anterior de la hoja, los números se mostrarían como fechas
-    // (ej. $46.000 → "09/12/2025"). Esto lo corrige siempre.
-    hojaRep.getRange(2, 3, productos.length, 1).setNumberFormat('0');          // Stock
-    hojaRep.getRange(2, 5, productos.length, 1).setNumberFormat('0');          // Vendidos (30d)
-    hojaRep.getRange(2, 6, productos.length, 1).setNumberFormat('"$"#,##0');   // Precio
-    hojaRep.getRange(2, 7, productos.length, 1).setNumberFormat('@');          // Última actualización (texto)
-
-    for (let i = 0; i < productos.length; i++) {
-      const stock = productos[i][2];
-      const color = stock === 0 ? '#3a0000' : stock === 1 ? '#2a1500' : '#1a1a00';
-      const fontColor = stock === 0 ? '#FF4444' : stock === 1 ? '#FF9900' : '#FFD700';
-      hojaRep.getRange(i + 2, 1, 1, 7).setBackground(color).setFontColor(fontColor);
-    }
-
-    hojaRep.setColumnWidth(1, 280);
-    hojaRep.setColumnWidth(2, 150);
-    hojaRep.setColumnWidth(3, 90);
-    hojaRep.setColumnWidth(4, 100);
-    hojaRep.setColumnWidth(5, 110);
-    hojaRep.setColumnWidth(6, 100);
-    hojaRep.setColumnWidth(7, 160);
+  var resumen = {
+    'AG SUPLEMENTOS':{ productos:0, unidades:0, total:0 },
+    'COLO MAYORISTA':{ productos:0, unidades:0, total:0 },
+    'ONE FIT':{ productos:0, unidades:0, total:0 },
+    '⚠️ REVISAR PROVEEDOR':{ productos:0, unidades:0, total:0 }
+  };
+  if (lista.length) {
+    var filasSalida = lista.map(function(item) {
+      var prov = resumen[item.proveedor] ? item.proveedor : '⚠️ REVISAR PROVEEDOR';
+      resumen[prov].productos++;
+      resumen[prov].unidades += item.comprar;
+      resumen[prov].total += Number(item.total) || 0;
+      return [
+        item.prioridad.etiqueta, item.producto.nombre, item.producto.marca, item.producto.stock,
+        item.objetivo || '', item.pendiente, item.vendidos, item.cobertura, item.comprar, item.estado,
+        item.proveedor, item.proveedor === 'AG SUPLEMENTOS' ? item.comprar : '',
+        item.proveedor === 'COLO MAYORISTA' ? item.comprar : '',
+        item.proveedor === 'ONE FIT' ? item.comprar : '', item.costo || '', item.total, fechaStr
+      ];
+    });
+    hojaRep.getRange(2, 1, filasSalida.length, headers[0].length).setValues(filasSalida);
+    hojaRep.getRange(2, 4, filasSalida.length, 6).setNumberFormat('0');
+    hojaRep.getRange(2, 12, filasSalida.length, 3).setNumberFormat('0');
+    hojaRep.getRange(2, 15, filasSalida.length, 2).setNumberFormat('$#,##0');
+    hojaRep.getRange(2, 17, filasSalida.length, 1).setNumberFormat('@');
+    var fondos = lista.map(function(item) {
+      var color = item.prioridad.nivel === 1 ? '#F4CCCC' : item.prioridad.nivel === 2 ? '#FCE5CD' :
+        item.prioridad.nivel === 3 ? '#FFF2CC' : '#D9EAF7';
+      return new Array(headers[0].length).fill(color);
+    });
+    hojaRep.getRange(2, 1, filasSalida.length, headers[0].length).setBackgrounds(fondos).setFontColor('#202124');
+    hojaRep.getRange(1, 1, filasSalida.length + 1, headers[0].length).createFilter();
   } else {
-    hojaRep.getRange(2, 1).setValue('✅ Todos los productos tienen stock suficiente');
-    hojaRep.getRange(2, 1).setFontColor('#00CC44');
+    hojaRep.getRange(2, 1).setValue('✅ No hay productos pendientes de reposición').setFontColor('#188038');
   }
 
-  hojaRep.getRange(1, 8).setValue('Actualizado: ' + fechaStr);
-  hojaRep.getRange(1, 8).setFontColor('#888888').setFontStyle('italic');
+  hojaRep.getRange(1, 19, 1, 4).setValues([['Proveedor','Productos','Unidades','Inversión estimada']])
+    .setBackground('#0B5394').setFontColor('#FFFFFF').setFontWeight('bold');
+  var ordenResumen = ['AG SUPLEMENTOS','COLO MAYORISTA','ONE FIT','⚠️ REVISAR PROVEEDOR'];
+  var filasResumen = ordenResumen.map(function(proveedor) {
+    var r = resumen[proveedor];
+    return [proveedor, r.productos, r.unidades, r.total || ''];
+  });
+  hojaRep.getRange(2, 19, filasResumen.length, 4).setValues(filasResumen);
+  hojaRep.getRange(2, 20, filasResumen.length, 2).setNumberFormat('0');
+  hojaRep.getRange(2, 22, filasResumen.length, 1).setNumberFormat('$#,##0');
+  hojaRep.getRange(7, 19, 1, 4).merge().setValue('Se actualiza con cada venta y cada carga de stock. Los precios/proveedores salen de STOCK_OBJETIVO y PROVEEDORES.')
+    .setBackground('#FFF4CC').setFontColor('#6B4E00').setFontWeight('bold').setWrap(true);
+
+  hojaRep.setFrozenRows(1);
+  hojaRep.setTabColor('#F4B400');
+  [170,300,150,90,95,115,105,110,85,125,170,90,90,100,125,125,155].forEach(function(ancho, indice) {
+    hojaRep.setColumnWidth(indice + 1, ancho);
+  });
+  [175,90,90,145].forEach(function(ancho, indice) { hojaRep.setColumnWidth(19 + indice, ancho); });
+  hojaRep.getRange(1, 1, Math.max(2, lista.length + 1), 17).setVerticalAlignment('middle');
+  SpreadsheetApp.flush();
+  return { ok:true, pendientes:lista.length, resumen:resumen, actualizado:fechaStr };
 }
 
 // ══════════════════════════════════════════════════════════
