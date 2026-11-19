@@ -2457,11 +2457,14 @@ function actualizarHojaReposicion() {
   hojaRep.getDataRange().breakApart();
   hojaRep.clearContents();
   hojaRep.clearFormats();
-  var headers = [['Prioridad','Producto','Marca','Stock actual','Stock objetivo','Pendiente por ventas',
-    'Vendidos 30 días','Cobertura (días)','A comprar','Estado','Proveedor recomendado',
-    'Pedir a AG','Pedir a Colo','Pedir a One Fit','Costo unitario puesto','Total estimado','Última actualización']];
+  var headers = [['Prioridad','Producto','Marca','Pedir a AG','Pedir a Colo','Pedir a One Fit',
+    'Proveedor recomendado','A comprar','Stock actual','Stock objetivo','Pendiente por ventas',
+    'Vendidos 30 días','Cobertura (días)','Estado','Costo unitario puesto','Total estimado','Última actualización']];
   hojaRep.getRange(1, 1, 1, headers[0].length).setValues(headers)
     .setBackground('#1a1a2e').setFontColor('#00C8FF').setFontWeight('bold').setWrap(true);
+  hojaRep.getRange('D1').setBackground('#38761D').setFontColor('#FFFFFF');
+  hojaRep.getRange('E1').setBackground('#0B5394').setFontColor('#FFFFFF');
+  hojaRep.getRange('F1').setBackground('#674EA7').setFontColor('#FFFFFF');
 
   var resumen = {
     'AG SUPLEMENTOS':{ productos:0, unidades:0, total:0 },
@@ -2476,16 +2479,17 @@ function actualizarHojaReposicion() {
       resumen[prov].unidades += item.comprar;
       resumen[prov].total += Number(item.total) || 0;
       return [
-        item.prioridad.etiqueta, item.producto.nombre, item.producto.marca, item.producto.stock,
-        item.objetivo || '', item.pendiente, item.vendidos, item.cobertura, item.comprar, item.estado,
-        item.proveedor, item.proveedor === 'AG SUPLEMENTOS' ? item.comprar : '',
+        item.prioridad.etiqueta, item.producto.nombre, item.producto.marca,
+        item.proveedor === 'AG SUPLEMENTOS' ? item.comprar : '',
         item.proveedor === 'COLO MAYORISTA' ? item.comprar : '',
-        item.proveedor === 'ONE FIT' ? item.comprar : '', item.costo || '', item.total, fechaStr
+        item.proveedor === 'ONE FIT' ? item.comprar : '', item.proveedor, item.comprar,
+        item.producto.stock, item.objetivo || '', item.pendiente, item.vendidos, item.cobertura,
+        item.estado, item.costo || '', item.total, fechaStr
       ];
     });
     hojaRep.getRange(2, 1, filasSalida.length, headers[0].length).setValues(filasSalida);
-    hojaRep.getRange(2, 4, filasSalida.length, 6).setNumberFormat('0');
-    hojaRep.getRange(2, 12, filasSalida.length, 3).setNumberFormat('0');
+    hojaRep.getRange(2, 4, filasSalida.length, 3).setNumberFormat('0');
+    hojaRep.getRange(2, 8, filasSalida.length, 6).setNumberFormat('0');
     hojaRep.getRange(2, 15, filasSalida.length, 2).setNumberFormat('$#,##0');
     hojaRep.getRange(2, 17, filasSalida.length, 1).setNumberFormat('@');
     var fondos = lista.map(function(item) {
@@ -2494,6 +2498,10 @@ function actualizarHojaReposicion() {
       return new Array(headers[0].length).fill(color);
     });
     hojaRep.getRange(2, 1, filasSalida.length, headers[0].length).setBackgrounds(fondos).setFontColor('#202124');
+    hojaRep.getRange(2, 4, filasSalida.length, 1).setBackground('#D9EAD3').setFontWeight('bold');
+    hojaRep.getRange(2, 5, filasSalida.length, 1).setBackground('#D9EAF7').setFontWeight('bold');
+    hojaRep.getRange(2, 6, filasSalida.length, 1).setBackground('#EADCF8').setFontWeight('bold');
+    hojaRep.getRange(2, 7, filasSalida.length, 2).setFontWeight('bold');
     hojaRep.getRange(1, 1, filasSalida.length + 1, headers[0].length).createFilter();
   } else {
     hojaRep.getRange(2, 1).setValue('✅ No hay productos pendientes de reposición').setFontColor('#188038');
@@ -2513,8 +2521,9 @@ function actualizarHojaReposicion() {
     .setBackground('#FFF4CC').setFontColor('#6B4E00').setFontWeight('bold').setWrap(true);
 
   hojaRep.setFrozenRows(1);
+  hojaRep.setFrozenColumns(3);
   hojaRep.setTabColor('#F4B400');
-  [170,300,150,90,95,115,105,110,85,125,170,90,90,100,125,125,155].forEach(function(ancho, indice) {
+  [170,300,150,95,95,105,175,90,90,95,115,105,110,125,125,125,155].forEach(function(ancho, indice) {
     hojaRep.setColumnWidth(indice + 1, ancho);
   });
   [175,90,90,145].forEach(function(ancho, indice) { hojaRep.setColumnWidth(19 + indice, ancho); });

@@ -4,6 +4,11 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'Ventas.gs'), 'utf8');
+assert.match(
+  source,
+  /\['Prioridad','Producto','Marca','Pedir a AG','Pedir a Colo','Pedir a One Fit'/,
+  'Las tres columnas de proveedores deben quedar visibles junto al producto'
+);
 const context = {};
 vm.createContext(context);
 vm.runInContext(source, context);
