@@ -5655,6 +5655,7 @@ function _waRespuestaCatalogoGeneral() {
 function _waExtraerConsultaProducto_(texto) {
   return _waNormalizar(texto)
     .replace(/\b(hola|max|maxup|buenas|buen|dia|tarde|noche|por|favor|me|mi|das|dame|decime|podes|podrias|quisiera|quiero|necesito|saber|consultar|consulta|pregunta|informacion|info|referencia|referencias|detalle|detalles|sobre|acerca|respecto|producto|productos|suplemento|suplementos|buscar|busco|precio|precios|stock|tenes|tienen|hay|beneficio|beneficios|sirve|contiene|composicion|ingrediente|ingredientes|que|cual|cuales|es|son|para|de|del|la|el|los|las|un|una|algo|algun|alguna|mostrar|mostrame|lei|escuche|dijeron|recomendaron|ayudaria|ayuda|ayudar|puede|podria|funciona|funcionaria|verdad|cierto|capaz|tal|vez)\b/g, ' ')
+    .replace(/\bashwaganda\b/g, 'ashwagandha')
     .replace(/\s+/g, ' ').trim();
 }
 
@@ -5836,7 +5837,7 @@ function _waInterpretarConGemini_(telefono, texto, estado, sinCache) {
   var normal = _waNormalizar(texto);
   if (!normal) return null;
   var cache = CacheService.getScriptCache();
-  var cacheKey = 'WA_GEMINI_V4_' + _hashSeguro(normal + '|' + String((estado&&estado.paso)||''));
+  var cacheKey = 'WA_GEMINI_V5_' + _hashSeguro(normal + '|' + String((estado&&estado.paso)||''));
   if (!sinCache) {
     var guardado = cache.get(cacheKey);
     if (guardado) { try { return JSON.parse(guardado); } catch(eCache) {} }
@@ -5851,6 +5852,7 @@ function _waInterpretarConGemini_(telefono, texto, estado, sinCache) {
     'Intenciones permitidas: HORARIOS, UBICACION, PRODUCTO, PEDIDO, PAGOS, ENTREGAS, MAYORISTA, PROMOCIONES, HUMANO, SALUDO, ACLARAR.',
     'Para PRODUCTO traducí el objetivo del cliente a una búsqueda útil del catálogo. Familias: bajar de peso/definición=quemadores; subir de peso/superávit=gainer; masa muscular/recuperación=proteína; fuerza/potencia=creatina; energía o enfoque=pre entreno salvo que diga barra/snack/gel; articulaciones/tendones/piel=colágeno; hidratación/electrolitos=isotónicos; descanso/calambres=magnesio o ZMA; estrés/relajación=ashwagandha; libido/deseo sexual=ashwagandha o ZMA sin prometer un efecto; salud cardiovascular=omega 3; antioxidantes=resveratrol.',
     'No inventes ni heredes una marca de mensajes anteriores. Incluí una marca en consulta_producto únicamente si aparece escrita en el último mensaje del cliente.',
+    'Si el cliente nombra explícitamente un suplemento, ese nombre tiene prioridad absoluta sobre el beneficio mencionado. Ejemplo: "ashwagandha para energía" sigue siendo ASHWAGANDHA, nunca omega 3 ni pre entreno.',
     'Para PEDIDO extraé codigo_pedido si aparece. Si falta información usá ACLARAR y escribí una pregunta breve.',
     'Formato: {"intent":"...","consulta_producto":"","codigo_pedido":"","confianza":0.0,"pregunta_aclaratoria":""}',
     historial ? 'Conversación reciente:\n' + historial : '',
@@ -6178,6 +6180,23 @@ function _waEsConsultaSalud(normal) {
   return /dosis|dosificacion|como tomar|cuanto tomar|embaraz|presion|diabetes|medicamento|contraindic|efecto secundario|enfermedad|lesion/.test(normal);
 }
 
+function _waConsultaExplicitaPrioritaria_(normal) {
+  normal=_waNormalizar(normal).replace(/\bashwaganda\b/g,'ashwagandha');
+  // Sólo reducimos la consulta al producto nombrado cuando el mensaje pregunta
+  // qué hace o confirma un beneficio. Así "creatina Gold precio" conserva la
+  // marca, pero "¿la creatina sirve para energía?" no termina en pre entrenos.
+  if(!/para que sirve|sirve para|que hace|beneficio|me ayuda|me ayudaria|ayudaria|puede ser|es verdad|lei que|me dijeron/.test(normal)) return '';
+  var familias=[
+    [/\bashwagandha\b/,'ashwagandha'],[/\bomega ?3\b|fish oil/,'omega 3'],[/\bzma(?:-b)?\b/,'zma'],
+    [/\bresveratrol\b/,'resveratrol'],[/\bcreatina\b/,'creatina'],[/\bproteina\b|\bwhey\b/,'proteina'],
+    [/\bcolageno\b/,'colageno'],[/\bglutamina\b/,'glutamina'],[/\bbcaa\b/,'bcaa'],[/\beaa\b/,'eaa'],
+    [/\bpre ?entreno\b|\bpreworkout\b/,'pre entreno'],[/\bgainer\b|ganador de peso/,'gainer'],
+    [/\bmagnesio\b/,'magnesio'],[/\bquemador\b|\btermogenico\b/,'quemador']
+  ];
+  for(var i=0;i<familias.length;i++) if(familias[i][0].test(normal)) return familias[i][1];
+  return '';
+}
+
 function _waConsultaPorObjetivo_(normal) {
   normal=_waNormalizar(normal);
   if(/bajar (?:de )?peso|perder (?:grasa|peso)|reducir (?:grasa|peso)|quemar grasa|adelgazar|adelgazamiento|definicion|controlar (?:el )?peso/.test(normal)) return 'quemador';
@@ -6204,7 +6223,7 @@ function _waCategoriaConsulta(normal) {
   if (/\b(colageno|colagenos|collagen)\b/.test(normal)) return 'colageno';
   if (/\b(quemador|quemadores|termogenico|termogenicos|lipo|adelgazar|adelgazamiento|definicion)\b|fat burner|quemar grasa|bajar (?:de )?peso|perder (?:grasa|peso)|reducir (?:grasa|peso)|controlar (?:el )?peso/.test(normal)) return 'quemador';
   if (/\b(magnesio|bisglicinato|glicinato|zma|omega ?3|fish oil)\b/.test(normal)) return 'magnesio';
-  if (/\b(ashwagandha|resveratrol|nad\+?|coenzima|antioxidante)\b/.test(normal)) return 'vitamin';
+  if (/\b(ashwagandh?a|resveratrol|nad\+?|coenzima|antioxidante)\b/.test(normal)) return 'vitamin';
   if (/\b(vitamina|vitaminas|mineral|minerales)\b/.test(normal)) return 'vitamin';
   if (/\b(hidratacion|isotonico|isotonicos|electrolito|electrolitos)\b/.test(normal)) return 'hidratacion';
   if (/\b(barra|barras|snack|snacks)\b/.test(normal)) return 'barra';
@@ -6262,7 +6281,7 @@ function _waDescripcionCategoria_(categoria, normal) {
   if (/\bomega ?3\b|fish oil/.test(normal)) {
     return '*Sobre el Omega 3:* aporta ácidos grasos como EPA y DHA. Se usa para complementar la alimentación y acompañar la salud cardiovascular, cerebral y el equilibrio de la respuesta inflamatoria, según la concentración de cada fórmula.';
   }
-  if (/\bashwagandha\b/.test(normal)) {
+  if (/\bashwagandh?a\b/.test(normal)) {
     return '*Sobre la ashwagandha:* es un adaptógeno utilizado para acompañar el manejo del estrés, la relajación y la calidad del descanso. Sus efectos dependen del extracto y de cada persona.';
   }
   if (/\bzma\b/.test(normal)) {
@@ -6415,8 +6434,9 @@ function _waRespuestaSinStock_(normal,categoria,marca) {
 
 function _waBuscarProductos(telefono, consulta, silencioso) {
   var normalOriginal=_waNormalizar(consulta);
-  var consultaObjetivo=_waConsultaPorObjetivo_(normalOriginal);
-  var normal = consultaObjetivo || _waExtraerConsultaProducto_(consulta);
+  var consultaExplicita=_waConsultaExplicitaPrioritaria_(normalOriginal);
+  var consultaObjetivo=consultaExplicita?'':_waConsultaPorObjetivo_(normalOriginal);
+  var normal = consultaExplicita || consultaObjetivo || _waExtraerConsultaProducto_(consulta);
   var stop = { de:1, del:1, la:1, el:1, los:1, las:1, con:1, para:1, que:1, es:1, ser:1, sirve:1, beneficio:1, beneficios:1, precio:1, stock:1, quiero:1, busco:1, tenes:1, tienen:1, hay:1, algo:1, alguna:1, algun:1, opcion:1, opciones:1, ayuda:1, ayudar:1, ayudaria:1, lei:1, escuche:1, dijeron:1, recomendaron:1, puede:1, podria:1, funciona:1, funcionaria:1, verdad:1, cierto:1, y:1, o:1, otra:1, otro:1, dame:1, mostrar:1 };
   var categoriaConsulta = _waCategoriaConsulta(normal);
   var categoriaFlexible = /\boxido\b|\bnitrico\b|nitric oxide/.test(normal);
@@ -6430,7 +6450,7 @@ function _waBuscarProductos(telefono, consulta, silencioso) {
   var catalogo = getCatalogo();
   var productos = catalogo.productos || [];
   var marcaSolicitada=_waMarcaSolicitada_(normalOriginal,productos,categoriaConsulta);
-  if(consultaObjetivo && marcaSolicitada){
+  if((consultaObjetivo||consultaExplicita) && marcaSolicitada){
     _waNormalizar(marcaSolicitada).split(' ').filter(function(t){return t.length>2 && t!=='nutrition' && tokens.indexOf(t)<0;}).forEach(function(t){tokens.push(t);});
   }
   var coincidencias = [];
