@@ -2380,6 +2380,7 @@ function actualizarHojaReposicion() {
   var hojaSup = ss.getSheetByName('SUPLEMENTOS');
   if (!hojaSup) return;
   var hojaRep = ss.getSheetByName('REPOSICION') || ss.insertSheet('REPOSICION');
+  hojaRep.showSheet();
   var fechaStr = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm');
   var datos = hojaSup.getDataRange().getValues();
   var catalogo = [];
