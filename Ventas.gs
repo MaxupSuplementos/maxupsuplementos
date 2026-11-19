@@ -35,6 +35,7 @@ function onOpen() {
     .addItem('🧪 Probar asistente híbrido', 'probarAsistenteHibridoMax')
     .addItem('⚙️ Activar/desactivar Caja al abrir', 'alternarCajaAutomaticaMaxup')
     .addItem('📦 Exportar datos para Caja V2', 'exportarDatosCajaV2')
+    .addItem('📋 Abrir lista de compras por proveedor', 'abrirListaComprasPorProveedor')
     .addSeparator()
     .addItem('Registrar Venta (formulario)', 'abrirFormularioVenta')
     .addItem('Nuevo Cliente', 'abrirFormularioCliente')
@@ -61,6 +62,11 @@ function onOpen() {
     .addItem('🧪 Probar salud del sistema', 'pruebaSaludSistema')
     .addItem('💾 Crear backup ahora', 'backupDiarioMaxup')
     .addToUi();
+
+  // Crear siempre el menú completo de compras al abrir la planilla. Antes
+  // podía quedar visible una versión antigua creada por otro disparador.
+  try { agregarMenuStockObjetivo(); }
+  catch (eMenuStock) { Logger.log('No se pudo crear el menú STOCK OBJETIVO: ' + eMenuStock.message); }
 
   // La Caja queda lista al abrir la planilla. Se puede desactivar desde el menú MAXUP.
   try {
