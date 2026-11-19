@@ -242,7 +242,7 @@ function crearControlStockObjetivo() {
 function agregarMenuStockObjetivo() {
   SpreadsheetApp.getUi().createMenu('📦 STOCK OBJETIVO')
     .addItem('Actualizar lista y análisis', 'crearControlStockObjetivo')
-    .addItem('Actualizar lista de compras por proveedor', 'actualizarHojaReposicion')
+    .addItem('Abrir y actualizar lista de compras', 'abrirListaComprasPorProveedor')
     .addItem('Actualizar proveedores, precios y comparativa', 'actualizarPreciosMayoristasMaxup')
     .addItem('Instalar revisión semanal', 'instalarActualizacionSemanalProveedores')
     .addItem('Abrir configuración de proveedores', 'abrirConfiguracionProveedoresMaxup')
@@ -250,6 +250,24 @@ function agregarMenuStockObjetivo() {
     .addSeparator()
     .addItem('Reordenar y organizar pestañas', 'organizarPlanillaMaxup')
     .addToUi();
+}
+
+function abrirListaComprasPorProveedor() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    var resultado = actualizarHojaReposicion();
+    var ss = (typeof _getSS === 'function') ? _getSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var hoja = ss.getSheetByName('REPOSICION');
+    if (!hoja) throw new Error('Google no pudo crear la hoja REPOSICION.');
+    hoja.showSheet();
+    hoja.activate();
+    hoja.setActiveSelection('A1');
+    ss.toast('Lista actualizada: ' + Number((resultado && resultado.pendientes) || 0) + ' productos pendientes.', 'COMPRAS MAXUP', 8);
+    return resultado;
+  } catch (error) {
+    ui.alert('No se pudo actualizar la lista de compras', String(error && error.message || error), ui.ButtonSet.OK);
+    throw error;
+  }
 }
 
 // ============================================================
