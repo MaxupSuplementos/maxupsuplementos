@@ -6052,6 +6052,11 @@ function _resolverAsistenteWhatsApp(telefono, texto) {
       + _waDerivarHumano(telefono, 'consulta de salud o dosificacion');
   }
 
+  if (_waEsComparacionProteinas_(normal)) {
+    _waGuardarEstado(telefono,'PRODUCTO',{fallos:0});
+    return _waRespuestaComparacionProteinas_(telefono);
+  }
+
   if (_waEsComparacionZmaTesto_(normal)) {
     _waGuardarEstado(telefono,'PRODUCTO',{fallos:0});
     return _waRespuestaComparacionZmaTesto_(telefono);
@@ -6358,6 +6363,61 @@ function _waTokenCoincide_(token,base,baseTokens) {
   });
 }
 
+function _waEsComparacionProteinas_(normal) {
+  normal=_waNormalizar(normal);
+  var aislada=/\b(?:aislad\w*|isolad\w*|isolat\w*|whey iso)\b/.test(normal);
+  var concentrada=/\b(?:concentrad\w*|concentrate\w*|wpc ?80)\b/.test(normal);
+  return aislada && concentrada;
+}
+
+function _waTipoProteina_(producto) {
+  var beneficios=Array.isArray(producto && producto.beneficios_publicacion)
+    ? producto.beneficios_publicacion.join(' ') : '';
+  var texto=_waNormalizar(
+    String(producto && producto.marca || '')+' '+String(producto && producto.nombre || '')+' '+
+    String(producto && (producto.descripcion_publicacion||producto.descripcion) || '')+' '+beneficios
+  );
+  if (/\b(?:aislad\w*|isolad\w*|isolat\w*|iso whey|whey iso)\b/.test(texto)) return 'aislada';
+  if (/\b(?:concentrad\w*|concentrate\w*|wpc ?80|whey concentrate)\b/.test(texto)) return 'concentrada';
+  return '';
+}
+
+function _waRespuestaComparacionProteinas_(telefono) {
+  var productos=(getCatalogo().productos||[]);
+  var aisladas=[],concentradas=[];
+  productos.forEach(function(p){
+    if(Number(p.stock||0)<=0 || _waCategoriaProducto(p)!=='proteina') return;
+    var tipo=_waTipoProteina_(p);
+    if(tipo==='aislada') aisladas.push(p);
+    else if(tipo==='concentrada') concentradas.push(p);
+  });
+  var elegibles=aisladas.slice(0,3).concat(concentradas.slice(0,3));
+  if(elegibles.length) _waGuardarResultadosProductos(telefono,elegibles.map(function(p){return {p:p,puntaje:1};}));
+
+  var salida=[
+    '*Diferencia entre proteína aislada y concentrada*',
+    '\n• *Proteína concentrada (whey concentrate):* tiene menos filtrado. Suele conservar algo más de lactosa, carbohidratos y grasas, y normalmente es la opción más económica.',
+    '\n• *Proteína aislada (whey isolate):* pasa por un filtrado mayor. Suele aportar un porcentaje más alto de proteína y menos lactosa, carbohidratos y grasas por porción. No significa que sea totalmente libre de lactosa: hay que revisar la etiqueta.',
+    '\n• *Las dos sirven* para completar el consumo diario de proteína y acompañar recuperación y masa muscular. La aislada conviene cuando se busca mayor pureza o mejor tolerancia; la concentrada suele ofrecer mejor relación precio-beneficio.'
+  ];
+
+  function agregarGrupo(titulo,lista,offset){
+    salida.push('\n*'+titulo+' con stock:*');
+    if(!lista.length){ salida.push('• No tenemos una opción identificada de este tipo en este momento.'); return; }
+    lista.slice(0,3).forEach(function(p,i){
+      var contado=Number(p.precio_venta||0),listaPrecio=Number(p.precio_lista||contado);
+      salida.push('\n*'+(offset+i+1)+'. '+String(p.marca||'')+' - '+String(p.nombre||'')+'*'
+        +'\nContado: '+_waMoneda(contado)
+        +(listaPrecio>0?' · 3 cuotas de '+_waMoneda(Math.ceil(listaPrecio/3)):'')
+        +'\nStock: '+Number(p.stock||0)+' unidad'+(Number(p.stock||0)===1?'':'es'));
+    });
+  }
+  agregarGrupo('Aisladas',aisladas,0);
+  agregarGrupo('Concentradas',concentradas,Math.min(aisladas.length,3));
+  salida.push('\n¿Querés más información sobre alguna? Respondé con su número o escribí *asesor* para atención personalizada.');
+  return salida.join('\n');
+}
+
 function _waEsComparacionZmaTesto_(normal) {
   normal=_waNormalizar(normal);
   return /\bzma(?:-b)?\b/.test(normal) && /\btesto(?: gold)?\b/.test(normal);
@@ -6446,6 +6506,14 @@ function _waTokenMarcaCoincide_(consulta,marca) {
     && consulta.charAt(distintas[1])===marca.charAt(distintas[0]);
 }
 
+function _waTokenMarcaGenerico_(token) {
+  return !!({
+    nutrition:1,suplementos:1,supplements:1,protein:1,proteina:1,proteinas:1,whey:1,
+    creatina:1,creatine:1,collagen:1,colageno:1,amino:1,aminoacidos:1,bcaa:1,eaa:1,
+    omega:1,vitamin:1,vitamina:1,vitaminas:1,minerales:1,sport:1,sports:1
+  }[String(token||'')]);
+}
+
 function _waMarcaSolicitada_(normal, productos, categoria) {
   var consultaTokens=String(normal||'').split(' ').filter(Boolean);
   var vistas={};
@@ -6456,7 +6524,9 @@ function _waMarcaSolicitada_(normal, productos, categoria) {
     var marca=_waNormalizar(original);
     if(!marca || vistas[marca]) return;
     vistas[marca]=1;
-    candidatas.push({original:original,normal:marca,tokens:marca.split(' ').filter(function(t){return t.length>2 && t!=='nutrition' && t!=='suplementos';})});
+    candidatas.push({original:original,normal:marca,tokens:marca.split(' ').filter(function(t){
+      return t.length>2 && !_waTokenMarcaGenerico_(t);
+    })});
   });
   candidatas.sort(function(a,b){return b.normal.length-a.normal.length;});
   for(var i=0;i<candidatas.length;i++){

@@ -314,3 +314,48 @@ test('Max compara ZMA con Testo Gold y no busca toda la frase como producto', ()
   assert.doesNotMatch(resultado.respuesta,/no contamos con.*TIENE DISTINTO/i);
 });
 
+test('Max compara proteína aislada y concentrada sin inventar Protein Project como marca', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'Api.gs'), 'utf8');
+  assert.ok(
+    source.indexOf('if (_waEsComparacionProteinas_(normal))') < source.indexOf('var posibleProducto=_waBuscarProductos'),
+    'La comparación debe resolverse antes de buscar la frase como si fuera un producto'
+  );
+  const comparacion = source.match(/function _waEsComparacionProteinas_[\s\S]*?(?=function _waEsComparacionZmaTesto_\()/);
+  const marcas = source.match(/function _waTokenMarcaCoincide_[\s\S]*?(?=function _waRespuestaSinStock_\()/);
+  assert.ok(comparacion && marcas, 'No se encontraron las funciones de comparación de proteínas y marcas');
+  const run = new Function(`
+    function _waNormalizar(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');}
+    function _waCategoriaProducto(p){return p.categoria;}
+    function _waDistanciaTexto_(a,b){
+      if(a===b)return 0; var prev=[]; for(var j=0;j<=b.length;j++)prev[j]=j;
+      for(var i=1;i<=a.length;i++){var cur=[i];for(var k=1;k<=b.length;k++)cur[k]=Math.min(cur[k-1]+1,prev[k]+1,prev[k-1]+(a[i-1]===b[k-1]?0:1));prev=cur;}return prev[b.length];
+    }
+    function getCatalogo(){return {productos:[
+      {marca:'GOLD NUTRITION',nombre:'Iso Gold Protein 2Lb',categoria:'proteina',stock:2,precio_venta:92000,precio_lista:104000,descripcion:'Proteína de suero aislada.'},
+      {marca:'ENA',nombre:'Whey Protein Concentrada 2Lb',categoria:'proteina',stock:3,precio_venta:78000,precio_lista:89000,descripcion:'Proteína de suero concentrada.'},
+      {marca:'PROTEIN PROJECT',nombre:'Whey Blend',categoria:'proteina',stock:0,precio_venta:70000}
+    ]};}
+    function _waGuardarResultadosProductos(){}
+    function _waMoneda(v){return '$'+v;}
+    ${comparacion[0]}
+    ${marcas[0]}
+    const consulta='quiero saber la diferencia entre una prote isolada y concentrada';
+    const productos=getCatalogo().productos;
+    return {
+      detecta:_waEsComparacionProteinas_(consulta),
+      respuesta:_waRespuestaComparacionProteinas_('549000'),
+      marcaFalsa:_waMarcaSolicitada_(consulta,productos,'proteina'),
+      marcaReal:_waMarcaSolicitada_('proteina protein project',productos,'proteina')
+    };
+  `);
+  const resultado=run();
+  assert.equal(resultado.detecta,true);
+  assert.equal(resultado.marcaFalsa,'','La palabra proteína no debe convertirse en la marca Protein Project');
+  assert.equal(resultado.marcaReal,'PROTEIN PROJECT');
+  assert.match(resultado.respuesta,/Diferencia entre proteína aislada y concentrada/);
+  assert.match(resultado.respuesta,/Iso Gold Protein 2Lb/);
+  assert.match(resultado.respuesta,/Whey Protein Concentrada 2Lb/);
+  assert.match(resultado.respuesta,/Las dos sirven/);
+  assert.doesNotMatch(resultado.respuesta,/no contamos con la marca/i);
+});
+
