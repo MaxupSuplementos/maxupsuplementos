@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-19",
-  "generado": "2026-11-19T21:48:21.808Z",
+  "fecha": "2026-11-20",
+  "generado": "2026-11-20T20:01:37.509Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Flexo Drink 390g - Pomelo Rosado",
+      "titulo": "Pre Work Gold X 280 Grs",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Flexo Drink 390g - Pomelo Rosado\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Pre Work Gold X 280 Grs\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Whey Protein Platinum 3Kg - Vainilla",
+      "titulo": "Protein Bar 46g - Chocolate",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Whey Protein Platinum 3Kg - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Protein Bar 46g - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Citrato De Magnesio 60 Cap",
+      "titulo": "Faja neoprene ajustable drb",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Citrato De Magnesio 60 Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Faja neoprene ajustable drb\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Kit 3 bandas tipo cinta de tela circular importada Sonnos",
+      "titulo": "L-Carnitina X 60 Comp.",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Kit 3 bandas tipo cinta de tela circular importada Sonnos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L-Carnitina X 60 Comp.\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Conjunto",
+      "titulo": "Calza Batik detalle en ambas piernas",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Conjunto\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Calza Batik detalle en ambas piernas\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
