@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-20",
-  "generado": "2026-11-20T21:30:17.966Z",
+  "fecha": "2026-11-21",
+  "generado": "2026-11-21T19:06:17.144Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Pre Work Gold X 280 Grs",
+      "titulo": "Creatina 300Gr",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Pre Work Gold X 280 Grs\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina 300Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Protein Bar 46g - Chocolate",
+      "titulo": "Bolso T80 - Negro",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Protein Bar 46g - Chocolate\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Bolso T80 - Negro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Faja neoprene ajustable drb",
+      "titulo": "Live Fem (Multivitamínico) 150Gr",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Faja neoprene ajustable drb\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Live Fem (Multivitamínico) 150Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "L-Carnitina X 60 Comp.",
+      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
       "file": "generated/daily/current/04.jpg",
-      "caption": "L-Carnitina X 60 Comp.\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Calza Batik detalle en ambas piernas",
+      "titulo": "Remerón Hamptoms",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Calza Batik detalle en ambas piernas\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Remerón Hamptoms\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
