@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-21",
-  "generado": "2026-11-21T20:13:38.589Z",
+  "fecha": "2026-11-22",
+  "generado": "2026-11-22T19:29:04.616Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Creatina 300Gr",
+      "titulo": "Botella Mamushka Cilindrica 3 En 1",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Creatina 300Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Botella Mamushka Cilindrica 3 En 1\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Bolso T80 - Negro",
+      "titulo": "Gelatina con Colageno 150g - Frutilla",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Bolso T80 - Negro\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Live Fem (Multivitamínico) 150Gr",
+      "titulo": "Glutamina 200G",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Live Fem (Multivitamínico) 150Gr\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Glutamina 200G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Mutantmass X 1,5 Kilos - Vainilla",
+      "titulo": "Whey Protein Platinum 3Kg - Vainilla",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Mutantmass X 1,5 Kilos - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Whey Protein Platinum 3Kg - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Remerón Hamptoms",
+      "titulo": "Conjunto Batik Bicolor",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Remerón Hamptoms\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Conjunto Batik Bicolor\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
