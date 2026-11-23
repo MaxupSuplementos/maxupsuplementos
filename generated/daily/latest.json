@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-22",
-  "generado": "2026-11-22T20:27:41.522Z",
+  "fecha": "2026-11-23",
+  "generado": "2026-11-23T23:47:39.235Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Botella Mamushka Cilindrica 3 En 1",
+      "titulo": "Scoop 5Gr Maxup",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Botella Mamushka Cilindrica 3 En 1\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Scoop 5Gr Maxup\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Gelatina con Colageno 150g - Frutilla",
+      "titulo": "Botella Mamushka Cilindrica 3 En 1",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Gelatina con Colageno 150g - Frutilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Botella Mamushka Cilindrica 3 En 1\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Glutamina 200G",
+      "titulo": "Bcaa 2000 30Cap",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Glutamina 200G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Bcaa 2000 30Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Whey Protein Platinum 3Kg - Vainilla",
+      "titulo": "Cafeina Booster 30Serv",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Whey Protein Platinum 3Kg - Vainilla\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Cafeina Booster 30Serv\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Conjunto Batik Bicolor",
+      "titulo": "Short Prelavado con red a los costados",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Conjunto Batik Bicolor\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Short Prelavado con red a los costados\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
