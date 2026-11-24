@@ -1,28 +1,28 @@
 {
-  "fecha": "2026-11-23",
-  "generado": "2026-11-24T01:14:57.813Z",
+  "fecha": "2026-11-24",
+  "generado": "2026-11-24T22:20:13.300Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Scoop 5Gr Maxup",
+      "titulo": "Tope Barra Olimpica",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Scoop 5Gr Maxup\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Tope Barra Olimpica\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Botella Mamushka Cilindrica 3 En 1",
+      "titulo": "L- Glutamina X300G",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Botella Mamushka Cilindrica 3 En 1\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "L- Glutamina X300G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Bcaa 2000 30Cap",
+      "titulo": "Ripped Fat Burner x60caps",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Bcaa 2000 30Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Ripped Fat Burner x60caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
@@ -34,9 +34,9 @@
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Short Prelavado con red a los costados",
+      "titulo": "Catsuit ESPALDA V",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Short Prelavado con red a los costados\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Catsuit ESPALDA V\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
