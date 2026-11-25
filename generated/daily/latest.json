@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-24",
-  "generado": "2026-11-24T23:14:49.124Z",
+  "fecha": "2026-11-25",
+  "generado": "2026-11-25T21:36:05.651Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Tope Barra Olimpica",
+      "titulo": "Enaccion Multivitaminico 30Cap",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Tope Barra Olimpica\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Enaccion Multivitaminico 30Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "L- Glutamina X300G",
+      "titulo": "Ejercitador de Mandibula",
       "file": "generated/daily/current/02.jpg",
-      "caption": "L- Glutamina X300G\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Ejercitador de Mandibula\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Ripped Fat Burner x60caps",
+      "titulo": "Collagen Sport Naranja X 360 Grs",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Ripped Fat Burner x60caps\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Collagen Sport Naranja X 360 Grs\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Cafeina Booster 30Serv",
+      "titulo": "Star Simple",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Cafeina Booster 30Serv\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Star Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Catsuit ESPALDA V",
+      "titulo": "Calza Batik detalle a una pierna",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Catsuit ESPALDA V\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Calza Batik detalle a una pierna\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
