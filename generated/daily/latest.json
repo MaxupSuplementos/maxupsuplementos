@@ -1,42 +1,42 @@
 {
-  "fecha": "2026-11-25",
-  "generado": "2026-11-25T22:42:45.624Z",
+  "fecha": "2026-11-26",
+  "generado": "2026-11-26T21:25:52.002Z",
   "cantidad": 5,
   "items": [
     {
       "orden": 1,
       "tipo": "suplemento",
-      "titulo": "Enaccion Multivitaminico 30Cap",
+      "titulo": "Creatina X 300 Grs - Doypack - Frutos Rojos",
       "file": "generated/daily/current/01.jpg",
-      "caption": "Enaccion Multivitaminico 30Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Creatina X 300 Grs - Doypack - Frutos Rojos\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 2,
       "tipo": "suplemento",
-      "titulo": "Ejercitador de Mandibula",
+      "titulo": "Fat Burner X60Cap",
       "file": "generated/daily/current/02.jpg",
-      "caption": "Ejercitador de Mandibula\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Fat Burner X60Cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 3,
       "tipo": "suplemento",
-      "titulo": "Collagen Sport Naranja X 360 Grs",
+      "titulo": "Pre Work Gold X 280 Grs",
       "file": "generated/daily/current/03.jpg",
-      "caption": "Collagen Sport Naranja X 360 Grs\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Pre Work Gold X 280 Grs\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 4,
       "tipo": "suplemento",
-      "titulo": "Star Simple",
+      "titulo": "Glicinato de Magnesio 60cap",
       "file": "generated/daily/current/04.jpg",
-      "caption": "Star Simple\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Glicinato de Magnesio 60cap\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     },
     {
       "orden": 5,
       "tipo": "indumentaria",
-      "titulo": "Calza Batik detalle a una pierna",
+      "titulo": "Calza rasgada",
       "file": "generated/daily/current/05.jpg",
-      "caption": "Calza Batik detalle a una pierna\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
+      "caption": "Calza rasgada\n\nMAXUP Suplementos\n🛒 Mirá precios, stock y productos:\nhttps://maxupsuplementos.com.ar/"
     }
   ]
 }
